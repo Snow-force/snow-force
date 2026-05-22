@@ -1,0 +1,52 @@
+"use client";
+
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+
+export type Lang = "en" | "zh";
+
+type BilingualData = { en: any; zh: any };
+
+type LanguageContextValue = {
+  lang: Lang;
+  setLang: (lang: Lang) => void;
+  t: (bilingual: BilingualData) => any;
+};
+
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+function getInitialLang(): Lang {
+  if (typeof document === "undefined") return "zh";
+  const cookie = document.cookie.split("; ").find((r) => r.startsWith("lang="));
+  if (cookie) return cookie.split("=")[1] as Lang;
+  return "zh";
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>("zh");
+
+  useState(() => {
+    setLangState(getInitialLang());
+  });
+
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l);
+    document.cookie = `lang=${l};path=/;max-age=${365 * 24 * 60 * 60}`;
+  }, []);
+
+  // Plain closure — avoids useCallback generic-erasure issues with bilingual arrays
+  function t(bilingual: BilingualData): any {
+    return bilingual[lang];
+  }
+
+  return (
+    <LanguageContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage(): LanguageContextValue {
+  const ctx = useContext(LanguageContext);
+  if (!ctx) throw new Error("useLanguage must be used within LanguageProvider");
+  return ctx;
+}

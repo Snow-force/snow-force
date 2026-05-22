@@ -1,0 +1,10 @@
+.data/
+.claude/
+.superpowers/
+artifacts/
+.env.local
+.next/
+node_modules/
+supabase/.temp/
+*.log
+tsconfig.tsbuildinfo
