@@ -14,43 +14,42 @@ export function EventDetailView({
   loadError?: boolean;
 }) {
   const { lang, t } = useLanguage();
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
 
   if (loadError) {
     return (
-      <div className="py-20 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t({ en: "Event Data Unavailable", zh: "活动数据不可用" })}
-        </h1>
-        <p className="mt-2 text-amber-700">
-          {t({
-            en: "Check the Supabase event setup before viewing activity details.",
-            zh: "查看活动详情前，请检查 Supabase 活动配置。",
-          })}
-        </p>
-      </div>
+      <StatusPage
+        title={t({ en: "Event Data Unavailable", zh: "活动数据不可用" })}
+        body={t({
+          en: "Check the Supabase event setup before viewing activity details.",
+          zh: "查看活动详情前，请检查 Supabase 活动配置。",
+        })}
+      />
     );
   }
 
   if (!event) {
     return (
-      <div className="py-20 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t({ en: "Event Not Found", zh: "活动未找到" })}
-        </h1>
-        <p className="mt-2 text-gray-500">
-          {t({ en: "The event you're looking for doesn't exist or has been removed.", zh: "你查找的活动不存在或已被移除。" })}
-        </p>
-        <Link href="/events" className="mt-4 inline-block text-sm font-medium text-snow-600 hover:text-snow-700">
-          {t({ en: "← Back to Events", zh: "← 返回活动列表" })}
+      <StatusPage
+        title={t({ en: "Event Not Found", zh: "活动未找到" })}
+        body={t({
+          en: "The event you're looking for doesn't exist or has been removed.",
+          zh: "你查找的活动不存在或已被移除。",
+        })}
+      >
+        <Link href="/events" className="mt-5 inline-flex text-[17px] leading-[1.47] tracking-[-0.374px] text-[#0066cc]">
+          {t({ en: "Back to Events", zh: "返回活动列表" })}
         </Link>
-      </div>
+      </StatusPage>
     );
   }
 
   const open = isEventOpen(event);
   const eventDate = new Date(event.eventStartAt);
   const eventEndDate = new Date(event.eventEndAt);
-  const dateFormatter = new Intl.DateTimeFormat(lang === "zh" ? "zh-CN" : "en-US", {
+  const capacityPercent = Math.min((event.registrationCount / event.capacity) * 100, 100);
+
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -58,145 +57,184 @@ export function EventDetailView({
   });
 
   return (
-    <div className="py-16 sm:py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
-        <nav className="mb-8 text-sm text-gray-400">
-          <Link href="/events" className="hover:text-gray-600">{t({ en: "Events", zh: "活动" })}</Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-600">{t(event.title)}</span>
-        </nav>
+    <div className="bg-white text-[#1d1d1f]">
+      <section className="bg-[#1d1d1f] px-4 py-10 text-white sm:px-6 sm:py-14">
+        <div className="mx-auto max-w-[1100px]">
+          <nav className="mb-8 text-[14px] leading-none tracking-[-0.224px] text-white/55">
+            <Link href="/events" className="hover:text-white">
+              {t({ en: "Events", zh: "活动" })}
+            </Link>
+            <span className="mx-2">/</span>
+            <span className="text-white/80">{t(event.title)}</span>
+          </nav>
 
-        <div className="grid gap-10 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Header */}
+          <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  open ? "bg-green-50 text-green-700 ring-1 ring-green-600/20" : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
-                }`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-[12px] leading-none tracking-[-0.12px] ${
+                    open ? "bg-[#e0effe] text-[#0555a1]" : "bg-white/12 text-white"
+                  }`}
+                >
                   {open ? t({ en: "Registration Open", zh: "报名开放中" }) : t({ en: "Registration Closed", zh: "报名已关闭" })}
                 </span>
                 {(t(event.tags) as string[]).map((tag) => (
-                  <span key={tag} className="inline-flex items-center rounded-full bg-snow-50 px-2.5 py-0.5 text-xs font-medium text-snow-700">
+                  <span key={tag} className="inline-flex items-center rounded-full border border-white/15 px-3 py-1 text-[12px] leading-none tracking-[-0.12px] text-white/80">
                     {tag}
                   </span>
                 ))}
               </div>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              <h1 className="mt-5 max-w-3xl text-[40px] font-semibold leading-[1.08] tracking-[-0.28px] sm:text-[56px]">
                 {t(event.title)}
               </h1>
-              <p className="mt-3 text-lg text-gray-500">{t(event.subtitle)}</p>
+              <p className="mt-4 max-w-2xl text-[21px] leading-[1.3] tracking-[0.231px] text-[#cccccc]">
+                {t(event.subtitle)}
+              </p>
             </div>
 
-            {/* Meta grid */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="card">
-                <div className="text-xs font-medium text-gray-400 uppercase">{t({ en: "Date & Time", zh: "时间" })}</div>
-                <div className="mt-1 text-sm font-medium text-gray-900">{dateFormatter.format(eventDate)}</div>
-                <div className="text-sm text-gray-500">
-                  {eventDate.toLocaleTimeString(lang === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })} — {eventEndDate.toLocaleTimeString(lang === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })}
+            <div className="rounded-[18px] border border-white/10 bg-white p-5 text-[#1d1d1f]">
+              <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.12em] text-[#0066cc]">
+                {t({ en: "Ride snapshot", zh: "活动概览" })}
+              </p>
+              <div className="mt-4 space-y-4">
+                <SnapshotRow label={t({ en: "When", zh: "时间" })} value={dateFormatter.format(eventDate)} />
+                <SnapshotRow label={t({ en: "Where", zh: "地点" })} value={t(event.location)} />
+                <SnapshotRow label={t({ en: "Level", zh: "水平" })} value={t(event.audienceLevel)} />
+              </div>
+              <div className="mt-5">
+                <div className="flex items-center justify-between text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
+                  <span>{t({ en: "Capacity", zh: "名额" })}</span>
+                  <span>
+                    {event.registrationCount}/{event.capacity}
+                  </span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f5f5f7]">
+                  <div className="h-full rounded-full bg-[#0066cc]" style={{ width: `${capacityPercent}%` }} />
                 </div>
               </div>
-              <div className="card">
-                <div className="text-xs font-medium text-gray-400 uppercase">{t({ en: "Location", zh: "地点" })}</div>
-                <div className="mt-1 text-sm font-medium text-gray-900">{t(event.location)}</div>
-                <a href={event.locationUrl} target="_blank" rel="noopener" className="text-sm text-snow-600 hover:text-snow-700">
-                  {t({ en: "View on map →", zh: "查看地图 →" })}
-                </a>
-              </div>
-              <div className="card">
-                <div className="text-xs font-medium text-gray-400 uppercase">{t({ en: "Audience Level", zh: "适合人群" })}</div>
-                <div className="mt-1 text-sm font-medium text-gray-900">{t(event.audienceLevel)}</div>
-              </div>
-              <div className="card">
-                <div className="text-xs font-medium text-gray-400 uppercase">{t({ en: "Capacity", zh: "名额" })}</div>
-                <div className="mt-1 text-sm font-medium text-gray-900">
-                  {event.registrationCount} / {event.capacity}
-                </div>
-                <div className="mt-1 h-2 w-full rounded-full bg-gray-100">
-                  <div
-                    className="h-2 rounded-full bg-snow-500 transition"
-                    style={{ width: `${Math.min((event.registrationCount / event.capacity) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t({ en: "About This Event", zh: "活动介绍" })}
-              </h2>
-              <div className="mt-3 whitespace-pre-line text-gray-600">{t(event.description)}</div>
-            </div>
-
-            {/* Highlights */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t({ en: "Highlights", zh: "活动亮点" })}
-              </h2>
-              <ul className="mt-3 space-y-2">
-                {(t(event.highlights) as string[]).map((h, i) => (
-                  <li key={i} className="flex items-start gap-2 text-gray-600">
-                    <svg className="mt-1 h-4 w-4 shrink-0 text-snow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-                    {h}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Schedule */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t({ en: "Schedule", zh: "活动流程" })}
-              </h2>
-              <pre className="mt-3 whitespace-pre-line rounded-lg bg-gray-50 p-4 text-sm text-gray-600 font-sans">
-                {t(event.schedule)}
-              </pre>
-            </div>
-
-            {/* Fee Info */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t({ en: "Fee Information", zh: "费用说明" })}
-              </h2>
-              <p className="mt-3 text-gray-600">{t(event.feeInfo)}</p>
-            </div>
-
-            {/* Notices */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t({ en: "Important Notices", zh: "注意事项" })}
-              </h2>
-              <ul className="mt-3 space-y-2">
-                {(t(event.notices) as string[]).map((n, i) => (
-                  <li key={i} className="flex items-start gap-2 text-gray-600">
-                    <svg className="mt-1 h-4 w-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-                    {n}
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+      <section className="px-4 py-14 sm:px-6 sm:py-16">
+        <div className="mx-auto grid max-w-[1100px] gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="space-y-8">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InfoCard label={t({ en: "Date & Time", zh: "时间" })}>
+                <p>{dateFormatter.format(eventDate)}</p>
+                <p className="mt-1 text-[#7a7a7a]">
+                  {eventDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} -{" "}
+                  {eventEndDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </InfoCard>
+              <InfoCard label={t({ en: "Location", zh: "地点" })}>
+                <p>{t(event.location)}</p>
+                <a href={event.locationUrl} target="_blank" rel="noopener" className="mt-1 inline-flex text-[#0066cc]">
+                  {t({ en: "View on map", zh: "查看地图" })}
+                </a>
+              </InfoCard>
+              <InfoCard label={t({ en: "Audience Level", zh: "适合人群" })}>
+                <p>{t(event.audienceLevel)}</p>
+              </InfoCard>
+              <InfoCard label={t({ en: "Fee Information", zh: "费用说明" })}>
+                <p>{t(event.feeInfo)}</p>
+              </InfoCard>
+            </div>
+
+            <ContentSection title={t({ en: "About This Event", zh: "活动介绍" })}>
+              <div className="whitespace-pre-line">{t(event.description)}</div>
+            </ContentSection>
+
+            <ContentSection title={t({ en: "Highlights", zh: "活动亮点" })}>
+              <ul className="space-y-3">
+                {(t(event.highlights) as string[]).map((highlight) => (
+                  <li key={highlight} className="flex gap-3">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#0066cc]" />
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </ContentSection>
+
+            <ContentSection title={t({ en: "Schedule", zh: "活动流程" })}>
+              <pre className="whitespace-pre-line rounded-[18px] bg-[#f5f5f7] p-5 font-sans text-[17px] leading-[1.47] tracking-[-0.374px] text-[#333333]">
+                {t(event.schedule)}
+              </pre>
+            </ContentSection>
+
+            <ContentSection title={t({ en: "Important Notices", zh: "注意事项" })}>
+              <ul className="space-y-3">
+                {(t(event.notices) as string[]).map((notice) => (
+                  <li key={notice} className="flex gap-3">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                    <span>{notice}</span>
+                  </li>
+                ))}
+              </ul>
+            </ContentSection>
+          </div>
+
+          <aside className="lg:col-span-1">
+            <div className="sticky top-28 space-y-6">
               {open ? (
                 <RegistrationForm event={event} />
               ) : (
-                <div className="card border-gray-200 bg-gray-50 text-center">
-                  <p className="text-sm font-medium text-gray-500">
+                <div className="card bg-[#f5f5f7] text-center">
+                  <p className="text-[17px] leading-[1.47] tracking-[-0.374px] text-[#333333]">
                     {t({ en: "Registration is currently closed for this event.", zh: "此活动当前不接受报名。" })}
                   </p>
                 </div>
               )}
             </div>
-          </div>
+          </aside>
         </div>
-      </div>
+      </section>
     </div>
+  );
+}
+
+function StatusPage({
+  title,
+  body,
+  children,
+}: {
+  title: string;
+  body: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="px-4 py-20 text-center sm:px-6">
+      <h1 className="text-[34px] font-semibold leading-[1.2] tracking-[-0.374px] text-[#1d1d1f]">{title}</h1>
+      <p className="mx-auto mt-3 max-w-xl text-[17px] leading-[1.47] tracking-[-0.374px] text-[#7a7a7a]">{body}</p>
+      {children}
+    </div>
+  );
+}
+
+function SnapshotRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.12em] text-[#7a7a7a]">{label}</p>
+      <p className="mt-1 text-[17px] font-semibold leading-[1.24] tracking-[-0.374px] text-[#1d1d1f]">{value}</p>
+    </div>
+  );
+}
+
+function InfoCard({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="card">
+      <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.12em] text-[#7a7a7a]">{label}</p>
+      <div className="mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.374px] text-[#1d1d1f]">{children}</div>
+    </div>
+  );
+}
+
+function ContentSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="text-[24px] font-semibold leading-[1.18] tracking-[-0.28px] text-[#1d1d1f]">{title}</h2>
+      <div className="mt-4 text-[17px] leading-[1.47] tracking-[-0.374px] text-[#333333]">{children}</div>
+    </section>
   );
 }

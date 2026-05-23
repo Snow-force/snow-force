@@ -7,52 +7,66 @@ export function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="border-t border-gray-100 bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">SnowForce</h3>
-            <p className="mt-2 text-sm text-gray-500">
-              {t({
-                en: "Community-driven snow sports in China. Events, training, and good times on the mountain.",
-                zh: "中国社群驱动的滑雪运动平台。活动、训练和山上的美好时光。",
-              })}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              {t({ en: "Explore", zh: "探索" })}
-            </h3>
-            <ul className="mt-2 space-y-2">
-              <li><Link href="/events" className="text-sm text-gray-500 hover:text-gray-700">{t({ en: "Events", zh: "当前活动" })}</Link></li>
-              <li><Link href="/recaps" className="text-sm text-gray-500 hover:text-gray-700">{t({ en: "Recaps", zh: "往期回顾" })}</Link></li>
-              <li><Link href="/faq" className="text-sm text-gray-500 hover:text-gray-700">{t({ en: "FAQ", zh: "常见问题" })}</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              {t({ en: "Connect", zh: "联系" })}
-            </h3>
-            <ul className="mt-2 space-y-2">
-              <li><Link href="/about" className="text-sm text-gray-500 hover:text-gray-700">{t({ en: "About Us", zh: "关于我们" })}</Link></li>
-              <li><Link href="/partner" className="text-sm text-gray-500 hover:text-gray-700">{t({ en: "Partner With Us", zh: "合作咨询" })}</Link></li>
-              <li><Link href="/member" className="text-sm text-gray-500 hover:text-gray-700">{t({ en: "Member Area", zh: "会员中心" })}</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              {t({ en: "Contact", zh: "联系方式" })}
-            </h3>
-            <ul className="mt-2 space-y-2 text-sm text-gray-500">
-              <li>hello@snowforce.example.com</li>
-              <li>{t({ en: "WeChat: SnowForce_Official", zh: "微信：SnowForce_Official" })}</li>
-            </ul>
-          </div>
+    <footer className="bg-[#f5f5f7] text-[#333333]">
+      <div className="mx-auto max-w-[980px] px-4 py-16 sm:px-6">
+        <p className="max-w-3xl text-[12px] leading-[1.45] tracking-[-0.12px] text-[#7a7a7a]">
+          {t({
+            en: "SnowForce is a community snow sports platform for events, training, and mountain days across China.",
+            zh: "SnowForce 是面向中国滑雪社群的活动、训练与雪山体验平台。",
+          })}
+        </p>
+
+        <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <FooterColumn title="SnowForce">
+            <FooterLink href="/events">{t({ en: "Events", zh: "当前活动" })}</FooterLink>
+            <FooterLink href="/recaps">{t({ en: "Recaps", zh: "往期回顾" })}</FooterLink>
+            <FooterLink href="/faq">{t({ en: "FAQ", zh: "常见问题" })}</FooterLink>
+          </FooterColumn>
+
+          <FooterColumn title={t({ en: "Community", zh: "社群" })}>
+            <FooterLink href="/about">{t({ en: "About Us", zh: "关于我们" })}</FooterLink>
+            <FooterLink href="/member">{t({ en: "Member Area", zh: "会员中心" })}</FooterLink>
+            <FooterLink href="/partner">{t({ en: "Partner With Us", zh: "合作咨询" })}</FooterLink>
+          </FooterColumn>
+
+          <FooterColumn title={t({ en: "Contact", zh: "联系方式" })}>
+            <li>hello@snowforce.example.com</li>
+            <li>{t({ en: "WeChat: SnowForce_Official", zh: "微信：SnowForce_Official" })}</li>
+          </FooterColumn>
+
+          <FooterColumn title={t({ en: "Language", zh: "语言" })}>
+            <li>中文</li>
+            <li>English</li>
+          </FooterColumn>
         </div>
-        <div className="mt-8 border-t border-gray-200 pt-8 text-center text-xs text-gray-400">
+
+        <div className="mt-10 border-t border-[#e0e0e0] pt-6 text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
           &copy; {new Date().getFullYear()} SnowForce. {t({ en: "All rights reserved.", zh: "保留所有权利。" })}
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-[14px] font-semibold leading-[1.29] tracking-[-0.224px] text-[#333333]">
+        {title}
+      </h3>
+      <ul className="mt-2 space-y-2 text-[12px] leading-[1.45] tracking-[-0.12px] text-[#7a7a7a]">
+        {children}
+      </ul>
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <Link href={href} className="transition hover:text-[#0066cc]">
+        {children}
+      </Link>
+    </li>
   );
 }

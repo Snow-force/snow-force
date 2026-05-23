@@ -7,30 +7,32 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-white text-[#1d1d1f] antialiased;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-snow-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-snow-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-snow-600 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-11 items-center justify-center rounded-full bg-[#0066cc] px-[22px] py-[11px] text-[17px] font-normal leading-none text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400;
+    @apply inline-flex min-h-11 items-center justify-center rounded-full border border-[#0066cc] bg-white px-[22px] py-[11px] text-[17px] font-normal leading-none text-[#0066cc] transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3];
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700;
+    @apply inline-flex min-h-11 items-center justify-center rounded-full bg-red-600 px-[22px] py-[11px] text-[17px] font-normal leading-none text-white transition active:scale-95;
   }
   .input-field {
-    @apply block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-snow-500 focus:ring-1 focus:ring-snow-500;
+    @apply block h-11 w-full rounded-full border border-black/10 px-5 py-3 text-[17px] font-normal text-[#1d1d1f] placeholder:text-[#7a7a7a] focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3];
   }
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply mb-1 block text-sm font-semibold tracking-[-0.224px] text-[#333333];
   }
   .card {
-    @apply rounded-xl border border-gray-200 bg-white p-6 shadow-sm;
+    @apply rounded-[18px] border border-[#e0e0e0] bg-white p-6;
   }
   .section-title {
-    @apply text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl;
+    @apply text-[34px] font-semibold leading-[1.2] tracking-[-0.374px] text-[#1d1d1f] sm:text-[40px] sm:leading-[1.1];
+    font-family: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
   }
 }

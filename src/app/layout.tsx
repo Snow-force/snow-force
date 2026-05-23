@@ -5,7 +5,7 @@ import { Footer } from "@/components/site/footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SnowForce — Community Snow Sports in China",
+  title: "SnowForce - Community Snow Sports in China",
   description:
     "SnowForce is a community-driven snow sports platform organizing events, training, and social gatherings for riders of all levels in China.",
 };
