@@ -3,6 +3,8 @@
 .superpowers/
 .impeccable/
 .playwright-cli/
+.playwright-mcp/
+.omo/
 artifacts/
 .env.local
 .next/

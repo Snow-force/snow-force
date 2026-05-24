@@ -50,6 +50,10 @@ export type EventSource = {
   upsertAdmin(row: EventWriteRow): Promise<EventRow>;
 };
 
+export type RegistrationCountSource = {
+  countForEvents(slugs: string[]): Promise<Map<string, number>>;
+};
+
 function throwSupabaseError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
@@ -83,12 +87,18 @@ function createAdminEventClient() {
 function supabaseEventSource(): EventSource {
   return {
     async listPublic() {
-      const { data, error } = await createPublicEventClient().from("events").select(eventColumns);
+      const { data, error } = await createPublicEventClient()
+        .from("events")
+        .select(eventColumns)
+        .order("event_start_at", { ascending: true, nullsFirst: false });
       throwSupabaseError(error);
       return (data ?? []) as unknown as EventRow[];
     },
     async listAdmin() {
-      const { data, error } = await createAdminEventClient().from("events").select(eventColumns);
+      const { data, error } = await createAdminEventClient()
+        .from("events")
+        .select(eventColumns)
+        .order("event_start_at", { ascending: true, nullsFirst: false });
       throwSupabaseError(error);
       return (data ?? []) as unknown as EventRow[];
     },
@@ -122,23 +132,38 @@ function supabaseEventSource(): EventSource {
   };
 }
 
-export function createEventRepository(source: EventSource) {
+export function createEventRepository(source: EventSource, countSource?: RegistrationCountSource) {
+  async function withRegistrationCounts(rows: EventRow[]) {
+    const events = rows.map(rowToEvent);
+    if (!countSource || events.length === 0) return events;
+
+    const counts = await countSource.countForEvents(events.map((event) => event.slug));
+    return events.map((event) => ({
+      ...event,
+      registrationCount: counts.get(event.slug) ?? 0,
+    }));
+  }
+
+  async function withRegistrationCount(row: EventRow | undefined) {
+    return (await withRegistrationCounts(row ? [row] : []))[0];
+  }
+
   return {
     async getEvents() {
-      return (await source.listPublic())
-        .filter((row) => row.status === "published")
-        .map(rowToEvent);
+      return withRegistrationCounts(
+        (await source.listPublic()).filter((row) => row.status === "published"),
+      );
     },
     async getAllEvents() {
-      return (await source.listAdmin()).map(rowToEvent);
+      return withRegistrationCounts(await source.listAdmin());
     },
     async getEvent(slug: string) {
       const row = await source.getPublic(slug);
-      return row?.status === "published" ? rowToEvent(row) : undefined;
+      return row?.status === "published" ? withRegistrationCount(row) : undefined;
     },
     async getEventAdmin(slug: string) {
       const row = await source.getAdmin(slug);
-      return row ? rowToEvent(row) : undefined;
+      return row ? withRegistrationCount(row) : undefined;
     },
     async createEvent(event: Event) {
       return rowToEvent(await source.upsertAdmin(eventToRow(event)));
@@ -153,7 +178,28 @@ export function createEventRepository(source: EventSource) {
   };
 }
 
-const repository = createEventRepository(supabaseEventSource());
+function supabaseRegistrationCountSource(): RegistrationCountSource {
+  return {
+    async countForEvents(slugs) {
+      if (slugs.length === 0) return new Map();
+
+      const { data, error } = await createAdminEventClient()
+        .from("registrations")
+        .select("event_slug,status")
+        .in("event_slug", slugs)
+        .neq("status", "cancelled");
+      throwSupabaseError(error);
+
+      const counts = new Map(slugs.map((slug) => [slug, 0]));
+      for (const registration of (data ?? []) as Array<{ event_slug: string }>) {
+        counts.set(registration.event_slug, (counts.get(registration.event_slug) ?? 0) + 1);
+      }
+      return counts;
+    },
+  };
+}
+
+const repository = createEventRepository(supabaseEventSource(), supabaseRegistrationCountSource());
 const registrations: Map<string, number> = new Map(seedEvents.map((e) => [e.slug, e.registrationCount]));
 
 export const getEvents = repository.getEvents;

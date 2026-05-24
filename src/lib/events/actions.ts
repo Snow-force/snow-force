@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireAdmin } from "../auth/admin";
 import type { Event, RegistrationFieldConfig, RegistrationState } from "../types";
+import { createRecapFromEvent } from "../recaps/actions";
 import { createEvent, getEventAdmin, updateEvent } from "./repository";
 import { parseEventEditorInput, validatePublishableEvent } from "./validation";
 
@@ -56,6 +57,8 @@ function readRegistrationFields(formData: FormData): RegistrationFieldConfig[] |
 }
 
 function editorInput(formData: FormData) {
+  const unlimitedCapacity = formText(formData, "unlimitedCapacity") === "1";
+
   return {
     slug: formText(formData, "slug"),
     status: formText(formData, "status") || "draft",
@@ -72,7 +75,7 @@ function editorInput(formData: FormData) {
     notices: bilingualLines(formData, "notices"),
     coverImage: formText(formData, "coverImage"),
     media: lines(formText(formData, "media")),
-    capacity: formText(formData, "capacity"),
+    capacity: unlimitedCapacity ? "0" : formText(formData, "capacity"),
     registrationCount: formText(formData, "registrationCount") || "0",
     registrationOpenAt: formText(formData, "registrationOpenAt"),
     registrationCloseAt: formText(formData, "registrationCloseAt"),
@@ -154,6 +157,16 @@ export async function publishEventResult(dependencies: PublishDependencies, slug
     : { success: false as const, message: "Event could not be published." };
 }
 
+export async function archiveEventResult(dependencies: PublishDependencies, slug: string) {
+  const event = await dependencies.load(slug);
+  if (!event) return { success: false as const, message: "Event not found." };
+
+  const saved = await dependencies.save(slug, { status: "archived", registrationState: "closed" });
+  return saved
+    ? { success: true as const, event: saved }
+    : { success: false as const, message: "Event could not be archived." };
+}
+
 export async function publishEventAction(formData: FormData) {
   await requireAdmin();
   const slug = formText(formData, "slug");
@@ -173,6 +186,27 @@ export async function unpublishEventAction(formData: FormData) {
   const slug = formText(formData, "slug");
   await updateEvent(slug, { status: "draft" });
   refreshEventPaths(slug);
+}
+
+export async function archiveEventAction(formData: FormData) {
+  await requireAdmin();
+  const slug = formText(formData, "slug");
+
+  const event = await getEventAdmin(slug);
+  if (!event) redirect("/admin/events");
+
+  await archiveEventResult({ load: getEventAdmin, save: updateEvent }, slug);
+
+  // Auto-create a recap entry so admin can manage it in recap management
+  try {
+    await createRecapFromEvent(event);
+  } catch {
+    // Recap creation is best-effort; don't block the archive action
+  }
+
+  refreshEventPaths(slug);
+  revalidatePath("/admin/recaps");
+  redirect(`/admin/recaps?archived=${slug}`);
 }
 
 export async function setRegistrationStateAction(formData: FormData) {

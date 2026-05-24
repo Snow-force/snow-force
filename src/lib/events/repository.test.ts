@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventRow, EventWriteRow } from "./mappers";
-import { createEventRepository, type EventSource } from "./repository";
+import { createEventRepository, type EventSource, type RegistrationCountSource } from "./repository";
 
 function eventRow(slug: string, status: EventRow["status"]): EventRow {
   return {
@@ -69,5 +69,21 @@ describe("event repository", () => {
       "published",
       "draft",
     ]);
+  });
+
+  it("merges persisted registration counts into event reads", async () => {
+    const countSource: RegistrationCountSource = {
+      countForEvents: async (slugs) =>
+        new Map(slugs.map((slug) => [slug, slug === "published" ? 2 : 0])),
+    };
+    const repository = createEventRepository(
+      eventSource([eventRow("published", "published"), eventRow("draft", "draft")]),
+      countSource,
+    );
+
+    expect((await repository.getEvents())[0].registrationCount).toBe(2);
+    expect((await repository.getAllEvents()).map((event) => event.registrationCount)).toEqual([2, 0]);
+    expect((await repository.getEvent("published"))?.registrationCount).toBe(2);
+    expect((await repository.getEventAdmin("draft"))?.registrationCount).toBe(0);
   });
 });

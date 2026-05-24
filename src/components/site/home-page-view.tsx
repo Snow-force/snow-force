@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { EventCard } from "@/components/events/event-card";
 import { useLanguage, type Lang } from "@/lib/language";
-import { getRecaps } from "@/lib/recaps/repository";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
 
 type Translate = <T>(value: Bilingual<T>) => T;
 
 type HomePageViewProps = {
   events: Event[];
+  recaps: EventRecap[];
   eventLoadError?: boolean;
 };
 
@@ -28,10 +28,10 @@ type RecapTile = {
   meta: string;
 };
 
-export function HomePageView({ events, eventLoadError = false }: HomePageViewProps) {
+export function HomePageView({ events, recaps, eventLoadError = false }: HomePageViewProps) {
   const { lang, t } = useLanguage();
   const locale = lang === "zh" ? "zh-CN" : "en-US";
-  const recaps = getRecaps().slice(0, 4);
+  const recentRecaps = recaps.slice(0, 4);
   const openEvents = events.filter((event) => event.registrationState === "open").slice(0, 4);
 
   return (
@@ -40,7 +40,7 @@ export function HomePageView({ events, eventLoadError = false }: HomePageViewPro
       <PhilosophySection t={t} />
       <ActivityModesSection t={t} />
       <CommunityExperienceSection t={t} />
-      <PhotoWallSection recaps={recaps} t={t} locale={locale} />
+      <PhotoWallSection recaps={recentRecaps} t={t} locale={locale} />
       <OpenEventsSection
         events={openEvents}
         allEventCount={events.length}

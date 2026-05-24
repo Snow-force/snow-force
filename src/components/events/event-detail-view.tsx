@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/lib/language";
-import { isEventOpen } from "@/lib/events/availability";
+import { isEventOpen, remainingCapacity } from "@/lib/events/availability";
 import { RegistrationForm } from "@/components/events/registration-form";
 import type { Event } from "@/lib/types";
 
@@ -47,7 +47,8 @@ export function EventDetailView({
   const open = isEventOpen(event);
   const eventDate = new Date(event.eventStartAt);
   const eventEndDate = new Date(event.eventEndAt);
-  const capacityPercent = Math.min((event.registrationCount / event.capacity) * 100, 100);
+  const remaining = remainingCapacity(event);
+  const capacityPercent = remaining === undefined ? 0 : Math.min((event.registrationCount / event.capacity) * 100, 100);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     weekday: "long",
@@ -103,9 +104,9 @@ export function EventDetailView({
               </div>
               <div className="mt-5">
                 <div className="flex items-center justify-between text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
-                  <span>{t({ en: "Capacity", zh: "名额" })}</span>
+                  <span>{t({ en: "Spots left", zh: "剩余名额" })}</span>
                   <span>
-                    {event.registrationCount}/{event.capacity}
+                    {remaining === undefined ? t({ en: "Unlimited", zh: "不限名额" }) : `${remaining}/${event.capacity}`}
                   </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f5f5f7]">

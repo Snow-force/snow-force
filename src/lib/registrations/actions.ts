@@ -1,6 +1,6 @@
 "use server";
 
-import { isEventOpen } from "@/lib/events/availability";
+import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
 import { getEvent } from "@/lib/events/repository";
 import { createRegistration, getRegistrationCountForEvent } from "@/lib/registrations/repository";
 import { sendEmail, buildConfirmationEmail, buildStaffNotificationEmail } from "@/lib/email/adapter";
@@ -26,7 +26,12 @@ export async function registerForEvent(
     return { success: false, error: "Event not found" };
   }
 
-  if (!isEventOpen(event) || (await getRegistrationCountForEvent(event.slug)) >= event.capacity) {
+  if (!isEventOpen(event)) {
+    return { success: false, error: "Event is not open for registration" };
+  }
+
+  const registrationCount = await getRegistrationCountForEvent(event.slug);
+  if (!hasRemainingCapacity({ ...event, registrationCount })) {
     return { success: false, error: "Event is not open for registration" };
   }
 

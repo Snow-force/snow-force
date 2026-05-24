@@ -18,13 +18,13 @@ export function Nav() {
 
   return (
     <header className="sticky top-0 z-50">
-      <nav className="h-11 bg-black text-white">
+      <nav className="h-16 border-b border-white/10 bg-black text-white">
         <div className="mx-auto flex h-full max-w-[980px] items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-[14px] font-normal tracking-[-0.224px] text-white/95">
+          <Link href="/" className="text-[24px] font-semibold leading-none text-white">
             SnowForce
           </Link>
 
-          <div className="hidden h-full items-center gap-5 md:flex">
+          <div className="hidden h-full items-center gap-5 lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -36,45 +36,20 @@ export function Nav() {
             ))}
           </div>
 
-          <button
-            className="flex h-11 w-11 items-center justify-center text-white/80 transition hover:text-white md:hidden"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-          >
-            <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeWidth={2} d="M4 7h16M4 17h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-      </nav>
-
-      <div className="border-b border-black/10 bg-[#f5f5f7]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-[52px] max-w-[980px] items-center justify-between px-4 sm:px-6">
-          <Link
-            href="/"
-            className="text-[21px] font-semibold leading-none tracking-[0.231px] text-[#1d1d1f]"
-          >
-            SnowForce
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 sm:flex">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setLang("zh")}
-                className={`rounded-full px-3 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 ${
-                  lang === "zh" ? "bg-[#1d1d1f] text-white" : "text-[#333333] hover:text-[#0066cc]"
+                className={`rounded-full px-2.5 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 sm:px-3 ${
+                  lang === "zh" ? "bg-white text-black" : "text-white/70 hover:text-white"
                 }`}
               >
                 中文
               </button>
               <button
                 onClick={() => setLang("en")}
-                className={`rounded-full px-3 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 ${
-                  lang === "en" ? "bg-[#1d1d1f] text-white" : "text-[#333333] hover:text-[#0066cc]"
+                className={`rounded-full px-2.5 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 sm:px-3 ${
+                  lang === "en" ? "bg-white text-black" : "text-white/70 hover:text-white"
                 }`}
               >
                 EN
@@ -83,16 +58,30 @@ export function Nav() {
 
             <Link
               href="/member"
-              className="rounded-full bg-[#0066cc] px-4 py-2 text-[14px] font-normal leading-none tracking-[-0.224px] text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3]"
+              className="rounded-full bg-[#0066cc] px-4 py-2 text-[14px] font-normal leading-none tracking-[-0.224px] text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3] sm:px-5 sm:py-3"
             >
               {t({ en: "Member", zh: "会员" })}
             </Link>
+
+            <button
+              className="flex h-11 w-11 items-center justify-center text-white/80 transition hover:text-white lg:hidden"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+            >
+              <svg className="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeWidth={2} d="M4 7h16M4 17h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
-      </div>
+      </nav>
 
       {menuOpen && (
-        <div className="border-b border-black/10 bg-black md:hidden">
+        <div className="border-b border-black/10 bg-black lg:hidden">
           <div className="space-y-1 px-4 py-3">
             {navItems.map((item) => (
               <Link
@@ -104,24 +93,6 @@ export function Nav() {
                 {t(item.label)}
               </Link>
             ))}
-            <div className="flex gap-2 px-3 pt-2">
-              <button
-                onClick={() => setLang("zh")}
-                className={`rounded-full px-3 py-2 text-[14px] leading-none ${
-                  lang === "zh" ? "bg-white text-black" : "bg-white/10 text-white/80"
-                }`}
-              >
-                中文
-              </button>
-              <button
-                onClick={() => setLang("en")}
-                className={`rounded-full px-3 py-2 text-[14px] leading-none ${
-                  lang === "en" ? "bg-white text-black" : "bg-white/10 text-white/80"
-                }`}
-              >
-                EN
-              </button>
-            </div>
           </div>
         </div>
       )}

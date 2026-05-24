@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormState } from "react-dom";
 
 import { saveEventAction, type EventEditorState } from "@/lib/events/actions";
@@ -89,7 +90,9 @@ function ContentFields({
 }
 
 export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean }) {
-  const [state, formAction] = useFormState(saveEventAction, initialState);
+  const [formState, formAction] = useFormState(saveEventAction, initialState);
+  const [unlimitedCapacity, setUnlimitedCapacity] = useState(event.capacity === 0);
+  const state = formState ?? initialState;
   const { t } = useLanguage();
   const contentLabels = {
     fieldTitle: t(adminCopy.editor.title),
@@ -124,7 +127,25 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
           </label>
           <label className="block text-sm text-gray-600">
             {t(adminCopy.editor.capacity)}
-            <input name="capacity" type="number" min={0} defaultValue={event.capacity} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
+            <input
+              name="capacity"
+              type="number"
+              min={0}
+              defaultValue={event.capacity}
+              disabled={unlimitedCapacity}
+              className="mt-1 w-full rounded border border-gray-200 px-3 py-2 disabled:bg-gray-50 disabled:text-gray-400"
+            />
+            <span className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <input
+                name="unlimitedCapacity"
+                type="checkbox"
+                value="1"
+                checked={unlimitedCapacity}
+                onChange={(event) => setUnlimitedCapacity(event.currentTarget.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              {t(adminCopy.editor.unlimitedCapacity)}
+            </span>
             <FieldError errors={state.fieldErrors?.capacity} />
           </label>
           <label className="block text-sm text-gray-600">

@@ -42,7 +42,7 @@ const registrationFieldSchema = z
 const editorSchema = z
   .object({
     slug: z.string().trim().min(1).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    status: z.enum(["draft", "published"]).default("draft"),
+    status: z.enum(["draft", "published", "archived"]).default("draft"),
     registrationState: z.enum(["open", "closed", "full"]).default("closed"),
     title: bilingualText.default({ en: "", zh: "" }),
     subtitle: bilingualText.default({ en: "", zh: "" }),

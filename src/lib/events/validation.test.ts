@@ -37,6 +37,17 @@ describe("event editor validation", () => {
     });
   });
 
+  it("accepts archived events from the admin editor", () => {
+    const result = parseEventEditorInput({
+      ...draftInput,
+      status: "archived",
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.status).toBe("archived");
+  });
+
   it("rejects invalid url identifiers and editor ranges", () => {
     const result = parseEventEditorInput({
       ...draftInput,

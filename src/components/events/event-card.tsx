@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { remainingCapacity } from "@/lib/events/availability";
 import type { Lang } from "@/lib/language";
 import type { Bilingual, Event } from "@/lib/types";
 
@@ -13,7 +14,8 @@ type EventCardProps = {
 
 export function EventCard({ event, lang, t, featured = false }: EventCardProps) {
   const locale = lang === "zh" ? "zh-CN" : "en-US";
-  const percentFull = Math.min(Math.round((event.registrationCount / event.capacity) * 100), 100);
+  const remaining = remainingCapacity(event);
+  const percentFull = remaining === undefined ? 0 : Math.min(Math.round((event.registrationCount / event.capacity) * 100), 100);
   const state = getRegistrationState(event.registrationState, t);
 
   return (
@@ -58,9 +60,9 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
 
         <div className="mt-5">
           <div className="flex items-center justify-between text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
-            <span>{t({ en: "Capacity", zh: "名额" })}</span>
+            <span>{t({ en: "Spots left", zh: "剩余名额" })}</span>
             <span>
-              {event.registrationCount}/{event.capacity}
+              {remaining === undefined ? t({ en: "Unlimited", zh: "不限名额" }) : `${remaining}/${event.capacity}`}
             </span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f5f5f7]">

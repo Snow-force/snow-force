@@ -3,10 +3,12 @@
 import Link from "next/link";
 
 import {
+  archiveEventAction,
   publishEventAction,
   setRegistrationStateAction,
   unpublishEventAction,
 } from "@/lib/events/actions";
+import { remainingCapacity } from "@/lib/events/availability";
 import { useLanguage } from "@/lib/language";
 import type { Event } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
@@ -46,7 +48,10 @@ export function AdminEventsView({ events }: { events: Event[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {events.map((event) => (
+            {events.map((event) => {
+              const remaining = remainingCapacity(event);
+
+              return (
               <tr key={event.slug} className="hover:bg-gray-50">
                 <td className="py-3 pr-4">
                   <p className="font-medium text-gray-900">{event.title[lang] || event.title.en || event.slug}</p>
@@ -56,12 +61,14 @@ export function AdminEventsView({ events }: { events: Event[] }) {
                   {event.eventStartAt ? new Date(event.eventStartAt).toLocaleDateString() : t(adminCopy.events.draftDate)}
                 </td>
                 <td className="px-4 py-3 text-gray-500">
-                  {event.registrationCount}/{event.capacity}
+                  {remaining === undefined ? t({ en: "Unlimited", zh: "不限名额" }) : `${remaining}/${event.capacity}`}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs ${
                     event.status === "published"
                       ? "bg-green-50 text-green-700"
+                      : event.status === "archived"
+                        ? "bg-blue-50 text-blue-700"
                       : "bg-gray-100 text-gray-600"
                   }`}>
                     {t(adminCopy.events.statuses[event.status])}
@@ -92,6 +99,14 @@ export function AdminEventsView({ events }: { events: Event[] }) {
                         {event.status === "published" ? t(adminCopy.events.unpublish) : t(adminCopy.events.publish)}
                       </button>
                     </form>
+                    {event.status !== "archived" ? (
+                      <form action={archiveEventAction}>
+                        <input type="hidden" name="slug" value={event.slug} />
+                        <button className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100">
+                          {t(adminCopy.events.archive)}
+                        </button>
+                      </form>
+                    ) : null}
                     <form action={setRegistrationStateAction}>
                       <input type="hidden" name="slug" value={event.slug} />
                       <input
@@ -108,7 +123,8 @@ export function AdminEventsView({ events }: { events: Event[] }) {
                   </div>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

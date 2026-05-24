@@ -1,6 +1,6 @@
 export type Bilingual<T = string> = { en: T; zh: T };
 
-export type EventStatus = "draft" | "published";
+export type EventStatus = "draft" | "published" | "archived";
 export type RegistrationState = "open" | "closed" | "full";
 
 export interface Event {
@@ -80,6 +80,7 @@ export interface EventRecap {
   tags: Bilingual<string[]>;
   seoTitle: Bilingual;
   seoDescription: Bilingual;
+  eventSlug?: string | null;
 }
 
 export interface FAQItem {
