@@ -153,6 +153,62 @@ describe("event editor validation", () => {
     );
   });
 
+  it("requires non-blank Chinese items for list detail modules before publishing", () => {
+    const result = parseEventEditorInput({
+      slug: "big-bear-day",
+      title: { zh: "大熊山一日滑雪", en: "" },
+      eventDate: "2026-12-12",
+      meetTime: "07:30",
+      activityLocation: { zh: "Big Bear Mountain Resort", en: "" },
+      capacity: "24",
+      registrationQuestions: [],
+      detailModules: [
+        {
+          id: "module-notes",
+          type: "notes",
+          displayMode: "list",
+          title: { zh: "注意事项", en: "" },
+          content: { zh: "这段不会在列表模块展示。", en: "" },
+          items: { zh: ["   "], en: [] },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(validatePublishableEvent(result.data)).toEqual(
+      expect.arrayContaining(["detailModules"]),
+    );
+  });
+
+  it("requires non-blank Chinese content for rich text detail modules before publishing", () => {
+    const result = parseEventEditorInput({
+      slug: "big-bear-day",
+      title: { zh: "大熊山一日滑雪", en: "" },
+      eventDate: "2026-12-12",
+      meetTime: "07:30",
+      activityLocation: { zh: "Big Bear Mountain Resort", en: "" },
+      capacity: "24",
+      registrationQuestions: [],
+      detailModules: [
+        {
+          id: "module-intro",
+          type: "intro",
+          displayMode: "rich_text",
+          title: { zh: "活动介绍", en: "" },
+          content: { zh: "", en: "" },
+          items: { zh: ["这条不会在富文本模块展示。"], en: [] },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(validatePublishableEvent(result.data)).toEqual(
+      expect.arrayContaining(["detailModules"]),
+    );
+  });
+
   it("parses draft editor input into typed defaults", () => {
     const result = parseEventEditorInput(draftInput);
 

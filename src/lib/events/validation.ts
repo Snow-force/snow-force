@@ -20,6 +20,14 @@ function hasMeaningfulListItem(items: string[]) {
   return items.some(hasMeaningfulText);
 }
 
+function hasMeaningfulDetailModule(moduleRow: Event["detailModules"][number]) {
+  if (moduleRow.displayMode === "list") {
+    return hasMeaningfulListItem(moduleRow.items.zh);
+  }
+
+  return hasMeaningfulText(moduleRow.content.zh);
+}
+
 const dateTime = z
   .string()
   .trim()
@@ -109,12 +117,7 @@ export function validatePublishableEvent(event: Event) {
     .filter(([, value]) => typeof value !== "string" || !value.trim())
     .map(([field]) => field);
 
-  if (
-    !event.detailModules.some(
-      (moduleRow) =>
-        hasMeaningfulText(moduleRow.content.zh) || hasMeaningfulListItem(moduleRow.items.zh),
-    )
-  ) {
+  if (!event.detailModules.some(hasMeaningfulDetailModule)) {
     missingFields.push("detailModules");
   }
 
