@@ -2,42 +2,66 @@ export type Bilingual<T = string> = { en: T; zh: T };
 
 export type EventStatus = "draft" | "published" | "archived";
 export type RegistrationState = "open" | "closed" | "full";
+export type EventQuestionType =
+  | "text"
+  | "single_choice"
+  | "multiple_choice"
+  | "yes_no"
+  | "date"
+  | "phone";
+export type EventDetailModuleType =
+  | "intro"
+  | "highlights"
+  | "itinerary"
+  | "notes"
+  | "fees"
+  | "refund"
+  | "contact"
+  | "custom";
+export type EventDetailDisplayMode = "rich_text" | "list";
+
+export interface EventRegistrationQuestion {
+  id: string;
+  key: string;
+  type: EventQuestionType;
+  required: boolean;
+  label: Bilingual;
+  helpText: Bilingual;
+  options: Bilingual<string[]>;
+}
+
+export interface EventDetailModule {
+  id: string;
+  type: EventDetailModuleType;
+  displayMode: EventDetailDisplayMode;
+  title: Bilingual;
+  content: Bilingual;
+  items: Bilingual<string[]>;
+}
 
 export interface Event {
   slug: string;
   status: EventStatus;
   registrationState: RegistrationState;
   title: Bilingual;
-  subtitle: Bilingual;
-  description: Bilingual;
-  highlights: Bilingual<string[]>;
-  audienceLevel: Bilingual;
-  schedule: Bilingual;
-  location: Bilingual;
+  eventDate: string;
+  meetTime: string;
+  meetLocation: Bilingual;
+  activityLocation: Bilingual;
   locationUrl: string;
-  feeInfo: Bilingual;
-  notices: Bilingual<string[]>;
   coverImage: string;
-  media: string[];
   capacity: number;
   registrationCount: number;
-  registrationOpenAt: string;
   registrationCloseAt: string;
-  eventStartAt: string;
-  eventEndAt: string;
-  registrationFields: RegistrationFieldConfig[];
-  tags: Bilingual<string[]>;
+  requiresApproval: boolean;
+  allowWaitlist: boolean;
+  allowCancellation: boolean;
+  feeAmount: string;
+  paymentInstructions: Bilingual;
   seoTitle: Bilingual;
   seoDescription: Bilingual;
-}
-
-export interface RegistrationFieldConfig {
-  key: string;
-  label: Bilingual;
-  type: "text" | "email" | "tel" | "textarea" | "select";
-  required: boolean;
-  options?: Bilingual<string[]>;
-  placeholder?: Bilingual;
+  registrationQuestions: EventRegistrationQuestion[];
+  detailModules: EventDetailModule[];
 }
 
 export interface Registration {

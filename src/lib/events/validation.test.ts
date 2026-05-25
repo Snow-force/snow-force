@@ -20,6 +20,40 @@ const draftInput = {
 };
 
 describe("event editor validation", () => {
+  it("parses a modular editor payload into an event aggregate", () => {
+    const result = parseEventEditorInput({
+      slug: "big-bear-day",
+      title: { zh: "大熊山一日滑雪", en: "" },
+      eventDate: "2026-12-12",
+      meetTime: "07:30",
+      meetLocation: { zh: "Rowland Heights 集合点", en: "" },
+      activityLocation: { zh: "Big Bear Mountain Resort", en: "" },
+      capacity: "24",
+      registrationCloseAt: "2026-12-10T18:00",
+      registrationQuestions: [],
+      detailModules: [
+        {
+          id: "module-intro",
+          type: "intro",
+          displayMode: "rich_text",
+          title: { zh: "活动介绍", en: "" },
+          content: { zh: "一日滑雪活动。", en: "" },
+          items: { zh: [], en: [] },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data).toMatchObject({
+      slug: "big-bear-day",
+      title: { zh: "大熊山一日滑雪", en: "" },
+      eventDate: "2026-12-12",
+      meetTime: "07:30",
+      registrationQuestions: [],
+    });
+  });
+
   it("parses draft editor input into typed defaults", () => {
     const result = parseEventEditorInput(draftInput);
 
