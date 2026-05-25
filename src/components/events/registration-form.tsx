@@ -2,63 +2,148 @@
 
 import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/language";
-import type { Event, RegistrationFieldConfig } from "@/lib/types";
+import type { Bilingual, Event, EventRegistrationQuestion } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
 
 type Props = {
   event: Event;
 };
 
+type AnswerValue = string | boolean | string[];
+type FormDataState = Record<string, AnswerValue>;
 type FormErrors = Record<string, string>;
 
-function renderField(
-  field: RegistrationFieldConfig,
-  value: string,
-  onChange: (v: string) => void,
-  error: string | undefined,
-  t: (b: { en: any; zh: any }) => any,
-) {
-  const label = t(field.label);
-  const placeholder = field.placeholder ? t(field.placeholder) : undefined;
+function localizedText(value: { en: string; zh: string }, lang: "en" | "zh") {
+  return lang === "en" ? value.en || value.zh : value.zh || value.en;
+}
 
+function localizedOptions(value: Bilingual<string[]>, lang: "en" | "zh") {
+  const primary = value[lang];
+  const fallback = lang === "en" ? value.zh : value.en;
+  return primary.length > 0 ? primary : fallback;
+}
+
+function isStringAnswer(value: AnswerValue | undefined): value is string {
+  return typeof value === "string";
+}
+
+function isBooleanAnswer(value: AnswerValue | undefined): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isStringArrayAnswer(value: AnswerValue | undefined): value is string[] {
+  return Array.isArray(value);
+}
+
+function renderQuestion(
+  question: EventRegistrationQuestion,
+  value: AnswerValue | undefined,
+  onChange: (v: AnswerValue) => void,
+  error: string | undefined,
+  lang: "en" | "zh",
+) {
+  const label = localizedText(question.label, lang);
+  const helpText = localizedText(question.helpText, lang);
+  const options = localizedOptions(question.options, lang);
   const inputClass = `input-field ${error ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`;
 
-  if (field.type === "select" && field.options) {
-    const options = (field.options ? t(field.options) : []) as string[];
+  if (question.type === "single_choice") {
     return (
-      <div key={field.key}>
-        <label className="label" htmlFor={`field-${field.key}`}>
-          {label} {field.required && <span className="text-red-500">*</span>}
+      <div key={question.key}>
+        <label className="label" htmlFor={`field-${question.key}`}>
+          {label} {question.required && <span className="text-red-500">*</span>}
         </label>
-        <select id={`field-${field.key}`} className={inputClass} value={value} onChange={(e) => onChange(e.target.value)}>
-          <option value="">{placeholder || `— ${t({ en: "Select", zh: "请选择" })} —`}</option>
-          {options.map((opt: string) => (
-            <option key={opt} value={opt}>{opt}</option>
+        <select
+          id={`field-${question.key}`}
+          className={inputClass}
+          value={isStringAnswer(value) ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          <option value="">{lang === "en" ? "-- Select --" : "-- 请选择 --"}</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
           ))}
         </select>
+        {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
         {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
     );
   }
 
-  if (field.type === "textarea") {
+  if (question.type === "yes_no") {
     return (
-      <div key={field.key}>
-        <label className="label" htmlFor={`field-${field.key}`}>
-          {label} {field.required && <span className="text-red-500">*</span>}
+      <div key={question.key}>
+        <label className="label" htmlFor={`field-${question.key}`}>
+          {label} {question.required && <span className="text-red-500">*</span>}
         </label>
-        <textarea id={`field-${field.key}`} className={inputClass} rows={3} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+        <select
+          id={`field-${question.key}`}
+          className={inputClass}
+          value={isBooleanAnswer(value) ? String(value) : ""}
+          onChange={(e) => {
+            if (e.target.value === "true") onChange(true);
+            if (e.target.value === "false") onChange(false);
+            if (e.target.value === "") onChange("");
+          }}
+        >
+          <option value="">{lang === "en" ? "-- Select --" : "-- 请选择 --"}</option>
+          <option value="true">{lang === "en" ? "Yes" : "是"}</option>
+          <option value="false">{lang === "en" ? "No" : "否"}</option>
+        </select>
+        {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
         {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
     );
   }
+
+  if (question.type === "multiple_choice") {
+    const selected = isStringArrayAnswer(value) ? value : [];
+
+    return (
+      <div key={question.key}>
+        <fieldset>
+          <legend className="label">
+            {label} {question.required && <span className="text-red-500">*</span>}
+          </legend>
+          <div className="space-y-2">
+            {options.map((opt) => (
+              <label key={opt} className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500"
+                  checked={selected.includes(opt)}
+                  onChange={(e) => {
+                    onChange(e.target.checked ? [...selected, opt] : selected.filter((item) => item !== opt));
+                  }}
+                />
+                <span className="text-sm text-gray-700">{opt}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      </div>
+    );
+  }
+
+  const inputType = question.type === "phone" ? "tel" : question.type;
 
   return (
-    <div key={field.key}>
-      <label className="label" htmlFor={`field-${field.key}`}>
-        {label} {field.required && <span className="text-red-500">*</span>}
+    <div key={question.key}>
+      <label className="label" htmlFor={`field-${question.key}`}>
+        {label} {question.required && <span className="text-red-500">*</span>}
       </label>
-      <input id={`field-${field.key}`} type={field.type} className={inputClass} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <input
+        id={`field-${question.key}`}
+        type={inputType}
+        className={inputClass}
+        value={isStringAnswer(value) ? value : ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
@@ -67,15 +152,20 @@ function renderField(
 export function RegistrationForm({ event }: Props) {
   const { lang, t } = useLanguage();
   const [, startTransition] = useTransition();
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<FormDataState>({});
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  function updateField(key: string, value: string) {
+  function updateField(key: string, value: AnswerValue) {
     setFormData((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
+  }
+
+  function isValidChoice(question: EventRegistrationQuestion, value: string) {
+    const options = [...question.options.en, ...question.options.zh];
+    return options.includes(value);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -84,12 +174,33 @@ export function RegistrationForm({ event }: Props) {
 
     const newErrors: FormErrors = {};
 
-    for (const field of event.registrationFields) {
-      if (field.required && !formData[field.key]?.trim()) {
-        newErrors[field.key] = t({ en: "This field is required", zh: "此字段为必填" });
+    for (const question of event.registrationQuestions) {
+      const value = formData[question.key];
+      const missing =
+        value === undefined ||
+        (typeof value === "string" && value.trim() === "") ||
+        (Array.isArray(value) && value.length === 0);
+
+      if (question.required && missing) {
+        newErrors[question.key] = t({ en: "This field is required", zh: "此字段为必填" });
+        continue;
       }
-      if (field.type === "email" && formData[field.key] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData[field.key])) {
-        newErrors[field.key] = t({ en: "Invalid email address", zh: "邮箱格式不正确" });
+
+      if (missing) continue;
+
+      if (question.type === "yes_no" && typeof value !== "boolean") {
+        newErrors[question.key] = t({ en: "Please choose yes or no", zh: "请选择是或否" });
+      }
+
+      if (question.type === "single_choice" && (!isStringAnswer(value) || !isValidChoice(question, value))) {
+        newErrors[question.key] = t({ en: "Please select a valid option", zh: "请选择有效选项" });
+      }
+
+      if (
+        question.type === "multiple_choice" &&
+        (!isStringArrayAnswer(value) || value.some((item) => !isValidChoice(question, item)))
+      ) {
+        newErrors[question.key] = t({ en: "Please select valid options", zh: "请选择有效选项" });
       }
     }
 
@@ -118,6 +229,8 @@ export function RegistrationForm({ event }: Props) {
   }
 
   if (success) {
+    const email = isStringAnswer(formData.email) ? formData.email : undefined;
+
     return (
       <div className="card border-green-200 bg-green-50 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
@@ -128,8 +241,8 @@ export function RegistrationForm({ event }: Props) {
         </h3>
         <p className="mt-2 text-sm text-green-700">
           {t({
-            en: `You're registered for ${t(event.title)}. A confirmation email will be sent to ${formData.email || "your email"}.`,
-            zh: `你已成功报名 ${t(event.title)}。确认邮件将发送至 ${formData.email || "你的邮箱"}。`,
+            en: `You're registered for ${t(event.title)}. A confirmation email will be sent to ${email || "your email"}.`,
+            zh: `你已成功报名 ${t(event.title)}。确认邮件将发送至 ${email || "你的邮箱"}。`,
           })}
         </p>
         <p className="mt-2 text-xs text-green-600">
@@ -148,8 +261,8 @@ export function RegistrationForm({ event }: Props) {
         {t({ en: "Register for this Event", zh: "报名参加此活动" })}
       </h3>
 
-      {event.registrationFields.map((field) =>
-        renderField(field, formData[field.key] || "", (v) => updateField(field.key, v), errors[field.key], t),
+      {event.registrationQuestions.map((question) =>
+        renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
       )}
 
       <div>
