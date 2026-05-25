@@ -80,5 +80,36 @@ describe("modular event mappers", () => {
     expect(rows.core.slug).toBe("big-bear-day");
     expect(rows.questions[0]).toMatchObject({ question_key: "level", sort_order: 0 });
     expect(rows.modules[0]).toMatchObject({ module_type: "intro", sort_order: 0 });
+    expect("id" in rows.questions[0]).toBe(false);
+    expect("id" in rows.modules[0]).toBe(false);
+  });
+
+  it("preserves valid strings from mixed JSON row arrays", () => {
+    const event = rowsToEvent(
+      core,
+      [
+        {
+          ...question,
+          options_en: ["first timer", 12, "intermediate", null],
+          options_zh: [false, "beginner", "advanced"],
+        },
+      ],
+      [
+        {
+          ...moduleRow,
+          items_en: ["bring gloves", { invalid: true }, "bring goggles"],
+          items_zh: [0, "helmet", "layers"],
+        },
+      ],
+    );
+
+    expect(event.registrationQuestions[0].options).toEqual({
+      en: ["first timer", "intermediate"],
+      zh: ["beginner", "advanced"],
+    });
+    expect(event.detailModules[0].items).toEqual({
+      en: ["bring gloves", "bring goggles"],
+      zh: ["helmet", "layers"],
+    });
   });
 });

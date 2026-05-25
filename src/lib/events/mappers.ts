@@ -62,21 +62,48 @@ export type EventDetailModuleRow = {
   items_en: unknown;
 };
 
+export type EventRegistrationQuestionWriteRow = {
+  event_slug: string;
+  question_key: string;
+  type: EventQuestionType;
+  required: boolean;
+  sort_order: number;
+  label_zh: string;
+  label_en: string;
+  help_zh: string;
+  help_en: string;
+  options_zh: string[];
+  options_en: string[];
+};
+
+export type EventDetailModuleWriteRow = {
+  event_slug: string;
+  module_type: EventDetailModuleType;
+  display_mode: EventDetailDisplayMode;
+  sort_order: number;
+  title_zh: string;
+  title_en: string;
+  content_zh: string;
+  content_en: string;
+  items_zh: string[];
+  items_en: string[];
+};
+
 export type EventAggregateWriteRows = {
   core: EventCoreRow;
-  questions: EventRegistrationQuestionRow[];
-  modules: EventDetailModuleRow[];
+  questions: EventRegistrationQuestionWriteRow[];
+  modules: EventDetailModuleWriteRow[];
 };
 
 function stringArray(value: unknown): string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : [];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function timeValue(value: string | null) {
   return value ? value.slice(0, 5) : "";
 }
 
-function nullableDate(value: string) {
+function nullableValue(value: string) {
   return value || null;
 }
 
@@ -150,8 +177,8 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       registration_state: event.registrationState,
       title_zh: event.title.zh,
       title_en: event.title.en,
-      event_date: nullableDate(event.eventDate),
-      meet_time: nullableDate(event.meetTime),
+      event_date: nullableValue(event.eventDate),
+      meet_time: nullableValue(event.meetTime),
       meet_location_zh: event.meetLocation.zh,
       meet_location_en: event.meetLocation.en,
       activity_location_zh: event.activityLocation.zh,
@@ -159,7 +186,7 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       location_url: event.locationUrl,
       cover_image: event.coverImage,
       capacity: event.capacity,
-      registration_close_at: nullableDate(event.registrationCloseAt),
+      registration_close_at: nullableValue(event.registrationCloseAt),
       requires_approval: event.requiresApproval,
       allow_waitlist: event.allowWaitlist,
       allow_cancellation: event.allowCancellation,
@@ -172,7 +199,6 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       seo_description_en: event.seoDescription.en,
     },
     questions: event.registrationQuestions.map((question, index) => ({
-      id: question.id,
       event_slug: event.slug,
       question_key: question.key,
       type: question.type,
@@ -186,7 +212,6 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       options_en: question.options.en,
     })),
     modules: event.detailModules.map((moduleRow, index) => ({
-      id: moduleRow.id,
       event_slug: event.slug,
       module_type: moduleRow.type,
       display_mode: moduleRow.displayMode,
