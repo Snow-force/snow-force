@@ -5,7 +5,8 @@ import { getEvent } from "@/lib/events/repository";
 import { createRegistration, getRegistrationCountForEvent } from "@/lib/registrations/repository";
 import { sendEmail, buildConfirmationEmail, buildStaffNotificationEmail } from "@/lib/email/adapter";
 import { getCurrentMemberProfile } from "@/lib/members/actions";
-import { validateRegistrationAnswers, type RegistrationAnswers } from "@/lib/registrations/validation";
+import { validateRegistrationAnswers } from "@/lib/registrations/validation";
+import type { RegistrationAnswers } from "@/lib/types";
 
 type RegisterInput = {
   answers: RegistrationAnswers;
@@ -16,15 +17,6 @@ type RegisterInput = {
 function getStringAnswer(answers: RegistrationAnswers, key: string) {
   const value = answers[key];
   return typeof value === "string" ? value : "";
-}
-
-function serializeAnswersForStorage(answers: RegistrationAnswers): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(answers).map(([key, value]) => [
-      key,
-      Array.isArray(value) ? value.join(", ") : String(value),
-    ]),
-  );
 }
 
 export async function registerForEvent(
@@ -59,14 +51,13 @@ export async function registerForEvent(
   const contactName = getStringAnswer(input.answers, "name");
   const contactEmail = getStringAnswer(input.answers, "email");
   const contactPhone = getStringAnswer(input.answers, "phone");
-  const answers = serializeAnswersForStorage(input.answers);
 
   // Persist registration first
   const member = await getCurrentMemberProfile();
   const result = await createRegistration({
     eventSlug,
     memberId: member?.id ?? null,
-    answers,
+    answers: input.answers,
     consentGiven: input.consentGiven,
     contactEmail,
     contactName,

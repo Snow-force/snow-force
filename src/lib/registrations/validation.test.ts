@@ -34,4 +34,14 @@ describe("registration answer validation", () => {
     const result = validateRegistrationAnswers(questions, { level: "其他" });
     expect(result.success).toBe(false);
   });
+
+  it("rejects boolean values for single choice answers", () => {
+    const result = validateRegistrationAnswers(questions, { level: true });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects array values for single choice answers", () => {
+    const result = validateRegistrationAnswers(questions, { level: ["新手"] });
+    expect(result.success).toBe(false);
+  });
 });

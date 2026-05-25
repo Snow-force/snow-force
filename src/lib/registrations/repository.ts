@@ -1,4 +1,4 @@
-import type { Registration } from "../types";
+import type { Registration, RegistrationAnswers } from "../types";
 import { createClient } from "@supabase/supabase-js";
 import { incrementRegistrationCount } from "../events/repository";
 import { createJsonArrayStore, workspaceDataPath } from "../server/json-store";
@@ -18,7 +18,7 @@ type RegistrationRow = {
   id: string;
   event_slug: string;
   member_id: string | null;
-  answers: Record<string, string>;
+  answers: RegistrationAnswers;
   consent_given: boolean;
   contact_email: string;
   contact_name: string;

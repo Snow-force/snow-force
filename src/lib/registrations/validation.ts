@@ -1,7 +1,5 @@
-import type { EventRegistrationQuestion } from "@/lib/types";
-
-export type RegistrationAnswerValue = string | boolean | string[];
-export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
+import type { EventRegistrationQuestion, RegistrationAnswers } from "@/lib/types";
+export type { RegistrationAnswerValue, RegistrationAnswers } from "@/lib/types";
 
 export function validateRegistrationAnswers(
   questions: EventRegistrationQuestion[],
@@ -24,8 +22,10 @@ export function validateRegistrationAnswers(
     if (missing) continue;
 
     const options = question.options.zh;
-    if (question.type === "single_choice" && typeof value === "string" && !options.includes(value)) {
-      errors[question.key] = `${question.key} is invalid`;
+    if (question.type === "single_choice") {
+      if (typeof value !== "string" || !options.includes(value)) {
+        errors[question.key] = `${question.key} is invalid`;
+      }
     }
     if (question.type === "multiple_choice") {
       if (!Array.isArray(value) || value.some((item) => !options.includes(item))) {

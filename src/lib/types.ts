@@ -39,6 +39,9 @@ export interface EventDetailModule {
   items: Bilingual<string[]>;
 }
 
+export type RegistrationAnswerValue = string | boolean | string[];
+export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
+
 export interface Event {
   slug: string;
   status: EventStatus;
@@ -68,7 +71,7 @@ export interface Registration {
   id: string;
   eventSlug: string;
   memberId: string | null;
-  answers: Record<string, string>;
+  answers: RegistrationAnswers;
   consentGiven: boolean;
   contactEmail: string;
   contactName: string;

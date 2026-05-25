@@ -25,6 +25,8 @@ describe("registration store", () => {
         name: "Tai",
         email: "tai@example.com",
         phone: "555-0100",
+        pass: ["Ikon", "Epic"],
+        needsRental: true,
       },
       consentGiven: true,
       contactEmail: "tai@example.com",
@@ -34,9 +36,11 @@ describe("registration store", () => {
 
     const secondStore = createRegistrationStore(filePath);
 
-    expect((await secondStore.list()).map((registration) => registration.id)).toEqual([
-      created.id,
-    ]);
+    const registrations = await secondStore.list();
+
+    expect(registrations.map((registration) => registration.id)).toEqual([created.id]);
+    expect(registrations[0].answers.pass).toEqual(["Ikon", "Epic"]);
+    expect(registrations[0].answers.needsRental).toBe(true);
   });
 
   it("creates registrations through a source-backed repository", async () => {
