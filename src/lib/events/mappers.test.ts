@@ -1,253 +1,84 @@
 import { describe, expect, it } from "vitest";
+import {
+  eventAggregateToWriteRows,
+  rowsToEvent,
+  type EventCoreRow,
+  type EventDetailModuleRow,
+  type EventRegistrationQuestionRow,
+} from "./mappers";
 
-import { eventToRow, rowToEvent, type EventRow } from "./mappers";
+const core: EventCoreRow = {
+  slug: "big-bear-day",
+  status: "published",
+  registration_state: "open",
+  title_zh: "大熊山一日滑雪",
+  title_en: "",
+  event_date: "2026-12-12",
+  meet_time: "07:30:00",
+  meet_location_zh: "Rowland Heights",
+  meet_location_en: "",
+  activity_location_zh: "Big Bear",
+  activity_location_en: "",
+  location_url: "",
+  cover_image: "",
+  capacity: 24,
+  registration_close_at: "2026-12-10T18:00:00+00:00",
+  requires_approval: false,
+  allow_waitlist: true,
+  allow_cancellation: true,
+  fee_amount: "$120",
+  payment_instructions_zh: "微信群确认付款",
+  payment_instructions_en: "",
+  seo_title_zh: "",
+  seo_title_en: "",
+  seo_description_zh: "",
+  seo_description_en: "",
+};
 
-describe("event mappers", () => {
-  it("maps a Supabase event row into the domain event shape", () => {
-    const event = rowToEvent({
-      slug: "spring-ride",
-      status: "published",
-      registration_state: "open",
-      title_en: "Spring Ride",
-      title_zh: "Spring Ride ZH",
-      subtitle_en: null,
-      subtitle_zh: "Sunny laps",
-      description_en: null,
-      description_zh: "Meet the crew.",
-      highlights_en: null,
-      highlights_zh: ["Coach support"],
-      audience_level_en: null,
-      audience_level_zh: "All levels",
-      schedule_en: null,
-      schedule_zh: "09:00 Meet",
-      location_en: null,
-      location_zh: "Mammoth",
-      location_url: null,
-      fee_info_en: null,
-      fee_info_zh: "Free",
-      notices_en: null,
-      notices_zh: ["Helmet recommended"],
-      cover_image: null,
-      media: null,
-      capacity: 40,
-      registration_open_at: null,
-      registration_close_at: "2026-10-05T00:00:00.000Z",
-      event_start_at: null,
-      event_end_at: "2026-10-06T22:00:00.000Z",
-      registration_fields: null,
-      tags_en: null,
-      tags_zh: ["Ride"],
-      seo_title_en: null,
-      seo_title_zh: "Spring Ride",
-      seo_description_en: null,
-      seo_description_zh: "Join the ride.",
-    });
+const question: EventRegistrationQuestionRow = {
+  id: "question-level",
+  event_slug: "big-bear-day",
+  question_key: "level",
+  type: "single_choice",
+  required: true,
+  sort_order: 0,
+  label_zh: "你的滑雪水平？",
+  label_en: "",
+  help_zh: "",
+  help_en: "",
+  options_zh: ["新手", "进阶"],
+  options_en: [],
+};
 
-    expect(event).toMatchObject({
-      registrationState: "open",
-      title: { en: "Spring Ride", zh: "Spring Ride ZH" },
-      subtitle: { en: "", zh: "Sunny laps" },
-      description: { en: "", zh: "Meet the crew." },
-      highlights: { en: [], zh: ["Coach support"] },
-      audienceLevel: { en: "", zh: "All levels" },
-      schedule: { en: "", zh: "09:00 Meet" },
-      location: { en: "", zh: "Mammoth" },
-      locationUrl: "",
-      feeInfo: { en: "", zh: "Free" },
-      notices: { en: [], zh: ["Helmet recommended"] },
-      coverImage: "",
-      media: [],
-      // The events table has no persisted registration count column.
-      registrationCount: 0,
-      registrationOpenAt: "",
-      registrationCloseAt: "2026-10-05T00:00:00.000Z",
-      eventStartAt: "",
-      eventEndAt: "2026-10-06T22:00:00.000Z",
-      registrationFields: [],
-      tags: { en: [], zh: ["Ride"] },
-      seoTitle: { en: "", zh: "Spring Ride" },
-      seoDescription: { en: "", zh: "Join the ride." },
+const moduleRow: EventDetailModuleRow = {
+  id: "module-intro",
+  event_slug: "big-bear-day",
+  module_type: "intro",
+  display_mode: "rich_text",
+  sort_order: 0,
+  title_zh: "活动介绍",
+  title_en: "",
+  content_zh: "一日活动",
+  content_en: "",
+  items_zh: [],
+  items_en: [],
+};
+
+describe("modular event mappers", () => {
+  it("maps rows into an event aggregate", () => {
+    expect(rowsToEvent(core, [question], [moduleRow])).toMatchObject({
+      slug: "big-bear-day",
+      registrationQuestions: [{ key: "level", type: "single_choice" }],
+      detailModules: [{ id: "module-intro", type: "intro" }],
     });
   });
 
-  it("maps a domain event into the exact Supabase write shape", () => {
-    const row = eventToRow({
-      slug: "draft",
-      status: "draft",
-      registrationState: "closed",
-      title: { en: "Draft", zh: "Draft ZH" },
-      subtitle: { en: "", zh: "" },
-      description: { en: "", zh: "" },
-      highlights: { en: [], zh: [] },
-      audienceLevel: { en: "", zh: "" },
-      schedule: { en: "", zh: "" },
-      location: { en: "", zh: "" },
-      locationUrl: "",
-      feeInfo: { en: "", zh: "" },
-      notices: { en: [], zh: [] },
-      coverImage: "",
-      media: [],
-      capacity: 0,
-      registrationCount: 7,
-      registrationOpenAt: "",
-      registrationCloseAt: "2026-10-02T00:00:00.000Z",
-      eventStartAt: "",
-      eventEndAt: "2026-10-04T00:00:00.000Z",
-      registrationFields: [],
-      tags: { en: [], zh: [] },
-      seoTitle: { en: "", zh: "" },
-      seoDescription: { en: "", zh: "" },
-    });
+  it("maps an event aggregate into core, question, and module write rows", () => {
+    const event = rowsToEvent(core, [question], [moduleRow]);
+    const rows = eventAggregateToWriteRows(event);
 
-    expect(row).toEqual({
-      slug: "draft",
-      status: "draft",
-      registration_state: "closed",
-      title_en: "Draft",
-      title_zh: "Draft ZH",
-      subtitle_en: "",
-      subtitle_zh: "",
-      description_en: "",
-      description_zh: "",
-      highlights_en: [],
-      highlights_zh: [],
-      audience_level_en: "",
-      audience_level_zh: "",
-      schedule_en: "",
-      schedule_zh: "",
-      location_en: "",
-      location_zh: "",
-      location_url: "",
-      fee_info_en: "",
-      fee_info_zh: "",
-      notices_en: [],
-      notices_zh: [],
-      cover_image: "",
-      media: [],
-      capacity: 0,
-      registration_open_at: null,
-      registration_close_at: "2026-10-02T00:00:00.000Z",
-      event_start_at: null,
-      event_end_at: "2026-10-04T00:00:00.000Z",
-      registration_fields: [],
-      tags_en: [],
-      tags_zh: [],
-      seo_title_en: "",
-      seo_title_zh: "",
-      seo_description_en: "",
-      seo_description_zh: "",
-    });
-    expect("registrationCount" in row).toBe(false);
-  });
-
-  it("drops malformed JSON-backed row lists at the domain boundary", () => {
-    const event = rowToEvent({
-      slug: "bad-json",
-      status: "draft",
-      registration_state: "closed",
-      title_en: "Bad JSON",
-      title_zh: "Bad JSON ZH",
-      subtitle_en: null,
-      subtitle_zh: null,
-      description_en: null,
-      description_zh: null,
-      highlights_en: "Coach support",
-      highlights_zh: [1],
-      audience_level_en: null,
-      audience_level_zh: null,
-      schedule_en: null,
-      schedule_zh: null,
-      location_en: null,
-      location_zh: null,
-      location_url: null,
-      fee_info_en: null,
-      fee_info_zh: null,
-      notices_en: { helmet: true },
-      notices_zh: ["Helmet recommended"],
-      cover_image: null,
-      media: [{ url: "/not-a-media-string" }],
-      capacity: 0,
-      registration_open_at: null,
-      registration_close_at: null,
-      event_start_at: null,
-      event_end_at: null,
-      registration_fields: [
-        {
-          key: "name",
-          label: { en: "Name", zh: "Name ZH" },
-          type: "text",
-          required: true,
-        },
-      ],
-      tags_en: { tag: "Ride" },
-      tags_zh: ["Ride"],
-      seo_title_en: null,
-      seo_title_zh: null,
-      seo_description_en: null,
-      seo_description_zh: null,
-    } as EventRow);
-
-    expect(event.highlights).toEqual({ en: [], zh: [] });
-    expect(event.notices).toEqual({ en: [], zh: ["Helmet recommended"] });
-    expect(event.media).toEqual([]);
-    expect(event.tags).toEqual({ en: [], zh: ["Ride"] });
-    expect(event.registrationFields).toEqual([
-      {
-        key: "name",
-        label: { en: "Name", zh: "Name ZH" },
-        type: "text",
-        required: true,
-      },
-    ]);
-  });
-
-  it("fails closed when provided registration field config is malformed", () => {
-    expect(() =>
-      rowToEvent({
-        slug: "bad-registration-config",
-        status: "draft",
-        registration_state: "closed",
-        title_en: "Bad Registration Config",
-        title_zh: "Bad Registration Config ZH",
-        subtitle_en: null,
-        subtitle_zh: null,
-        description_en: null,
-        description_zh: null,
-        highlights_en: null,
-        highlights_zh: null,
-        audience_level_en: null,
-        audience_level_zh: null,
-        schedule_en: null,
-        schedule_zh: null,
-        location_en: null,
-        location_zh: null,
-        location_url: null,
-        fee_info_en: null,
-        fee_info_zh: null,
-        notices_en: null,
-        notices_zh: null,
-        cover_image: null,
-        media: null,
-        capacity: 0,
-        registration_open_at: null,
-        registration_close_at: null,
-        event_start_at: null,
-        event_end_at: null,
-        registration_fields: [
-          {
-            key: "bad",
-            label: { en: "Bad", zh: "Bad ZH" },
-            type: "unsupported",
-            required: true,
-          },
-        ],
-        tags_en: null,
-        tags_zh: null,
-        seo_title_en: null,
-        seo_title_zh: null,
-        seo_description_en: null,
-        seo_description_zh: null,
-      } as EventRow),
-    ).toThrow("Invalid event registration field configuration.");
+    expect(rows.core.slug).toBe("big-bear-day");
+    expect(rows.questions[0]).toMatchObject({ question_key: "level", sort_order: 0 });
+    expect(rows.modules[0]).toMatchObject({ module_type: "intro", sort_order: 0 });
   });
 });
