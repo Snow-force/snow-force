@@ -78,6 +78,28 @@ describe("event editor validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects choice questions with only blank Chinese options", () => {
+    const result = parseEventEditorInput({
+      slug: "big-bear-day",
+      title: { zh: "大熊山一日滑雪", en: "" },
+      capacity: "24",
+      registrationQuestions: [
+        {
+          id: "q1",
+          key: "level",
+          type: "single_choice",
+          required: true,
+          label: { zh: "水平", en: "" },
+          helpText: { zh: "", en: "" },
+          options: { zh: ["   "], en: [] },
+        },
+      ],
+      detailModules: [],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("requires core Chinese content and one meaningful detail module before publishing", () => {
     const result = parseEventEditorInput({
       slug: "big-bear-day",
@@ -100,6 +122,34 @@ describe("event editor validation", () => {
         "activityLocation.zh",
         "detailModules",
       ]),
+    );
+  });
+
+  it("requires non-blank Chinese detail module content or items before publishing", () => {
+    const result = parseEventEditorInput({
+      slug: "big-bear-day",
+      title: { zh: "大熊山一日滑雪", en: "" },
+      eventDate: "2026-12-12",
+      meetTime: "07:30",
+      activityLocation: { zh: "Big Bear Mountain Resort", en: "" },
+      capacity: "24",
+      registrationQuestions: [],
+      detailModules: [
+        {
+          id: "module-notes",
+          type: "notes",
+          displayMode: "list",
+          title: { zh: "注意事项", en: "" },
+          content: { zh: "", en: "" },
+          items: { zh: ["   "], en: [] },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(validatePublishableEvent(result.data)).toEqual(
+      expect.arrayContaining(["detailModules"]),
     );
   });
 

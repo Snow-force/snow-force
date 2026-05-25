@@ -12,6 +12,14 @@ const bilingualList = z.object({
   zh: z.array(z.string()).default([]),
 });
 
+function hasMeaningfulText(value: string) {
+  return value.trim().length > 0;
+}
+
+function hasMeaningfulListItem(items: string[]) {
+  return items.some(hasMeaningfulText);
+}
+
 const dateTime = z
   .string()
   .trim()
@@ -41,7 +49,7 @@ const questionSchema = z
   .superRefine((question, ctx) => {
     if (
       (question.type === "single_choice" || question.type === "multiple_choice") &&
-      question.options.zh.length === 0
+      !hasMeaningfulListItem(question.options.zh)
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -103,7 +111,8 @@ export function validatePublishableEvent(event: Event) {
 
   if (
     !event.detailModules.some(
-      (moduleRow) => moduleRow.content.zh.trim() || moduleRow.items.zh.length,
+      (moduleRow) =>
+        hasMeaningfulText(moduleRow.content.zh) || hasMeaningfulListItem(moduleRow.items.zh),
     )
   ) {
     missingFields.push("detailModules");
