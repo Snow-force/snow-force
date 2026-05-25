@@ -12,15 +12,29 @@ type Props = {
 type AnswerValue = string | boolean | string[];
 type FormDataState = Record<string, AnswerValue>;
 type FormErrors = Record<string, string>;
+type OptionPair = { value: string; label: string };
 
 function localizedText(value: { en: string; zh: string }, lang: "en" | "zh") {
   return lang === "en" ? value.en || value.zh : value.zh || value.en;
 }
 
-function localizedOptions(value: Bilingual<string[]>, lang: "en" | "zh") {
-  const primary = value[lang];
-  const fallback = lang === "en" ? value.zh : value.en;
-  return primary.length > 0 ? primary : fallback;
+function localizedOptionPairs(value: Bilingual<string[]>, lang: "en" | "zh") {
+  const pairs: OptionPair[] = [];
+  const activeOptions = value[lang];
+  const fallbackOptions = lang === "en" ? value.zh : value.en;
+  const optionCount = Math.max(value.zh.length, value.en.length);
+
+  for (let index = 0; index < optionCount; index += 1) {
+    const canonicalValue = value.zh[index] || value.en[index];
+    if (!canonicalValue) continue;
+
+    pairs.push({
+      value: canonicalValue,
+      label: activeOptions[index] || fallbackOptions[index] || canonicalValue,
+    });
+  }
+
+  return pairs;
 }
 
 function isStringAnswer(value: AnswerValue | undefined): value is string {
@@ -44,7 +58,7 @@ function renderQuestion(
 ) {
   const label = localizedText(question.label, lang);
   const helpText = localizedText(question.helpText, lang);
-  const options = localizedOptions(question.options, lang);
+  const options = localizedOptionPairs(question.options, lang);
   const inputClass = `input-field ${error ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`;
 
   if (question.type === "single_choice") {
@@ -57,12 +71,13 @@ function renderQuestion(
           id={`field-${question.key}`}
           className={inputClass}
           value={isStringAnswer(value) ? value : ""}
+          aria-invalid={Boolean(error) || undefined}
           onChange={(e) => onChange(e.target.value)}
         >
           <option value="">{lang === "en" ? "-- Select --" : "-- 请选择 --"}</option>
-          {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
@@ -82,6 +97,7 @@ function renderQuestion(
           id={`field-${question.key}`}
           className={inputClass}
           value={isBooleanAnswer(value) ? String(value) : ""}
+          aria-invalid={Boolean(error) || undefined}
           onChange={(e) => {
             if (e.target.value === "true") onChange(true);
             if (e.target.value === "false") onChange(false);
@@ -108,17 +124,19 @@ function renderQuestion(
             {label} {question.required && <span className="text-red-500">*</span>}
           </legend>
           <div className="space-y-2">
-            {options.map((opt) => (
-              <label key={opt} className="flex items-start gap-3">
+            {options.map((option) => (
+              <label key={option.value} className="flex items-start gap-3">
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500"
-                  checked={selected.includes(opt)}
+                  checked={selected.includes(option.value)}
+                  value={option.value}
+                  aria-invalid={Boolean(error) || undefined}
                   onChange={(e) => {
-                    onChange(e.target.checked ? [...selected, opt] : selected.filter((item) => item !== opt));
+                    onChange(e.target.checked ? [...selected, option.value] : selected.filter((item) => item !== option.value));
                   }}
                 />
-                <span className="text-sm text-gray-700">{opt}</span>
+                <span className="text-sm text-gray-700">{option.label}</span>
               </label>
             ))}
           </div>
@@ -141,6 +159,7 @@ function renderQuestion(
         type={inputType}
         className={inputClass}
         value={isStringAnswer(value) ? value : ""}
+        aria-invalid={Boolean(error) || undefined}
         onChange={(e) => onChange(e.target.value)}
       />
       {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
