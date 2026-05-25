@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "../auth/admin";
-import type { Event, RegistrationFieldConfig, RegistrationState } from "../types";
+import type { Event, RegistrationState } from "../types";
 import { createRecapFromEvent } from "../recaps/actions";
 import { createEvent, getEventAdmin, updateEvent } from "./repository";
 import { parseEventEditorInput, validatePublishableEvent } from "./validation";
@@ -24,68 +24,14 @@ function formText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
-function lines(value: string) {
-  return value
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function bilingual(formData: FormData, key: string) {
-  return {
-    en: formText(formData, `${key}.en`),
-    zh: formText(formData, `${key}.zh`),
-  };
-}
-
-function bilingualLines(formData: FormData, key: string) {
-  return {
-    en: lines(formText(formData, `${key}.en`)),
-    zh: lines(formText(formData, `${key}.zh`)),
-  };
-}
-
-function readRegistrationFields(formData: FormData): RegistrationFieldConfig[] | unknown {
-  const raw = formText(formData, "registrationFields");
-  if (!raw) return [];
-
+function readEditorPayload(formData: FormData) {
+  const raw = formText(formData, "eventPayload");
+  if (!raw) return {};
   try {
     return JSON.parse(raw) as unknown;
   } catch {
-    return "Invalid registration field JSON.";
+    return { __invalidPayload: true };
   }
-}
-
-function editorInput(formData: FormData) {
-  const unlimitedCapacity = formText(formData, "unlimitedCapacity") === "1";
-
-  return {
-    slug: formText(formData, "slug"),
-    status: formText(formData, "status") || "draft",
-    registrationState: formText(formData, "registrationState") || "closed",
-    title: bilingual(formData, "title"),
-    subtitle: bilingual(formData, "subtitle"),
-    description: bilingual(formData, "description"),
-    highlights: bilingualLines(formData, "highlights"),
-    audienceLevel: bilingual(formData, "audienceLevel"),
-    schedule: bilingual(formData, "schedule"),
-    location: bilingual(formData, "location"),
-    locationUrl: formText(formData, "locationUrl"),
-    feeInfo: bilingual(formData, "feeInfo"),
-    notices: bilingualLines(formData, "notices"),
-    coverImage: formText(formData, "coverImage"),
-    media: lines(formText(formData, "media")),
-    capacity: unlimitedCapacity ? "0" : formText(formData, "capacity"),
-    registrationCount: formText(formData, "registrationCount") || "0",
-    registrationOpenAt: formText(formData, "registrationOpenAt"),
-    registrationCloseAt: formText(formData, "registrationCloseAt"),
-    eventStartAt: formText(formData, "eventStartAt"),
-    eventEndAt: formText(formData, "eventEndAt"),
-    registrationFields: readRegistrationFields(formData),
-    tags: bilingualLines(formData, "tags"),
-    seoTitle: bilingual(formData, "seoTitle"),
-    seoDescription: bilingual(formData, "seoDescription"),
-  };
 }
 
 function refreshEventPaths(slug: string) {
@@ -102,7 +48,7 @@ export async function saveEventAction(
 ): Promise<EventEditorState> {
   await requireAdmin();
 
-  const parsed = parseEventEditorInput(editorInput(formData));
+  const parsed = parseEventEditorInput(readEditorPayload(formData));
   if (!parsed.success) {
     return {
       success: false,
