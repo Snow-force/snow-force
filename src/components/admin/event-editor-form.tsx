@@ -28,13 +28,32 @@ function normalizeQuestionKey(value: string) {
   return /^[a-z]/.test(normalized) ? normalized : `field_${normalized}`;
 }
 
+function uniqueQuestionKey(base: string, existingKeys: Set<string>) {
+  const normalizedBase = normalizeQuestionKey(base);
+  if (!existingKeys.has(normalizedBase)) return normalizedBase;
+
+  let suffix = 2;
+  let candidate = `${normalizedBase}_${suffix}`;
+  while (existingKeys.has(candidate)) {
+    suffix += 1;
+    candidate = `${normalizedBase}_${suffix}`;
+  }
+  return candidate;
+}
+
 function eventPayload(event: Event) {
+  const questionKeys = new Set<string>();
+
   return JSON.stringify({
     ...event,
-    registrationQuestions: event.registrationQuestions.map((question) => ({
-      ...question,
-      key: normalizeQuestionKey(question.key),
-    })),
+    registrationQuestions: event.registrationQuestions.map((question) => {
+      const key = uniqueQuestionKey(question.key, questionKeys);
+      questionKeys.add(key);
+      return {
+        ...question,
+        key,
+      };
+    }),
   });
 }
 

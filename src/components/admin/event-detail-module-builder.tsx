@@ -17,8 +17,26 @@ type EventDetailModuleBuilderProps = {
 const moduleTypes: EventDetailModuleType[] = ["intro", "highlights", "itinerary", "notes", "fees", "refund", "contact", "custom"];
 const displayModes: EventDetailDisplayMode[] = ["rich_text", "list"];
 
-function createModule(type: EventDetailModuleType): EventDetailModule {
-  const id = `${type}_${Date.now()}`;
+function normalizeId(value: string) {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+  return normalized || "module";
+}
+
+function uniqueId(base: string, existingIds: Set<string>) {
+  const normalizedBase = normalizeId(base);
+  if (!existingIds.has(normalizedBase)) return normalizedBase;
+
+  let suffix = 2;
+  let candidate = `${normalizedBase}_${suffix}`;
+  while (existingIds.has(candidate)) {
+    suffix += 1;
+    candidate = `${normalizedBase}_${suffix}`;
+  }
+  return candidate;
+}
+
+function createModule(type: EventDetailModuleType, existingModules: EventDetailModule[]): EventDetailModule {
+  const id = uniqueId(`${type}_${Date.now()}`, new Set(existingModules.map((moduleItem) => moduleItem.id)));
   return {
     id,
     type,
@@ -47,13 +65,13 @@ export function EventDetailModuleBuilder({ modules, activeLang, onChange }: Even
   }
 
   function addModule() {
-    onChange([...modules, createModule(newType)]);
+    onChange([...modules, createModule(newType, modules)]);
   }
 
   function copyModule(index: number) {
     const source = modules[index];
     if (!source) return;
-    const id = `${source.type}_${Date.now()}`;
+    const id = uniqueId(`${source.id}_copy`, new Set(modules.map((moduleItem) => moduleItem.id)));
     onChange([...modules.slice(0, index + 1), { ...source, id }, ...modules.slice(index + 1)]);
   }
 

@@ -22,10 +22,32 @@ function normalizeQuestionKey(value: string) {
   return /^[a-z]/.test(normalized) ? normalized : `field_${normalized}`;
 }
 
-function createQuestion(type: EventQuestionType): EventRegistrationQuestion {
-  const key = normalizeQuestionKey(`${type}_${Date.now()}`);
+function uniqueValue(base: string, existingValues: Set<string>) {
+  if (!existingValues.has(base)) return base;
+
+  let suffix = 2;
+  let candidate = `${base}_${suffix}`;
+  while (existingValues.has(candidate)) {
+    suffix += 1;
+    candidate = `${base}_${suffix}`;
+  }
+  return candidate;
+}
+
+function uniqueQuestionKey(base: string, existingKeys: Set<string>) {
+  return uniqueValue(normalizeQuestionKey(base), existingKeys);
+}
+
+function uniqueId(base: string, existingIds: Set<string>) {
+  return uniqueValue(normalizeQuestionKey(base), existingIds);
+}
+
+function createQuestion(type: EventQuestionType, existingQuestions: EventRegistrationQuestion[]): EventRegistrationQuestion {
+  const base = normalizeQuestionKey(`${type}_${Date.now()}`);
+  const key = uniqueQuestionKey(base, new Set(existingQuestions.map((question) => question.key)));
+  const id = uniqueId(base, new Set(existingQuestions.map((question) => question.id)));
   return {
-    id: key,
+    id,
     key,
     type,
     required: false,
@@ -57,14 +79,17 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
   }
 
   function addQuestion() {
-    onChange([...questions, createQuestion(newType)]);
+    onChange([...questions, createQuestion(newType, questions)]);
   }
 
   function copyQuestion(index: number) {
     const source = questions[index];
     if (!source) return;
-    const key = normalizeQuestionKey(`${source.type}_${Date.now()}`);
-    onChange([...questions.slice(0, index + 1), { ...source, id: key, key }, ...questions.slice(index + 1)]);
+    const existingIds = new Set(questions.map((question) => question.id));
+    const existingKeys = new Set(questions.map((question) => question.key));
+    const id = uniqueId(`${source.id}_copy`, existingIds);
+    const key = uniqueQuestionKey(`${source.key}_copy`, existingKeys);
+    onChange([...questions.slice(0, index + 1), { ...source, id, key }, ...questions.slice(index + 1)]);
   }
 
   function deleteQuestion(index: number) {
@@ -152,7 +177,14 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     Key
                     <input
                       value={question.key}
-                      onChange={(changeEvent) => updateQuestion(index, { ...question, key: normalizeQuestionKey(changeEvent.currentTarget.value) })}
+                      onChange={(changeEvent) => {
+                        const otherKeys = new Set(
+                          questions
+                            .filter((_, questionIndex) => questionIndex !== index)
+                            .map((existingQuestion) => existingQuestion.key),
+                        );
+                        updateQuestion(index, { ...question, key: uniqueQuestionKey(changeEvent.currentTarget.value, otherKeys) });
+                      }}
                       className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
                     />
                   </label>
