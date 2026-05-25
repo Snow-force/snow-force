@@ -65,18 +65,27 @@ function recapEditorInput(formData: FormData): Partial<EventRecap> {
 export async function createRecapFromEvent(event: Event): Promise<EventRecap | undefined> {
   const existing = await getRecapAdmin(event.slug);
   if (existing) return existing;
+  const introModule = event.detailModules.find((moduleItem) => moduleItem.type === "intro") ?? event.detailModules[0];
+  const recapContent = introModule?.content ?? { en: "", zh: "" };
+  const recapTags = event.detailModules.reduce(
+    (tags, moduleItem) => ({
+      en: moduleItem.title.en ? [...tags.en, moduleItem.title.en] : tags.en,
+      zh: moduleItem.title.zh ? [...tags.zh, moduleItem.title.zh] : tags.zh,
+    }),
+    { en: [] as string[], zh: [] as string[] },
+  );
 
   const recap: EventRecap = {
     slug: event.slug,
     status: "draft",
     title: event.title,
-    summary: event.description,
-    content: event.description,
-    date: event.eventStartAt.slice(0, 10),
-    location: event.location,
+    summary: recapContent,
+    content: recapContent,
+    date: event.eventDate,
+    location: event.activityLocation,
     coverImage: event.coverImage,
     media: [],
-    tags: event.tags,
+    tags: recapTags,
     seoTitle: event.seoTitle,
     seoDescription: event.seoDescription,
     eventSlug: event.slug,

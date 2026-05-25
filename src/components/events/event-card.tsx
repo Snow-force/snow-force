@@ -17,6 +17,12 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
   const remaining = remainingCapacity(event);
   const percentFull = remaining === undefined ? 0 : Math.min(Math.round((event.registrationCount / event.capacity) * 100), 100);
   const state = getRegistrationState(event.registrationState, t);
+  const intro = event.detailModules.find((moduleItem) => moduleItem.type === "intro") ?? event.detailModules[0];
+  const summary = intro ? localizedText(intro.content, lang) : "";
+  const tags = event.detailModules
+    .map((moduleItem) => localizedText(moduleItem.title, lang))
+    .filter(Boolean)
+    .slice(0, 3);
 
   return (
     <Link
@@ -31,7 +37,7 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap gap-2">
-              {(t(event.tags) as string[]).slice(0, 3).map((tag) => (
+              {tags.map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full border border-[#e0e0e0] px-3 py-1 text-[12px] leading-none tracking-[-0.12px] text-[#333333]"
@@ -44,7 +50,7 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
               {t(event.title)}
             </h3>
             <p className="mt-2 line-clamp-2 text-[17px] leading-[1.47] tracking-[-0.374px] text-[#333333]">
-              {t(event.subtitle)}
+              {summary}
             </p>
           </div>
           <span className={`shrink-0 rounded-full px-3 py-1 text-[12px] leading-none tracking-[-0.12px] ${state.className}`}>
@@ -53,9 +59,9 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
         </div>
 
         <div className="mt-6 flex flex-wrap gap-x-3 gap-y-2 text-[14px] leading-[1.43] tracking-[-0.224px] text-[#7a7a7a]">
-          <span>{t(event.location)}</span>
-          <span>{new Date(event.eventStartAt).toLocaleDateString(locale, { month: "short", day: "numeric" })}</span>
-          <span>{t(event.audienceLevel)}</span>
+          <span>{localizedText(event.activityLocation, lang)}</span>
+          <span>{event.eventDate ? new Date(`${event.eventDate}T00:00:00`).toLocaleDateString(locale, { month: "short", day: "numeric" }) : ""}</span>
+          <span>{event.meetTime}</span>
         </div>
 
         <div className="mt-5">
@@ -75,6 +81,10 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
       </div>
     </Link>
   );
+}
+
+function localizedText(value: Bilingual, lang: Lang) {
+  return lang === "en" ? value.en || value.zh : value.zh || value.en;
 }
 
 function ActivityVisual({

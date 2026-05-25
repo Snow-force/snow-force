@@ -25,6 +25,7 @@ export function AdminEventsUnavailable() {
 
 export function AdminEventsView({ events }: { events: Event[] }) {
   const { lang, t } = useLanguage();
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
 
   return (
     <div>
@@ -58,7 +59,8 @@ export function AdminEventsView({ events }: { events: Event[] }) {
                   <p className="text-xs text-gray-400">{event.slug}</p>
                 </td>
                 <td className="px-4 py-3 text-gray-500">
-                  {event.eventStartAt ? new Date(event.eventStartAt).toLocaleDateString() : t(adminCopy.events.draftDate)}
+                  {event.eventDate ? new Date(`${event.eventDate}T00:00:00`).toLocaleDateString(locale) : t(adminCopy.events.draftDate)}
+                  <p className="text-xs text-gray-400">{event.activityLocation[lang] || event.activityLocation.en || event.activityLocation.zh}</p>
                 </td>
                 <td className="px-4 py-3 text-gray-500">
                   {remaining === undefined ? t({ en: "Unlimited", zh: "不限名额" }) : `${remaining}/${event.capacity}`}
@@ -136,7 +138,12 @@ export function AdminEventsView({ events }: { events: Event[] }) {
           {events.filter((event) => event.status === "published").map((event) => {
             const missing: string[] = [];
             if (!event.title.en || !event.title.zh) missing.push("title");
-            if (!event.description.en || !event.description.zh) missing.push("description");
+            if (!event.detailModules.some((moduleItem) => moduleItem.content.en || moduleItem.items.en.length)) {
+              missing.push("detail modules");
+            }
+            if (!event.detailModules.some((moduleItem) => moduleItem.content.zh || moduleItem.items.zh.length)) {
+              missing.push("详情模块");
+            }
 
             return (
               <div key={event.slug} className="flex items-center justify-between gap-4 py-2">
