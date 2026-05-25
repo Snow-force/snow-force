@@ -5,7 +5,7 @@ import { useFormState } from "react-dom";
 
 import { saveEventAction, type EventEditorState } from "@/lib/events/actions";
 import { useLanguage } from "@/lib/language";
-import type { Event } from "@/lib/types";
+import type { Event, EventDetailModule, EventRegistrationQuestion } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
 
 const initialState: EventEditorState = { success: false };
@@ -14,6 +14,7 @@ type ActiveLang = "zh" | "en";
 type BilingualEventKey = {
   [Key in keyof Event]: Event[Key] extends { en: string; zh: string } ? Key : never;
 }[keyof Event];
+type JsonErrors = { questions?: string; modules?: string };
 
 function localDateTime(value: string) {
   return value ? value.slice(0, 16) : "";
@@ -23,10 +24,81 @@ function prettyJson(value: unknown) {
   return JSON.stringify(value, null, 2);
 }
 
-function parseJsonArray<T>(value: string) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isBilingualText(value: unknown): value is Event["title"] {
+  return isRecord(value) && typeof value.en === "string" && typeof value.zh === "string";
+}
+
+function isBilingualList(value: unknown): value is EventRegistrationQuestion["options"] {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.en) &&
+    Array.isArray(value.zh) &&
+    value.en.every((item) => typeof item === "string") &&
+    value.zh.every((item) => typeof item === "string")
+  );
+}
+
+function isQuestionType(value: unknown): value is EventRegistrationQuestion["type"] {
+  return (
+    value === "text" ||
+    value === "single_choice" ||
+    value === "multiple_choice" ||
+    value === "yes_no" ||
+    value === "date" ||
+    value === "phone"
+  );
+}
+
+function isModuleType(value: unknown): value is EventDetailModule["type"] {
+  return (
+    value === "intro" ||
+    value === "highlights" ||
+    value === "itinerary" ||
+    value === "notes" ||
+    value === "fees" ||
+    value === "refund" ||
+    value === "contact" ||
+    value === "custom"
+  );
+}
+
+function isDisplayMode(value: unknown): value is EventDetailModule["displayMode"] {
+  return value === "rich_text" || value === "list";
+}
+
+function isRegistrationQuestion(value: unknown): value is EventRegistrationQuestion {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.key === "string" &&
+    isQuestionType(value.type) &&
+    typeof value.required === "boolean" &&
+    isBilingualText(value.label) &&
+    isBilingualText(value.helpText) &&
+    isBilingualList(value.options)
+  );
+}
+
+function isDetailModule(value: unknown): value is EventDetailModule {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    isModuleType(value.type) &&
+    isDisplayMode(value.displayMode) &&
+    isBilingualText(value.title) &&
+    isBilingualText(value.content) &&
+    isBilingualList(value.items)
+  );
+}
+
+function parseJsonArray<T>(value: string, isItem: (item: unknown) => item is T) {
   try {
     const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed) ? (parsed as T[]) : null;
+    return Array.isArray(parsed) && parsed.every(isItem) ? parsed : null;
   } catch {
     return null;
   }
@@ -42,8 +114,10 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
   const [activeLang, setActiveLang] = useState<ActiveLang>("zh");
   const [questionsJson, setQuestionsJson] = useState(prettyJson(event.registrationQuestions));
   const [modulesJson, setModulesJson] = useState(prettyJson(event.detailModules));
+  const [jsonErrors, setJsonErrors] = useState<JsonErrors>({});
   const state = formState ?? initialState;
   const { t } = useLanguage();
+  const hasJsonErrors = Boolean(jsonErrors.questions || jsonErrors.modules);
 
   function updateEventValue<Key extends keyof Event>(key: Key, value: Event[Key]) {
     setDraftEvent((current) => ({ ...current, [key]: value }));
@@ -61,14 +135,24 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
 
   function syncQuestionsJson(value: string) {
     setQuestionsJson(value);
-    const parsed = parseJsonArray<Event["registrationQuestions"][number]>(value);
-    if (parsed) updateEventValue("registrationQuestions", parsed);
+    const parsed = parseJsonArray(value, isRegistrationQuestion);
+    if (!parsed) {
+      setJsonErrors((current) => ({ ...current, questions: t(adminCopy.editor.invalidJson) }));
+      return;
+    }
+    setJsonErrors((current) => ({ ...current, questions: undefined }));
+    updateEventValue("registrationQuestions", parsed);
   }
 
   function syncModulesJson(value: string) {
     setModulesJson(value);
-    const parsed = parseJsonArray<Event["detailModules"][number]>(value);
-    if (parsed) updateEventValue("detailModules", parsed);
+    const parsed = parseJsonArray(value, isDetailModule);
+    if (!parsed) {
+      setJsonErrors((current) => ({ ...current, modules: t(adminCopy.editor.invalidJson) }));
+      return;
+    }
+    setJsonErrors((current) => ({ ...current, modules: undefined }));
+    updateEventValue("detailModules", parsed);
   }
 
   return (
@@ -141,7 +225,7 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
             <FieldError errors={state.fieldErrors?.meetTime} />
           </label>
           <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.locationZh)}
+            {t(adminCopy.editor.meetLocation)}
             <input
               value={draftEvent.meetLocation[activeLang]}
               onChange={(changeEvent) => updateBilingualValue("meetLocation", activeLang, changeEvent.currentTarget.value)}
@@ -149,7 +233,7 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
             />
           </label>
           <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.locationEn)}
+            {t(adminCopy.editor.activityLocation)}
             <input
               value={draftEvent.activityLocation[activeLang]}
               onChange={(changeEvent) => updateBilingualValue("activityLocation", activeLang, changeEvent.currentTarget.value)}
@@ -275,6 +359,7 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
           rows={10}
           className="w-full rounded border border-gray-200 px-3 py-2 font-mono text-xs"
         />
+        {jsonErrors.questions ? <p className="text-xs text-red-600">{jsonErrors.questions}</p> : null}
         <FieldError errors={state.fieldErrors?.registrationQuestions} />
       </section>
 
@@ -291,6 +376,7 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
           rows={12}
           className="w-full rounded border border-gray-200 px-3 py-2 font-mono text-xs"
         />
+        {jsonErrors.modules ? <p className="text-xs text-red-600">{jsonErrors.modules}</p> : null}
         <FieldError errors={state.fieldErrors?.detailModules} />
       </section>
 
@@ -329,7 +415,7 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
         </div>
       </section>
 
-      <button type="submit" className="btn-primary px-5 py-2">
+      <button type="submit" disabled={hasJsonErrors} className="btn-primary px-5 py-2 disabled:cursor-not-allowed disabled:opacity-50">
         {t(adminCopy.editor.save)}
       </button>
     </form>

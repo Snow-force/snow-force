@@ -11,6 +11,9 @@ describe("adminCopy", () => {
     expect(adminCopy.editor.participantQuestions.en).toBe("Participant questions");
     expect(adminCopy.editor.eventDetailModules.en).toBe("Event detail modules");
     expect(adminCopy.editor.previewAndPublish.en).toBe("Preview and publish");
+    expect(adminCopy.editor.meetLocation.en).toBe("Meet location");
+    expect(adminCopy.editor.activityLocation.en).toBe("Activity location");
+    expect(adminCopy.editor.invalidJson.en).toBe("Enter valid JSON array before saving.");
     expect(adminCopy.editor.addQuestion.en).toBe("Add question");
     expect(adminCopy.editor.addModule.en).toBe("Add module");
     expect(adminCopy.editor.copy.en).toBe("Copy");
