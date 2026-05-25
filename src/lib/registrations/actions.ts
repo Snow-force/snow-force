@@ -48,16 +48,17 @@ export async function registerForEvent(
     return { success: false, error: error ?? "Invalid registration answers" };
   }
 
-  const contactName = getStringAnswer(input.answers, "name");
-  const contactEmail = getStringAnswer(input.answers, "email");
-  const contactPhone = getStringAnswer(input.answers, "phone");
+  const answers = answerValidation.data;
+  const contactName = getStringAnswer(answers, "name");
+  const contactEmail = getStringAnswer(answers, "email");
+  const contactPhone = getStringAnswer(answers, "phone");
 
   // Persist registration first
   const member = await getCurrentMemberProfile();
   const result = await createRegistration({
     eventSlug,
     memberId: member?.id ?? null,
-    answers: input.answers,
+    answers,
     consentGiven: input.consentGiven,
     contactEmail,
     contactName,
