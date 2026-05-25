@@ -5,12 +5,27 @@ import { getEvent } from "@/lib/events/repository";
 import { createRegistration, getRegistrationCountForEvent } from "@/lib/registrations/repository";
 import { sendEmail, buildConfirmationEmail, buildStaffNotificationEmail } from "@/lib/email/adapter";
 import { getCurrentMemberProfile } from "@/lib/members/actions";
+import { validateRegistrationAnswers, type RegistrationAnswers } from "@/lib/registrations/validation";
 
 type RegisterInput = {
-  answers: Record<string, string>;
+  answers: RegistrationAnswers;
   consentGiven: boolean;
   lang: "en" | "zh";
 };
+
+function getStringAnswer(answers: RegistrationAnswers, key: string) {
+  const value = answers[key];
+  return typeof value === "string" ? value : "";
+}
+
+function serializeAnswersForStorage(answers: RegistrationAnswers): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(answers).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value.join(", ") : String(value),
+    ]),
+  );
+}
 
 export async function registerForEvent(
   eventSlug: string,
@@ -35,29 +50,23 @@ export async function registerForEvent(
     return { success: false, error: "Event is not open for registration" };
   }
 
-  // Validate required fields
-  for (const field of event.registrationFields) {
-    if (field.required) {
-      const value = input.answers[field.key];
-      if (!value || !value.trim()) {
-        return { success: false, error: `${field.key} is required` };
-      }
-      if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return { success: false, error: "Invalid email format" };
-      }
-    }
+  const answerValidation = validateRegistrationAnswers(event.registrationQuestions, input.answers);
+  if (!answerValidation.success) {
+    const [error] = Object.values(answerValidation.errors);
+    return { success: false, error: error ?? "Invalid registration answers" };
   }
 
-  const contactName = input.answers["name"] || "";
-  const contactEmail = input.answers["email"] || "";
-  const contactPhone = input.answers["phone"] || "";
+  const contactName = getStringAnswer(input.answers, "name");
+  const contactEmail = getStringAnswer(input.answers, "email");
+  const contactPhone = getStringAnswer(input.answers, "phone");
+  const answers = serializeAnswersForStorage(input.answers);
 
   // Persist registration first
   const member = await getCurrentMemberProfile();
   const result = await createRegistration({
     eventSlug,
     memberId: member?.id ?? null,
-    answers: input.answers,
+    answers,
     consentGiven: input.consentGiven,
     contactEmail,
     contactName,
@@ -65,8 +74,9 @@ export async function registerForEvent(
   });
 
   // Fire-and-forget notifications — failure must not affect the registration
-  const eventTitle = input.lang === "zh" ? event.title.zh : event.title.en;
-  const eventDate = new Date(event.eventStartAt).toLocaleDateString(
+  const eventTitle =
+    input.lang === "zh" ? event.title.zh || event.title.en : event.title.en || event.title.zh;
+  const eventDate = new Date(event.eventDate).toLocaleDateString(
     input.lang === "zh" ? "zh-CN" : "en-US",
   );
 

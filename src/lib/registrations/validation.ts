@@ -1,43 +1,43 @@
-import { z } from "zod";
-import type { RegistrationFieldConfig } from "@/lib/types";
+import type { EventRegistrationQuestion } from "@/lib/types";
 
-export function buildRegistrationSchema(fields: RegistrationFieldConfig[]) {
-  const shape: Record<string, z.ZodTypeAny> = {};
+export type RegistrationAnswerValue = string | boolean | string[];
+export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
 
-  for (const field of fields) {
-    let schema: z.ZodTypeAny;
+export function validateRegistrationAnswers(
+  questions: EventRegistrationQuestion[],
+  answers: RegistrationAnswers,
+) {
+  const errors: Record<string, string> = {};
 
-    switch (field.type) {
-      case "email":
-        schema = z.string().email("Invalid email");
-        break;
-      case "tel":
-        schema = z.string().min(5, "Phone number too short");
-        break;
-      case "textarea":
-        schema = z.string();
-        break;
-      case "select":
-        schema = z.string();
-        break;
-      default:
-        schema = z.string();
+  for (const question of questions) {
+    const value = answers[question.key];
+    const missing =
+      value === undefined ||
+      (typeof value === "string" && value.trim() === "") ||
+      (Array.isArray(value) && value.length === 0);
+
+    if (question.required && missing) {
+      errors[question.key] = `${question.key} is required`;
+      continue;
     }
 
-    if (field.required) {
-      schema = (schema as z.ZodString).min(1, `${field.key} is required`);
-    } else {
-      schema = schema.optional().or(z.literal(""));
-    }
+    if (missing) continue;
 
-    shape[field.key] = schema;
+    const options = question.options.zh;
+    if (question.type === "single_choice" && typeof value === "string" && !options.includes(value)) {
+      errors[question.key] = `${question.key} is invalid`;
+    }
+    if (question.type === "multiple_choice") {
+      if (!Array.isArray(value) || value.some((item) => !options.includes(item))) {
+        errors[question.key] = `${question.key} is invalid`;
+      }
+    }
+    if (question.type === "phone" && typeof value === "string" && value.trim().length < 5) {
+      errors[question.key] = `${question.key} is invalid`;
+    }
   }
 
-  shape.consent = z.literal(true, {
-    errorMap: () => ({ message: "You must agree to the terms" }),
-  });
-
-  return z.object(shape);
+  return Object.keys(errors).length
+    ? { success: false as const, errors }
+    : { success: true as const, data: answers };
 }
-
-export type RegistrationFormData = z.infer<ReturnType<typeof buildRegistrationSchema>>;
