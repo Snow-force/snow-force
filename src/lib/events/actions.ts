@@ -66,6 +66,19 @@ export async function saveEventAction(
     };
   }
 
+  if (parsed.data.status === "published") {
+    const missingFields = validatePublishableEvent(parsed.data);
+    if (missingFields.length) {
+      return {
+        success: false,
+        message: "Complete required event fields before publishing.",
+        fieldErrors: Object.fromEntries(
+          missingFields.map((field) => [field, ["Required before publishing."]]),
+        ),
+      };
+    }
+  }
+
   let saved: Event | undefined;
   try {
     saved = originalSlug

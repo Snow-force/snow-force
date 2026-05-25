@@ -103,6 +103,46 @@ describe("event admin action helpers", () => {
     expect(actionMocks.createEvent).toHaveBeenCalledWith(modularEvent);
   });
 
+  it("rejects published event payloads missing required public content", async () => {
+    const formData = new FormData();
+    formData.set(
+      "eventPayload",
+      JSON.stringify({
+        ...modularEvent,
+        status: "published",
+        detailModules: [],
+      }),
+    );
+
+    const result = await saveEventAction({ success: false }, formData);
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "Complete required event fields before publishing.",
+      fieldErrors: {
+        detailModules: ["Required before publishing."],
+      },
+    });
+    expect(actionMocks.createEvent).not.toHaveBeenCalled();
+    expect(actionMocks.updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("prevents changing an existing event slug", async () => {
+    const formData = new FormData();
+    formData.set("originalSlug", "original-event");
+    formData.set("eventPayload", JSON.stringify(modularEvent));
+
+    const result = await saveEventAction({ success: false }, formData);
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "Existing event slugs cannot be changed.",
+      fieldErrors: { slug: ["Create a new event if the URL slug needs to change."] },
+    });
+    expect(actionMocks.createEvent).not.toHaveBeenCalled();
+    expect(actionMocks.updateEvent).not.toHaveBeenCalled();
+  });
+
   it("blocks publishing modular events without required public content", async () => {
     const event = {
       ...modularEvent,
