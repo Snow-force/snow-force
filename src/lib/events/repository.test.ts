@@ -1,66 +1,143 @@
 import { describe, expect, it } from "vitest";
 
-import type { EventRow, EventWriteRow } from "./mappers";
+import type { EventDetailModule, EventRegistrationQuestion } from "@/lib/types";
+import {
+  rowsToEvent,
+  type EventAggregateWriteRows,
+  type EventCoreRow,
+  type EventDetailModuleRow,
+  type EventDetailModuleWriteRow,
+  type EventRegistrationQuestionRow,
+  type EventRegistrationQuestionWriteRow,
+} from "./mappers";
 import { createEventRepository, type EventSource, type RegistrationCountSource } from "./repository";
 
-function eventRow(slug: string, status: EventRow["status"]): EventRow {
+function eventCoreRow(slug: string, status: EventCoreRow["status"]): EventCoreRow {
   return {
     slug,
     status,
     registration_state: "closed",
     title_en: slug,
     title_zh: `${slug}-zh`,
-    subtitle_en: null,
-    subtitle_zh: null,
-    description_en: null,
-    description_zh: null,
-    highlights_en: [],
-    highlights_zh: [],
-    audience_level_en: null,
-    audience_level_zh: null,
-    schedule_en: null,
-    schedule_zh: null,
-    location_en: null,
-    location_zh: null,
-    location_url: null,
-    fee_info_en: null,
-    fee_info_zh: null,
-    notices_en: [],
-    notices_zh: [],
-    cover_image: null,
-    media: [],
+    event_date: null,
+    meet_time: null,
+    meet_location_en: "",
+    meet_location_zh: "",
+    activity_location_en: "",
+    activity_location_zh: "",
+    location_url: "",
+    cover_image: "",
     capacity: 12,
-    registration_open_at: null,
     registration_close_at: null,
-    event_start_at: null,
-    event_end_at: null,
-    registration_fields: [],
-    tags_en: [],
-    tags_zh: [],
-    seo_title_en: null,
-    seo_title_zh: null,
-    seo_description_en: null,
-    seo_description_zh: null,
+    requires_approval: false,
+    allow_waitlist: false,
+    allow_cancellation: false,
+    fee_amount: "",
+    payment_instructions_en: "",
+    payment_instructions_zh: "",
+    seo_title_en: "",
+    seo_title_zh: "",
+    seo_description_en: "",
+    seo_description_zh: "",
   };
 }
 
-function eventSource(rows: EventRow[]): EventSource {
+function questionRow(eventSlug: string): EventRegistrationQuestionRow {
   return {
-    listPublic: async () => rows,
-    listAdmin: async () => rows,
-    getPublic: async (slug) => rows.find((row) => row.slug === slug),
-    getAdmin: async (slug) => rows.find((row) => row.slug === slug),
-    upsertAdmin: async (row: EventWriteRow) => ({
-      ...eventRow(row.slug, row.status),
-      ...row,
-    }),
+    id: `question-${eventSlug}`,
+    event_slug: eventSlug,
+    question_key: "level",
+    type: "single_choice",
+    required: true,
+    sort_order: 0,
+    label_en: "Level",
+    label_zh: "Level zh",
+    help_en: "",
+    help_zh: "",
+    options_en: ["beginner"],
+    options_zh: ["beginner zh"],
+  };
+}
+
+function moduleRow(eventSlug: string): EventDetailModuleRow {
+  return {
+    id: `module-${eventSlug}`,
+    event_slug: eventSlug,
+    module_type: "intro",
+    display_mode: "rich_text",
+    sort_order: 0,
+    title_en: "Intro",
+    title_zh: "Intro zh",
+    content_en: "Welcome",
+    content_zh: "Welcome zh",
+    items_en: [],
+    items_zh: [],
+  };
+}
+
+function eventQuestion(key: string): EventRegistrationQuestion {
+  return {
+    id: `question-${key}`,
+    key,
+    type: "single_choice",
+    required: true,
+    label: { en: key, zh: `${key}-zh` },
+    helpText: { en: "", zh: "" },
+    options: { en: ["beginner"], zh: ["beginner-zh"] },
+  };
+}
+
+function eventModule(type: EventDetailModule["type"]): EventDetailModule {
+  return {
+    id: `module-${type}`,
+    type,
+    displayMode: "rich_text",
+    title: { en: type, zh: `${type}-zh` },
+    content: { en: "content", zh: "content-zh" },
+    items: { en: [], zh: [] },
+  };
+}
+
+function eventSource({
+  events,
+  questions,
+  modules,
+}: {
+  events: EventCoreRow[];
+  questions: EventRegistrationQuestionRow[];
+  modules: EventDetailModuleRow[];
+}): EventSource & {
+  savedQuestions: EventRegistrationQuestionWriteRow[];
+  savedModules: EventDetailModuleWriteRow[];
+} {
+  const savedQuestions: EventRegistrationQuestionWriteRow[] = [];
+  const savedModules: EventDetailModuleWriteRow[] = [];
+
+  return {
+    savedQuestions,
+    savedModules,
+    listPublicEvents: async () => events,
+    listAdminEvents: async () => events,
+    getPublicEvent: async (slug) => events.find((row) => row.slug === slug),
+    getAdminEvent: async (slug) => events.find((row) => row.slug === slug),
+    listQuestions: async (slugs) => questions.filter((row) => slugs.includes(row.event_slug)),
+    listModules: async (slugs) => modules.filter((row) => slugs.includes(row.event_slug)),
+    saveAggregate: async (rows: EventAggregateWriteRows) => {
+      savedQuestions.splice(0, savedQuestions.length, ...rows.questions);
+      savedModules.splice(0, savedModules.length, ...rows.modules);
+      return rows.core;
+    },
   };
 }
 
 describe("event repository", () => {
   it("keeps drafts out of public event reads", async () => {
     const repository = createEventRepository(
-      eventSource([eventRow("published", "published"), eventRow("draft", "draft")]),
+      eventSource({
+        events: [eventCoreRow("published", "published"), eventCoreRow("draft", "draft")],
+        questions: [],
+        modules: [],
+      }),
     );
 
     expect((await repository.getEvents()).map((event) => event.slug)).toEqual(["published"]);
@@ -77,7 +154,11 @@ describe("event repository", () => {
         new Map(slugs.map((slug) => [slug, slug === "published" ? 2 : 0])),
     };
     const repository = createEventRepository(
-      eventSource([eventRow("published", "published"), eventRow("draft", "draft")]),
+      eventSource({
+        events: [eventCoreRow("published", "published"), eventCoreRow("draft", "draft")],
+        questions: [],
+        modules: [],
+      }),
       countSource,
     );
 
@@ -85,5 +166,38 @@ describe("event repository", () => {
     expect((await repository.getAllEvents()).map((event) => event.registrationCount)).toEqual([2, 0]);
     expect((await repository.getEvent("published"))?.registrationCount).toBe(2);
     expect((await repository.getEventAdmin("draft"))?.registrationCount).toBe(0);
+  });
+
+  it("loads questions and modules into public event aggregates", async () => {
+    const repository = createEventRepository(
+      eventSource({
+        events: [eventCoreRow("published", "published")],
+        questions: [questionRow("published")],
+        modules: [moduleRow("published")],
+      }),
+    );
+
+    const event = await repository.getEvent("published");
+
+    expect(event?.registrationQuestions).toHaveLength(1);
+    expect(event?.detailModules).toHaveLength(1);
+  });
+
+  it("replaces questions and modules when saving an event aggregate", async () => {
+    const source = eventSource({
+      events: [eventCoreRow("draft", "draft")],
+      questions: [],
+      modules: [],
+    });
+    const repository = createEventRepository(source);
+
+    await repository.createEvent({
+      ...rowsToEvent(eventCoreRow("draft", "draft"), [], []),
+      registrationQuestions: [eventQuestion("level")],
+      detailModules: [eventModule("intro")],
+    });
+
+    expect(source.savedQuestions.map((row) => row.question_key)).toEqual(["level"]);
+    expect(source.savedModules.map((row) => row.module_type)).toEqual(["intro"]);
   });
 });
