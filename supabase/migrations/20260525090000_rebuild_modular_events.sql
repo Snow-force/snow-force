@@ -112,13 +112,13 @@ create policy "Members can read own registrations" on registrations
   for select using (member_id in (select id from member_profiles where user_id = auth.uid()));
 
 create policy "Staff can manage events" on events
-  for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
+  for all using (public.is_staff());
 create policy "Staff can manage event questions" on event_registration_questions
-  for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
+  for all using (public.is_staff());
 create policy "Staff can manage event modules" on event_detail_modules
-  for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
+  for all using (public.is_staff());
 create policy "Staff can manage registrations" on registrations
-  for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
+  for all using (public.is_staff());
 
 create trigger set_updated_at before update on events for each row execute function update_updated_at();
 create trigger set_updated_at before update on event_registration_questions for each row execute function update_updated_at();

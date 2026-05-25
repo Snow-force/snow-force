@@ -16,6 +16,8 @@ as $$
 $$;
 
 drop policy if exists "Staff can manage events" on events;
+drop policy if exists "Staff can manage event questions" on event_registration_questions;
+drop policy if exists "Staff can manage event modules" on event_detail_modules;
 drop policy if exists "Staff can manage registrations" on registrations;
 drop policy if exists "Staff can manage recaps" on event_recaps;
 drop policy if exists "Staff can manage faqs" on faq_items;
@@ -24,6 +26,8 @@ drop policy if exists "Staff can manage media" on media_assets;
 drop policy if exists "Staff can view roles" on staff_roles;
 
 create policy "Staff can manage events" on events for all using (public.is_staff());
+create policy "Staff can manage event questions" on event_registration_questions for all using (public.is_staff());
+create policy "Staff can manage event modules" on event_detail_modules for all using (public.is_staff());
 create policy "Staff can manage registrations" on registrations for all using (public.is_staff());
 create policy "Staff can manage recaps" on event_recaps for all using (public.is_staff());
 create policy "Staff can manage faqs" on faq_items for all using (public.is_staff());
