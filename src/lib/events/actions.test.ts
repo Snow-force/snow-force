@@ -149,6 +149,84 @@ describe("event admin action helpers", () => {
     expect(getPublicUrl).toHaveBeenCalledWith(uploadedPath);
   });
 
+  it("persists uploaded cover URLs for existing events", async () => {
+    const upload = vi.fn().mockResolvedValue({ data: { path: "events/pow-day/123-cover.webp" }, error: null });
+    const getPublicUrl = vi.fn((path: string) => ({ data: { publicUrl: `https://cdn.example.com/event-covers/${path}` } }));
+    const from = vi.fn().mockReturnValue({ upload, getPublicUrl });
+    actionMocks.createAdminClient.mockReturnValue({ storage: { from } });
+    actionMocks.updateEvent.mockResolvedValue(modularEvent);
+
+    const formData = new FormData();
+    formData.set("originalSlug", "pow-day");
+    formData.set("slug", "Pow Day 2026!");
+    formData.set("coverImage", new File(["image bytes"], "My Cover.webp", { type: "image/webp" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result.success).toBe(true);
+    if (!result.success || !result.url) return;
+    expect(actionMocks.updateEvent).toHaveBeenCalledWith("pow-day", { coverImage: result.url });
+  });
+
+  it("deletes the previous event cover object when replacing an existing cover", async () => {
+    const upload = vi.fn().mockResolvedValue({ data: { path: "events/pow-day/123-cover.webp" }, error: null });
+    const getPublicUrl = vi.fn((path: string) => ({ data: { publicUrl: `https://cdn.example.com/event-covers/${path}` } }));
+    const list = vi.fn().mockResolvedValue({ data: [{ name: "old-cover.webp" }], error: null });
+    const remove = vi.fn().mockResolvedValue({ data: [], error: null });
+    const from = vi.fn().mockReturnValue({ upload, getPublicUrl, list, remove });
+    actionMocks.createAdminClient.mockReturnValue({ storage: { from } });
+    actionMocks.getEventAdmin.mockResolvedValue({
+      ...modularEvent,
+      coverImage: "https://project.supabase.co/storage/v1/object/public/event-covers/events/pow-day/old-cover.webp",
+    });
+    actionMocks.updateEvent.mockResolvedValue(modularEvent);
+
+    const formData = new FormData();
+    formData.set("originalSlug", "pow-day");
+    formData.set("slug", "pow-day");
+    formData.set("coverImage", new File(["image bytes"], "cover.webp", { type: "image/webp" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result.success).toBe(true);
+    expect(actionMocks.getEventAdmin).toHaveBeenCalledWith("pow-day");
+    expect(remove).toHaveBeenCalledWith(["events/pow-day/old-cover.webp"]);
+  });
+
+  it("removes older cover objects under the event folder when replacing an existing cover", async () => {
+    const upload = vi.fn().mockResolvedValue({ data: { path: "events/pow-day/123-cover.webp" }, error: null });
+    const getPublicUrl = vi.fn((path: string) => ({ data: { publicUrl: `https://cdn.example.com/event-covers/${path}` } }));
+    const list = vi.fn().mockResolvedValue({
+      data: [
+        { name: "old-cover.webp" },
+        { name: "orphan-cover.webp" },
+      ],
+      error: null,
+    });
+    const remove = vi.fn().mockResolvedValue({ data: [], error: null });
+    const from = vi.fn().mockReturnValue({ upload, getPublicUrl, list, remove });
+    actionMocks.createAdminClient.mockReturnValue({ storage: { from } });
+    actionMocks.getEventAdmin.mockResolvedValue({
+      ...modularEvent,
+      coverImage: "https://project.supabase.co/storage/v1/object/public/event-covers/events/pow-day/old-cover.webp",
+    });
+    actionMocks.updateEvent.mockResolvedValue(modularEvent);
+
+    const formData = new FormData();
+    formData.set("originalSlug", "pow-day");
+    formData.set("slug", "pow-day");
+    formData.set("coverImage", new File(["image bytes"], "cover.webp", { type: "image/webp" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result.success).toBe(true);
+    expect(list).toHaveBeenCalledWith("events/pow-day", { limit: 1000 });
+    expect(remove).toHaveBeenCalledWith([
+      "events/pow-day/old-cover.webp",
+      "events/pow-day/orphan-cover.webp",
+    ]);
+  });
+
   it("returns storage upload errors", async () => {
     const upload = vi.fn().mockResolvedValue({ data: null, error: new Error("bucket missing") });
     const getPublicUrl = vi.fn();

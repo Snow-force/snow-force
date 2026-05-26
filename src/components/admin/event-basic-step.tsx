@@ -65,6 +65,7 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
 
     const formData = new FormData();
     formData.set("slug", event.slug);
+    if (!isNew) formData.set("originalSlug", event.slug);
     formData.set("coverImage", file);
 
     startCoverUpload(async () => {

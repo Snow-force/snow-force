@@ -42,6 +42,30 @@ function safeEventCoverPath(slug: string, fileName: string) {
   return `events/${eventSegment}/${Date.now()}-${fileSegment}`;
 }
 
+function eventCoverFolder(slug: string) {
+  return `events/${safePathSegment(slug, "draft")}`;
+}
+
+function eventCoverObjectPath(folder: string, name: string) {
+  return `${folder}/${name}`;
+}
+
+function eventCoverObjectPathFromUrl(value: string, eventSlug: string) {
+  if (!value) return undefined;
+
+  try {
+    const url = new URL(value);
+    const prefix = `/storage/v1/object/public/${EVENT_COVER_BUCKET}/`;
+    if (!url.pathname.startsWith(prefix)) return undefined;
+
+    const path = decodeURIComponent(url.pathname.slice(prefix.length));
+    const eventPrefix = `${eventCoverFolder(eventSlug)}/`;
+    return path.startsWith(eventPrefix) ? path : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function isUploadFile(value: FormDataEntryValue | null): value is File {
   return typeof File !== "undefined" && value instanceof File;
 }
@@ -100,6 +124,41 @@ export async function uploadEventCoverAction(
   }
 
   const { data } = bucket.getPublicUrl(path);
+  const originalSlug = formText(formData, "originalSlug");
+
+  if (originalSlug) {
+    try {
+      const currentEvent = await getEventAdmin(originalSlug);
+      const previousCoverPath = currentEvent?.coverImage
+        ? eventCoverObjectPathFromUrl(currentEvent.coverImage, originalSlug)
+        : undefined;
+      const saved = await updateEvent(originalSlug, { coverImage: data.publicUrl });
+      if (!saved) return { success: false, message: "Event cover image could not be saved." };
+      if (currentEvent) {
+        const folder = eventCoverFolder(originalSlug);
+        const { data: existingCovers, error: listError } = await bucket.list(folder, { limit: 1000 });
+        if (listError) return { success: false, message: listError.message };
+
+        const staleCoverPaths = (existingCovers ?? [])
+          .map((cover) => eventCoverObjectPath(folder, cover.name))
+          .filter((coverPath) => coverPath !== path);
+        if (previousCoverPath && previousCoverPath !== path && !staleCoverPaths.includes(previousCoverPath)) {
+          staleCoverPaths.push(previousCoverPath);
+        }
+        if (staleCoverPaths.length > 0) {
+          const { error: removeError } = await bucket.remove(staleCoverPaths);
+          if (removeError) return { success: false, message: removeError.message };
+        }
+      }
+      refreshEventPaths(originalSlug);
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Event cover image could not be saved.",
+      };
+    }
+  }
+
   return { success: true, url: data.publicUrl };
 }
 

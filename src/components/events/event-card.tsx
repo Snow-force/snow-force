@@ -31,7 +31,7 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
         featured ? "border-white/15" : "border-[#e0e0e0]"
       }`}
     >
-      <ActivityVisual title={t(event.title)} stateLabel={state.label} stateTone={state.tone} />
+      <ActivityVisual title={t(event.title)} stateLabel={state.label} stateTone={state.tone} coverImage={event.coverImage} />
 
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
@@ -91,27 +91,38 @@ function ActivityVisual({
   title,
   stateLabel,
   stateTone,
+  coverImage,
 }: {
   title: string;
   stateLabel: string;
   stateTone: "open" | "full" | "closed";
+  coverImage: string;
 }) {
   const accent = stateTone === "open" ? "bg-[#0066cc]" : stateTone === "full" ? "bg-amber-500" : "bg-[#7a7a7a]";
 
   return (
     <div className="relative h-44 overflow-hidden bg-[#eef5fb]">
-      <div className="absolute inset-0 bg-[linear-gradient(145deg,#f8fbff_0%,#d9ecfb_50%,#b9d8ef_100%)]" />
-      <div className="absolute -left-10 top-20 h-40 w-[120%] -rotate-6 rounded-[50%] bg-white/90" />
-      <div className="absolute -right-10 top-28 h-32 w-[90%] -rotate-6 rounded-[50%] bg-[#dfeaf2]" />
-      <div className="absolute left-[12%] top-[24%] h-16 w-16 rotate-45 rounded-[18px] bg-[#1d1d1f]" />
-      <div className="absolute left-[22%] top-[32%] h-12 w-12 rotate-45 rounded-[14px] bg-white" />
-      <div className="absolute right-[13%] top-[24%] h-20 w-20 rotate-45 rounded-[20px] bg-white/85" />
+      {coverImage ? (
+        <>
+          <img src={coverImage} alt={title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[linear-gradient(145deg,#f8fbff_0%,#d9ecfb_50%,#b9d8ef_100%)]" />
+          <div className="absolute -left-10 top-20 h-40 w-[120%] -rotate-6 rounded-[50%] bg-white/90" />
+          <div className="absolute -right-10 top-28 h-32 w-[90%] -rotate-6 rounded-[50%] bg-[#dfeaf2]" />
+          <div className="absolute left-[12%] top-[24%] h-16 w-16 rotate-45 rounded-[18px] bg-[#1d1d1f]" />
+          <div className="absolute left-[22%] top-[32%] h-12 w-12 rotate-45 rounded-[14px] bg-white" />
+          <div className="absolute right-[13%] top-[24%] h-20 w-20 rotate-45 rounded-[20px] bg-white/85" />
+        </>
+      )}
       <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.12em] text-[#0066cc]">
+          <p className={`text-[12px] font-semibold uppercase leading-none tracking-[0.12em] ${coverImage ? "text-white/75" : "text-[#0066cc]"}`}>
             SnowForce
           </p>
-          <p className="mt-2 line-clamp-1 text-[21px] font-semibold leading-none tracking-[0.231px] text-[#1d1d1f]">
+          <p className={`mt-2 line-clamp-1 text-[21px] font-semibold leading-none tracking-[0.231px] ${coverImage ? "text-white" : "text-[#1d1d1f]"}`}>
             {title}
           </p>
         </div>

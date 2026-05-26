@@ -84,6 +84,12 @@ export function EventDetailView({
             <span className="text-white/80">{eventTitle}</span>
           </nav>
 
+          {event.coverImage ? (
+            <div className="mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-2xl shadow-black/25">
+              <img src={event.coverImage} alt={eventTitle} className="aspect-[16/7] w-full object-cover" />
+            </div>
+          ) : null}
+
           <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div>
               <div className="flex flex-wrap items-center gap-2">
