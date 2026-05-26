@@ -61,6 +61,24 @@ function FieldError({ errors }: { errors?: string[] }) {
   return errors?.length ? <p className="mt-1 text-xs text-red-600">{errors[0]}</p> : null;
 }
 
+function friendlyFieldName(field: string) {
+  const map: Record<string, string> = {
+    slug: "链接标识 Slug",
+    title: "活动标题",
+    "title.zh": "活动标题（中文）",
+    eventDate: "活动日期",
+    meetTime: "集合时间",
+    meetLocation: "集合地点",
+    activityLocation: "活动地点",
+    "activityLocation.zh": "活动地点（中文）",
+    registrationCloseAt: "报名截止时间",
+    capacity: "最大人数",
+    registrationQuestions: "参与者问题",
+    detailModules: "活动详情模块",
+  };
+  return map[field] ?? field;
+}
+
 function FieldErrorSummary({ fieldErrors }: { fieldErrors?: Record<string, string[] | undefined> }) {
   if (!fieldErrors) return null;
   const entries = Object.entries(fieldErrors).filter(([, errors]) => errors?.length);
@@ -68,13 +86,13 @@ function FieldErrorSummary({ fieldErrors }: { fieldErrors?: Record<string, strin
 
   return (
     <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-      <p className="font-medium">Review these fields before saving:</p>
-      <ul className="mt-2 list-disc space-y-1 pl-5">
-        {entries.map(([field, errors]) => (
-          <li key={field}>{field}: {errors?.[0]}</li>
+        <p className="font-medium">Review these fields before saving:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {entries.map(([field, errors]) => (
+          <li key={field}>{friendlyFieldName(field)}: {errors?.[0]}</li>
         ))}
-      </ul>
-    </div>
+        </ul>
+      </div>
   );
 }
 
@@ -84,7 +102,8 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
   const [activeLang, setActiveLang] = useState<ActiveLang>("zh");
   const [activeStep, setActiveStep] = useState<StepId>("basic");
   const state = formState ?? initialState;
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const isZh = lang === "zh";
 
   function updateBilingualValue(key: BilingualEventKey, lang: ActiveLang, value: string) {
     setDraftEvent((current) => ({
@@ -97,10 +116,16 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
   }
 
   const summaries: Record<StepId, string> = {
-    basic: draftEvent.title[activeLang] || draftEvent.slug || "Untitled",
-    registration: `${draftEvent.registrationState}, ${draftEvent.capacity === 0 ? "unlimited" : draftEvent.capacity} spots`,
-    questions: `${draftEvent.registrationQuestions.length} question${draftEvent.registrationQuestions.length === 1 ? "" : "s"}`,
-    modules: `${draftEvent.detailModules.length} module${draftEvent.detailModules.length === 1 ? "" : "s"}`,
+    basic: draftEvent.title[activeLang] || draftEvent.slug || (isZh ? "未命名" : "Untitled"),
+    registration: isZh
+      ? `${draftEvent.registrationState}，${draftEvent.capacity === 0 ? "不限名额" : `${draftEvent.capacity} 人`}`
+      : `${draftEvent.registrationState}, ${draftEvent.capacity === 0 ? "unlimited" : draftEvent.capacity} spots`,
+    questions: isZh
+      ? `${draftEvent.registrationQuestions.length} 个问题`
+      : `${draftEvent.registrationQuestions.length} question${draftEvent.registrationQuestions.length === 1 ? "" : "s"}`,
+    modules: isZh
+      ? `${draftEvent.detailModules.length} 个模块`
+      : `${draftEvent.detailModules.length} module${draftEvent.detailModules.length === 1 ? "" : "s"}`,
     preview: draftEvent.status,
   };
 

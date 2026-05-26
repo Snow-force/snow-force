@@ -18,6 +18,18 @@ function localDateTime(value: string) {
 
 export function EventRegistrationSettingsStep({ event, activeLang, onChange }: EventRegistrationSettingsStepProps) {
   const { t } = useLanguage();
+  const registrationCloseHint =
+    activeLang === "zh"
+      ? "格式: YYYY-MM-DD HH:mm，例如 2026-12-10 18:00"
+      : "Format: YYYY-MM-DD HH:mm, e.g. 2026-12-10 18:00";
+  const feeHint =
+    activeLang === "zh"
+      ? "示例: 免费 / 120 USD / ¥399"
+      : "Example: Free / 120 USD / ¥399";
+  const paymentHint =
+    activeLang === "zh"
+      ? "示例: 报名后在微信群发送支付方式与截止时间"
+      : "Example: Payment instructions sent in group chat after signup";
 
   function updateEventValue<Key extends keyof Event>(key: Key, value: Event[Key]) {
     onChange({ ...event, [key]: value });
@@ -55,6 +67,7 @@ export function EventRegistrationSettingsStep({ event, activeLang, onChange }: E
             onChange={(changeEvent) => updateEventValue("registrationCloseAt", changeEvent.currentTarget.value)}
             className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
           />
+          <p className="mt-1 text-xs text-gray-500">{registrationCloseHint}</p>
         </label>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
@@ -92,17 +105,21 @@ export function EventRegistrationSettingsStep({ event, activeLang, onChange }: E
           <input
             value={event.feeAmount}
             onChange={(changeEvent) => updateEventValue("feeAmount", changeEvent.currentTarget.value)}
+            placeholder={feeHint}
             className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
           />
+          <p className="mt-1 text-xs text-gray-500">{feeHint}</p>
         </label>
         <label className="block text-sm text-gray-600">
           Payment instructions
           <textarea
             value={event.paymentInstructions[activeLang]}
             onChange={(changeEvent) => updatePaymentInstructions(changeEvent.currentTarget.value)}
+            placeholder={paymentHint}
             rows={3}
             className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
           />
+          <p className="mt-1 text-xs text-gray-500">{paymentHint}</p>
         </label>
       </div>
     </section>
