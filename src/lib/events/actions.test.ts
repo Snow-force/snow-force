@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Event } from "@/lib/types";
 
 const actionMocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(),
   createEvent: vi.fn(),
   getEventAdmin: vi.fn(),
   redirect: vi.fn((url: string) => {
@@ -25,13 +26,17 @@ vi.mock("../auth/admin", () => ({
   requireAdmin: actionMocks.requireAdmin,
 }));
 
+vi.mock("../supabase/server", () => ({
+  createAdminClient: actionMocks.createAdminClient,
+}));
+
 vi.mock("./repository", () => ({
   createEvent: actionMocks.createEvent,
   getEventAdmin: actionMocks.getEventAdmin,
   updateEvent: actionMocks.updateEvent,
 }));
 
-import { archiveEventResult, publishEventResult, saveEventAction } from "./actions";
+import { archiveEventResult, publishEventResult, saveEventAction, uploadEventCoverAction } from "./actions";
 
 const modularEvent: Event = {
   slug: "modular-event",
@@ -82,12 +87,84 @@ const modularEvent: Event = {
 
 describe("event admin action helpers", () => {
   beforeEach(() => {
+    actionMocks.createAdminClient.mockReset();
     actionMocks.createEvent.mockReset();
     actionMocks.getEventAdmin.mockReset();
     actionMocks.redirect.mockClear();
     actionMocks.requireAdmin.mockReset();
     actionMocks.revalidatePath.mockClear();
     actionMocks.updateEvent.mockReset();
+  });
+
+  it("rejects non-image cover uploads", async () => {
+    const formData = new FormData();
+    formData.set("coverImage", new File(["not an image"], "cover.txt", { type: "text/plain" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "Upload a JPG, PNG, WebP, or GIF image.",
+    });
+    expect(actionMocks.requireAdmin).toHaveBeenCalled();
+    expect(actionMocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects cover uploads over 6MB", async () => {
+    const formData = new FormData();
+    formData.set("coverImage", new File([new Uint8Array(6 * 1024 * 1024 + 1)], "cover.jpg", { type: "image/jpeg" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "Cover image must be 6MB or smaller.",
+    });
+    expect(actionMocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("uploads valid cover images to Supabase Storage and returns a public URL", async () => {
+    const upload = vi.fn().mockResolvedValue({ data: { path: "events/pow-day/123-cover.webp" }, error: null });
+    const getPublicUrl = vi.fn((path: string) => ({ data: { publicUrl: `https://cdn.example.com/event-covers/${path}` } }));
+    const from = vi.fn().mockReturnValue({ upload, getPublicUrl });
+    actionMocks.createAdminClient.mockReturnValue({ storage: { from } });
+
+    const formData = new FormData();
+    formData.set("slug", "Pow Day 2026!");
+    formData.set("coverImage", new File(["image bytes"], "My Cover.webp", { type: "image/webp" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.url).toMatch(/^https:\/\/cdn\.example\.com\/event-covers\/events\/pow-day-2026\/\d+-my-cover\.webp$/);
+    expect(actionMocks.requireAdmin).toHaveBeenCalled();
+    expect(from).toHaveBeenCalledWith("event-covers");
+    expect(upload).toHaveBeenCalledWith(
+      expect.stringMatching(/^events\/pow-day-2026\/\d+-my-cover\.webp$/),
+      expect.any(File),
+      { cacheControl: "3600", contentType: "image/webp", upsert: false },
+    );
+    const uploadedPath = upload.mock.calls[0]?.[0];
+    expect(getPublicUrl).toHaveBeenCalledWith(uploadedPath);
+  });
+
+  it("returns storage upload errors", async () => {
+    const upload = vi.fn().mockResolvedValue({ data: null, error: new Error("bucket missing") });
+    const getPublicUrl = vi.fn();
+    const from = vi.fn().mockReturnValue({ upload, getPublicUrl });
+    actionMocks.createAdminClient.mockReturnValue({ storage: { from } });
+
+    const formData = new FormData();
+    formData.set("coverImage", new File(["image bytes"], "cover.png", { type: "image/png" }));
+
+    const result = await uploadEventCoverAction({ success: false }, formData);
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "bucket missing",
+    });
+    expect(getPublicUrl).not.toHaveBeenCalled();
   });
 
   it("saves events from modular JSON payloads", async () => {
