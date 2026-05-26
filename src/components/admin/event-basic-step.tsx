@@ -1,5 +1,8 @@
 "use client";
 
+import { useRef, useState, useTransition } from "react";
+
+import { uploadEventCoverAction } from "@/lib/events/actions";
 import type { Event, EventStatus, RegistrationState } from "@/lib/types";
 import { useLanguage } from "@/lib/language";
 import { adminCopy } from "./admin-copy";
@@ -23,6 +26,9 @@ function isRegistrationState(value: string): value is RegistrationState {
 
 export function EventBasicStep({ event, activeLang, onChange, isNew = true }: EventBasicStepProps) {
   const { t } = useLanguage();
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [coverUploadMessage, setCoverUploadMessage] = useState<string>("");
+  const [isUploadingCover, startCoverUpload] = useTransition();
   const formatHints =
     activeLang === "zh"
       ? {
@@ -47,6 +53,30 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
         ...event[key],
         [activeLang]: value,
       },
+    });
+  }
+
+  function uploadCoverImage() {
+    const file = coverInputRef.current?.files?.[0];
+    if (!file) {
+      setCoverUploadMessage(activeLang === "zh" ? "请选择一张封面图片。" : "Choose a cover image to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("slug", event.slug);
+    formData.set("coverImage", file);
+
+    startCoverUpload(async () => {
+      const result = await uploadEventCoverAction({ success: false }, formData);
+      if (!result.success || !result.url) {
+        setCoverUploadMessage(result.message ?? (activeLang === "zh" ? "上传失败。" : "Upload failed."));
+        return;
+      }
+
+      updateEventValue("coverImage", result.url);
+      setCoverUploadMessage(t(adminCopy.editor.coverUploaded));
+      if (coverInputRef.current) coverInputRef.current.value = "";
     });
   }
 
@@ -121,15 +151,37 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
           />
           <p className="mt-1 text-xs text-gray-500">{formatHints.mapUrl}</p>
         </label>
-        <label className="block text-sm text-gray-600">
-          {t(adminCopy.editor.coverImage)}
-          <input
-            value={event.coverImage}
-            onChange={(changeEvent) => updateEventValue("coverImage", changeEvent.currentTarget.value)}
-            placeholder={activeLang === "zh" ? "/images/events/big-bear.jpg 或 https://..." : "/images/events/big-bear.jpg or https://..."}
-            className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
-          />
-        </label>
+        <div className="block text-sm text-gray-600">
+          <label>
+            {t(adminCopy.editor.coverImage)}
+            <input
+              value={event.coverImage}
+              onChange={(changeEvent) => updateEventValue("coverImage", changeEvent.currentTarget.value)}
+              placeholder={activeLang === "zh" ? "/images/events/big-bear.jpg 或 https://..." : "/images/events/big-bear.jpg or https://..."}
+              className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
+            />
+          </label>
+          <div className="mt-2 rounded border border-dashed border-gray-200 bg-gray-50 p-3">
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={uploadCoverImage}
+                disabled={isUploadingCover}
+                className="rounded border border-gray-200 bg-white px-3 py-1 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUploadingCover ? t(adminCopy.editor.uploadingCoverImage) : t(adminCopy.editor.uploadCoverImage)}
+              </button>
+              <p className="text-xs text-gray-500">{t(adminCopy.editor.coverUploadHelp)}</p>
+            </div>
+            {coverUploadMessage ? <p className="mt-2 text-xs text-gray-600">{coverUploadMessage}</p> : null}
+          </div>
+        </div>
         <label className="block text-sm text-gray-600">
           {t(adminCopy.editor.status)}
           <select
