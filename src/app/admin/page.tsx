@@ -13,10 +13,11 @@ export default async function AdminDashboard() {
     getRegistrations(),
     getInquiries(),
   ]);
+  const recaps = await getRecaps().catch(() => []);
   const stats = [
     { key: "events" as const, value: events.length, href: "/admin/events" },
     { key: "registrations" as const, value: registrations.length, href: "/admin/registrations" },
-    { key: "recaps" as const, value: getRecaps().length, href: "/admin/recaps" },
+    { key: "recaps" as const, value: recaps.length, href: "/admin/recaps" },
     { key: "faqs" as const, value: getFAQs().length, href: "/admin/faq" },
     { key: "inquiries" as const, value: inquiries.length, href: "/admin" },
   ];

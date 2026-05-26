@@ -1,10 +1,15 @@
 .data/
 .claude/
 .superpowers/
+.impeccable/
+.playwright-cli/
+.playwright-mcp/
+.omo/
 artifacts/
 .env.local
 .next/
 node_modules/
 supabase/.temp/
 *.log
+*.pid
 tsconfig.tsbuildinfo

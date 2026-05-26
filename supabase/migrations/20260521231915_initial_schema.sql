@@ -4,41 +4,64 @@
 -- Events
 create table if not exists events (
   slug text primary key,
-  status text not null default 'draft' check (status in ('draft', 'published')),
+  status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
   registration_state text not null default 'closed' check (registration_state in ('open', 'closed', 'full')),
-  title_en text not null,
-  title_zh text not null,
-  subtitle_en text,
-  subtitle_zh text,
-  description_en text,
-  description_zh text,
-  highlights_en jsonb default '[]',
-  highlights_zh jsonb default '[]',
-  audience_level_en text,
-  audience_level_zh text,
-  schedule_en text,
-  schedule_zh text,
-  location_en text,
-  location_zh text,
-  location_url text,
-  fee_info_en text,
-  fee_info_zh text,
-  notices_en jsonb default '[]',
-  notices_zh jsonb default '[]',
-  cover_image text,
-  media jsonb default '[]',
-  capacity integer not null default 0,
-  registration_open_at timestamptz,
+  title_zh text not null default '',
+  title_en text not null default '',
+  event_date date,
+  meet_time time,
+  meet_location_zh text not null default '',
+  meet_location_en text not null default '',
+  activity_location_zh text not null default '',
+  activity_location_en text not null default '',
+  location_url text not null default '',
+  cover_image text not null default '',
+  capacity integer not null default 0 check (capacity >= 0),
   registration_close_at timestamptz,
-  event_start_at timestamptz,
-  event_end_at timestamptz,
-  registration_fields jsonb default '[]',
-  tags_en jsonb default '[]',
-  tags_zh jsonb default '[]',
-  seo_title_en text,
-  seo_title_zh text,
-  seo_description_en text,
-  seo_description_zh text,
+  requires_approval boolean not null default false,
+  allow_waitlist boolean not null default false,
+  allow_cancellation boolean not null default true,
+  fee_amount text not null default '',
+  payment_instructions_zh text not null default '',
+  payment_instructions_en text not null default '',
+  seo_title_zh text not null default '',
+  seo_title_en text not null default '',
+  seo_description_zh text not null default '',
+  seo_description_en text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists event_registration_questions (
+  id uuid primary key default gen_random_uuid(),
+  event_slug text not null references events(slug) on delete cascade,
+  question_key text not null,
+  type text not null check (type in ('text', 'single_choice', 'multiple_choice', 'yes_no', 'date', 'phone')),
+  required boolean not null default false,
+  sort_order integer not null default 0,
+  label_zh text not null default '',
+  label_en text not null default '',
+  help_zh text not null default '',
+  help_en text not null default '',
+  options_zh jsonb not null default '[]',
+  options_en jsonb not null default '[]',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(event_slug, question_key)
+);
+
+create table if not exists event_detail_modules (
+  id uuid primary key default gen_random_uuid(),
+  event_slug text not null references events(slug) on delete cascade,
+  module_type text not null check (module_type in ('intro', 'highlights', 'itinerary', 'notes', 'fees', 'refund', 'contact', 'custom')),
+  display_mode text not null default 'rich_text' check (display_mode in ('rich_text', 'list')),
+  sort_order integer not null default 0,
+  title_zh text not null default '',
+  title_en text not null default '',
+  content_zh text not null default '',
+  content_en text not null default '',
+  items_zh jsonb not null default '[]',
+  items_en jsonb not null default '[]',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -146,12 +169,16 @@ create table if not exists staff_roles (
 );
 
 -- Indexes
+create index if not exists idx_event_registration_questions_event on event_registration_questions(event_slug, sort_order);
+create index if not exists idx_event_detail_modules_event on event_detail_modules(event_slug, sort_order);
 create index if not exists idx_registrations_event on registrations(event_slug);
 create index if not exists idx_registrations_member on registrations(member_id);
 create index if not exists idx_registrations_status on registrations(status);
 
 -- Row-level security
 alter table events enable row level security;
+alter table event_registration_questions enable row level security;
+alter table event_detail_modules enable row level security;
 alter table member_profiles enable row level security;
 alter table registrations enable row level security;
 alter table event_recaps enable row level security;
@@ -162,6 +189,14 @@ alter table staff_roles enable row level security;
 
 -- Public read policies
 create policy "Public can read published events" on events for select using (status = 'published');
+create policy "Public can read published event questions" on event_registration_questions
+  for select using (exists (
+    select 1 from events where events.slug = event_registration_questions.event_slug and events.status = 'published'
+  ));
+create policy "Public can read published event modules" on event_detail_modules
+  for select using (exists (
+    select 1 from events where events.slug = event_detail_modules.event_slug and events.status = 'published'
+  ));
 create policy "Public can read published recaps" on event_recaps for select using (status = 'published');
 create policy "Public can read faqs" on faq_items for select using (true);
 
@@ -177,6 +212,8 @@ create policy "Members can read own registrations" on registrations for select u
 
 -- Staff policies (all-access for users in staff_roles)
 create policy "Staff can manage events" on events for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
+create policy "Staff can manage event questions" on event_registration_questions for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
+create policy "Staff can manage event modules" on event_detail_modules for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
 create policy "Staff can manage registrations" on registrations for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
 create policy "Staff can manage recaps" on event_recaps for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
 create policy "Staff can manage faqs" on faq_items for all using (exists (select 1 from staff_roles where user_id = auth.uid()));
@@ -194,6 +231,8 @@ end;
 $$ language plpgsql;
 
 create trigger set_updated_at before update on events for each row execute function update_updated_at();
+create trigger set_updated_at before update on event_registration_questions for each row execute function update_updated_at();
+create trigger set_updated_at before update on event_detail_modules for each row execute function update_updated_at();
 create trigger set_updated_at before update on member_profiles for each row execute function update_updated_at();
 create trigger set_updated_at before update on registrations for each row execute function update_updated_at();
 create trigger set_updated_at before update on event_recaps for each row execute function update_updated_at();

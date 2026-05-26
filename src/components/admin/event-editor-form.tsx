@@ -1,217 +1,242 @@
 "use client";
 
+import { useState } from "react";
 import { useFormState } from "react-dom";
 
 import { saveEventAction, type EventEditorState } from "@/lib/events/actions";
 import { useLanguage } from "@/lib/language";
 import type { Event } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
+import { EventBasicStep } from "./event-basic-step";
+import { EventDetailModuleBuilder } from "./event-detail-module-builder";
+import { EventEditorStepper, type StepId } from "./event-editor-stepper";
+import { EventPreviewPanel } from "./event-preview-panel";
+import { EventQuestionBuilder } from "./event-question-builder";
+import { EventRegistrationSettingsStep } from "./event-registration-settings-step";
 
 const initialState: EventEditorState = { success: false };
 
-function lines(items: string[]) {
-  return items.join("\n");
+type ActiveLang = "zh" | "en";
+
+type BilingualEventKey = {
+  [Key in keyof Event]: Event[Key] extends { en: string; zh: string } ? Key : never;
+}[keyof Event];
+
+function normalizeQuestionKey(value: string) {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+  if (!normalized) return "field";
+  return /^[a-z]/.test(normalized) ? normalized : `field_${normalized}`;
 }
 
-function localDateTime(value: string) {
-  return value ? value.slice(0, 16) : "";
+function uniqueQuestionKey(base: string, existingKeys: Set<string>) {
+  const normalizedBase = normalizeQuestionKey(base);
+  if (!existingKeys.has(normalizedBase)) return normalizedBase;
+
+  let suffix = 2;
+  let candidate = `${normalizedBase}_${suffix}`;
+  while (existingKeys.has(candidate)) {
+    suffix += 1;
+    candidate = `${normalizedBase}_${suffix}`;
+  }
+  return candidate;
+}
+
+function eventPayload(event: Event) {
+  const questionKeys = new Set<string>();
+
+  return JSON.stringify({
+    ...event,
+    registrationQuestions: event.registrationQuestions.map((question) => {
+      const key = uniqueQuestionKey(question.key, questionKeys);
+      questionKeys.add(key);
+      return {
+        ...question,
+        key,
+      };
+    }),
+  });
 }
 
 function FieldError({ errors }: { errors?: string[] }) {
   return errors?.length ? <p className="mt-1 text-xs text-red-600">{errors[0]}</p> : null;
 }
 
-function ContentFields({
-  event,
-  lang,
-  labels,
-}: {
-  event: Event;
-  lang: "en" | "zh";
-  labels: {
-    title: string;
-    fieldTitle: string;
-    subtitle: string;
-    description: string;
-    highlights: string;
-    notices: string;
-    audienceLevel: string;
-    feeInfo: string;
-    schedule: string;
-    tags: string;
+function friendlyFieldName(field: string) {
+  const map: Record<string, string> = {
+    slug: "链接标识 Slug",
+    title: "活动标题",
+    "title.zh": "活动标题（中文）",
+    eventDate: "活动日期",
+    meetTime: "集合时间",
+    meetLocation: "集合地点",
+    activityLocation: "活动地点",
+    "activityLocation.zh": "活动地点（中文）",
+    registrationCloseAt: "报名截止时间",
+    capacity: "最大人数",
+    registrationQuestions: "参与者问题",
+    detailModules: "活动详情模块",
   };
-}) {
+  return map[field] ?? field;
+}
+
+function FieldErrorSummary({ fieldErrors }: { fieldErrors?: Record<string, string[] | undefined> }) {
+  if (!fieldErrors) return null;
+  const entries = Object.entries(fieldErrors).filter(([, errors]) => errors?.length);
+  if (!entries.length) return null;
+
   return (
-    <section className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">{labels.title}</h3>
-      <label className="block text-sm text-gray-600">
-        {labels.fieldTitle}
-        <input name={`title.${lang}`} defaultValue={event.title[lang]} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <label className="block text-sm text-gray-600">
-        {labels.subtitle}
-        <input name={`subtitle.${lang}`} defaultValue={event.subtitle[lang]} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <label className="block text-sm text-gray-600">
-        {labels.description}
-        <textarea name={`description.${lang}`} defaultValue={event.description[lang]} rows={5} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm text-gray-600">
-          {labels.highlights}
-          <textarea name={`highlights.${lang}`} defaultValue={lines(event.highlights[lang])} rows={4} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-        </label>
-        <label className="block text-sm text-gray-600">
-          {labels.notices}
-          <textarea name={`notices.${lang}`} defaultValue={lines(event.notices[lang])} rows={4} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-        </label>
+    <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="font-medium">Review these fields before saving:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {entries.map(([field, errors]) => (
+          <li key={field}>{friendlyFieldName(field)}: {errors?.[0]}</li>
+        ))}
+        </ul>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm text-gray-600">
-          {labels.audienceLevel}
-          <input name={`audienceLevel.${lang}`} defaultValue={event.audienceLevel[lang]} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-        </label>
-        <label className="block text-sm text-gray-600">
-          {labels.feeInfo}
-          <input name={`feeInfo.${lang}`} defaultValue={event.feeInfo[lang]} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-        </label>
-      </div>
-      <label className="block text-sm text-gray-600">
-        {labels.schedule}
-        <textarea name={`schedule.${lang}`} defaultValue={event.schedule[lang]} rows={4} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <label className="block text-sm text-gray-600">
-        {labels.tags}
-        <textarea name={`tags.${lang}`} defaultValue={lines(event.tags[lang])} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-    </section>
   );
 }
 
 export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean }) {
-  const [state, formAction] = useFormState(saveEventAction, initialState);
-  const { t } = useLanguage();
-  const contentLabels = {
-    fieldTitle: t(adminCopy.editor.title),
-    subtitle: t(adminCopy.editor.subtitle),
-    description: t(adminCopy.editor.description),
-    highlights: t(adminCopy.editor.highlights),
-    notices: t(adminCopy.editor.notices),
-    audienceLevel: t(adminCopy.editor.audienceLevel),
-    feeInfo: t(adminCopy.editor.feeInfo),
-    schedule: t(adminCopy.editor.schedule),
-    tags: t(adminCopy.editor.tags),
+  const [formState, formAction] = useFormState(saveEventAction, initialState);
+  const [draftEvent, setDraftEvent] = useState<Event>(event);
+  const [activeLang, setActiveLang] = useState<ActiveLang>("zh");
+  const [activeStep, setActiveStep] = useState<StepId>("basic");
+  const state = formState ?? initialState;
+  const { lang, t } = useLanguage();
+  const isZh = lang === "zh";
+
+  function updateBilingualValue(key: BilingualEventKey, lang: ActiveLang, value: string) {
+    setDraftEvent((current) => ({
+      ...current,
+      [key]: {
+        ...current[key],
+        [lang]: value,
+      },
+    }));
+  }
+
+  const summaries: Record<StepId, string> = {
+    basic: draftEvent.title[activeLang] || draftEvent.slug || (isZh ? "未命名" : "Untitled"),
+    registration: isZh
+      ? `${draftEvent.registrationState}，${draftEvent.capacity === 0 ? "不限名额" : `${draftEvent.capacity} 人`}`
+      : `${draftEvent.registrationState}, ${draftEvent.capacity === 0 ? "unlimited" : draftEvent.capacity} spots`,
+    questions: isZh
+      ? `${draftEvent.registrationQuestions.length} 个问题`
+      : `${draftEvent.registrationQuestions.length} question${draftEvent.registrationQuestions.length === 1 ? "" : "s"}`,
+    modules: isZh
+      ? `${draftEvent.detailModules.length} 个模块`
+      : `${draftEvent.detailModules.length} module${draftEvent.detailModules.length === 1 ? "" : "s"}`,
+    preview: draftEvent.status,
   };
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className="space-y-5">
       {!isNew ? <input type="hidden" name="originalSlug" value={event.slug} /> : null}
-      <input type="hidden" name="registrationCount" value={event.registrationCount} />
-      <input type="hidden" name="status" value={event.status} />
+      <input type="hidden" name="eventPayload" value={eventPayload(draftEvent)} />
+
       {state.message ? (
         <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.message}
         </p>
       ) : null}
 
-      <section className="card space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t(adminCopy.editor.basic)}</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.slug)}
-            <input name="slug" defaultValue={event.slug} readOnly={!isNew} className="mt-1 w-full rounded border border-gray-200 px-3 py-2 read-only:bg-gray-50" />
-            <FieldError errors={state.fieldErrors?.slug} />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.capacity)}
-            <input name="capacity" type="number" min={0} defaultValue={event.capacity} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-            <FieldError errors={state.fieldErrors?.capacity} />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.locationEn)}
-            <input name="location.en" defaultValue={event.location.en} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.locationZh)}
-            <input name="location.zh" defaultValue={event.location.zh} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.mapUrl)}
-            <input name="locationUrl" defaultValue={event.locationUrl} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.coverImage)}
-            <input name="coverImage" defaultValue={event.coverImage} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.eventStart)}
-            <input name="eventStartAt" type="datetime-local" defaultValue={localDateTime(event.eventStartAt)} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.eventEnd)}
-            <input name="eventEndAt" type="datetime-local" defaultValue={localDateTime(event.eventEndAt)} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
+      <div className="flex flex-wrap items-center gap-2">
+        {(["zh", "en"] as const).map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            onClick={() => setActiveLang(lang)}
+            className={`rounded border px-3 py-1 text-sm font-medium ${
+              activeLang === lang
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            {lang === "zh" ? "Chinese" : "English"}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_320px]">
+        <div className="xl:sticky xl:top-4 xl:self-start">
+          <EventEditorStepper activeStep={activeStep} onStepChange={setActiveStep} summaries={summaries} />
         </div>
-      </section>
 
-      <section className="card grid gap-8 xl:grid-cols-2">
-        <ContentFields event={event} lang="en" labels={{ ...contentLabels, title: t(adminCopy.editor.englishContent) }} />
-        <ContentFields event={event} lang="zh" labels={{ ...contentLabels, title: t(adminCopy.editor.chineseContent) }} />
-      </section>
+        <div className="min-w-0">
+          {activeStep === "basic" ? (
+            <div className="space-y-2">
+              <EventBasicStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} isNew={isNew} />
+              <FieldError errors={state.fieldErrors?.slug} />
+              <FieldError errors={state.fieldErrors?.title} />
+              <FieldError errors={state.fieldErrors?.eventDate} />
+              <FieldError errors={state.fieldErrors?.meetTime} />
+              <FieldError errors={state.fieldErrors?.activityLocation} />
+            </div>
+          ) : null}
 
-      <section className="card space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t(adminCopy.editor.registration)}</h3>
-        <div className="grid gap-4 md:grid-cols-3">
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.state)}
-            <select name="registrationState" defaultValue={event.registrationState} className="mt-1 w-full rounded border border-gray-200 px-3 py-2">
-              <option value="closed">{t(adminCopy.editor.closed)}</option>
-              <option value="open">{t(adminCopy.editor.open)}</option>
-              <option value="full">{t(adminCopy.editor.full)}</option>
-            </select>
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.registrationOpen)}
-            <input name="registrationOpenAt" type="datetime-local" defaultValue={localDateTime(event.registrationOpenAt)} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.registrationClose)}
-            <input name="registrationCloseAt" type="datetime-local" defaultValue={localDateTime(event.registrationCloseAt)} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
+          {activeStep === "registration" ? (
+            <div className="space-y-2">
+              <EventRegistrationSettingsStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} />
+              <FieldError errors={state.fieldErrors?.capacity} />
+            </div>
+          ) : null}
+
+          {activeStep === "questions" ? (
+            <div className="space-y-2">
+              <EventQuestionBuilder
+                questions={draftEvent.registrationQuestions}
+                activeLang={activeLang}
+                onChange={(registrationQuestions) => setDraftEvent((current) => ({ ...current, registrationQuestions }))}
+              />
+              <FieldError errors={state.fieldErrors?.registrationQuestions} />
+            </div>
+          ) : null}
+
+          {activeStep === "modules" ? (
+            <div className="space-y-2">
+              <EventDetailModuleBuilder
+                modules={draftEvent.detailModules}
+                activeLang={activeLang}
+                onChange={(detailModules) => setDraftEvent((current) => ({ ...current, detailModules }))}
+              />
+              <FieldError errors={state.fieldErrors?.detailModules} />
+            </div>
+          ) : null}
+
+          {activeStep === "preview" ? (
+            <section className="card space-y-4">
+              <h3 className="text-base font-semibold text-gray-900">SEO</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block text-sm text-gray-600">
+                  {t(adminCopy.editor.seoTitleEn)}
+                  <input
+                    value={draftEvent.seoTitle[activeLang]}
+                    onChange={(changeEvent) => updateBilingualValue("seoTitle", activeLang, changeEvent.currentTarget.value)}
+                    className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm text-gray-600 md:col-span-2">
+                  {t(adminCopy.editor.seoDescriptionEn)}
+                  <textarea
+                    value={draftEvent.seoDescription[activeLang]}
+                    onChange={(changeEvent) => updateBilingualValue("seoDescription", activeLang, changeEvent.currentTarget.value)}
+                    rows={3}
+                    className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
+                  />
+                </label>
+              </div>
+              <FieldErrorSummary fieldErrors={state.fieldErrors} />
+            </section>
+          ) : null}
         </div>
-        <label className="block text-sm text-gray-600">
-          {t(adminCopy.editor.registrationFields)}
-          <textarea name="registrationFields" defaultValue={JSON.stringify(event.registrationFields, null, 2)} rows={10} className="mt-1 w-full rounded border border-gray-200 px-3 py-2 font-mono text-xs" />
-        </label>
-      </section>
 
-      <section className="card space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t(adminCopy.editor.seoMedia)}</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoTitleEn)}
-            <input name="seoTitle.en" defaultValue={event.seoTitle.en} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoTitleZh)}
-            <input name="seoTitle.zh" defaultValue={event.seoTitle.zh} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoDescriptionEn)}
-            <textarea name="seoDescription.en" defaultValue={event.seoDescription.en} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoDescriptionZh)}
-            <textarea name="seoDescription.zh" defaultValue={event.seoDescription.zh} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
+        <div className="space-y-3 xl:sticky xl:top-4 xl:self-start">
+          <EventPreviewPanel event={draftEvent} activeLang={activeLang} />
+          <button type="submit" className="btn-primary w-full px-5 py-2">
+            {t(adminCopy.editor.save)}
+          </button>
         </div>
-        <label className="block text-sm text-gray-600">
-          {t(adminCopy.editor.media)}
-          <textarea name="media" defaultValue={lines(event.media)} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-        </label>
-      </section>
-
-      <button className="btn-primary px-5 py-2">{t(adminCopy.editor.save)}</button>
+      </div>
     </form>
   );
 }

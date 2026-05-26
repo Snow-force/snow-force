@@ -12,6 +12,22 @@ const bilingualList = z.object({
   zh: z.array(z.string()).default([]),
 });
 
+function hasMeaningfulText(value: string) {
+  return value.trim().length > 0;
+}
+
+function hasMeaningfulListItem(items: string[]) {
+  return items.some(hasMeaningfulText);
+}
+
+function hasMeaningfulDetailModule(moduleRow: Event["detailModules"][number]) {
+  if (moduleRow.displayMode === "list") {
+    return hasMeaningfulListItem(moduleRow.items.zh);
+  }
+
+  return hasMeaningfulText(moduleRow.content.zh);
+}
+
 const dateTime = z
   .string()
   .trim()
@@ -20,78 +36,70 @@ const dateTime = z
     "Enter a valid date and time.",
   );
 
-const registrationFieldSchema = z
+const dateString = z
+  .string()
+  .trim()
+  .refine(
+    (value) => !value || !Number.isNaN(new Date(`${value}T00:00:00`).getTime()),
+    "Enter a valid date.",
+  );
+
+const questionSchema = z
   .object({
-    key: z.string().trim().min(1),
+    id: z.string().trim().min(1),
+    key: z.string().trim().min(1).regex(/^[a-z][a-z0-9_]*$/),
+    type: z.enum(["text", "single_choice", "multiple_choice", "yes_no", "date", "phone"]),
+    required: z.boolean().default(false),
     label: bilingualText,
-    type: z.enum(["text", "email", "tel", "textarea", "select"]),
-    required: z.boolean(),
-    options: bilingualList.optional(),
-    placeholder: bilingualText.optional(),
+    helpText: bilingualText.default({ en: "", zh: "" }),
+    options: bilingualList.default({ en: [], zh: [] }),
   })
-  .superRefine((field, ctx) => {
-    if (field.type === "select" && (!field.options?.en.length || !field.options.zh.length)) {
+  .superRefine((question, ctx) => {
+    if (
+      (question.type === "single_choice" || question.type === "multiple_choice") &&
+      !hasMeaningfulListItem(question.options.zh)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["options"],
-        message: "Select registration fields require bilingual options.",
+        path: ["options", "zh"],
+        message: "Choice questions need Chinese options.",
       });
     }
   });
 
-const editorSchema = z
-  .object({
-    slug: z.string().trim().min(1).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    status: z.enum(["draft", "published"]).default("draft"),
-    registrationState: z.enum(["open", "closed", "full"]).default("closed"),
-    title: bilingualText.default({ en: "", zh: "" }),
-    subtitle: bilingualText.default({ en: "", zh: "" }),
-    description: bilingualText.default({ en: "", zh: "" }),
-    highlights: bilingualList.default({ en: [], zh: [] }),
-    audienceLevel: bilingualText.default({ en: "", zh: "" }),
-    schedule: bilingualText.default({ en: "", zh: "" }),
-    location: bilingualText.default({ en: "", zh: "" }),
-    locationUrl: z.string().default(""),
-    feeInfo: bilingualText.default({ en: "", zh: "" }),
-    notices: bilingualList.default({ en: [], zh: [] }),
-    coverImage: z.string().default(""),
-    media: z.array(z.string()).default([]),
-    capacity: z.coerce.number().int().min(0),
-    registrationCount: z.coerce.number().int().min(0).default(0),
-    registrationOpenAt: dateTime,
-    registrationCloseAt: dateTime,
-    eventStartAt: dateTime,
-    eventEndAt: dateTime,
-    registrationFields: z.array(registrationFieldSchema).default([]),
-    tags: bilingualList.default({ en: [], zh: [] }),
-    seoTitle: bilingualText.default({ en: "", zh: "" }),
-    seoDescription: bilingualText.default({ en: "", zh: "" }),
-  })
-  .superRefine((event, ctx) => {
-    if (
-      event.eventStartAt &&
-      event.eventEndAt &&
-      new Date(event.eventEndAt) < new Date(event.eventStartAt)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["eventEndAt"],
-        message: "Event end must follow event start.",
-      });
-    }
+const moduleSchema = z.object({
+  id: z.string().trim().min(1),
+  type: z.enum(["intro", "highlights", "itinerary", "notes", "fees", "refund", "contact", "custom"]),
+  displayMode: z.enum(["rich_text", "list"]).default("rich_text"),
+  title: bilingualText,
+  content: bilingualText.default({ en: "", zh: "" }),
+  items: bilingualList.default({ en: [], zh: [] }),
+});
 
-    if (
-      event.registrationOpenAt &&
-      event.registrationCloseAt &&
-      new Date(event.registrationCloseAt) < new Date(event.registrationOpenAt)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["registrationCloseAt"],
-        message: "Registration close must follow registration open.",
-      });
-    }
-  });
+const editorSchema = z.object({
+  slug: z.string().trim().min(1).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  status: z.enum(["draft", "published", "archived"]).default("draft"),
+  registrationState: z.enum(["open", "closed", "full"]).default("closed"),
+  title: bilingualText.default({ en: "", zh: "" }),
+  eventDate: dateString.default(""),
+  meetTime: z.string().trim().default(""),
+  meetLocation: bilingualText.default({ en: "", zh: "" }),
+  activityLocation: bilingualText.default({ en: "", zh: "" }),
+  locationUrl: z.string().default(""),
+  coverImage: z.string().default(""),
+  capacity: z.coerce.number().int().min(0),
+  registrationCount: z.coerce.number().int().min(0).default(0),
+  registrationCloseAt: dateTime.default(""),
+  requiresApproval: z.boolean().default(false),
+  allowWaitlist: z.boolean().default(false),
+  allowCancellation: z.boolean().default(false),
+  feeAmount: z.string().default(""),
+  paymentInstructions: bilingualText.default({ en: "", zh: "" }),
+  seoTitle: bilingualText.default({ en: "", zh: "" }),
+  seoDescription: bilingualText.default({ en: "", zh: "" }),
+  registrationQuestions: z.array(questionSchema).default([]),
+  detailModules: z.array(moduleSchema).default([]),
+});
 
 export function parseEventEditorInput(input: unknown) {
   return editorSchema.safeParse(input);
@@ -99,17 +107,19 @@ export function parseEventEditorInput(input: unknown) {
 
 export function validatePublishableEvent(event: Event) {
   const requiredFields: Array<[string, unknown]> = [
-    ["title.en", event.title.en],
     ["title.zh", event.title.zh],
-    ["description.en", event.description.en],
-    ["description.zh", event.description.zh],
-    ["location.en", event.location.en],
-    ["location.zh", event.location.zh],
-    ["eventStartAt", event.eventStartAt],
-    ["eventEndAt", event.eventEndAt],
-    ["registrationOpenAt", event.registrationOpenAt],
-    ["registrationCloseAt", event.registrationCloseAt],
+    ["eventDate", event.eventDate],
+    ["meetTime", event.meetTime],
+    ["activityLocation.zh", event.activityLocation.zh],
   ];
 
-  return requiredFields.filter(([, value]) => !value).map(([field]) => field);
+  const missingFields = requiredFields
+    .filter(([, value]) => typeof value !== "string" || !value.trim())
+    .map(([field]) => field);
+
+  if (!event.detailModules.some(hasMeaningfulDetailModule)) {
+    missingFields.push("detailModules");
+  }
+
+  return missingFields;
 }

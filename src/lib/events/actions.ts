@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "../auth/admin";
-import type { Event, RegistrationFieldConfig, RegistrationState } from "../types";
+import type { Event, RegistrationState } from "../types";
+import { createRecapFromEvent } from "../recaps/actions";
 import { createEvent, getEventAdmin, updateEvent } from "./repository";
 import { parseEventEditorInput, validatePublishableEvent } from "./validation";
 
@@ -23,66 +24,14 @@ function formText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
-function lines(value: string) {
-  return value
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function bilingual(formData: FormData, key: string) {
-  return {
-    en: formText(formData, `${key}.en`),
-    zh: formText(formData, `${key}.zh`),
-  };
-}
-
-function bilingualLines(formData: FormData, key: string) {
-  return {
-    en: lines(formText(formData, `${key}.en`)),
-    zh: lines(formText(formData, `${key}.zh`)),
-  };
-}
-
-function readRegistrationFields(formData: FormData): RegistrationFieldConfig[] | unknown {
-  const raw = formText(formData, "registrationFields");
-  if (!raw) return [];
-
+function readEditorPayload(formData: FormData) {
+  const raw = formText(formData, "eventPayload");
+  if (!raw) return {};
   try {
     return JSON.parse(raw) as unknown;
   } catch {
-    return "Invalid registration field JSON.";
+    return { __invalidPayload: true };
   }
-}
-
-function editorInput(formData: FormData) {
-  return {
-    slug: formText(formData, "slug"),
-    status: formText(formData, "status") || "draft",
-    registrationState: formText(formData, "registrationState") || "closed",
-    title: bilingual(formData, "title"),
-    subtitle: bilingual(formData, "subtitle"),
-    description: bilingual(formData, "description"),
-    highlights: bilingualLines(formData, "highlights"),
-    audienceLevel: bilingual(formData, "audienceLevel"),
-    schedule: bilingual(formData, "schedule"),
-    location: bilingual(formData, "location"),
-    locationUrl: formText(formData, "locationUrl"),
-    feeInfo: bilingual(formData, "feeInfo"),
-    notices: bilingualLines(formData, "notices"),
-    coverImage: formText(formData, "coverImage"),
-    media: lines(formText(formData, "media")),
-    capacity: formText(formData, "capacity"),
-    registrationCount: formText(formData, "registrationCount") || "0",
-    registrationOpenAt: formText(formData, "registrationOpenAt"),
-    registrationCloseAt: formText(formData, "registrationCloseAt"),
-    eventStartAt: formText(formData, "eventStartAt"),
-    eventEndAt: formText(formData, "eventEndAt"),
-    registrationFields: readRegistrationFields(formData),
-    tags: bilingualLines(formData, "tags"),
-    seoTitle: bilingual(formData, "seoTitle"),
-    seoDescription: bilingual(formData, "seoDescription"),
-  };
 }
 
 function refreshEventPaths(slug: string) {
@@ -99,7 +48,7 @@ export async function saveEventAction(
 ): Promise<EventEditorState> {
   await requireAdmin();
 
-  const parsed = parseEventEditorInput(editorInput(formData));
+  const parsed = parseEventEditorInput(readEditorPayload(formData));
   if (!parsed.success) {
     return {
       success: false,
@@ -115,6 +64,19 @@ export async function saveEventAction(
       message: "Existing event slugs cannot be changed.",
       fieldErrors: { slug: ["Create a new event if the URL slug needs to change."] },
     };
+  }
+
+  if (parsed.data.status === "published") {
+    const missingFields = validatePublishableEvent(parsed.data);
+    if (missingFields.length) {
+      return {
+        success: false,
+        message: "Complete required event fields before publishing.",
+        fieldErrors: Object.fromEntries(
+          missingFields.map((field) => [field, ["Required before publishing."]]),
+        ),
+      };
+    }
   }
 
   let saved: Event | undefined;
@@ -154,6 +116,16 @@ export async function publishEventResult(dependencies: PublishDependencies, slug
     : { success: false as const, message: "Event could not be published." };
 }
 
+export async function archiveEventResult(dependencies: PublishDependencies, slug: string) {
+  const event = await dependencies.load(slug);
+  if (!event) return { success: false as const, message: "Event not found." };
+
+  const saved = await dependencies.save(slug, { status: "archived", registrationState: "closed" });
+  return saved
+    ? { success: true as const, event: saved }
+    : { success: false as const, message: "Event could not be archived." };
+}
+
 export async function publishEventAction(formData: FormData) {
   await requireAdmin();
   const slug = formText(formData, "slug");
@@ -173,6 +145,27 @@ export async function unpublishEventAction(formData: FormData) {
   const slug = formText(formData, "slug");
   await updateEvent(slug, { status: "draft" });
   refreshEventPaths(slug);
+}
+
+export async function archiveEventAction(formData: FormData) {
+  await requireAdmin();
+  const slug = formText(formData, "slug");
+
+  const event = await getEventAdmin(slug);
+  if (!event) redirect("/admin/events");
+
+  await archiveEventResult({ load: getEventAdmin, save: updateEvent }, slug);
+
+  // Auto-create a recap entry so admin can manage it in recap management
+  try {
+    await createRecapFromEvent(event);
+  } catch {
+    // Recap creation is best-effort; don't block the archive action
+  }
+
+  refreshEventPaths(slug);
+  revalidatePath("/admin/recaps");
+  redirect(`/admin/recaps?archived=${slug}`);
 }
 
 export async function setRegistrationStateAction(formData: FormData) {
