@@ -21,6 +21,12 @@ describe("adminCopy", () => {
     expect(adminCopy.editor.moveDown.en).toBe("Move down");
     expect(adminCopy.editor.collapse.en).toBe("Collapse");
     expect(adminCopy.editor.expand.en).toBe("Expand");
+    expect(adminCopy.editor.questionKey.zh).toBe("字段标识");
+    expect(adminCopy.editor.questionLabelZh.zh).toBe("中文问题");
+    expect(adminCopy.editor.questionOptionsZh.zh).toBe("中文选项，每行一条");
+    expect(adminCopy.editor.uploadCoverImage.en).toBe("Upload cover image");
+    expect(adminCopy.editor.coverUploadHelp.zh).toBe("支持 6MB 以内 JPG、PNG、WebP 或 GIF。");
+    expect(adminCopy.editor.coverUploaded.zh).toBe("封面已上传。");
     expect(adminCopy.shell.signOut.zh).toBe("退出");
   });
 });
