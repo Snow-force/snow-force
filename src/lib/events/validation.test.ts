@@ -100,6 +100,25 @@ describe("event editor validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects participant questions without Chinese labels", () => {
+    const result = parseEventEditorInput({
+      ...draftInput,
+      registrationQuestions: [
+        {
+          id: "question-name",
+          key: "name",
+          type: "text",
+          required: true,
+          label: { zh: "   ", en: "Name" },
+          helpText: { zh: "", en: "" },
+          options: { zh: [], en: [] },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("requires core Chinese content and one meaningful detail module before publishing", () => {
     const result = parseEventEditorInput({
       slug: "big-bear-day",

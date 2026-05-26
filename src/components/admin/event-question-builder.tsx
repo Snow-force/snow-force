@@ -150,7 +150,9 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{question.label[activeLang] || question.key}</p>
-                  <p className="text-xs text-gray-500">{question.type.replaceAll("_", " ")} / {question.required ? "Required" : "Optional"}</p>
+                  <p className="text-xs text-gray-500">
+                    {question.type.replaceAll("_", " ")} / {question.required ? t(adminCopy.editor.questionRequired) : t(adminCopy.editor.questionOptional)}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <button type="button" onClick={() => moveQuestion(index, -1)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
@@ -163,7 +165,7 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     {t(adminCopy.editor.copy)}
                   </button>
                   <button type="button" onClick={() => deleteQuestion(index)} className="rounded border border-red-200 px-2 py-1 text-xs text-red-600">
-                    Delete
+                    {t(adminCopy.editor.delete)}
                   </button>
                   <button type="button" onClick={() => toggleCollapsed(question.id)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
                     {isCollapsed ? t(adminCopy.editor.expand) : t(adminCopy.editor.collapse)}
@@ -174,7 +176,7 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
               {!isCollapsed ? (
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <label className="block text-sm text-gray-600">
-                    Key
+                    {t(adminCopy.editor.questionKey)}
                     <input
                       value={question.key}
                       onChange={(changeEvent) => {
@@ -189,7 +191,7 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     />
                   </label>
                   <label className="block text-sm text-gray-600">
-                    Type
+                    {t(adminCopy.editor.questionType)}
                     <select
                       value={question.type}
                       onChange={(changeEvent) => {
@@ -205,8 +207,8 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                       ))}
                     </select>
                   </label>
-                  <label className="block text-sm text-gray-600">
-                    Label
+                  <label className="block text-sm text-gray-600 md:col-span-2">
+                    {t(activeLang === "zh" ? adminCopy.editor.questionLabelZh : adminCopy.editor.questionLabelEn)}
                     <input
                       value={question.label[activeLang]}
                       onChange={(changeEvent) => updateQuestion(index, {
@@ -216,8 +218,8 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                       className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-gray-600">
-                    Help text
+                  <label className="block text-sm text-gray-600 md:col-span-2">
+                    {t(activeLang === "zh" ? adminCopy.editor.questionHelpZh : adminCopy.editor.questionHelpEn)}
                     <input
                       value={question.helpText[activeLang]}
                       onChange={(changeEvent) => updateQuestion(index, {
@@ -234,11 +236,11 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                       onChange={(changeEvent) => updateQuestion(index, { ...question, required: changeEvent.currentTarget.checked })}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                    Required
+                    {t(adminCopy.editor.questionRequired)}
                   </label>
                   {isChoiceQuestion(question.type) ? (
                     <label className="block text-sm text-gray-600 md:col-span-2">
-                      Options, one per line
+                      {t(activeLang === "zh" ? adminCopy.editor.questionOptionsZh : adminCopy.editor.questionOptionsEn)}
                       <textarea
                         value={optionsToText(question.options[activeLang])}
                         onChange={(changeEvent) => updateQuestion(index, {

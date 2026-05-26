@@ -55,6 +55,14 @@ const questionSchema = z
     options: bilingualList.default({ en: [], zh: [] }),
   })
   .superRefine((question, ctx) => {
+    if (!hasMeaningfulText(question.label.zh)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["label", "zh"],
+        message: "Participant questions need Chinese labels.",
+      });
+    }
+
     if (
       (question.type === "single_choice" || question.type === "multiple_choice") &&
       !hasMeaningfulListItem(question.options.zh)
