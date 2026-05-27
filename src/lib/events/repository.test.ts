@@ -148,6 +148,18 @@ describe("event repository", () => {
     ]);
   });
 
+  it("keeps archived events out of the admin event management list", async () => {
+    const repository = createEventRepository(
+      eventSource({
+        events: [eventCoreRow("draft", "draft"), eventCoreRow("archived", "archived")],
+        questions: [],
+        modules: [],
+      }),
+    );
+
+    expect((await repository.getAllEvents()).map((event) => event.slug)).toEqual(["draft"]);
+  });
+
   it("merges persisted registration counts into event reads", async () => {
     const countSource: RegistrationCountSource = {
       countForEvents: async (slugs) =>

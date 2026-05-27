@@ -250,7 +250,9 @@ export function createEventRepository(source: EventSource, countSource?: Registr
       );
     },
     async getAllEvents() {
-      return withRegistrationCounts(await source.listAdminEvents());
+      return withRegistrationCounts(
+        (await source.listAdminEvents()).filter((row) => row.status !== "archived"),
+      );
     },
     async getEvent(slug: string) {
       const row = await source.getPublicEvent(slug);
