@@ -4,8 +4,19 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/language";
+import { unarchiveRecapAction } from "@/lib/recaps/actions";
 import { adminCopy } from "./admin-copy";
 import type { EventRecap } from "@/lib/types";
+
+function recapMissingFields(recap: EventRecap) {
+  const missing: string[] = [];
+  if (!recap.title.zh) missing.push("中文标题");
+  if (!recap.summary.zh) missing.push("中文摘要");
+  if (!recap.content.zh) missing.push("中文正文");
+  if (!recap.location.zh) missing.push("中文地点");
+  if (recap.media.length === 0) missing.push("media");
+  return missing;
+}
 
 export function AdminRecapsView({ initialRecaps }: { initialRecaps: EventRecap[] }) {
   const { t } = useLanguage();
@@ -62,7 +73,7 @@ export function AdminRecapsView({ initialRecaps }: { initialRecaps: EventRecap[]
               <th className="px-4 py-3">{t(adminCopy.recaps.date)}</th>
               <th className="px-4 py-3">{t(adminCopy.recaps.location)}</th>
               <th className="px-4 py-3">{t(adminCopy.recaps.media2)}</th>
-              <th className="px-4 py-3">{t({ en: "Source Event", zh: "来源活动" })}</th>
+              <th className="px-4 py-3">{t(adminCopy.recaps.sourceEvent)}</th>
               <th className="px-4 py-3">{t(adminCopy.events.status)}</th>
               <th className="py-3 pl-4">{t(adminCopy.events.actions)}</th>
             </tr>
@@ -125,6 +136,27 @@ export function AdminRecapsView({ initialRecaps }: { initialRecaps: EventRecap[]
                           ? t(adminCopy.recaps.unpublish)
                           : t(adminCopy.recaps.publish)}
                       </button>
+                      {recap.eventSlug ? (
+                        <form action={unarchiveRecapAction}>
+                          <input type="hidden" name="slug" value={recap.slug} />
+                          <button
+                            type="submit"
+                            onClick={(event) => {
+                              if (
+                                recap.status === "published" &&
+                                !window.confirm(
+                                  t(adminCopy.recaps.unarchivePublishedConfirm),
+                                )
+                              ) {
+                                event.preventDefault();
+                              }
+                            }}
+                            className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                          >
+                            {t(adminCopy.recaps.unarchive)}
+                          </button>
+                        </form>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -143,9 +175,7 @@ export function AdminRecapsView({ initialRecaps }: { initialRecaps: EventRecap[]
           {recaps
             .filter((recap) => recap.status === "published")
             .map((recap) => {
-              const missing: string[] = [];
-              if (!recap.title.en || !recap.title.zh) missing.push("title");
-              if (!recap.content.en || !recap.content.zh) missing.push("content");
+              const missing = recapMissingFields(recap);
 
               return (
                 <div key={recap.slug} className="flex items-center justify-between py-2">

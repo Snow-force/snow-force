@@ -1,160 +1,102 @@
 "use client";
 
+import { useState } from "react";
+
+import { localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
 import { updateRecapAction } from "@/lib/recaps/actions";
 import type { EventRecap } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
+import { RecapBasicStep } from "./recap-basic-step";
+import { RecapContentStep } from "./recap-content-step";
+import { RecapEditorStepper, type RecapStepId } from "./recap-editor-stepper";
+import { RecapMediaManager } from "./recap-media-manager";
+import { RecapPublishStep } from "./recap-publish-step";
 
-function lines(items: string[]) {
-  return items.join("\n");
-}
+type ActiveLang = "zh" | "en";
 
-function mediaUrls(media: EventRecap["media"]) {
-  return media.map((m) => m.url).join("\n");
-}
-
-function mediaCaptions(media: EventRecap["media"], lang: "en" | "zh") {
-  return media.map((m) => m.caption[lang]).join("\n");
-}
-
-function ContentFields({
-  recap,
-  lang,
-  labels,
-}: {
-  recap: EventRecap;
-  lang: "en" | "zh";
-  labels: {
-    sectionTitle: string;
-    title: string;
-    summary: string;
-    content: string;
-    tags: string;
-  };
-}) {
-  return (
-    <section className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">{labels.sectionTitle}</h3>
-      <label className="block text-sm text-gray-600">
-        {labels.title}
-        <input name={`title.${lang}`} defaultValue={recap.title[lang]} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <label className="block text-sm text-gray-600">
-        {labels.summary}
-        <textarea name={`summary.${lang}`} defaultValue={recap.summary[lang]} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <label className="block text-sm text-gray-600">
-        {labels.content}
-        <textarea name={`content.${lang}`} defaultValue={recap.content[lang]} rows={8} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-      <label className="block text-sm text-gray-600">
-        {labels.tags}
-        <textarea name={`tags.${lang}`} defaultValue={lines(recap.tags[lang])} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-      </label>
-    </section>
-  );
+function recapPayload(recap: EventRecap) {
+  return JSON.stringify(recap);
 }
 
 export function RecapEditorForm({ recap }: { recap: EventRecap }) {
-  const { t } = useLanguage();
-  const contentLabels = {
-    title: t(adminCopy.editor.title),
-    summary: t(adminCopy.recapEditor.summary),
-    content: t(adminCopy.recapEditor.content),
-    tags: t(adminCopy.editor.tags),
+  const [draftRecap, setDraftRecap] = useState(recap);
+  const [activeLang, setActiveLang] = useState<ActiveLang>("zh");
+  const [activeStep, setActiveStep] = useState<RecapStepId>("basic");
+  const { lang, t } = useLanguage();
+  const payload = recapPayload(draftRecap);
+  const saveFormId = `recap-save-${recap.slug}`;
+
+  const summaries: Record<RecapStepId, string> = {
+    basic: `${draftRecap.date || "—"} · ${localizedText(draftRecap.location, "zh") || draftRecap.slug}`,
+    content: localizedText(draftRecap.title, activeLang) || draftRecap.slug,
+    media: `${draftRecap.media.length} ${lang === "zh" ? "张照片" : "photos"}`,
+    publish: draftRecap.status,
   };
 
   return (
-    <form action={updateRecapAction} className="space-y-8">
-      <input type="hidden" name="slug" value={recap.slug} />
-      <input type="hidden" name="status" value={recap.status} />
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm font-medium uppercase tracking-wide text-gray-400">
+          {t(adminCopy.recaps.recapEditor)}
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold text-gray-900">
+          {localizedText(draftRecap.title, activeLang) || draftRecap.slug}
+        </h2>
+      </div>
 
-      {recap.eventSlug ? (
-        <div className="rounded border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
-          <span className="font-medium">{t({ en: "Source event:", zh: "来源活动：" })}</span>{" "}
-          <span className="font-mono text-indigo-600">{recap.eventSlug}</span>
-          <span className="ml-2 text-indigo-500">
-            {t({
-              en: "— Add photos and publish to show this recap on the recaps page.",
-              zh: "— 添加照片并发布后，将在往期回顾页面展示。",
-            })}
-          </span>
+      <form id={saveFormId} action={updateRecapAction}>
+        <input type="hidden" name="slug" value={recap.slug} />
+        <input type="hidden" name="recapPayload" value={payload} />
+      </form>
+
+      <div className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_320px]">
+        <div className="xl:sticky xl:top-4 xl:self-start">
+          <RecapEditorStepper activeStep={activeStep} onStepChange={setActiveStep} summaries={summaries} />
         </div>
-      ) : null}
 
-      <section className="card space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t(adminCopy.editor.basic)}</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.slug)}
-            <input name="slugDisplay" value={recap.slug} readOnly className="mt-1 w-full rounded border border-gray-200 bg-gray-50 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.recapEditor.date)}
-            <input name="date" type="date" defaultValue={recap.date} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.locationEn)}
-            <input name="location.en" defaultValue={recap.location.en} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.locationZh)}
-            <input name="location.zh" defaultValue={recap.location.zh} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600 md:col-span-2">
-            {t(adminCopy.editor.coverImage)}
-            <input name="coverImage" defaultValue={recap.coverImage} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
+        <div className="min-w-0">
+          {activeStep === "basic" ? <RecapBasicStep recap={draftRecap} onChange={setDraftRecap} /> : null}
+          {activeStep === "content" ? (
+            <RecapContentStep
+              recap={draftRecap}
+              activeLang={activeLang}
+              onLangChange={setActiveLang}
+              onChange={setDraftRecap}
+            />
+          ) : null}
+          {activeStep === "media" ? <RecapMediaManager recap={draftRecap} draftPayload={payload} /> : null}
+          {activeStep === "publish" ? (
+            <RecapPublishStep
+              recap={draftRecap}
+              activeLang={activeLang}
+              onLangChange={setActiveLang}
+              onChange={setDraftRecap}
+            />
+          ) : null}
         </div>
-      </section>
 
-      <section className="card grid gap-8 xl:grid-cols-2">
-        <ContentFields recap={recap} lang="en" labels={{ ...contentLabels, sectionTitle: t(adminCopy.editor.englishContent) }} />
-        <ContentFields recap={recap} lang="zh" labels={{ ...contentLabels, sectionTitle: t(adminCopy.editor.chineseContent) }} />
-      </section>
-
-      <section className="card space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t(adminCopy.recapEditor.media)}</h3>
-        <p className="text-sm text-gray-400">{t(adminCopy.recapEditor.mediaHelp)}</p>
-        <div className="grid gap-4 md:grid-cols-3">
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.recapEditor.mediaUrls)}
-            <textarea name="mediaUrls" defaultValue={mediaUrls(recap.media)} rows={5} className="mt-1 w-full rounded border border-gray-200 px-3 py-2 font-mono text-xs" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.recapEditor.mediaCaptionsEn)}
-            <textarea name="mediaCaptions.en" defaultValue={mediaCaptions(recap.media, "en")} rows={5} className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-xs" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.recapEditor.mediaCaptionsZh)}
-            <textarea name="mediaCaptions.zh" defaultValue={mediaCaptions(recap.media, "zh")} rows={5} className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-xs" />
-          </label>
-        </div>
-      </section>
-
-      <section className="card space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t(adminCopy.editor.seoMedia)}</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoTitleEn)}
-            <input name="seoTitle.en" defaultValue={recap.seoTitle.en} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoTitleZh)}
-            <input name="seoTitle.zh" defaultValue={recap.seoTitle.zh} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoDescriptionEn)}
-            <textarea name="seoDescription.en" defaultValue={recap.seoDescription.en} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-          <label className="block text-sm text-gray-600">
-            {t(adminCopy.editor.seoDescriptionZh)}
-            <textarea name="seoDescription.zh" defaultValue={recap.seoDescription.zh} rows={3} className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
-          </label>
-        </div>
-      </section>
-
-      <button className="btn-primary px-5 py-2">{t(adminCopy.editor.save)}</button>
-    </form>
+        <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">
+          <section className="card space-y-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                {t(adminCopy.recaps.preview)}
+            </p>
+            {draftRecap.coverImage ? (
+              <div
+                className="h-32 rounded-lg bg-cover bg-center"
+                style={{ backgroundImage: `url(${draftRecap.coverImage})` }}
+              />
+            ) : null}
+            <h3 className="font-semibold text-gray-900">
+              {localizedText(draftRecap.title, activeLang) || draftRecap.slug}
+            </h3>
+            <p className="text-sm text-gray-500">{localizedText(draftRecap.summary, activeLang)}</p>
+          </section>
+          <button type="submit" form={saveFormId} className="btn-primary w-full px-5 py-2">
+            {t(adminCopy.editor.save)}
+          </button>
+        </aside>
+      </div>
+    </div>
   );
 }

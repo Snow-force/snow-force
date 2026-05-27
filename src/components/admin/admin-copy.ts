@@ -142,6 +142,23 @@ export const adminCopy = {
     mediaUrls: { en: "Image URLs (one per line)", zh: "图片链接（每行一条）" },
     mediaCaptionsEn: { en: "Captions EN (one per line)", zh: "英文说明（每行一条）" },
     mediaCaptionsZh: { en: "Captions ZH (one per line)", zh: "中文说明（每行一条）" },
+    sourceEvent: { en: "Source event:", zh: "来源活动：" },
+    recapContent: { en: "Recap content", zh: "回顾内容" },
+    englishOptional: {
+      en: "English is optional. Empty fields fall back to Chinese on the public site.",
+      zh: "英文内容为选填。为空时前台会自动显示中文。",
+    },
+    selectPhotos: { en: "Select photos", zh: "选择照片" },
+    uploadSelectedPhotos: { en: "Upload selected photos", zh: "上传所选照片" },
+    noPhotos: {
+      en: "No photos yet. Upload photos to build the recap wall.",
+      zh: "暂无照片。上传照片后即可生成回顾照片墙。",
+    },
+    cover: { en: "Cover", zh: "封面" },
+    setCover: { en: "Set cover", zh: "设为封面" },
+    advancedSettings: { en: "Advanced settings", zh: "高级设置" },
+    captionZhOptional: { en: "Chinese caption (optional)", zh: "中文说明（选填）" },
+    captionEnOptional: { en: "English caption (optional)", zh: "英文说明（选填）" },
   },
   recaps: {
     title: { en: "Recap Management", zh: "回顾管理" },
@@ -161,5 +178,13 @@ export const adminCopy = {
     },
     missing: { en: "Missing", zh: "缺失" },
     complete: { en: "Complete", zh: "完整" },
+    recapEditor: { en: "Recap editor", zh: "回顾编辑" },
+    preview: { en: "Preview", zh: "预览" },
+    sourceEvent: { en: "Source Event", zh: "来源活动" },
+    unarchive: { en: "Unarchive", zh: "恢复为活动" },
+    unarchivePublishedConfirm: {
+      en: "After restoring this as an activity, the recap will no longer be public. Continue?",
+      zh: "恢复为活动后，该回顾将不再公开显示，是否继续？",
+    },
   },
 } as const;
