@@ -350,7 +350,7 @@ function getRecapTiles(recaps: EventRecap[], t: Translate, locale: string): Reca
       ...recap.media.map((item, index) => ({
         key: `${recap.slug}-${index}`,
         src: item.url,
-        title: t(item.caption),
+        title: t({ en: item.caption?.en ?? "", zh: item.caption?.zh ?? "" }),
         meta: new Date(recap.date).toLocaleDateString(locale),
       })),
     ])

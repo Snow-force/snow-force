@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { localizedList, localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
 import type { EventRecap } from "@/lib/types";
 
@@ -26,35 +27,42 @@ export function RecapsView({ recaps }: { recaps: EventRecap[] }) {
           </p>
         ) : (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {recaps.map((recap) => (
-              <Link
-                key={recap.slug}
-                href={`/recaps/${recap.slug}`}
-                className="card group transition hover:shadow-md"
-              >
-                <div className="flex flex-wrap gap-2">
-                  {(t(recap.tags) as string[]).map((tag) => (
-                    <span key={tag} className="inline-block rounded-full bg-snow-50 px-2.5 py-0.5 text-xs font-medium text-snow-700">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <h2 className="mt-3 text-lg font-semibold text-gray-900 group-hover:text-snow-600">
-                  {t(recap.title)}
-                </h2>
-                <p className="mt-1 line-clamp-3 text-sm text-gray-500">{t(recap.summary)}</p>
-                <div className="mt-4 flex items-center gap-3 text-sm text-gray-400">
-                  <span>{t(recap.location)}</span>
-                  <span>·</span>
-                  <span>{new Date(recap.date).toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
-                </div>
-                {recap.media.length > 0 ? (
-                  <div className="mt-3 text-xs text-snow-600">
-                    {recap.media.length} {t({ en: "photos", zh: "张照片" })}
+            {recaps.map((recap) => {
+              const title = localizedText(recap.title, lang);
+              const summary = localizedText(recap.summary, lang);
+              const location = localizedText(recap.location, lang);
+              const tags = localizedList(recap.tags, lang);
+
+              return (
+                <Link
+                  key={recap.slug}
+                  href={`/recaps/${recap.slug}`}
+                  className="card group transition hover:shadow-md"
+                >
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <span key={tag} className="inline-block rounded-full bg-snow-50 px-2.5 py-0.5 text-xs font-medium text-snow-700">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                ) : null}
-              </Link>
-            ))}
+                  <h2 className="mt-3 text-lg font-semibold text-gray-900 group-hover:text-snow-600">
+                    {title}
+                  </h2>
+                  <p className="mt-1 line-clamp-3 text-sm text-gray-500">{summary}</p>
+                  <div className="mt-4 flex items-center gap-3 text-sm text-gray-400">
+                    <span>{location}</span>
+                    <span>·</span>
+                    <span>{new Date(recap.date).toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                  </div>
+                  {recap.media.length > 0 ? (
+                    <div className="mt-3 text-xs text-snow-600">
+                      {recap.media.length} {t({ en: "photos", zh: "张照片" })}
+                    </div>
+                  ) : null}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

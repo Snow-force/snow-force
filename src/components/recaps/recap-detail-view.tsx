@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { localizedList, localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
 import type { EventRecap } from "@/lib/types";
 
@@ -20,17 +21,22 @@ export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
     );
   }
 
+  const title = localizedText(recap.title, lang);
+  const content = localizedText(recap.content, lang);
+  const location = localizedText(recap.location, lang);
+  const tags = localizedList(recap.tags, lang);
+
   return (
     <div className="py-16 sm:py-20">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <nav className="mb-8 text-sm text-gray-400">
           <Link href="/recaps" className="hover:text-gray-600">{t({ en: "Recaps", zh: "往期回顾" })}</Link>
           <span className="mx-2">/</span>
-          <span className="text-gray-600">{t(recap.title)}</span>
+          <span className="text-gray-600">{title}</span>
         </nav>
 
         <div className="flex flex-wrap gap-2">
-          {(t(recap.tags) as string[]).map((tag) => (
+          {tags.map((tag) => (
             <span key={tag} className="inline-block rounded-full bg-snow-50 px-2.5 py-0.5 text-xs font-medium text-snow-700">
               {tag}
             </span>
@@ -38,17 +44,17 @@ export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
         </div>
 
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-          {t(recap.title)}
+          {title}
         </h1>
 
         <div className="mt-4 flex items-center gap-3 text-sm text-gray-400">
-          <span>{t(recap.location)}</span>
+          <span>{location}</span>
           <span>·</span>
           <span>{new Date(recap.date).toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
         </div>
 
         <div className="mt-8 whitespace-pre-line text-gray-600 leading-relaxed">
-          {t(recap.content)}
+          {content}
         </div>
 
         {recap.media.length > 0 ? (
@@ -57,20 +63,26 @@ export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
               {t({ en: "Photos", zh: "活动照片" })}
             </h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {recap.media.map((m) => (
-                <div key={m.url} className="overflow-hidden rounded-lg border border-gray-200">
+              {recap.media.map((m) => {
+                const caption = localizedText(
+                  { en: m.caption?.en ?? "", zh: m.caption?.zh ?? "" },
+                  lang,
+                );
+                return (
+                <figure key={m.id} className="overflow-hidden rounded-lg border border-gray-200">
                   <div className="aspect-video bg-gray-100">
                     <img
                       src={m.url}
-                      alt={t(m.caption) as string}
+                      alt={caption}
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  {t(m.caption) ? (
-                    <p className="p-3 text-xs text-gray-500">{t(m.caption)}</p>
+                  {caption ? (
+                    <figcaption className="p-3 text-xs text-gray-500">{caption}</figcaption>
                   ) : null}
-                </div>
-              ))}
+                </figure>
+                );
+              })}
             </div>
           </div>
         ) : null}
