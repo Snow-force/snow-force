@@ -1,6 +1,8 @@
 export type Bilingual<T = string> = { en: T; zh: T };
 
 export type EventStatus = "draft" | "published" | "archived";
+export type RecapStatus = "draft" | "published" | "hidden";
+export type RecapMediaType = "image";
 export type RegistrationState = "open" | "closed" | "full";
 export type EventQuestionType =
   | "text"
@@ -94,16 +96,26 @@ export interface MemberProfile {
   updatedAt: string;
 }
 
+export interface RecapMediaItem {
+  id: string;
+  type: RecapMediaType;
+  url: string;
+  storagePath: string;
+  caption?: Partial<Bilingual>;
+  order: number;
+  isCover: boolean;
+}
+
 export interface EventRecap {
   slug: string;
-  status: EventStatus;
+  status: RecapStatus;
   title: Bilingual;
   summary: Bilingual;
   content: Bilingual;
   date: string;
   location: Bilingual;
   coverImage: string;
-  media: { url: string; caption: Bilingual }[];
+  media: RecapMediaItem[];
   tags: Bilingual<string[]>;
   seoTitle: Bilingual;
   seoDescription: Bilingual;
