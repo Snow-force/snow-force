@@ -1,4 +1,4 @@
-import type { EventRecap } from "@/lib/types";
+import type { Bilingual, EventRecap } from "@/lib/types";
 import { createClient } from "@supabase/supabase-js";
 import { seedRecaps } from "./seed";
 
@@ -60,34 +60,61 @@ function stringArray(value: unknown): string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : [];
 }
 
-function mediaItems(value: unknown): EventRecap["media"] {
+function normalizeCaption(value: unknown): Partial<Bilingual> | undefined {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const obj = value as Record<string, unknown>;
+  const en = typeof obj.en === "string" ? obj.en : undefined;
+  const zh = typeof obj.zh === "string" ? obj.zh : undefined;
+  if (en === undefined && zh === undefined) return undefined;
+  const caption: Partial<Bilingual> = {};
+  if (en !== undefined) caption.en = en;
+  if (zh !== undefined) caption.zh = zh;
+  return caption;
+}
+
+function mediaItems(value: unknown, slug: string, coverImage: string): EventRecap["media"] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is EventRecap["media"][number] => {
-    if (!item || typeof item !== "object") return false;
-    const media = item as Record<string, unknown>;
-    const caption = media.caption as Record<string, unknown> | undefined;
-    return (
-      typeof media.url === "string" &&
-      Boolean(caption) &&
-      typeof caption?.en === "string" &&
-      typeof caption?.zh === "string"
-    );
-  });
+
+  const items = value
+    .map((item, index): EventRecap["media"][number] | undefined => {
+      if (!item || typeof item !== "object") return undefined;
+      const media = item as Record<string, unknown>;
+      if (typeof media.url !== "string" || !media.url) return undefined;
+
+      return {
+        id: typeof media.id === "string" && media.id ? media.id : `${slug}-${index}`,
+        type: "image",
+        url: media.url,
+        storagePath: typeof media.storagePath === "string" ? media.storagePath : "",
+        caption: normalizeCaption(media.caption),
+        order: typeof media.order === "number" ? media.order : index,
+        isCover: typeof media.isCover === "boolean" ? media.isCover : media.url === coverImage,
+      };
+    })
+    .filter((item): item is EventRecap["media"][number] => Boolean(item))
+    .sort((a, b) => a.order - b.order)
+    .map((item, order) => ({ ...item, order }));
+
+  if (items.length > 0 && !items.some((item) => item.isCover)) {
+    items[0] = { ...items[0], isCover: true };
+  }
+
+  return items;
 }
 
 function recapToRow(recap: Partial<EventRecap>) {
   return {
-    ...(recap.status ? { status: recap.status } : {}),
-    ...(recap.title ? { title_en: recap.title.en, title_zh: recap.title.zh } : {}),
-    ...(recap.summary ? { summary_en: recap.summary.en, summary_zh: recap.summary.zh } : {}),
-    ...(recap.content ? { content_en: recap.content.en, content_zh: recap.content.zh } : {}),
-    ...(recap.date ? { date: recap.date } : {}),
-    ...(recap.location ? { location_en: recap.location.en, location_zh: recap.location.zh } : {}),
-    ...(recap.coverImage ? { cover_image: recap.coverImage } : {}),
-    ...(recap.media ? { media: recap.media } : {}),
-    ...(recap.tags ? { tags_en: recap.tags.en, tags_zh: recap.tags.zh } : {}),
-    ...(recap.seoTitle ? { seo_title_en: recap.seoTitle.en, seo_title_zh: recap.seoTitle.zh } : {}),
-    ...(recap.seoDescription
+    ...(recap.status !== undefined ? { status: recap.status } : {}),
+    ...(recap.title !== undefined ? { title_en: recap.title.en, title_zh: recap.title.zh } : {}),
+    ...(recap.summary !== undefined ? { summary_en: recap.summary.en, summary_zh: recap.summary.zh } : {}),
+    ...(recap.content !== undefined ? { content_en: recap.content.en, content_zh: recap.content.zh } : {}),
+    ...(recap.date !== undefined ? { date: recap.date } : {}),
+    ...(recap.location !== undefined ? { location_en: recap.location.en, location_zh: recap.location.zh } : {}),
+    ...(recap.coverImage !== undefined ? { cover_image: recap.coverImage } : {}),
+    ...(recap.media !== undefined ? { media: recap.media } : {}),
+    ...(recap.tags !== undefined ? { tags_en: recap.tags.en, tags_zh: recap.tags.zh } : {}),
+    ...(recap.seoTitle !== undefined ? { seo_title_en: recap.seoTitle.en, seo_title_zh: recap.seoTitle.zh } : {}),
+    ...(recap.seoDescription !== undefined
       ? { seo_description_en: recap.seoDescription.en, seo_description_zh: recap.seoDescription.zh }
       : {}),
     ...("eventSlug" in recap ? { event_slug: recap.eventSlug as string | null } : {}),
@@ -104,7 +131,7 @@ function rowToRecap(row: RecapRow): EventRecap {
     date: row.date,
     location: { en: row.location_en ?? "", zh: row.location_zh ?? "" },
     coverImage: row.cover_image ?? "",
-    media: mediaItems(row.media),
+    media: mediaItems(row.media, row.slug, row.cover_image ?? ""),
     tags: { en: stringArray(row.tags_en), zh: stringArray(row.tags_zh) },
     seoTitle: { en: row.seo_title_en ?? "", zh: row.seo_title_zh ?? "" },
     seoDescription: {
@@ -277,8 +304,11 @@ export function createRecapRepository(source: RecapSource) {
       const row = rows.find((r) => r.slug === slug);
       return row ? rowToRecap(row) : undefined;
     },
-    async getAllRecaps() {
-      return (await source.listAdmin()).map(rowToRecap);
+    async getAllRecaps(options: { includeHidden?: boolean } = {}) {
+      const rows = await source.listAdmin();
+      return rows
+        .filter((row) => options.includeHidden || row.status !== "hidden")
+        .map(rowToRecap);
     },
     async insertRecap(recap: EventRecap) {
       return rowToRecap(await source.insert(recap));

@@ -23,9 +23,9 @@ export const seedRecaps: EventRecap[] = [
     },
     coverImage: "/images/recaps/2025-finale-cover.jpg",
     media: [
-      { url: "/images/recaps/2025-finale-1.jpg", caption: { en: "Group shot at the peak", zh: "山顶大合影" } },
-      { url: "/images/recaps/2025-finale-2.jpg", caption: { en: "Best trick contest", zh: "最佳技巧赛" } },
-      { url: "/images/recaps/2025-finale-3.jpg", caption: { en: "Sunset BBQ", zh: "日落烧烤" } },
+      { id: "finale-1", type: "image", url: "/images/recaps/2025-finale-1.jpg", storagePath: "", caption: { en: "Group shot at the peak", zh: "山顶大合影" }, order: 0, isCover: true },
+      { id: "finale-2", type: "image", url: "/images/recaps/2025-finale-2.jpg", storagePath: "", caption: { en: "Best trick contest", zh: "最佳技巧赛" }, order: 1, isCover: false },
+      { id: "finale-3", type: "image", url: "/images/recaps/2025-finale-3.jpg", storagePath: "", caption: { en: "Sunset BBQ", zh: "日落烧烤" }, order: 2, isCover: false },
     ],
     tags: {
       en: ["Season Finale", "Spring", "BBQ", "Contest"],
@@ -62,8 +62,8 @@ export const seedRecaps: EventRecap[] = [
     },
     coverImage: "/images/recaps/night-session-cover.jpg",
     media: [
-      { url: "/images/recaps/night-session-1.jpg", caption: { en: "Full moon rising over the park", zh: "满月从公园上方升起" } },
-      { url: "/images/recaps/night-session-2.jpg", caption: { en: "Night laps crew", zh: "夜滑小队" } },
+      { id: "night-1", type: "image", url: "/images/recaps/night-session-1.jpg", storagePath: "", caption: { en: "Full moon rising over the park", zh: "满月从公园上方升起" }, order: 0, isCover: true },
+      { id: "night-2", type: "image", url: "/images/recaps/night-session-2.jpg", storagePath: "", caption: { en: "Night laps crew", zh: "夜滑小队" }, order: 1, isCover: false },
     ],
     tags: {
       en: ["Night Riding", "Full Moon", "Park", "Social"],
