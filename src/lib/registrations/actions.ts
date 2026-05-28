@@ -4,7 +4,8 @@ import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
 import { getEvent } from "@/lib/events/repository";
 import { createRegistration, getRegistrationCountForEvent } from "@/lib/registrations/repository";
 import { sendEmail, buildConfirmationEmail, buildStaffNotificationEmail } from "@/lib/email/adapter";
-import { getCurrentMemberProfile } from "@/lib/members/actions";
+import { getCurrentMemberAccount } from "@/lib/members/actions";
+import { canSubmitMemberRegistration } from "@/lib/registrations/member-gate";
 import { validateRegistrationAnswers } from "@/lib/registrations/validation";
 import type { RegistrationAnswers } from "@/lib/types";
 
@@ -54,10 +55,14 @@ export async function registerForEvent(
   const contactPhone = getStringAnswer(answers, "phone");
 
   // Persist registration first
-  const member = await getCurrentMemberProfile();
+  const account = await getCurrentMemberAccount();
+  const memberDecision = canSubmitMemberRegistration(account?.profile ? { profile: account.profile, emailConfirmed: account.emailConfirmed } : null);
+  if (!memberDecision.allowed) {
+    return { success: false, error: memberDecision.error };
+  }
   const result = await createRegistration({
     eventSlug,
-    memberId: member?.id ?? null,
+    memberId: memberDecision.memberId,
     answers,
     consentGiven: input.consentGiven,
     contactEmail,
