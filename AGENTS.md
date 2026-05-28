@@ -1,20 +1,24 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-05-24
-**Commit:** 8dee71b
-**Branch:** codex/homepage-immersive-redesign
+**Generated:** 2026-05-27
+**Commit:** 53dfdb9
+**Branch:** main
 
 ## OVERVIEW
-SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 14 App Router, TypeScript, Tailwind, Vitest, and Supabase. Public pages sell events and recaps; admin pages operate event content, registrations, recaps, FAQs, and inquiries behind a local staff password session.
+SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 14 App Router, TypeScript, Tailwind, Vitest, and Supabase. Public pages sell events and recaps; member auth/dashboard uses Supabase SSR; admin pages operate event content, registrations, recaps, FAQs, and inquiries behind a local staff password session.
 
 ## STRUCTURE
 ```
 ./
 ├── src/app/                 # App Router routes, server data loading, admin route guards
-├── src/components/          # Client UI by surface: site, events, admin, recaps
-├── src/lib/                 # Domain repositories, server actions, auth, Supabase adapters
-├── supabase/migrations/     # Schema, RLS, status constraints, recap linkage
-├── docs/superpowers/        # Implementation plans/specs; useful context, not runtime docs
+│   └── auth/callback/       # Supabase SSR code exchange → redirect
+├── src/components/          # Client UI by surface: site, events, members, admin, recaps
+├── src/lib/                 # Domain logic: repositories, server actions, auth, Supabase clients
+│   ├── members/             # Supabase Auth flows, structured profiles, dashboard, supporting tables
+│   ├── registrations/       # Registration validation, actions, member gating, autofill
+│   │   └── member-gate.ts   # Verified-email gate + profile autofill for event forms
+├── supabase/migrations/     # Schema, RLS, member expansion, supporting tables
+├── middleware.ts             # Supabase SSR session refresh (root-level)
 ├── PRODUCT.md               # Product register, users, principles
 └── DESIGN.md                # SnowForce design system and bans
 ```
@@ -25,10 +29,12 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 | Public event list/detail | `src/app/events`, `src/components/events` | Route pages read repositories server-side, render client components for language switching. |
 | Admin event workflow | `src/app/admin/events`, `src/components/admin`, `src/lib/events` | Mutations go through server actions after `requireAdmin()`. |
 | Archive to recap workflow | `src/lib/events/actions.ts`, `src/lib/recaps`, `src/app/admin/recaps` | Archive creates draft recap, editor adds media, status route publishes public recaps. |
-| Registrations | `src/lib/registrations`, `src/components/events/registration-form.tsx` | Client validates UX; server action rechecks event state, window, capacity, required fields. |
-| Member auth/profile | `src/lib/members`, `src/app/member` | Uses Supabase Auth browser/server client helpers, separate from local staff admin session. |
+| Registrations | `src/lib/registrations`, `src/components/events/registration-form.tsx` | Client validates UX; server action rechecks event state, window, capacity, required fields, email verification. |
+| Member auth gateway | `src/components/members/member-auth-panel.tsx`, `src/lib/members/actions.ts` | Immersive hero + auth card; login/register/magic/Google OAuth/forgot/reset flows. |
+| Member dashboard | `src/components/members/member-dashboard.tsx`, `src/lib/members/dashboard.ts` | Portal: upcoming trips, registration cards, saved events, notifications, recaps. |
+| Member profile | `src/components/members/profile-form.tsx`, `src/lib/members/repository.ts`, `src/lib/members/profile-fields.ts` | Structured rider fields, passes, equipment, emergency contacts. |
 | Staff admin auth | `src/lib/auth/admin.ts`, `src/app/staff-login`, `src/app/admin/layout.tsx` | Signed httpOnly cookie, not Supabase staff auth yet. |
-| Database/RLS changes | `supabase/migrations` | Apply migrations before relying on new statuses/columns. |
+| Database/RLS changes | `supabase/migrations` | Apply migrations before relying on new statuses/columns/tables. |
 | Design/product rules | `PRODUCT.md`, `DESIGN.md` | Product register. Public pages may be energetic; admin stays practical. |
 
 ## CODE MAP
@@ -41,7 +47,12 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 | `createRecapRepository()` | repository factory | `src/lib/recaps/repository.ts` | Public/admin recap reads, insert/update mapping. |
 | `updateSession()` | middleware adapter | `src/lib/supabase/middleware.ts` | Supabase auth cookie refresh for member flows. |
 | `LanguageProvider` | client context | `src/lib/language.tsx` | Runtime EN/ZH selection via cookie. |
-| `createJsonArrayStore()` | fallback persistence | `src/lib/server/json-store.ts` | `.data` storage for non-Supabase fallback domains. |
+| `getCurrentMemberAccount()` | server helper | `src/lib/members/actions.ts` | Auth user + profile + email confirmed check. |
+| `buildMemberDashboard()` | aggregation | `src/lib/members/dashboard.ts` | Upcoming/history/saved/notifications/recaps from registrations/events. |
+| `sanitizeMemberNextPath()` | auth security | `src/lib/members/auth-results.ts` | Callback redirect sanitizer; only allows /member, /events, /recaps. |
+| `normalizeMemberProfileRow()` | data mapper | `src/lib/members/profile-fields.ts` | DB row → typed MemberProfile with enum guards. |
+| `canSubmitMemberRegistration()` | registration gate | `src/lib/registrations/member-gate.ts` | Blocks unverified members; returns memberId or null. |
+| `autofillRegistrationAnswers()` | autofill | `src/lib/registrations/member-gate.ts` | Pre-fills event form from member profile. |
 
 ## CONVENTIONS
 - Path alias: `@/*` maps to `./src/*`.
@@ -53,6 +64,9 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 - Bilingual data uses `{ en, zh }`; arrays use `{ en: string[], zh: string[] }`.
 - Cover/media are URL/path strings in this increment. No Supabase Storage upload UI exists yet.
 - `capacity === 0` means unlimited capacity.
+- Auth redirects route through `/auth/callback` for Supabase SSR code exchange; never directly to `/member`.
+- `member_profiles` uses structured fields (riderType/riderLevel) alongside legacy bilingual columns.
+- Supporting tables (`member_passes`, `member_equipment`, `saved_events`, `notifications`) back the new member portal.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Never import privileged Supabase admin/service client into client components.
@@ -62,6 +76,8 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 - Do not silently assume public data is correct when Supabase config or migrations are missing.
 - Do not use `as any`, `@ts-ignore`, or `@ts-expect-error`.
 - Do not remove existing dirty worktree changes without explicit instruction.
+- Do not use `raw_user_meta_data` for authorization decisions.
+- Do not put `security definer` functions in public schema.
 
 ## UNIQUE STYLES
 - Product register: public discovery can be lively; admin screens should be dense, calm, and scannable.
@@ -83,3 +99,4 @@ supabase db push  # Apply migrations to linked project when schema changes
 - `.env.local` contains real local credentials. Do not print or copy values into logs/docs.
 - Local Next dev/build can corrupt `.next` if multiple Next processes write concurrently. Stop project Node/Next processes before clean rebuilds.
 - `.omo/`, `.playwright-mcp/`, `.superpowers/`, `.next/`, `node_modules/`, and `.data/` are tool/runtime state, not source knowledge.
+- Root `middleware.ts` delegates to `src/lib/supabase/middleware.ts`; `src/middleware.ts` is the deployable entry point.
