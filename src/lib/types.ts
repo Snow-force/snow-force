@@ -83,6 +83,20 @@ export interface Registration {
   updatedAt: string;
 }
 
+export interface MemberEquipment {
+  ownsSkis: boolean;
+  ownsSnowboard: boolean;
+  ownsBoots: boolean;
+  needsRentalHelp: boolean;
+}
+
+export interface MemberNotificationPreferences {
+  eventReminders: boolean;
+  newTrips: boolean;
+  recapPosted: boolean;
+  communityUpdates: boolean;
+}
+
 export interface MemberProfile {
   id: string;
   userId: string;
@@ -90,6 +104,20 @@ export interface MemberProfile {
   email: string;
   phone: string;
   riderLevel: Bilingual;
+  riderType: "" | "skier" | "snowboarder" | "both" | "learning";
+  structuredRiderLevel: "" | "first_timer" | "beginner" | "intermediate" | "advanced" | "expert";
+  homeMountain: string;
+  bio: string;
+  carpoolInterest: boolean;
+  lodgingInterest: boolean;
+  preferredLanguage: "en" | "zh";
+  instagram: string;
+  discord: string;
+  avatarUrl: string;
+  passes: string[];
+  equipment: MemberEquipment;
+  savedEventSlugs: string[];
+  notificationPreferences: MemberNotificationPreferences;
   emergencyContact: string;
   emergencyPhone: string;
   createdAt: string;
@@ -146,4 +174,51 @@ export interface StaffUser {
   id: string;
   email: string;
   role: "admin" | "manager";
+}
+
+export interface MemberPass {
+  id: string;
+  profileId: string;
+  passType: "ikon" | "epic" | "big_bear" | "mountain_high" | "other";
+  label: string;
+  createdAt: string;
+}
+
+export interface MemberEquipmentRow {
+  id: string;
+  profileId: string;
+  ownsSkis: boolean;
+  ownsSnowboard: boolean;
+  ownsBoots: boolean;
+  needsRentalHelp: boolean;
+  note: string;
+  updatedAt: string;
+}
+
+export interface SavedEvent {
+  id: string;
+  profileId: string;
+  eventSlug: string;
+  savedAt: string;
+}
+
+export type NotificationType =
+  | "email_verification"
+  | "profile_completion"
+  | "event_opened"
+  | "waitlist_confirmed"
+  | "event_cancelled"
+  | "recap_published"
+  | "registration_changed"
+  | "payment_reminder";
+
+export interface MemberNotification {
+  id: string;
+  profileId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  href: string;
+  readAt: string | null;
+  createdAt: string;
 }
