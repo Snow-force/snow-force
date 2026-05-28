@@ -25,6 +25,15 @@
   .input-field {
     @apply block h-11 w-full rounded-full border border-black/10 px-5 py-3 text-[17px] font-normal text-[#1d1d1f] placeholder:text-[#7a7a7a] focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3];
   }
+  .auth-input {
+    @apply block min-h-12 w-full rounded-2xl border border-[#dce3ed] bg-[#f6f8fb] px-4 py-3 text-[16px] font-normal text-[#15171b] outline-none transition placeholder:text-[#98a2b3] focus:border-[#005bea] focus:bg-white focus:ring-4 focus:ring-[#005bea]/10;
+  }
+  .auth-input-dark {
+    @apply block min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[16px] font-normal text-white outline-none transition placeholder:text-white/25 focus:border-white/30 focus:bg-white/10 focus:ring-0;
+  }
+  .auth-primary-button {
+    @apply inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#005bea] px-5 text-[16px] font-semibold text-white transition hover:bg-[#004fd0] active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005bea] disabled:cursor-not-allowed disabled:opacity-50;
+  }
   .label {
     @apply mb-1 block text-sm font-semibold tracking-[-0.224px] text-[#333333];
   }
