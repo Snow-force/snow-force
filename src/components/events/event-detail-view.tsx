@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLanguage, type Lang } from "@/lib/language";
 import { isEventOpen, remainingCapacity } from "@/lib/events/availability";
 import { RegistrationForm } from "@/components/events/registration-form";
-import type { Bilingual, Event } from "@/lib/types";
+import type { Bilingual, Event, MemberProfile } from "@/lib/types";
 
 function localizedText(value: Bilingual, lang: Lang) {
   return lang === "en" ? value.en || value.zh : value.zh || value.en;
@@ -17,9 +17,13 @@ function localizedList(value: Bilingual<string[]>, lang: Lang) {
 export function EventDetailView({
   event,
   loadError = false,
+  memberProfile = null,
+  emailConfirmed = false,
 }: {
   event: Event | undefined;
   loadError?: boolean;
+  memberProfile?: MemberProfile | null;
+  emailConfirmed?: boolean;
 }) {
   const { lang, t } = useLanguage();
   const locale = lang === "zh" ? "zh-CN" : "en-US";
@@ -105,6 +109,13 @@ export function EventDetailView({
                     {event.feeAmount}
                   </span>
                 ) : null}
+                {memberProfile ? (
+                  memberProfile.savedEventSlugs.includes(event.slug) ? (
+                    <span className="inline-flex items-center rounded-full border border-[#005bea] bg-[#005bea] px-3 py-1 text-[12px] font-semibold leading-none text-white">
+                      {t({ en: "Saved", zh: "已收藏" })}
+                    </span>
+                  ) : null
+                ) : null}
               </div>
               <h1 className="mt-5 max-w-3xl text-[40px] font-semibold leading-[1.08] tracking-[-0.28px] sm:text-[56px]">
                 {eventTitle}
@@ -188,7 +199,7 @@ export function EventDetailView({
           <aside className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
               {open ? (
-                <RegistrationForm event={event} />
+                <RegistrationForm event={event} memberProfile={memberProfile} emailConfirmed={emailConfirmed} />
               ) : (
                 <div className="card bg-[#f5f5f7] text-center">
                   <p className="text-[17px] leading-[1.47] tracking-[-0.374px] text-[#333333]">

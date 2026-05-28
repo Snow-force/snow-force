@@ -2,11 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/language";
-import type { Bilingual, Event, EventRegistrationQuestion } from "@/lib/types";
+import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
+import { autofillRegistrationAnswers } from "@/lib/registrations/member-gate";
 
 type Props = {
   event: Event;
+  memberProfile?: MemberProfile | null;
+  emailConfirmed?: boolean;
 };
 
 type AnswerValue = string | boolean | string[];
@@ -168,10 +171,10 @@ function renderQuestion(
   );
 }
 
-export function RegistrationForm({ event }: Props) {
+export function RegistrationForm({ event, memberProfile = null, emailConfirmed = false }: Props) {
   const { lang, t } = useLanguage();
   const [, startTransition] = useTransition();
-  const [formData, setFormData] = useState<FormDataState>({});
+  const [formData, setFormData] = useState<FormDataState>(() => autofillRegistrationAnswers({}, memberProfile));
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
@@ -268,6 +271,22 @@ export function RegistrationForm({ event }: Props) {
           {t({
             en: "We'll send more details closer to the event date.",
             zh: "活动临近时我们会发送更多详情。",
+          })}
+        </p>
+      </div>
+    );
+  }
+
+  if (memberProfile && !emailConfirmed) {
+    return (
+      <div className="card border-amber-200 bg-amber-50">
+        <h3 className="text-lg font-semibold text-amber-900">
+          {t({ en: "Verify your email to register as a member", zh: "请先验证邮箱再使用会员报名" })}
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-amber-800">
+          {t({
+            en: "SnowForce member registration uses your saved profile, so your account email must be verified first.",
+            zh: "会员报名会使用你保存的资料，因此需要先完成邮箱验证。",
           })}
         </p>
       </div>
