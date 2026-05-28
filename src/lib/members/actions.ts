@@ -1,17 +1,94 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
-import { parseMemberEntry } from "./member-entry";
+import { memberAuthCallbackUrl } from "./auth-results";
+import {
+  parseMemberEmail,
+  parseMemberEntry,
+  parseMemberMagicLink,
+  parseMemberPasswordUpdate,
+  parseMemberProfileUpdate,
+} from "./member-entry";
+import {
+  addMemberPass,
+  getSavedEvents,
+  markNotificationRead,
+  removeMemberPass,
+  saveEvent,
+  unsaveEvent,
+  upsertMemberEquipment,
+} from "./supporting";
 
-export async function getCurrentMemberProfile() {
+function siteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
+function memberRedirect(path: string) {
+  return `${siteUrl()}${path}`;
+}
+
+function memberCallback(path: string) {
+  return memberAuthCallbackUrl(siteUrl(), path);
+}
+
+function hasMemberAuthCookie() {
+  return cookies()
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
+}
+
+export async function getCurrentMemberAccount() {
+  if (!hasMemberAuthCookie()) {
+    return null;
+  }
+
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user ? (await getMemberProfile(user.id)) ?? null : null;
+
+  if (!user) {
+    return null;
+  }
+
+  let profile = (await getMemberProfile(user.id)) ?? null;
+
+  // Auto-create profile when auth user exists but trigger didn't fire
+  if (!profile && user.email) {
+    const displayName =
+      (user.user_metadata?.display_name as string)?.trim() ||
+      user.email.split("@")[0] ||
+      "";
+
+    const { data: newProfile } = await supabase
+      .from("member_profiles")
+      .insert({
+        user_id: user.id,
+        display_name: displayName,
+        email: user.email,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (newProfile) {
+      profile = (await getMemberProfile(user.id)) ?? null;
+    }
+  }
+
+  return {
+    user,
+    profile,
+    emailConfirmed: Boolean(user.email_confirmed_at),
+  };
+}
+
+export async function getCurrentMemberProfile() {
+  const account = await getCurrentMemberAccount();
+  return account?.profile ?? null;
 }
 
 export async function registerMemberProfile(formData: FormData) {
@@ -26,7 +103,7 @@ export async function registerMemberProfile(formData: FormData) {
     password: entry.password,
     options: {
       data: { display_name: entry.displayName },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/member`,
+      emailRedirectTo: memberCallback("/member"),
     },
   });
 
@@ -61,16 +138,196 @@ export async function saveMemberProfile(formData: FormData) {
   const profile = await getCurrentMemberProfile();
   if (!profile) redirect("/member?error=1");
 
-  await updateMemberProfile(profile.userId, {
-    displayName: String(formData.get("displayName") ?? "").trim(),
-    phone: String(formData.get("phone") ?? "").trim(),
-    riderLevel: {
-      en: String(formData.get("riderLevelEn") ?? "").trim(),
-      zh: String(formData.get("riderLevelZh") ?? "").trim(),
+  const entry = parseMemberProfileUpdate(formData);
+  if (!entry.success) {
+    redirect(`/member?profileError=${entry.error}`);
+  }
+
+  await updateMemberProfile(profile.userId, entry.data);
+  revalidatePath("/member");
+  redirect("/member?profileSaved=1");
+}
+
+export async function requestMemberMagicLink(formData: FormData) {
+  const entry = parseMemberMagicLink(formData);
+  if (!entry.success) {
+    redirect("/member?error=magic");
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: entry.email,
+    options: {
+      emailRedirectTo: memberCallback("/member"),
     },
-    emergencyContact: String(formData.get("emergencyContact") ?? "").trim(),
-    emergencyPhone: String(formData.get("emergencyPhone") ?? "").trim(),
   });
+  if (error) {
+    redirect("/member?error=magic");
+  }
+
+  redirect("/member?magicSent=1");
+}
+
+export async function loginMemberWithGoogle() {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: memberCallback("/member"),
+    },
+  });
+  if (error || !data.url) {
+    redirect("/member?error=oauth");
+  }
+
+  redirect(data.url);
+}
+
+export async function requestMemberPasswordReset(formData: FormData) {
+  const entry = parseMemberEmail(formData);
+  if (!entry.success) {
+    redirect("/member/forgot-password?error=email");
+  }
+
+  const supabase = createClient();
+  await supabase.auth.resetPasswordForEmail(entry.email, {
+    redirectTo: memberCallback("/member/reset-password"),
+  });
+
+  redirect("/member/forgot-password?sent=1");
+}
+
+export async function resendMemberVerification(formData: FormData) {
+  const entry = parseMemberEmail(formData);
+  if (!entry.success) {
+    redirect("/member?error=verification-email");
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: entry.email,
+    options: {
+      emailRedirectTo: memberCallback("/member"),
+    },
+  });
+  if (error) {
+    redirect("/member?error=verification-email");
+  }
+
+  redirect("/member?verificationSent=1");
+}
+
+export async function resetMemberPassword(formData: FormData) {
+  const entry = parseMemberPasswordUpdate(formData);
+  if (!entry.success) {
+    redirect(`/member/reset-password?error=${entry.error}`);
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.updateUser({ password: entry.password });
+  if (error) {
+    redirect("/member/reset-password?error=session");
+  }
+
+  revalidatePath("/member");
+  redirect("/member?passwordReset=1");
+}
+
+export async function changeMemberPassword(formData: FormData) {
+  const account = await getCurrentMemberAccount();
+  if (!account) {
+    redirect("/member?error=login");
+  }
+
+  const entry = parseMemberPasswordUpdate(formData);
+  if (!entry.success) {
+    redirect(`/member?securityError=${entry.error}`);
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.updateUser({ password: entry.password });
+  if (error) {
+    redirect("/member?securityError=session");
+  }
+
+  revalidatePath("/member");
+  redirect("/member?passwordChanged=1");
+}
+
+export async function toggleSaveEventAction(formData: FormData) {
+  "use server";
+
+  const profile = await getCurrentMemberProfile();
+  if (!profile) redirect("/member?error=login");
+
+  const eventSlug = String(formData.get("eventSlug") ?? "").trim();
+  if (!eventSlug) redirect("/member");
+
+  const existing = await getSavedEvents(profile.id);
+  if (existing.some((item) => item.eventSlug === eventSlug)) {
+    await unsaveEvent(profile.id, eventSlug);
+  } else {
+    await saveEvent(profile.id, eventSlug);
+  }
+  revalidatePath("/member");
+  revalidatePath(`/events/${eventSlug}`);
+  redirect(`/events/${eventSlug}`);
+}
+
+export async function addPassAction(formData: FormData) {
+  "use server";
+
+  const profile = await getCurrentMemberProfile();
+  if (!profile) redirect("/member?error=login");
+
+  const passType = String(formData.get("passType") ?? "").trim();
+  if (!passType || !["ikon", "epic", "big_bear", "mountain_high", "other"].includes(passType)) {
+    redirect("/member?profileError=passType");
+  }
+  const label = String(formData.get("passLabel") ?? "").trim();
+  await addMemberPass(profile.id, passType as "ikon" | "epic" | "big_bear" | "mountain_high" | "other", label);
+  revalidatePath("/member");
+  redirect("/member?profileSaved=1");
+}
+
+export async function removePassAction(formData: FormData) {
+  "use server";
+
+  const profile = await getCurrentMemberProfile();
+  if (!profile) redirect("/member?error=login");
+
+  const passId = String(formData.get("passId") ?? "").trim();
+  if (passId) await removeMemberPass(passId);
+  revalidatePath("/member");
+  redirect("/member?profileSaved=1");
+}
+
+export async function saveEquipmentAction(formData: FormData) {
+  "use server";
+
+  const profile = await getCurrentMemberProfile();
+  if (!profile) redirect("/member?error=login");
+
+  await upsertMemberEquipment(profile.id, {
+    ownsSkis: formData.get("ownsSkis") === "on",
+    ownsSnowboard: formData.get("ownsSnowboard") === "on",
+    ownsBoots: formData.get("ownsBoots") === "on",
+    needsRentalHelp: formData.get("needsRentalHelp") === "on",
+    note: String(formData.get("equipmentNote") ?? "").trim(),
+  });
+  revalidatePath("/member");
+  redirect("/member?profileSaved=1");
+}
+
+export async function markNotificationReadAction(formData: FormData) {
+  "use server";
+
+  const profile = await getCurrentMemberProfile();
+  if (!profile) return;
+
+  const notificationId = String(formData.get("notificationId") ?? "").trim();
+  if (notificationId) await markNotificationRead(notificationId);
   revalidatePath("/member");
 }
 
