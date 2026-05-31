@@ -2,7 +2,7 @@ import { changeMemberPassword } from "@/lib/members/actions";
 
 export function SecurityForm() {
   return (
-    <form action={changeMemberPassword} className="card space-y-5">
+    <form id="security" action={changeMemberPassword} className="card space-y-5">
       <div>
         <h2 className="text-xl font-semibold text-gray-900">Security</h2>
         <p className="mt-1 text-sm leading-6 text-gray-500">

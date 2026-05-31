@@ -29,7 +29,7 @@ const riderLevels = [
 export function ProfileForm({ profile }: ProfileFormProps) {
   return (
     <div>
-    <form action={saveMemberProfile} className="rounded-[28px] border border-[#dce3ed] bg-white p-6 shadow-sm shadow-slate-200/40">
+    <form id="profile" action={saveMemberProfile} className="rounded-[28px] border border-[#dce3ed] bg-white p-6 shadow-sm shadow-slate-200/40">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#005bea]">Rider profile</p>
@@ -70,7 +70,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       </div>
     </form>
 
-    <form action={addPassAction} className="mt-6 rounded-[24px] border border-[#dce3ed] bg-[#f6f7fb] p-5">
+    <form id="passes" action={addPassAction} className="mt-6 rounded-[24px] border border-[#dce3ed] bg-[#f6f7fb] p-5">
       <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#005bea]">Passes</p>
       {profile.passes.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
@@ -97,7 +97,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       </div>
     </form>
 
-    <form action={saveEquipmentAction} className="mt-4 rounded-[24px] border border-[#dce3ed] bg-[#f6f7fb] p-5">
+    <form id="equipment" action={saveEquipmentAction} className="mt-4 rounded-[24px] border border-[#dce3ed] bg-[#f6f7fb] p-5">
       <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#005bea]">Equipment</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Check name="ownsSkis" label="Own skis" defaultChecked={profile.equipment.ownsSkis} />

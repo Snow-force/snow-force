@@ -33,9 +33,7 @@ export default async function MemberPage({
   return (
     <MemberDashboard
       dashboard={dashboard}
-      emailConfirmed={account.emailConfirmed}
       profile={account.profile}
-      registrations={registrations}
       searchParams={searchParams}
       user={account.user}
     />

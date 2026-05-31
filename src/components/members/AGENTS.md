@@ -7,11 +7,12 @@ Client UI for SnowForce member identity: immersive auth gateway, dashboard-first
 | Task | Location | Notes |
 |------|----------|-------|
 | Unauthenticated auth gateway | `member-auth-panel.tsx` | Immersive hero + floating auth card; login/register/magic mode tabs; Google OAuth; forgot password; resend verification. |
-| Authenticated member portal | `member-dashboard.tsx` | Dashboard-first: command center header, next trip, quick actions, history, saved events, notifications, recaps, profile, security. |
+| Authenticated member portal | `member-dashboard.tsx` | Consumer dashboard: next trip, recent registrations, quick actions, recaps, profile readiness. Saved events and notifications are currently hidden from member UI. |
+| Shared member shell | `member-secondary-shell.tsx` | Dashboard-style chrome for Trips, Profile, and Account Settings pages with desktop side nav and mobile bottom nav. |
 | Structured profile editing | `profile-form.tsx` | Rider type/level selects, passes add form, equipment checkboxes, emergency contacts, social handles. |
 | Registration history cards | `registration-history.tsx` | Event-linked cards with status pills, payment/waitlist badges, answer summary. |
 | Status message display | `member-status-message.tsx` | Maps URL search params to success/error copy for member, forgot, and reset scopes. |
-| Security/password form | `security-form.tsx` | Change password via server action. |
+| Security/password form | `security-form.tsx` | Change password via server action; rendered under `/member/account-settings`, not the profile page. |
 
 ## CONVENTIONS
 - Components use `useLanguage()` + bilingual `t()` calls for EN/ZH strings.

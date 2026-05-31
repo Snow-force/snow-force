@@ -140,12 +140,13 @@ export async function saveMemberProfile(formData: FormData) {
 
   const entry = parseMemberProfileUpdate(formData);
   if (!entry.success) {
-    redirect(`/member?profileError=${entry.error}`);
+    redirect(`/member/settings?profileError=${entry.error}`);
   }
 
   await updateMemberProfile(profile.userId, entry.data);
   revalidatePath("/member");
-  redirect("/member?profileSaved=1");
+  revalidatePath("/member/settings");
+  redirect("/member/settings?profileSaved=1");
 }
 
 export async function requestMemberMagicLink(formData: FormData) {
@@ -242,17 +243,18 @@ export async function changeMemberPassword(formData: FormData) {
 
   const entry = parseMemberPasswordUpdate(formData);
   if (!entry.success) {
-    redirect(`/member?securityError=${entry.error}`);
+    redirect(`/member/account-settings?securityError=${entry.error}`);
   }
 
   const supabase = createClient();
   const { error } = await supabase.auth.updateUser({ password: entry.password });
   if (error) {
-    redirect("/member?securityError=session");
+    redirect("/member/account-settings?securityError=session");
   }
 
   revalidatePath("/member");
-  redirect("/member?passwordChanged=1");
+  revalidatePath("/member/account-settings");
+  redirect("/member/account-settings?passwordChanged=1");
 }
 
 export async function toggleSaveEventAction(formData: FormData) {
@@ -283,12 +285,13 @@ export async function addPassAction(formData: FormData) {
 
   const passType = String(formData.get("passType") ?? "").trim();
   if (!passType || !["ikon", "epic", "big_bear", "mountain_high", "other"].includes(passType)) {
-    redirect("/member?profileError=passType");
+    redirect("/member/settings?profileError=passType");
   }
   const label = String(formData.get("passLabel") ?? "").trim();
   await addMemberPass(profile.id, passType as "ikon" | "epic" | "big_bear" | "mountain_high" | "other", label);
   revalidatePath("/member");
-  redirect("/member?profileSaved=1");
+  revalidatePath("/member/settings");
+  redirect("/member/settings?profileSaved=1");
 }
 
 export async function removePassAction(formData: FormData) {
@@ -300,7 +303,8 @@ export async function removePassAction(formData: FormData) {
   const passId = String(formData.get("passId") ?? "").trim();
   if (passId) await removeMemberPass(passId);
   revalidatePath("/member");
-  redirect("/member?profileSaved=1");
+  revalidatePath("/member/settings");
+  redirect("/member/settings?profileSaved=1");
 }
 
 export async function saveEquipmentAction(formData: FormData) {
@@ -317,7 +321,8 @@ export async function saveEquipmentAction(formData: FormData) {
     note: String(formData.get("equipmentNote") ?? "").trim(),
   });
   revalidatePath("/member");
-  redirect("/member?profileSaved=1");
+  revalidatePath("/member/settings");
+  redirect("/member/settings?profileSaved=1");
 }
 
 export async function markNotificationReadAction(formData: FormData) {

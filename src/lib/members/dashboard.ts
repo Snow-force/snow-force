@@ -73,7 +73,7 @@ function buildNotifications(
       type: "email_verification",
       title: "Verify your email",
       body: "Verify your email before using member-linked event registration.",
-      href: "/member#security",
+      href: "/member/account-settings",
     });
   }
   if (profileCompletion(profile) < 80) {
@@ -82,7 +82,7 @@ function buildNotifications(
       type: "profile_completion",
       title: "Complete your rider profile",
       body: "Add phone, rider level, pass, and emergency details to speed up trip registration.",
-      href: "/member#profile",
+      href: "/member/settings#profile",
     });
   }
   if (upcomingTrips.length > 0) {
@@ -144,7 +144,7 @@ export function buildMemberDashboard({
     profileCompletion: profileCompletion(profile),
     quickActions: [
       { label: "Browse open events", href: "/events" },
-      { label: "Complete profile", href: "/member#profile" },
+      { label: "Complete profile", href: "/member/settings#profile" },
       { label: "View recaps", href: "/recaps" },
     ],
   };
