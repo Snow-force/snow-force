@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { EventCard } from "@/components/events/event-card";
 import { useLanguage, type Lang } from "@/lib/language";
@@ -53,27 +54,54 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
 }
 
 function HeroSection({ t }: { t: Translate }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [showPlayButton, setShowPlayButton] = useState(true);
+
+  async function handlePlayClick() {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    video.muted = true;
+    video.playsInline = true;
+
+    try {
+      await video.play();
+      setShowPlayButton(false);
+    } catch {
+      setShowPlayButton(true);
+    }
+  }
+
   return (
     <section className="relative flex min-h-[calc(100svh-96px)] items-center justify-center overflow-hidden px-4 py-24 text-center sm:px-6">
       <video
+        ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
         src="/videos/snowmountain.mp4"
         autoPlay
         muted
         loop
         playsInline
-        aria-hidden="true"
+        onPlay={() => setShowPlayButton(false)}
+        onPause={() => setShowPlayButton(true)}
+        aria-label={t({ en: "SnowForce mountain video", zh: "SnowForce 雪山视频" })}
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.46)_58%,rgba(7,9,12,0.96))]" />
       <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(7,9,12,0),#07090c)]" />
 
       <div className="relative z-10 mx-auto max-w-[980px]">
-        <div
-          aria-hidden="true"
-          className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/60 bg-white/20 text-white backdrop-blur-sm"
+        <button
+          type="button"
+          aria-label={t({ en: "Play background video", zh: "播放背景视频" })}
+          onClick={handlePlayClick}
+          className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/60 bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-95 ${
+            showPlayButton ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
         >
-          <span className="ml-1 block h-0 w-0 border-y-[8px] border-l-[12px] border-y-transparent border-l-current" />
-        </div>
+          <span aria-hidden="true" className="ml-1 block h-0 w-0 border-y-[8px] border-l-[12px] border-y-transparent border-l-current" />
+        </button>
 
         <h1 className="mt-8 text-[50px] font-semibold leading-[0.98] text-white sm:text-[84px] lg:text-[112px]">
           {t({ en: "Ride the mountain together.", zh: "一起去雪山。" })}
