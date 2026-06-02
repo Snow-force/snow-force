@@ -104,7 +104,7 @@ function HeroSection({ t }: { t: Translate }) {
         </button>
 
         <h1 className="mt-8 text-[50px] font-semibold leading-[0.98] text-white sm:text-[84px] lg:text-[112px]">
-          {t({ en: "Ride the mountain together.", zh: "一起去雪山。" })}
+          {t({ en: "Ride the mountain together.", zh: "一起去雪山" })}
         </h1>
         <p className="mx-auto mt-6 max-w-[19rem] break-words text-[17px] leading-[1.55] text-white/82 sm:max-w-2xl sm:text-[21px]">
           {t({
@@ -229,22 +229,31 @@ function CommunityExperienceSection({ t }: { t: Translate }) {
   ];
 
   return (
-    <section className="bg-[#f3f7fb] px-4 py-20 text-[#111827] sm:px-6 sm:py-28">
-      <div className="mx-auto grid max-w-[1120px] gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+    <section className="bg-[#f4f4f1] px-4 py-24 text-[#151515] sm:px-6 sm:py-36">
+      <div className="mx-auto grid max-w-[1120px] gap-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-20">
         <div>
-          <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#0066cc]">
-            {t({ en: "Community experience", zh: "社区特色" })}
+          <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.24em] text-[#6f6f68]">
+            {t({ en: "SNOWFORCE COMMUNITY", zh: "SNOWFORCE COMMUNITY" })}
           </p>
-          <h2 className="mt-4 text-[38px] font-semibold leading-[1.08] sm:text-[56px]">
-            {t({ en: "The website handles signup. The community handles the ride.", zh: "网站负责报名，社群负责一起出发。" })}
+          <p className="mt-6 text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#8a877f]">
+            {t({ en: "Mountain culture", zh: "山野社群" })}
+          </p>
+          <h2 className="mt-8 max-w-[720px] text-[44px] font-semibold leading-[0.98] tracking-normal sm:text-[64px] lg:text-[72px]">
+            {t({ en: "Signup is simple. The ride is shared.", zh: "网站负责报名 社群负责一起出发" })}
           </h2>
+          <p className="mt-8 max-w-[560px] text-[18px] leading-[1.75] text-[#57534b] sm:text-[20px]">
+            {t({
+              en: "SnowForce is built around the trust that happens before the first chair: familiar names, clear plans, and a group that knows why the mountain matters.",
+              zh: "SnowForce 关心的不只是名额 而是出发前就能被看见的信任 熟悉的人 清楚的安排 和真正属于雪上的共同感",
+            })}
+          </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-0 border-y border-[#d8d6cf]">
           {features.map((feature) => (
-            <article key={feature.title} className="border-t border-[#cfd9e3] py-6 first:border-t-0 first:pt-0">
-              <h3 className="text-[24px] font-semibold leading-[1.18]">{feature.title}</h3>
-              <p className="mt-3 text-[17px] leading-[1.6] text-[#475569]">{feature.body}</p>
+            <article key={feature.title} className="border-t border-[#d8d6cf] py-8 first:border-t-0 sm:py-10">
+              <h3 className="text-[25px] font-semibold leading-[1.1] tracking-normal">{feature.title}</h3>
+              <p className="mt-4 text-[17px] leading-[1.7] text-[#5f5b52]">{feature.body}</p>
             </article>
           ))}
         </div>
