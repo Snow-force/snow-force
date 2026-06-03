@@ -34,6 +34,24 @@ export function buildConfirmationEmail(
   };
 }
 
+export function buildRegistrationVerificationEmail(
+  to: string,
+  eventTitle: string,
+  confirmationUrl: string,
+  lang: "en" | "zh",
+): EmailPayload {
+  const isEn = lang === "en";
+  return {
+    to,
+    subject: isEn
+      ? `Confirm your SnowForce registration - ${eventTitle}`
+      : `确认你的 SnowForce 报名 - ${eventTitle}`,
+    html: isEn
+      ? `<h2>Confirm your registration</h2><p>Click the link below to confirm your registration for <strong>${eventTitle}</strong>.</p><p><a href="${confirmationUrl}">Confirm registration</a></p><p>This link expires in 24 hours.</p>`
+      : `<h2>确认报名</h2><p>点击下方链接确认报名 <strong>${eventTitle}</strong>。</p><p><a href="${confirmationUrl}">确认报名</a></p><p>此链接将在 24 小时后失效。</p>`,
+  };
+}
+
 export function buildStaffNotificationEmail(
   eventTitle: string,
   registrantName: string,

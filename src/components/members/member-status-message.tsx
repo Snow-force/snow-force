@@ -44,6 +44,18 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   if (searchParams.profileSaved) {
     return { tone: "success", text: "会员资料已保存。" };
   }
+  if (searchParams.registration === "confirmed") {
+    return { tone: "success", text: "Registration confirmed. It now appears in your trips and the staff list." };
+  }
+  if (searchParams.registration === "duplicate") {
+    return { tone: "error", text: "This email is already registered for that event." };
+  }
+  if (searchParams.registration === "unavailable") {
+    return { tone: "error", text: "This event is no longer available for registration." };
+  }
+  if (searchParams.registration === "invalid") {
+    return { tone: "error", text: "That pending registration could not be confirmed. Please submit again if needed." };
+  }
   if (searchParams.error === "register") {
     return { tone: "error", text: "请填写姓名、有效邮箱和密码后注册。" };
   }

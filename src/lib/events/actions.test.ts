@@ -255,7 +255,14 @@ describe("event admin action helpers", () => {
       "NEXT_REDIRECT:/admin/events/modular-event/edit?saved=1",
     );
 
-    expect(actionMocks.createEvent).toHaveBeenCalledWith(modularEvent);
+    expect(actionMocks.createEvent).toHaveBeenCalledWith({
+      ...modularEvent,
+      registrationQuestions: [
+        expect.objectContaining({ key: "name", type: "text", required: true }),
+        expect.objectContaining({ key: "email", type: "text", required: true }),
+        ...modularEvent.registrationQuestions,
+      ],
+    });
   });
 
   it("rejects published event payloads missing required public content", async () => {

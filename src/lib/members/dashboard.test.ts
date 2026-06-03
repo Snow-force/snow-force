@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Event, EventRecap, MemberProfile, Registration } from "@/lib/types";
 import { buildMemberDashboard } from "./dashboard";
 import { defaultMemberEquipment, defaultMemberNotificationPreferences } from "./profile-fields";
+import type { PendingRegistration } from "../registrations/pending-repository";
 
 const profile: MemberProfile = {
   id: "member-1",
@@ -73,6 +74,22 @@ function registration(eventSlug: string, createdAt: string): Registration {
   };
 }
 
+function pendingRegistration(eventSlug: string): PendingRegistration {
+  return {
+    id: `pending-${eventSlug}`,
+    eventSlug,
+    memberId: "member-1",
+    answers: { name: "Rider One", email: "rider@example.com" },
+    consentGiven: true,
+    contactEmail: "rider@example.com",
+    contactName: "Rider One",
+    contactPhone: "555-0100",
+    tokenHash: "hash",
+    expiresAt: "2099-01-01T00:00:00.000Z",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+}
+
 const recap: EventRecap = {
   slug: "recap-1",
   status: "published",
@@ -115,6 +132,21 @@ describe("member dashboard aggregation", () => {
     });
 
     expect(dashboard.savedEvents.map((item) => item.slug)).toEqual(["future-trip"]);
+  });
+
+  it("shows pending member confirmations with their events", () => {
+    const dashboard = buildMemberDashboard({
+      profile,
+      emailConfirmed: true,
+      registrations: [],
+      pendingRegistrations: [pendingRegistration("future-trip")],
+      events: [event("future-trip", "2099-02-01")],
+      recaps: [],
+      now: new Date("2026-05-01T00:00:00.000Z"),
+    });
+
+    expect(dashboard.pendingConfirmations.map((item) => item.event.slug)).toEqual(["future-trip"]);
+    expect(dashboard.pendingConfirmations[0].pending.contactEmail).toBe("rider@example.com");
   });
 
   it("S4-dashboard-creates-email-verification-notification", () => {

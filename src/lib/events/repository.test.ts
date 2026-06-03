@@ -191,7 +191,12 @@ describe("event repository", () => {
 
     const event = await repository.getEvent("published");
 
-    expect(event?.registrationQuestions).toHaveLength(1);
+    expect(event?.registrationQuestions).toHaveLength(3);
+    expect(event?.registrationQuestions.map((question) => question.key)).toEqual([
+      "name",
+      "email",
+      "level",
+    ]);
     expect(event?.detailModules).toHaveLength(1);
   });
 
@@ -209,7 +214,7 @@ describe("event repository", () => {
       detailModules: [eventModule("intro")],
     });
 
-    expect(source.savedQuestions.map((row) => row.question_key)).toEqual(["level"]);
+    expect(source.savedQuestions.map((row) => row.question_key)).toEqual(["name", "email", "level"]);
     expect(source.savedModules.map((row) => row.module_type)).toEqual(["intro"]);
   });
 });

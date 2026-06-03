@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
-import { autofillRegistrationAnswers } from "@/lib/registrations/member-gate";
 
 type Props = {
   event: Event;
@@ -174,11 +173,12 @@ function renderQuestion(
 export function RegistrationForm({ event, memberProfile = null, emailConfirmed = false }: Props) {
   const { lang, t } = useLanguage();
   const [, startTransition] = useTransition();
-  const [formData, setFormData] = useState<FormDataState>(() => autofillRegistrationAnswers({}, memberProfile));
+  const [formData, setFormData] = useState<FormDataState>({});
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingConfirmation, setPendingConfirmation] = useState<"email" | "member">("email");
 
   function updateField(key: string, value: AnswerValue) {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -242,7 +242,8 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         lang,
       }).then((result) => {
         if (result.success) {
-          setSuccess(true);
+          setPendingEmail(result.email);
+          setPendingConfirmation(result.confirmation);
         } else {
           setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
         }
@@ -250,8 +251,34 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     });
   }
 
-  if (success) {
-    const email = isStringAnswer(formData.email) ? formData.email : undefined;
+  if (pendingEmail) {
+    if (pendingConfirmation === "member") {
+      return (
+        <div className="card border-green-200 bg-green-50 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h3 className="mt-4 text-lg font-semibold text-green-800">
+            {t({ en: "Confirm in your member home", zh: "请前往会员主页确认" })}
+          </h3>
+          <p className="mt-2 text-sm text-green-700">
+            {t({
+              en: `Your registration for ${t(event.title)} is waiting in your member home. Click Confirm there to complete it.`,
+              zh: `${t(event.title)} 的报名已提交到会员主页，请在那里点击确认完成报名。`,
+            })}
+          </p>
+          <p className="mt-2 text-xs text-green-600">
+            {t({
+              en: "No second email verification is needed while you are logged in.",
+              zh: "登录状态下不需要再次邮箱验证。",
+            })}
+          </p>
+          <a href="/member" className="mt-4 inline-flex rounded-full bg-green-700 px-5 py-2 text-sm font-semibold text-white">
+            {t({ en: "Go to member home", zh: "前往会员主页" })}
+          </a>
+        </div>
+      );
+    }
 
     return (
       <div className="card border-green-200 bg-green-50 text-center">
@@ -259,18 +286,18 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
         </div>
         <h3 className="mt-4 text-lg font-semibold text-green-800">
-          {t({ en: "Registration Confirmed!", zh: "报名成功！" })}
+          {t({ en: "Check your email", zh: "请查看邮箱" })}
         </h3>
         <p className="mt-2 text-sm text-green-700">
           {t({
-            en: `You're registered for ${t(event.title)}. A confirmation email will be sent to ${email || "your email"}.`,
-            zh: `你已成功报名 ${t(event.title)}。确认邮件将发送至 ${email || "你的邮箱"}。`,
+            en: `We sent a confirmation link to ${pendingEmail}. Click it to complete your registration for ${t(event.title)}.`,
+            zh: `我们已发送确认链接至 ${pendingEmail}。点击邮件链接后才会完成 ${t(event.title)} 的报名。`,
           })}
         </p>
         <p className="mt-2 text-xs text-green-600">
           {t({
-            en: "We'll send more details closer to the event date.",
-            zh: "活动临近时我们会发送更多详情。",
+            en: "Your registration will not appear in the admin list until the email is confirmed.",
+            zh: "确认邮箱前，这条报名不会进入后台名单。",
           })}
         </p>
       </div>

@@ -1,8 +1,14 @@
 import type { Event, EventRecap, MemberProfile, Registration } from "@/lib/types";
+import type { PendingRegistration } from "../registrations/pending-repository";
 
 export type MemberDashboardTrip = {
   event: Event;
   registration: Registration;
+};
+
+export type MemberDashboardPendingConfirmation = {
+  event: Event;
+  pending: PendingRegistration;
 };
 
 export type MemberDashboardNotification = {
@@ -16,6 +22,7 @@ export type MemberDashboardNotification = {
 export type MemberDashboardData = {
   upcomingTrips: MemberDashboardTrip[];
   registrationHistory: MemberDashboardTrip[];
+  pendingConfirmations: MemberDashboardPendingConfirmation[];
   savedEvents: Event[];
   recentRecaps: EventRecap[];
   notifications: MemberDashboardNotification[];
@@ -27,6 +34,7 @@ export type BuildMemberDashboardInput = {
   profile: MemberProfile;
   emailConfirmed: boolean;
   registrations: Registration[];
+  pendingRegistrations?: PendingRegistration[];
   events: Event[];
   recaps: EventRecap[];
   now?: Date;
@@ -110,6 +118,7 @@ export function buildMemberDashboard({
   profile,
   emailConfirmed,
   registrations,
+  pendingRegistrations = [],
   events,
   recaps,
   now = new Date(),
@@ -122,6 +131,13 @@ export function buildMemberDashboard({
     })
     .filter((trip): trip is MemberDashboardTrip => Boolean(trip));
   const nowTime = now.getTime();
+  const pendingConfirmations = pendingRegistrations
+    .map((pending) => {
+      const event = eventsBySlug.get(pending.eventSlug);
+      return event ? { event, pending } : undefined;
+    })
+    .filter((item): item is MemberDashboardPendingConfirmation => Boolean(item))
+    .sort((a, b) => Date.parse(a.pending.createdAt) - Date.parse(b.pending.createdAt));
   const upcomingTrips = trips
     .filter((trip) => eventTime(trip.event) >= nowTime && trip.registration.status !== "cancelled")
     .sort(byEventDateAsc);
@@ -138,6 +154,7 @@ export function buildMemberDashboard({
   return {
     upcomingTrips,
     registrationHistory,
+    pendingConfirmations,
     savedEvents,
     recentRecaps,
     notifications: buildNotifications(profile, emailConfirmed, upcomingTrips, savedEvents),

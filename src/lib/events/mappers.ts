@@ -4,6 +4,7 @@ import type {
   EventDetailModuleType,
   EventQuestionType,
 } from "@/lib/types";
+import { ensureRequiredRegistrationQuestions } from "./required-registration-questions";
 
 export type EventCoreRow = {
   slug: string;
@@ -139,9 +140,8 @@ export function rowsToEvent(
       en: core.seo_description_en,
       zh: core.seo_description_zh,
     },
-    registrationQuestions: questions
-      .toSorted((left, right) => left.sort_order - right.sort_order)
-      .map((question) => ({
+    registrationQuestions: ensureRequiredRegistrationQuestions(
+      questions.toSorted((left, right) => left.sort_order - right.sort_order).map((question) => ({
         id: question.id,
         key: question.question_key,
         type: question.type,
@@ -153,6 +153,7 @@ export function rowsToEvent(
           zh: stringArray(question.options_zh),
         },
       })),
+    ),
     detailModules: modules
       .toSorted((left, right) => left.sort_order - right.sort_order)
       .map((moduleRow) => ({
@@ -198,7 +199,7 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       seo_description_zh: event.seoDescription.zh,
       seo_description_en: event.seoDescription.en,
     },
-    questions: event.registrationQuestions.map((question, index) => ({
+    questions: ensureRequiredRegistrationQuestions(event.registrationQuestions).map((question, index) => ({
       event_slug: event.slug,
       question_key: question.key,
       type: question.type,

@@ -1,5 +1,8 @@
 import type { EventRegistrationQuestion, RegistrationAnswers } from "@/lib/types";
+import { ensureRequiredRegistrationQuestions } from "../events/required-registration-questions";
 export type { RegistrationAnswerValue, RegistrationAnswers } from "@/lib/types";
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function validateRegistrationAnswers(
   questions: EventRegistrationQuestion[],
@@ -8,7 +11,7 @@ export function validateRegistrationAnswers(
   const errors: Record<string, string> = {};
   const data: RegistrationAnswers = {};
 
-  for (const question of questions) {
+  for (const question of ensureRequiredRegistrationQuestions(questions)) {
     const value = answers[question.key];
     const missing =
       value === undefined ||
@@ -28,6 +31,9 @@ export function validateRegistrationAnswers(
       case "text":
         if (typeof value !== "string") {
           errors[question.key] = `${question.key} is invalid`;
+        }
+        if (question.key === "email" && (typeof value !== "string" || !emailPattern.test(value.trim()))) {
+          errors[question.key] = "Email is invalid";
         }
         break;
       case "phone":

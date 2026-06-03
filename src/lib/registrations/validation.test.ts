@@ -61,6 +61,7 @@ const allQuestionTypes: EventRegistrationQuestion[] = [
 
 const validAnswers: RegistrationAnswers = {
   name: "Tai",
+  email: "tai@example.com",
   phone: "555-0100",
   birthDate: "2026-02-01",
   needsRental: false,

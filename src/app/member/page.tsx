@@ -4,6 +4,7 @@ import { getEvents } from "@/lib/events/repository";
 import { buildMemberDashboard } from "@/lib/members/dashboard";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getRecaps } from "@/lib/recaps/repository";
+import { getPendingRegistrationsByMember } from "@/lib/registrations/pending-repository";
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
 
 export default async function MemberPage({
@@ -17,8 +18,9 @@ export default async function MemberPage({
     return <MemberAuthPanel searchParams={searchParams} />;
   }
 
-  const [registrations, events, recaps] = await Promise.all([
+  const [registrations, pendingRegistrations, events, recaps] = await Promise.all([
     getRegistrationsByMember(account.profile.id),
+    getPendingRegistrationsByMember(account.profile.id),
     getEvents(),
     getRecaps(),
   ]);
@@ -26,6 +28,7 @@ export default async function MemberPage({
     profile: account.profile,
     emailConfirmed: account.emailConfirmed,
     registrations,
+    pendingRegistrations,
     events,
     recaps,
   });

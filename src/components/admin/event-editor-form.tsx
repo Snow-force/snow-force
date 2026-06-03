@@ -13,6 +13,7 @@ import { EventEditorStepper, type StepId } from "./event-editor-stepper";
 import { EventPreviewPanel } from "./event-preview-panel";
 import { EventQuestionBuilder } from "./event-question-builder";
 import { EventRegistrationSettingsStep } from "./event-registration-settings-step";
+import { ensureRequiredRegistrationQuestions } from "@/lib/events/required-registration-questions";
 
 const initialState: EventEditorState = { success: false };
 
@@ -46,7 +47,7 @@ function eventPayload(event: Event) {
 
   return JSON.stringify({
     ...event,
-    registrationQuestions: event.registrationQuestions.map((question) => {
+    registrationQuestions: ensureRequiredRegistrationQuestions(event.registrationQuestions).map((question) => {
       const key = uniqueQuestionKey(question.key, questionKeys);
       questionKeys.add(key);
       return {

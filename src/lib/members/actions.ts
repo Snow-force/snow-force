@@ -3,6 +3,18 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
+import { getEvent } from "@/lib/events/repository";
+import { buildStaffNotificationEmail, sendEmail } from "@/lib/email/adapter";
+import {
+  deletePendingRegistration,
+  getPendingRegistrationsByMember,
+} from "@/lib/registrations/pending-repository";
+import {
+  createRegistration,
+  getRegistrationCountForEvent,
+  getRegistrations,
+} from "@/lib/registrations/repository";
 import { createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
 import { memberAuthCallbackUrl } from "./auth-results";
@@ -39,6 +51,10 @@ function hasMemberAuthCookie() {
   return cookies()
     .getAll()
     .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
 }
 
 export async function getCurrentMemberAccount() {
@@ -334,6 +350,61 @@ export async function markNotificationReadAction(formData: FormData) {
   const notificationId = String(formData.get("notificationId") ?? "").trim();
   if (notificationId) await markNotificationRead(notificationId);
   revalidatePath("/member");
+}
+
+export async function confirmMemberPendingRegistrationAction(formData: FormData) {
+  "use server";
+
+  const account = await getCurrentMemberAccount();
+  if (!account?.profile) redirect("/member?error=login");
+
+  const pendingId = String(formData.get("pendingId") ?? "").trim();
+  if (!pendingId) redirect("/member?registration=invalid");
+
+  const pending = (await getPendingRegistrationsByMember(account.profile.id))
+    .find((item) => item.id === pendingId);
+  if (!pending) redirect("/member?registration=invalid");
+
+  const event = await getEvent(pending.eventSlug);
+  if (!event || !isEventOpen(event)) {
+    redirect("/member?registration=unavailable");
+  }
+
+  const registrationCount = await getRegistrationCountForEvent(event.slug);
+  if (!hasRemainingCapacity({ ...event, registrationCount })) {
+    redirect("/member?registration=unavailable");
+  }
+
+  const normalizedEmail = normalizeEmail(pending.contactEmail);
+  const existingRegistrations = await getRegistrations(event.slug);
+  if (
+    existingRegistrations.some(
+      (registration) => normalizeEmail(registration.contactEmail) === normalizedEmail,
+    )
+  ) {
+    await deletePendingRegistration(pending.id);
+    revalidatePath("/member");
+    redirect("/member?registration=duplicate");
+  }
+
+  await createRegistration({
+    eventSlug: pending.eventSlug,
+    memberId: account.profile.id,
+    answers: pending.answers,
+    consentGiven: pending.consentGiven,
+    contactEmail: normalizedEmail,
+    contactName: pending.contactName,
+    contactPhone: pending.contactPhone,
+  });
+  await deletePendingRegistration(pending.id);
+
+  const eventTitle = event.title.en || event.title.zh || event.slug;
+  await sendEmail(buildStaffNotificationEmail(eventTitle, pending.contactName)).catch(() => {});
+
+  revalidatePath("/member");
+  revalidatePath("/member/trips");
+  revalidatePath(`/events/${event.slug}`);
+  redirect("/member?registration=confirmed");
 }
 
 export async function logoutMember() {

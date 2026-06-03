@@ -31,6 +31,31 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: mockCreateClient,
 }));
 
+vi.mock("@/lib/events/availability", () => ({
+  hasRemainingCapacity: vi.fn(),
+  isEventOpen: vi.fn(),
+}));
+
+vi.mock("@/lib/events/repository", () => ({
+  getEvent: vi.fn(),
+}));
+
+vi.mock("@/lib/email/adapter", () => ({
+  buildStaffNotificationEmail: vi.fn(),
+  sendEmail: vi.fn(),
+}));
+
+vi.mock("@/lib/registrations/pending-repository", () => ({
+  deletePendingRegistration: vi.fn(),
+  getPendingRegistrationsByMember: vi.fn(),
+}));
+
+vi.mock("@/lib/registrations/repository", () => ({
+  createRegistration: vi.fn(),
+  getRegistrationCountForEvent: vi.fn(),
+  getRegistrations: vi.fn(),
+}));
+
 vi.mock("./member-entry", () => ({
   parseMemberEmail: mockParseMemberEmail,
   parseMemberEntry: mockParseMemberEntry,
