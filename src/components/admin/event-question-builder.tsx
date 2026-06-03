@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import type { EventQuestionType, EventRegistrationQuestion } from "@/lib/types";
 import { useLanguage } from "@/lib/language";
+import { ensureRequiredRegistrationQuestions, isSystemRegistrationQuestion } from "@/lib/events/required-registration-questions";
 import { adminCopy } from "./admin-copy";
 
 type ActiveLang = "zh" | "en";
@@ -73,33 +74,34 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
   const { t } = useLanguage();
   const [newType, setNewType] = useState<EventQuestionType>("text");
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const visibleQuestions = ensureRequiredRegistrationQuestions(questions);
 
   function updateQuestion(index: number, nextQuestion: EventRegistrationQuestion) {
-    onChange(questions.map((question, questionIndex) => (questionIndex === index ? nextQuestion : question)));
+    onChange(visibleQuestions.map((question, questionIndex) => (questionIndex === index ? nextQuestion : question)));
   }
 
   function addQuestion() {
-    onChange([...questions, createQuestion(newType, questions)]);
+    onChange([...visibleQuestions, createQuestion(newType, visibleQuestions)]);
   }
 
   function copyQuestion(index: number) {
-    const source = questions[index];
+    const source = visibleQuestions[index];
     if (!source) return;
-    const existingIds = new Set(questions.map((question) => question.id));
-    const existingKeys = new Set(questions.map((question) => question.key));
+    const existingIds = new Set(visibleQuestions.map((question) => question.id));
+    const existingKeys = new Set(visibleQuestions.map((question) => question.key));
     const id = uniqueId(`${source.id}_copy`, existingIds);
     const key = uniqueQuestionKey(`${source.key}_copy`, existingKeys);
-    onChange([...questions.slice(0, index + 1), { ...source, id, key }, ...questions.slice(index + 1)]);
+    onChange([...visibleQuestions.slice(0, index + 1), { ...source, id, key }, ...visibleQuestions.slice(index + 1)]);
   }
 
   function deleteQuestion(index: number) {
-    onChange(questions.filter((_, questionIndex) => questionIndex !== index));
+    onChange(visibleQuestions.filter((_, questionIndex) => questionIndex !== index));
   }
 
   function moveQuestion(index: number, direction: -1 | 1) {
     const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= questions.length) return;
-    const nextQuestions = [...questions];
+    if (nextIndex < 0 || nextIndex >= visibleQuestions.length) return;
+    const nextQuestions = [...visibleQuestions];
     const current = nextQuestions[index];
     const target = nextQuestions[nextIndex];
     if (!current || !target) return;
@@ -143,8 +145,9 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
       </div>
 
       <div className="space-y-3">
-        {questions.map((question, index) => {
+        {visibleQuestions.map((question, index) => {
           const isCollapsed = collapsedIds.has(question.id);
+          const isSystemQuestion = isSystemRegistrationQuestion(question.key);
           return (
             <article key={question.id} className="rounded border border-gray-200 bg-white p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -155,16 +158,16 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  <button type="button" onClick={() => moveQuestion(index, -1)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
+                  <button type="button" disabled={isSystemQuestion} onClick={() => moveQuestion(index, -1)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
                     {t(adminCopy.editor.moveUp)}
                   </button>
-                  <button type="button" onClick={() => moveQuestion(index, 1)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
+                  <button type="button" disabled={isSystemQuestion} onClick={() => moveQuestion(index, 1)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
                     {t(adminCopy.editor.moveDown)}
                   </button>
                   <button type="button" onClick={() => copyQuestion(index)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
                     {t(adminCopy.editor.copy)}
                   </button>
-                  <button type="button" onClick={() => deleteQuestion(index)} className="rounded border border-red-200 px-2 py-1 text-xs text-red-600">
+                  <button type="button" disabled={isSystemQuestion} onClick={() => deleteQuestion(index)} className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 disabled:cursor-not-allowed disabled:opacity-40">
                     {t(adminCopy.editor.delete)}
                   </button>
                   <button type="button" onClick={() => toggleCollapsed(question.id)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
@@ -180,13 +183,15 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     <input
                       value={question.key}
                       onChange={(changeEvent) => {
+                        if (isSystemQuestion) return;
                         const otherKeys = new Set(
-                          questions
+                          visibleQuestions
                             .filter((_, questionIndex) => questionIndex !== index)
                             .map((existingQuestion) => existingQuestion.key),
                         );
                         updateQuestion(index, { ...question, key: uniqueQuestionKey(changeEvent.currentTarget.value, otherKeys) });
                       }}
+                      disabled={isSystemQuestion}
                       className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
                     />
                   </label>
@@ -195,9 +200,11 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     <select
                       value={question.type}
                       onChange={(changeEvent) => {
+                        if (isSystemQuestion) return;
                         const selectedType = questionTypes.find((type) => type === changeEvent.currentTarget.value);
                         if (selectedType) updateQuestion(index, { ...question, type: selectedType });
                       }}
+                      disabled={isSystemQuestion}
                       className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
                     >
                       {questionTypes.map((type) => (
@@ -233,7 +240,8 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     <input
                       type="checkbox"
                       checked={question.required}
-                      onChange={(changeEvent) => updateQuestion(index, { ...question, required: changeEvent.currentTarget.checked })}
+                      onChange={(changeEvent) => updateQuestion(index, { ...question, required: isSystemQuestion || changeEvent.currentTarget.checked })}
+                      disabled={isSystemQuestion}
                       className="h-4 w-4 rounded border-gray-300"
                     />
                     {t(adminCopy.editor.questionRequired)}

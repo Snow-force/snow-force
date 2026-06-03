@@ -5,9 +5,12 @@ function csvCell(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   await requireAdmin();
-  const registrations = await getRegistrations();
+  const eventSlug = new URL(request.url).searchParams.get("event");
+  const registrations = eventSlug
+    ? (await getRegistrations()).filter((registration) => registration.eventSlug === eventSlug)
+    : await getRegistrations();
   const rows = [
     ["ID", "Event", "Name", "Email", "Phone", "Status", "Created", "Member"],
     ...registrations.map((registration) => [

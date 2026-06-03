@@ -51,7 +51,10 @@ describe("event editor validation", () => {
       title: { zh: "大熊山一日滑雪", en: "" },
       eventDate: "2026-12-12",
       meetTime: "07:30",
-      registrationQuestions: [],
+      registrationQuestions: [
+        { key: "name", required: true, type: "text" },
+        { key: "email", required: true, type: "text" },
+      ],
       detailModules: [{ id: "module-intro", type: "intro" }],
     });
   });
@@ -245,6 +248,15 @@ describe("event editor validation", () => {
       registrationQuestions: [
         {
           ...draftInput.registrationQuestions[0],
+          helpText: { en: "", zh: "" },
+          options: { en: [], zh: [] },
+        },
+        {
+          id: "system-email",
+          key: "email",
+          type: "text",
+          required: true,
+          label: { en: "Email", zh: "邮箱" },
           helpText: { en: "", zh: "" },
           options: { en: [], zh: [] },
         },

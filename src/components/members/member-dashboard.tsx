@@ -2,7 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import type { MemberDashboardData, MemberDashboardTrip } from "@/lib/members/dashboard";
 import type { Event, MemberProfile, Registration } from "@/lib/types";
-import { logoutMember } from "@/lib/members/actions";
+import { confirmMemberPendingRegistrationAction, logoutMember } from "@/lib/members/actions";
 import { MemberStatusMessage } from "./member-status-message";
 
 type MemberDashboardProps = {
@@ -310,6 +310,39 @@ function RecentRegistrations({ trips }: { trips: MemberDashboardTrip[] }) {
   );
 }
 
+function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData }) {
+  if (dashboard.pendingConfirmations.length === 0) return null;
+
+  return (
+    <section className="rounded-[24px] border border-[#b9d7ff] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-[22px] font-semibold tracking-[-0.2px] md:text-[19px]">Pending Confirmation</h2>
+          <p className="mt-1 text-[14px] leading-6 text-[#667085]">Confirm logged-in registrations here. No second email check is needed.</p>
+        </div>
+      </div>
+      <div className="space-y-4">
+        {dashboard.pendingConfirmations.map(({ event, pending }) => (
+          <div key={pending.id} className="grid gap-4 rounded-[16px] border border-[#e2e8f0] p-4 md:grid-cols-[72px_1fr_auto] md:items-center">
+            <img src={tripImage(event)} alt="" className="h-[72px] w-[72px] rounded-[12px] object-cover" />
+            <div className="min-w-0">
+              <p className="truncate text-[18px] font-semibold tracking-[-0.1px] md:text-[16px]">{display(event.title)}</p>
+              <p className="mt-1 text-[14px] font-medium text-[#667085]">{pending.contactName || pending.contactEmail}</p>
+              <p className="mt-1 text-[13px] text-[#8a94a6]">{pending.contactEmail}</p>
+            </div>
+            <form action={confirmMemberPendingRegistrationAction}>
+              <input type="hidden" name="pendingId" value={pending.id} />
+              <button className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0066ff] px-6 text-[15px] font-semibold text-white transition active:scale-95">
+                Confirm
+              </button>
+            </form>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function QuickActions() {
   return (
     <section className="rounded-[24px] border border-[#e6ebf2] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
@@ -414,6 +447,10 @@ export function MemberDashboard({
 
           <div className="mt-5 md:mt-6">
             <NextTripCard trip={nextTrip} />
+          </div>
+
+          <div className="mt-6">
+            <PendingConfirmations dashboard={dashboard} />
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,0.98fr)_minmax(440px,1fr)]">

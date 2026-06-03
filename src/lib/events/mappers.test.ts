@@ -68,7 +68,11 @@ describe("modular event mappers", () => {
   it("maps rows into an event aggregate", () => {
     expect(rowsToEvent(core, [question], [moduleRow])).toMatchObject({
       slug: "big-bear-day",
-      registrationQuestions: [{ key: "level", type: "single_choice" }],
+      registrationQuestions: [
+        { key: "name", type: "text", required: true },
+        { key: "email", type: "text", required: true },
+        { key: "level", type: "single_choice" },
+      ],
       detailModules: [{ id: "module-intro", type: "intro" }],
     });
   });
@@ -78,7 +82,9 @@ describe("modular event mappers", () => {
     const rows = eventAggregateToWriteRows(event);
 
     expect(rows.core.slug).toBe("big-bear-day");
-    expect(rows.questions[0]).toMatchObject({ question_key: "level", sort_order: 0 });
+    expect(rows.questions.map((row) => row.question_key)).toEqual(["name", "email", "level"]);
+    expect(rows.questions[0]).toMatchObject({ question_key: "name", sort_order: 0 });
+    expect(rows.questions[2]).toMatchObject({ question_key: "level", sort_order: 2 });
     expect(rows.modules[0]).toMatchObject({ module_type: "intro", sort_order: 0 });
     expect("id" in rows.questions[0]).toBe(false);
     expect("id" in rows.modules[0]).toBe(false);
@@ -103,7 +109,7 @@ describe("modular event mappers", () => {
       ],
     );
 
-    expect(event.registrationQuestions[0].options).toEqual({
+    expect(event.registrationQuestions.find((item) => item.key === "level")?.options).toEqual({
       en: ["first timer", "intermediate"],
       zh: ["beginner", "advanced"],
     });

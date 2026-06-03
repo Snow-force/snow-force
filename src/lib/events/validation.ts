@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { Event } from "@/lib/types";
+import { ensureRequiredRegistrationQuestions } from "./required-registration-questions";
 
 const bilingualText = z.object({
   en: z.string().default(""),
@@ -110,7 +111,15 @@ const editorSchema = z.object({
 });
 
 export function parseEventEditorInput(input: unknown) {
-  return editorSchema.safeParse(input);
+  const result = editorSchema.safeParse(input);
+  if (!result.success) return result;
+  return {
+    ...result,
+    data: {
+      ...result.data,
+      registrationQuestions: ensureRequiredRegistrationQuestions(result.data.registrationQuestions),
+    },
+  };
 }
 
 export function validatePublishableEvent(event: Event) {
