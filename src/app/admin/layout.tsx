@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAdmin();
+  const staff = await requireAdmin();
 
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminShell staff={staff}>{children}</AdminShell>;
 }
