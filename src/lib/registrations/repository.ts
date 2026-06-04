@@ -267,7 +267,13 @@ function createSupabaseRegistrationSource(): RegistrationSource {
       return data ? rowToRegistration(data as RegistrationRow) : undefined;
     },
     async updateFinance(id, financeInput) {
-      const existing = await this.get(id);
+      const { data: existingRow, error: getError } = await createAdminRegistrationClient()
+        .from("registrations")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      throwSupabaseError(getError);
+      const existing = existingRow ? rowToRegistration(existingRow as RegistrationRow) : undefined;
       if (!existing) return undefined;
       const finance = applyRegistrationFinanceInput(existing.finance, financeInput);
       const { data, error } = await createAdminRegistrationClient()

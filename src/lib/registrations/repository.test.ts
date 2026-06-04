@@ -155,4 +155,28 @@ describe("registration store", () => {
     ]);
     expect(await repository.getRegistrationCountForEvent("snowforce-kickoff-2026")).toBe(2);
   });
+
+  it("updates finance through an extracted repository function", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "snowforce-registrations-"));
+    tempDirs.push(dir);
+    const store = createRegistrationStore(path.join(dir, "registrations.json"));
+    const created = await store.create({
+      eventSlug: "snowforce-kickoff-2026",
+      memberId: "member-1",
+      answers: {},
+      consentGiven: true,
+      contactEmail: "member@example.com",
+      contactName: "Member",
+      contactPhone: "",
+    });
+    const { updateRegistrationFinance } = createRegistrationRepository(store);
+
+    const updated = await updateRegistrationFinance(created.id, {
+      depositAmount: 150,
+      finalAmount: 180,
+    });
+
+    expect(updated?.finance?.settlementAmount).toBe(30);
+    expect(updated?.finance?.settlementStatus).toBe("pending_balance");
+  });
 });
