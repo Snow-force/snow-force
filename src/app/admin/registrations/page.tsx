@@ -1,7 +1,9 @@
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth/admin";
 import { getEventAdmin } from "@/lib/events/repository";
 import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
+import { FinanceSubmitButton } from "@/components/admin/finance-submit-button";
 import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "@/lib/registrations/admin-view";
 import { deleteCancelledRegistration, getRegistrations, updateRegistrationFinance, updateRegistrationStatus } from "@/lib/registrations/repository";
 import type { Event, Registration, RegistrationDepositStatus, RegistrationSettlementStatus } from "@/lib/types";
@@ -38,6 +40,7 @@ async function updateFinance(formData: FormData) {
   "use server";
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
+  const returnEvent = String(formData.get("returnEvent") ?? "").trim();
   const depositStatus = String(formData.get("depositStatus") ?? "pending") as RegistrationDepositStatus;
   const settlementStatus = String(formData.get("settlementStatus") ?? "not_started") as RegistrationSettlementStatus;
   if (!id) return;
@@ -55,6 +58,9 @@ async function updateFinance(formData: FormData) {
     settlementNote: String(formData.get("settlementNote") ?? "").trim(),
   });
   revalidatePath("/admin/registrations");
+  const query = new URLSearchParams({ financeSaved: id });
+  if (returnEvent) query.set("event", returnEvent);
+  redirect(`/admin/registrations?${query.toString()}`);
 }
 
 function eventQueryValue(value: string | string[] | undefined) {
@@ -64,7 +70,7 @@ function eventQueryValue(value: string | string[] | undefined) {
 export default async function AdminRegistrationsPage({
   searchParams,
 }: {
-  searchParams?: { event?: string | string[] };
+  searchParams?: { event?: string | string[]; financeSaved?: string | string[] };
 }) {
   const staff = await requireAdmin();
   const registrations = await getRegistrations();
@@ -82,6 +88,7 @@ export default async function AdminRegistrationsPage({
   const exportHref = view.selectedEventSlug
     ? `/admin/registrations/export?event=${encodeURIComponent(view.selectedEventSlug)}`
     : "/admin/registrations/export";
+  const financeSavedId = eventQueryValue(searchParams?.financeSaved);
 
   return (
     <div>
@@ -162,6 +169,7 @@ export default async function AdminRegistrationsPage({
                       </form>
                       <form action={updateFinance} className="grid min-w-[360px] grid-cols-3 gap-1 rounded border border-gray-100 bg-gray-50 p-2">
                         <input type="hidden" name="id" value={registration.id} />
+                        <input type="hidden" name="returnEvent" value={view.selectedEventSlug} />
                         <input name="depositAmount" defaultValue={finance.depositAmount ?? ""} placeholder="Deposit" className="rounded border border-gray-200 px-2 py-1 text-xs" />
                         <select name="depositStatus" defaultValue={finance.depositStatus} className="rounded border border-gray-200 px-2 py-1 text-xs">
                           <option value="pending">Deposit pending</option>
@@ -180,7 +188,10 @@ export default async function AdminRegistrationsPage({
                         </select>
                         <input name="paymentNote" defaultValue={finance.paymentNote} placeholder="Payment note" className="rounded border border-gray-200 px-2 py-1 text-xs" />
                         <input name="settlementNote" defaultValue={finance.settlementNote} placeholder="Settlement note" className="rounded border border-gray-200 px-2 py-1 text-xs" />
-                        <button className="rounded bg-gray-900 px-2 py-1 text-xs font-semibold text-white">Save finance</button>
+                        <FinanceSubmitButton />
+                        {financeSavedId === registration.id ? (
+                          <span className="flex items-center px-2 text-xs font-semibold text-green-700">Saved</span>
+                        ) : null}
                       </form>
                       {staff.role === "admin" && registration.status === "cancelled" ? (
                         <form action={deleteRegistration}>
