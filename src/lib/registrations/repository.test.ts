@@ -73,6 +73,12 @@ describe("registration store", () => {
         registration.status = status;
         return registration;
       },
+      deleteCancelled: async (id) => {
+        const index = rows.findIndex((registration) => registration.id === id);
+        if (index === -1 || rows[index].status !== "cancelled") return undefined;
+        const [deleted] = rows.splice(index, 1);
+        return deleted;
+      },
     };
     const repository = createRegistrationRepository(source);
 
@@ -95,5 +101,52 @@ describe("registration store", () => {
     expect((await repository.getRegistrations()).map((registration) => registration.contactEmail)).toEqual([
       "tai@example.com",
     ]);
+  });
+
+  it("deletes only cancelled registrations", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "snowforce-registrations-"));
+    tempDirs.push(dir);
+    const store = createRegistrationStore(path.join(dir, "registrations.json"));
+    const confirmed = await store.create({
+      eventSlug: "snowforce-kickoff-2026",
+      memberId: null,
+      answers: {},
+      consentGiven: true,
+      contactEmail: "confirmed@example.com",
+      contactName: "Confirmed",
+      contactPhone: "",
+    });
+    const cancelled = await store.create({
+      eventSlug: "snowforce-kickoff-2026",
+      memberId: null,
+      answers: {},
+      consentGiven: true,
+      contactEmail: "cancelled@example.com",
+      contactName: "Cancelled",
+      contactPhone: "",
+    });
+    const waitlist = await store.create({
+      eventSlug: "snowforce-kickoff-2026",
+      memberId: null,
+      answers: {},
+      consentGiven: true,
+      contactEmail: "waitlist@example.com",
+      contactName: "Waitlist",
+      contactPhone: "",
+    });
+    await store.updateStatus(cancelled.id, "cancelled");
+    await store.updateStatus(waitlist.id, "waitlist");
+    const repository = createRegistrationRepository(store);
+
+    await expect(repository.deleteCancelledRegistration(confirmed.id)).resolves.toBeUndefined();
+    await expect(repository.deleteCancelledRegistration(waitlist.id)).resolves.toBeUndefined();
+    const deleted = await repository.deleteCancelledRegistration(cancelled.id);
+
+    expect(deleted?.id).toBe(cancelled.id);
+    expect((await repository.getRegistrations()).map((registration) => registration.id)).toEqual([
+      confirmed.id,
+      waitlist.id,
+    ]);
+    expect(await repository.getRegistrationCountForEvent("snowforce-kickoff-2026")).toBe(2);
   });
 });

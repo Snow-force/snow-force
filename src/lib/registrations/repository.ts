@@ -12,6 +12,7 @@ export type RegistrationSource = {
   countForEvent(eventSlug: string): Promise<number>;
   create(data: NewRegistration): Promise<Registration>;
   updateStatus(id: string, status: Registration["status"]): Promise<Registration | undefined>;
+  deleteCancelled(id: string): Promise<Registration | undefined>;
 };
 
 type RegistrationRow = {
@@ -128,6 +129,14 @@ export function createRegistrationStore(filePath: string): RegistrationSource {
       await store.write(registrations);
       return registrations[index];
     },
+    async deleteCancelled(id: string) {
+      const registrations = await store.read();
+      const index = registrations.findIndex((registration) => registration.id === id);
+      if (index === -1 || registrations[index].status !== "cancelled") return undefined;
+      const [deleted] = registrations.splice(index, 1);
+      await store.write(registrations);
+      return deleted;
+    },
   };
 }
 
@@ -190,6 +199,17 @@ function createSupabaseRegistrationSource(): RegistrationSource {
       throwSupabaseError(error);
       return data ? rowToRegistration(data as RegistrationRow) : undefined;
     },
+    async deleteCancelled(id) {
+      const { data, error } = await createAdminRegistrationClient()
+        .from("registrations")
+        .delete()
+        .eq("id", id)
+        .eq("status", "cancelled")
+        .select("*")
+        .maybeSingle();
+      throwSupabaseError(error);
+      return data ? rowToRegistration(data as RegistrationRow) : undefined;
+    },
   };
 }
 
@@ -200,6 +220,7 @@ export function createRegistrationRepository(source: RegistrationSource) {
     getRegistrationsByMember: source.listForMember,
     getRegistrationCountForEvent: source.countForEvent,
     updateRegistrationStatus: source.updateStatus,
+    deleteCancelledRegistration: source.deleteCancelled,
     async createRegistration(data: NewRegistration) {
       return { success: true as const, registration: await source.create(data) };
     },
@@ -216,4 +237,5 @@ export const getRegistration = repository.getRegistration;
 export const getRegistrationsByMember = repository.getRegistrationsByMember;
 export const getRegistrationCountForEvent = repository.getRegistrationCountForEvent;
 export const updateRegistrationStatus = repository.updateRegistrationStatus;
+export const deleteCancelledRegistration = repository.deleteCancelledRegistration;
 export const createRegistration = repository.createRegistration;

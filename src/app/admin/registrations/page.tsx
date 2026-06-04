@@ -1,8 +1,8 @@
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/admin";
+import { requireAdmin, requireSuperAdmin } from "@/lib/auth/admin";
 import { getEventAdmin } from "@/lib/events/repository";
 import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "@/lib/registrations/admin-view";
-import { getRegistrations, updateRegistrationStatus } from "@/lib/registrations/repository";
+import { deleteCancelledRegistration, getRegistrations, updateRegistrationStatus } from "@/lib/registrations/repository";
 import type { Event, Registration } from "@/lib/types";
 
 async function setRegistrationStatus(formData: FormData) {
@@ -16,6 +16,16 @@ async function setRegistrationStatus(formData: FormData) {
   }
 }
 
+async function deleteRegistration(formData: FormData) {
+  "use server";
+  await requireSuperAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (id) {
+    await deleteCancelledRegistration(id);
+    revalidatePath("/admin/registrations");
+  }
+}
+
 function eventQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -25,7 +35,7 @@ export default async function AdminRegistrationsPage({
 }: {
   searchParams?: { event?: string | string[] };
 }) {
-  await requireAdmin();
+  const staff = await requireAdmin();
   const registrations = await getRegistrations();
   const eventSlugs = Array.from(new Set(registrations.map((registration) => registration.eventSlug)));
   const events = await Promise.all(eventSlugs.map((slug) => getEventAdmin(slug)));
@@ -102,11 +112,19 @@ export default async function AdminRegistrationsPage({
                   <td className="px-4 py-3">{registration.status}</td>
                   <td className="px-4 py-3 text-xs text-gray-400">{new Date(registration.createdAt).toLocaleDateString()}</td>
                   <td className="py-3 pl-4">
-                    <form action={setRegistrationStatus} className="flex gap-1">
-                      <input type="hidden" name="id" value={registration.id} />
-                      <button name="status" value="confirmed" className="rounded px-2 py-1 text-xs text-green-600 hover:bg-green-50">Confirm</button>
-                      <button name="status" value="cancelled" className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50">Cancel</button>
-                    </form>
+                    <div className="flex gap-1">
+                      <form action={setRegistrationStatus} className="flex gap-1">
+                        <input type="hidden" name="id" value={registration.id} />
+                        <button name="status" value="confirmed" className="rounded px-2 py-1 text-xs text-green-600 hover:bg-green-50">Confirm</button>
+                        <button name="status" value="cancelled" className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50">Cancel</button>
+                      </form>
+                      {staff.role === "admin" && registration.status === "cancelled" ? (
+                        <form action={deleteRegistration}>
+                          <input type="hidden" name="id" value={registration.id} />
+                          <button className="rounded px-2 py-1 text-xs text-red-700 hover:bg-red-50">Delete</button>
+                        </form>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               );
