@@ -1,22 +1,15 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
 import { getEvent } from "@/lib/events/repository";
-import { buildRegistrationVerificationEmail, sendEmail } from "@/lib/email/adapter";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { canSubmitMemberRegistration } from "@/lib/registrations/member-gate";
 import {
   createOrRefreshPendingRegistration,
-  hasPendingRegistrationForEmail,
 } from "@/lib/registrations/pending-repository";
 import { getRegistrationCountForEvent, getRegistrations } from "@/lib/registrations/repository";
-import {
-  createRegistrationVerificationToken,
-  hashRegistrationVerificationToken,
-} from "./token";
 import { validateRegistrationAnswers } from "@/lib/registrations/validation";
 import type { RegistrationAnswers } from "@/lib/types";
 
@@ -27,7 +20,7 @@ type RegisterInput = {
 };
 
 export type RegisterForEventResult =
-  | { success: true; pending: true; email: string; confirmation: "email" | "member" }
+  | { success: true; pending: true; email: string; confirmation: "member" }
   | { success: false; error: string };
 
 function getStringAnswer(answers: RegistrationAnswers, key: string) {
@@ -41,10 +34,6 @@ function normalizeEmail(value: string) {
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function confirmationOrigin() {
-  return headers().get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 }
 
 export async function registerForEvent(
@@ -81,7 +70,16 @@ export async function registerForEvent(
     account?.profile ? { profile: account.profile, emailConfirmed: account.emailConfirmed } : null,
   );
   if (!memberDecision.allowed) {
-    return { success: false, error: memberDecision.error };
+    return {
+      success: false,
+      error: account?.profile
+        ? memberDecision.error
+        : "Sign in as a verified SnowForce member before registering for events.",
+    };
+  }
+
+  if (!memberDecision.memberId) {
+    return { success: false, error: "Sign in as a verified SnowForce member before registering for events." };
   }
 
   const contactName = getStringAnswer(answers, "name");
@@ -100,22 +98,11 @@ export async function registerForEvent(
   const existingRegistrations = await getRegistrations(event.slug);
   if (
     existingRegistrations.some(
-      (registration) => normalizeEmail(registration.contactEmail) === normalizedContactEmail,
+      (registration) => registration.memberId === memberDecision.memberId,
     )
   ) {
-    return { success: false, error: "This email is already registered for this event." };
+    return { success: false, error: "You are already registered for this event." };
   }
-
-  if (await hasPendingRegistrationForEmail(event.slug, normalizedContactEmail)) {
-    return {
-      success: false,
-      error: memberDecision.memberId
-        ? "Confirm this registration in your member home before submitting again."
-        : "Check your email to confirm this registration before submitting again.",
-    };
-  }
-
-  const token = createRegistrationVerificationToken();
 
   await createOrRefreshPendingRegistration({
     eventSlug,
@@ -125,38 +112,15 @@ export async function registerForEvent(
     contactEmail: normalizedContactEmail,
     contactName,
     contactPhone,
-    tokenHash: hashRegistrationVerificationToken(token),
+    tokenHash: `member-pending-${crypto.randomUUID()}`,
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   });
 
-  if (memberDecision.memberId) {
-    revalidatePath("/member");
-    return {
-      success: true,
-      pending: true,
-      email: normalizedContactEmail,
-      confirmation: "member",
-    };
-  }
-
-  const confirmationUrl = new URL("/registrations/confirm", confirmationOrigin());
-  confirmationUrl.searchParams.set("token", token);
-  const eventTitle =
-    input.lang === "zh" ? event.title.zh || event.title.en : event.title.en || event.title.zh;
-
-  await sendEmail(
-    buildRegistrationVerificationEmail(
-      normalizedContactEmail,
-      eventTitle,
-      confirmationUrl.toString(),
-      input.lang,
-    ),
-  );
-
+  revalidatePath("/member");
   return {
     success: true,
     pending: true,
     email: normalizedContactEmail,
-    confirmation: "email",
+    confirmation: "member",
   };
 }

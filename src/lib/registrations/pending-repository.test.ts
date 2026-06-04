@@ -104,4 +104,39 @@ describe("pending registration repository", () => {
 
     expect(rows.map((row) => row.eventSlug)).toEqual(["big-bear-day"]);
   });
+
+  it("refreshes pending registrations for the same event and member", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "snowforce-pending-"));
+    tempDirs.push(dir);
+    const repository = createPendingRegistrationRepository(
+      createPendingRegistrationStore(path.join(dir, "pending.json")),
+    );
+
+    await repository.createOrRefreshPendingRegistration({
+      eventSlug: "big-bear-day",
+      memberId: "member-1",
+      answers: { name: "Tai", email: "old@example.com" },
+      consentGiven: true,
+      contactName: "Tai",
+      contactEmail: "old@example.com",
+      contactPhone: "",
+      tokenHash: "hash-1",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+    await repository.createOrRefreshPendingRegistration({
+      eventSlug: "big-bear-day",
+      memberId: "member-1",
+      answers: { name: "Tai", email: "new@example.com" },
+      consentGiven: true,
+      contactName: "Tai",
+      contactEmail: "new@example.com",
+      contactPhone: "",
+      tokenHash: "hash-2",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+
+    expect(await repository.hasPendingRegistrationForMember("big-bear-day", "member-1")).toBe(true);
+    expect(await repository.getPendingRegistrationByTokenHash("hash-1")).toBeUndefined();
+    expect((await repository.getPendingRegistrationsByMember("member-1")).map((row) => row.contactEmail)).toEqual(["new@example.com"]);
+  });
 });

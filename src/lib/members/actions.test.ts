@@ -66,6 +66,7 @@ vi.mock("./member-entry", () => ({
 
 vi.mock("./auth-results", () => ({
   memberAuthCallbackUrl: vi.fn(() => "https://snowforce.test/auth/callback?next=%2Fmember"),
+  sanitizeMemberNextPath: vi.fn((value: string) => value || "/member"),
 }));
 
 vi.mock("./repository", () => ({

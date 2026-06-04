@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
 import type { Registration } from "@/lib/types";
 
 type RegistrationHistoryProps = {
@@ -32,6 +33,20 @@ function answerSummary(registration: Registration) {
     .slice(0, 3);
 
   return values.length > 0 ? values.join(" · ") : "Registration details saved";
+}
+
+function financeSummary(registration: Registration) {
+  const finance = normalizeRegistrationFinance(registration.finance);
+  if (finance.settlementStatus === "pending_balance" && finance.settlementAmount !== null) {
+    return `Balance due: $${finance.settlementAmount}`;
+  }
+  if (finance.settlementStatus === "pending_refund" && finance.settlementAmount !== null) {
+    return `Refund due: $${Math.abs(finance.settlementAmount)}`;
+  }
+  if (finance.settlementStatus === "settled") return "Settlement: settled";
+  if (finance.depositStatus === "paid") return "Deposit: paid";
+  if (finance.depositStatus === "waived") return "Deposit: waived";
+  return finance.depositAmount === null ? "Deposit: pending" : `Deposit due: $${finance.depositAmount}`;
 }
 
 export function RegistrationHistory({ registrations }: RegistrationHistoryProps) {
@@ -73,7 +88,7 @@ export function RegistrationHistory({ registrations }: RegistrationHistoryProps)
                   <p className="mt-3 text-[14px] text-[#667085]">{answerSummary(registration)}</p>
                   <div className="mt-4 flex flex-wrap gap-2 text-[13px] font-semibold">
                     <Link href={`/events/${registration.eventSlug}`} className="rounded-full bg-[#005bea] px-4 py-2 text-white">View detail</Link>
-                    <span className="rounded-full border border-[#dce3ed] px-4 py-2 text-[#667085]">Payment: pending</span>
+                    <span className="rounded-full border border-[#dce3ed] px-4 py-2 text-[#667085]">{financeSummary(registration)}</span>
                     <span className="rounded-full border border-[#dce3ed] px-4 py-2 text-[#667085]">Waitlist: {registration.status === "waitlist" ? "active" : "no"}</span>
                   </div>
                 </div>

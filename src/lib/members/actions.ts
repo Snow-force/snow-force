@@ -17,7 +17,7 @@ import {
 } from "@/lib/registrations/repository";
 import { createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
-import { memberAuthCallbackUrl } from "./auth-results";
+import { memberAuthCallbackUrl, sanitizeMemberNextPath } from "./auth-results";
 import {
   parseMemberEmail,
   parseMemberEntry,
@@ -55,6 +55,10 @@ function hasMemberAuthCookie() {
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+function nextPathFromForm(formData: FormData) {
+  return sanitizeMemberNextPath(String(formData.get("next") ?? ""));
 }
 
 export async function getCurrentMemberAccount() {
@@ -119,7 +123,7 @@ export async function registerMemberProfile(formData: FormData) {
     password: entry.password,
     options: {
       data: { display_name: entry.displayName },
-      emailRedirectTo: memberCallback("/member"),
+      emailRedirectTo: memberCallback(nextPathFromForm(formData)),
     },
   });
 
@@ -147,7 +151,7 @@ export async function loginMemberProfile(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/member");
+  redirect(nextPathFromForm(formData));
 }
 
 export async function saveMemberProfile(formData: FormData) {
@@ -175,7 +179,7 @@ export async function requestMemberMagicLink(formData: FormData) {
   const { error } = await supabase.auth.signInWithOtp({
     email: entry.email,
     options: {
-      emailRedirectTo: memberCallback("/member"),
+      emailRedirectTo: memberCallback(nextPathFromForm(formData)),
     },
   });
   if (error) {
@@ -185,12 +189,12 @@ export async function requestMemberMagicLink(formData: FormData) {
   redirect("/member?magicSent=1");
 }
 
-export async function loginMemberWithGoogle() {
+export async function loginMemberWithGoogle(formData: FormData) {
   const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: memberCallback("/member"),
+      redirectTo: memberCallback(nextPathFromForm(formData)),
     },
   });
   if (error || !data.url) {
@@ -357,11 +361,12 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
 
   const account = await getCurrentMemberAccount();
   if (!account?.profile) redirect("/member?error=login");
+  const profile = account.profile;
 
   const pendingId = String(formData.get("pendingId") ?? "").trim();
   if (!pendingId) redirect("/member?registration=invalid");
 
-  const pending = (await getPendingRegistrationsByMember(account.profile.id))
+  const pending = (await getPendingRegistrationsByMember(profile.id))
     .find((item) => item.id === pendingId);
   if (!pending) redirect("/member?registration=invalid");
 
@@ -379,7 +384,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
   const existingRegistrations = await getRegistrations(event.slug);
   if (
     existingRegistrations.some(
-      (registration) => normalizeEmail(registration.contactEmail) === normalizedEmail,
+      (registration) => registration.memberId === profile.id,
     )
   ) {
     await deletePendingRegistration(pending.id);
@@ -389,7 +394,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
 
   await createRegistration({
     eventSlug: pending.eventSlug,
-    memberId: account.profile.id,
+    memberId: profile.id,
     answers: pending.answers,
     consentGiven: pending.consentGiven,
     contactEmail: normalizedEmail,

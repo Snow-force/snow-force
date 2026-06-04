@@ -24,6 +24,7 @@ export type PendingRegistrationSource = {
   getByTokenHash(tokenHash: string): Promise<PendingRegistration | undefined>;
   listForMember(memberId: string, now?: Date): Promise<PendingRegistration[]>;
   hasForEmail(eventSlug: string, email: string, now?: Date): Promise<boolean>;
+  hasForMember(eventSlug: string, memberId: string, now?: Date): Promise<boolean>;
   delete(id: string): Promise<void>;
 };
 
@@ -114,7 +115,9 @@ export function createPendingRegistrationStore(filePath: string): PendingRegistr
       const rows = (await store.read()).filter(
         (row) =>
           row.eventSlug !== data.eventSlug ||
-          normalizeEmail(row.contactEmail) !== normalizedEmail,
+          (data.memberId
+            ? row.memberId !== data.memberId
+            : normalizeEmail(row.contactEmail) !== normalizedEmail),
       );
       const now = new Date().toISOString();
       const pending: PendingRegistration = {
@@ -145,6 +148,14 @@ export function createPendingRegistrationStore(filePath: string): PendingRegistr
           Date.parse(row.expiresAt) > now.getTime(),
       );
     },
+    async hasForMember(eventSlug, memberId, now = new Date()) {
+      return (await store.read()).some(
+        (row) =>
+          row.eventSlug === eventSlug &&
+          row.memberId === memberId &&
+          Date.parse(row.expiresAt) > now.getTime(),
+      );
+    },
     async delete(id) {
       await store.write((await store.read()).filter((row) => row.id !== id));
     },
@@ -156,11 +167,14 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
     async createOrRefresh(data) {
       const client = createAdminPendingRegistrationClient();
       const normalizedEmail = normalizeEmail(data.contactEmail);
-      const { error: deleteError } = await client
+      let deleteQuery = client
         .from("pending_registrations")
         .delete()
-        .eq("event_slug", data.eventSlug)
-        .eq("contact_email", normalizedEmail);
+        .eq("event_slug", data.eventSlug);
+      deleteQuery = data.memberId
+        ? deleteQuery.eq("member_id", data.memberId)
+        : deleteQuery.eq("contact_email", normalizedEmail);
+      const { error: deleteError } = await deleteQuery;
       throwSupabaseError(deleteError);
 
       const { data: row, error } = await client
@@ -202,6 +216,17 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
       throwSupabaseError(error);
       return (data ?? []).length > 0;
     },
+    async hasForMember(eventSlug, memberId, now = new Date()) {
+      const { data, error } = await createAdminPendingRegistrationClient()
+        .from("pending_registrations")
+        .select("id")
+        .eq("event_slug", eventSlug)
+        .eq("member_id", memberId)
+        .gt("expires_at", now.toISOString())
+        .limit(1);
+      throwSupabaseError(error);
+      return (data ?? []).length > 0;
+    },
     async delete(id) {
       const { error } = await createAdminPendingRegistrationClient()
         .from("pending_registrations")
@@ -218,6 +243,7 @@ export function createPendingRegistrationRepository(source: PendingRegistrationS
     getPendingRegistrationByTokenHash: source.getByTokenHash,
     getPendingRegistrationsByMember: source.listForMember,
     hasPendingRegistrationForEmail: source.hasForEmail,
+    hasPendingRegistrationForMember: source.hasForMember,
     deletePendingRegistration: source.delete,
   };
 }
@@ -231,4 +257,5 @@ export const createOrRefreshPendingRegistration = repository.createOrRefreshPend
 export const getPendingRegistrationByTokenHash = repository.getPendingRegistrationByTokenHash;
 export const getPendingRegistrationsByMember = repository.getPendingRegistrationsByMember;
 export const hasPendingRegistrationForEmail = repository.hasPendingRegistrationForEmail;
+export const hasPendingRegistrationForMember = repository.hasPendingRegistrationForMember;
 export const deletePendingRegistration = repository.deletePendingRegistration;

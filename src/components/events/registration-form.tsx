@@ -304,7 +304,26 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     );
   }
 
-  if (memberProfile && !emailConfirmed) {
+  if (!memberProfile) {
+    return (
+      <div className="card border-blue-200 bg-blue-50">
+        <h3 className="text-lg font-semibold text-blue-950">
+          {t({ en: "Member sign-in required", zh: "请先登录会员" })}
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-blue-900">
+          {t({
+            en: "SnowForce event registration is member-only. Sign in or create a member account, verify your email, then return here to submit and confirm your registration.",
+            zh: "SnowForce 活动报名仅限会员。请登录或注册会员，完成邮箱验证后回到这里提交并确认报名。",
+          })}
+        </p>
+        <a href={`/member?next=/events/${event.slug}`} className="mt-4 inline-flex rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white">
+          {t({ en: "Sign in to register", zh: "登录后报名" })}
+        </a>
+      </div>
+    );
+  }
+
+  if (!emailConfirmed) {
     return (
       <div className="card border-amber-200 bg-amber-50">
         <h3 className="text-lg font-semibold text-amber-900">

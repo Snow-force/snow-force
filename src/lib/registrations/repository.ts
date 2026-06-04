@@ -1,7 +1,13 @@
-import type { Registration, RegistrationAnswers } from "../types";
+import type { Registration, RegistrationAnswers, RegistrationFinance } from "../types";
 import { createClient } from "@supabase/supabase-js";
 import { incrementRegistrationCount } from "../events/repository";
 import { createJsonArrayStore, workspaceDataPath } from "../server/json-store";
+import {
+  applyRegistrationFinanceInput,
+  defaultRegistrationFinance,
+  normalizeRegistrationFinance,
+  type RegistrationFinanceInput,
+} from "./finance";
 
 export type NewRegistration = Omit<Registration, "id" | "createdAt" | "updatedAt" | "status">;
 
@@ -12,6 +18,7 @@ export type RegistrationSource = {
   countForEvent(eventSlug: string): Promise<number>;
   create(data: NewRegistration): Promise<Registration>;
   updateStatus(id: string, status: Registration["status"]): Promise<Registration | undefined>;
+  updateFinance(id: string, finance: RegistrationFinanceInput): Promise<Registration | undefined>;
   deleteCancelled(id: string): Promise<Registration | undefined>;
 };
 
@@ -25,6 +32,16 @@ type RegistrationRow = {
   contact_name: string;
   contact_phone: string | null;
   status: Registration["status"];
+  deposit_amount: number | null;
+  deposit_status: RegistrationFinance["depositStatus"] | null;
+  deposit_paid_at: string | null;
+  payment_method: string | null;
+  payment_note: string | null;
+  lodging_assignment: string | null;
+  final_amount: number | null;
+  settlement_amount: number | null;
+  settlement_status: RegistrationFinance["settlementStatus"] | null;
+  settlement_note: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -63,6 +80,18 @@ function rowToRegistration(row: RegistrationRow): Registration {
     contactName: row.contact_name,
     contactPhone: row.contact_phone ?? "",
     status: row.status,
+    finance: normalizeRegistrationFinance({
+      depositAmount: row.deposit_amount,
+      depositStatus: row.deposit_status ?? defaultRegistrationFinance.depositStatus,
+      depositPaidAt: row.deposit_paid_at ?? "",
+      paymentMethod: row.payment_method ?? "",
+      paymentNote: row.payment_note ?? "",
+      lodgingAssignment: row.lodging_assignment ?? "",
+      finalAmount: row.final_amount,
+      settlementAmount: row.settlement_amount,
+      settlementStatus: row.settlement_status ?? defaultRegistrationFinance.settlementStatus,
+      settlementNote: row.settlement_note ?? "",
+    }),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -77,6 +106,31 @@ function registrationToInsert(data: NewRegistration) {
     contact_email: data.contactEmail,
     contact_name: data.contactName,
     contact_phone: data.contactPhone,
+    deposit_amount: data.finance?.depositAmount ?? null,
+    deposit_status: data.finance?.depositStatus ?? defaultRegistrationFinance.depositStatus,
+    deposit_paid_at: data.finance?.depositPaidAt || null,
+    payment_method: data.finance?.paymentMethod ?? "",
+    payment_note: data.finance?.paymentNote ?? "",
+    lodging_assignment: data.finance?.lodgingAssignment ?? "",
+    final_amount: data.finance?.finalAmount ?? null,
+    settlement_amount: data.finance?.settlementAmount ?? null,
+    settlement_status: data.finance?.settlementStatus ?? defaultRegistrationFinance.settlementStatus,
+    settlement_note: data.finance?.settlementNote ?? "",
+  };
+}
+
+function financeToUpdate(finance: RegistrationFinance) {
+  return {
+    deposit_amount: finance.depositAmount,
+    deposit_status: finance.depositStatus,
+    deposit_paid_at: finance.depositPaidAt || null,
+    payment_method: finance.paymentMethod,
+    payment_note: finance.paymentNote,
+    lodging_assignment: finance.lodgingAssignment,
+    final_amount: finance.finalAmount,
+    settlement_amount: finance.settlementAmount,
+    settlement_status: finance.settlementStatus,
+    settlement_note: finance.settlementNote,
   };
 }
 
@@ -109,6 +163,7 @@ export function createRegistrationStore(filePath: string): RegistrationSource {
         ...data,
         id: `reg_${Date.now()}_${crypto.randomUUID()}`,
         status: "confirmed",
+        finance: normalizeRegistrationFinance(data.finance),
         createdAt: now,
         updatedAt: now,
       };
@@ -124,6 +179,18 @@ export function createRegistrationStore(filePath: string): RegistrationSource {
       registrations[index] = {
         ...registrations[index],
         status,
+        updatedAt: new Date().toISOString(),
+      };
+      await store.write(registrations);
+      return registrations[index];
+    },
+    async updateFinance(id: string, financeInput: RegistrationFinanceInput) {
+      const registrations = await store.read();
+      const index = registrations.findIndex((registration) => registration.id === id);
+      if (index === -1) return undefined;
+      registrations[index] = {
+        ...registrations[index],
+        finance: applyRegistrationFinanceInput(registrations[index].finance, financeInput),
         updatedAt: new Date().toISOString(),
       };
       await store.write(registrations);
@@ -199,6 +266,19 @@ function createSupabaseRegistrationSource(): RegistrationSource {
       throwSupabaseError(error);
       return data ? rowToRegistration(data as RegistrationRow) : undefined;
     },
+    async updateFinance(id, financeInput) {
+      const existing = await this.get(id);
+      if (!existing) return undefined;
+      const finance = applyRegistrationFinanceInput(existing.finance, financeInput);
+      const { data, error } = await createAdminRegistrationClient()
+        .from("registrations")
+        .update(financeToUpdate(finance))
+        .eq("id", id)
+        .select("*")
+        .maybeSingle();
+      throwSupabaseError(error);
+      return data ? rowToRegistration(data as RegistrationRow) : undefined;
+    },
     async deleteCancelled(id) {
       const { data, error } = await createAdminRegistrationClient()
         .from("registrations")
@@ -220,6 +300,7 @@ export function createRegistrationRepository(source: RegistrationSource) {
     getRegistrationsByMember: source.listForMember,
     getRegistrationCountForEvent: source.countForEvent,
     updateRegistrationStatus: source.updateStatus,
+    updateRegistrationFinance: source.updateFinance,
     deleteCancelledRegistration: source.deleteCancelled,
     async createRegistration(data: NewRegistration) {
       return { success: true as const, registration: await source.create(data) };
@@ -237,5 +318,6 @@ export const getRegistration = repository.getRegistration;
 export const getRegistrationsByMember = repository.getRegistrationsByMember;
 export const getRegistrationCountForEvent = repository.getRegistrationCountForEvent;
 export const updateRegistrationStatus = repository.updateRegistrationStatus;
+export const updateRegistrationFinance = repository.updateRegistrationFinance;
 export const deleteCancelledRegistration = repository.deleteCancelledRegistration;
 export const createRegistration = repository.createRegistration;

@@ -31,6 +31,7 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
   const initialMode = searchParams.mode === "register" || searchParams.mode === "magic" ? searchParams.mode : "login";
   const [mode, setMode] = useState<"login" | "register" | "magic">(initialMode);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const next = searchParams.next ?? "/member";
 
   const heading = mode === "register" ? "Create profile" : mode === "magic" ? "Magic link" : "Welcome";
   const subtext = forgotOpen
@@ -77,6 +78,7 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
         <div className="mt-4">
           {mode === "register" ? (
             <form action={registerMemberProfile} className="space-y-3">
+              <input type="hidden" name="next" value={next} />
               <AuthField label="Display name" id="register-member-name" name="displayName" autoComplete="name" />
               <AuthField label="Email" id="register-member-email" name="email" type="email" autoComplete="email" />
               <AuthField label="Password" id="register-member-password" name="password" type="password" autoComplete="new-password" minLength={6} />
@@ -84,11 +86,13 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
             </form>
           ) : mode === "magic" ? (
             <form action={requestMemberMagicLink} className="space-y-3">
+              <input type="hidden" name="next" value={next} />
               <AuthField label="Email" id="magic-member-email" name="email" type="email" autoComplete="email" />
               <button className="auth-primary-button mt-1">Send secure link</button>
             </form>
           ) : (
             <form action={loginMemberProfile} className="space-y-3">
+              <input type="hidden" name="next" value={next} />
               <AuthField label="Email" id="login-member-email" name="email" type="email" autoComplete="email" />
               <AuthField label="Password" id="login-member-password" name="password" type="password" autoComplete="current-password" />
               <div className="flex items-center justify-between gap-3 text-[12px] text-white/50">
@@ -116,6 +120,7 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
           </div>
 
           <form action={loginMemberWithGoogle} className="mt-4">
+            <input type="hidden" name="next" value={next} />
             <button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-[15px] font-semibold text-white transition hover:bg-white/10 active:scale-[0.98]">
               <GoogleIcon /> Continue with Google
             </button>

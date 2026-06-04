@@ -73,6 +73,12 @@ describe("registration store", () => {
         registration.status = status;
         return registration;
       },
+      updateFinance: async (id, finance) => {
+        const registration = rows.find((item) => item.id === id);
+        if (!registration) return undefined;
+        registration.finance = { ...registration.finance, ...finance } as Registration["finance"];
+        return registration;
+      },
       deleteCancelled: async (id) => {
         const index = rows.findIndex((registration) => registration.id === id);
         if (index === -1 || rows[index].status !== "cancelled") return undefined;

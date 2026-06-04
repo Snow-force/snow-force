@@ -44,6 +44,26 @@ export interface EventDetailModule {
 export type RegistrationAnswerValue = string | boolean | string[];
 export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
 
+export type RegistrationDepositStatus = "pending" | "paid" | "waived";
+export type RegistrationSettlementStatus =
+  | "not_started"
+  | "pending_balance"
+  | "pending_refund"
+  | "settled";
+
+export interface RegistrationFinance {
+  depositAmount: number | null;
+  depositStatus: RegistrationDepositStatus;
+  depositPaidAt: string;
+  paymentMethod: string;
+  paymentNote: string;
+  lodgingAssignment: string;
+  finalAmount: number | null;
+  settlementAmount: number | null;
+  settlementStatus: RegistrationSettlementStatus;
+  settlementNote: string;
+}
+
 export interface Event {
   slug: string;
   status: EventStatus;
@@ -79,6 +99,7 @@ export interface Registration {
   contactName: string;
   contactPhone: string;
   status: "confirmed" | "cancelled" | "waitlist";
+  finance?: RegistrationFinance;
   createdAt: string;
   updatedAt: string;
 }

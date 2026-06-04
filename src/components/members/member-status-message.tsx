@@ -48,7 +48,10 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
     return { tone: "success", text: "Registration confirmed. It now appears in your trips and the staff list." };
   }
   if (searchParams.registration === "duplicate") {
-    return { tone: "error", text: "This email is already registered for that event." };
+    return { tone: "error", text: "You are already registered for that event." };
+  }
+  if (searchParams.registration === "member-only") {
+    return { tone: "error", text: "Event registration is now confirmed from your member home. Please sign in and confirm there." };
   }
   if (searchParams.registration === "unavailable") {
     return { tone: "error", text: "This event is no longer available for registration." };

@@ -25,7 +25,7 @@ export const seedFAQs: FAQItem[] = [
     id: "3",
     question: { en: "How do I register for an event?", zh: "如何报名活动？" },
     answer: {
-      en: "Browse events on our site, click into the one you want, and fill out the registration form. You'll receive a confirmation email once registered. You don't need an account to register, but creating one makes future registrations faster.",
+      en: "Browse events on our site, sign in as a verified SnowForce member, and fill out the registration form. After submitting, go to your member home and click Confirm so the registration enters the staff list.",
       zh: "浏览我们网站上的活动，点击你感兴趣的活动，填写报名表单即可。报名成功后会收到确认邮件。注册不需要账号，但创建账号后下次报名更快捷。",
     },
     category: { en: "Participation", zh: "参与相关" },
@@ -35,7 +35,7 @@ export const seedFAQs: FAQItem[] = [
     id: "4",
     question: { en: "How much do events cost?", zh: "活动费用是多少？" },
     answer: {
-      en: "Many SnowForce community events are free to join. Some specialized training events have coaching fees. In all cases, participants are responsible for their own lift tickets, equipment, and meals unless stated otherwise. Check each event's fee details for specifics.",
+      en: "Many SnowForce community events are free to join. Overnight trips may collect a deposit first for lodging, food, or shared supplies, then settle the final amount after the trip based on room assignment and actual costs. Check each event's fee details for specifics.",
       zh: "很多 SnowForce 社群活动免费参与。部分专项训练活动会收取教练费。除特别说明外，参与者需自理雪票、装备和餐饮。具体请查看每个活动的费用说明。",
     },
     category: { en: "Cost", zh: "费用相关" },
@@ -45,7 +45,7 @@ export const seedFAQs: FAQItem[] = [
     id: "5",
     question: { en: "What if I need to cancel my registration?", zh: "如果需要取消报名怎么办？" },
     answer: {
-      en: "You can cancel your registration by replying to your confirmation email or contacting us through the site. Please cancel as early as possible so we can offer the spot to someone on the waitlist.",
+      en: "You can cancel by contacting SnowForce through the member channel or the site. Please cancel as early as possible so we can offer the spot to someone on the waitlist.",
       zh: "你可以通过回复确认邮件或通过网站联系我们取消报名。请尽早取消，以便我们将名额释放给候补的朋友。",
     },
     category: { en: "Participation", zh: "参与相关" },

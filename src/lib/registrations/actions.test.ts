@@ -7,7 +7,6 @@ const mockGetRegistrationCountForEvent = vi.hoisted(() => vi.fn());
 const mockGetRegistrations = vi.hoisted(() => vi.fn());
 const mockCreateRegistration = vi.hoisted(() => vi.fn());
 const mockCreateOrRefreshPendingRegistration = vi.hoisted(() => vi.fn());
-const mockHasPendingRegistrationForEmail = vi.hoisted(() => vi.fn());
 const mockGetCurrentMemberAccount = vi.hoisted(() => vi.fn());
 const mockSendEmail = vi.hoisted(() => vi.fn());
 
@@ -28,12 +27,11 @@ vi.mock("@/lib/registrations/repository", () => ({
 
 vi.mock("@/lib/registrations/pending-repository", () => ({
   createOrRefreshPendingRegistration: mockCreateOrRefreshPendingRegistration,
-  hasPendingRegistrationForEmail: mockHasPendingRegistrationForEmail,
 }));
 
 vi.mock("@/lib/registrations/member-gate", () => ({
   canSubmitMemberRegistration: vi.fn((account: { profile: { id: string }; emailConfirmed: boolean } | null) => {
-    if (!account) return { allowed: true, memberId: null };
+    if (!account) return { allowed: false, error: "Sign in as a verified SnowForce member before registering for events." };
     if (!account.emailConfirmed) {
       return { allowed: false, error: "Verify your email before using member registration." };
     }
@@ -47,7 +45,6 @@ vi.mock("@/lib/registrations/validation", () => ({
 
 vi.mock("@/lib/email/adapter", () => ({
   buildConfirmationEmail: vi.fn(() => ({ subject: "confirmation" })),
-  buildRegistrationVerificationEmail: vi.fn((to: string) => ({ to, subject: "verify", html: "" })),
   buildStaffNotificationEmail: vi.fn(() => ({ subject: "staff" })),
   sendEmail: mockSendEmail,
 }));
@@ -185,7 +182,6 @@ beforeEach(() => {
     eventSlug: "mammoth-weekend",
     contactEmail: "rider@example.com",
   });
-  mockHasPendingRegistrationForEmail.mockResolvedValue(false);
   mockGetCurrentMemberAccount.mockResolvedValue(null);
   mockSendEmail.mockResolvedValue(undefined);
 });
@@ -239,24 +235,16 @@ describe("registerForEvent member persistence", () => {
     expect(mockCreateRegistration).not.toHaveBeenCalled();
   });
 
-  it("S4-anonymous-registration-persists-with-null-member-id", async () => {
-    const anonymousRegistration = { ...registration, memberId: null };
-    mockCreateRegistration.mockResolvedValue({ success: true, registration: anonymousRegistration });
-
+  it("rejects anonymous registration before pending write", async () => {
     const result = await registerForEvent("mammoth-weekend", validInput());
 
     expect(result).toEqual({
-      success: true,
-      pending: true,
-      email: "rider@example.com",
-      confirmation: "email",
+      success: false,
+      error: "Sign in as a verified SnowForce member before registering for events.",
     });
-    expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledWith(expect.objectContaining({ memberId: null }));
+    expect(mockCreateOrRefreshPendingRegistration).not.toHaveBeenCalled();
     expect(mockCreateRegistration).not.toHaveBeenCalled();
-    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({
-      to: "rider@example.com",
-      subject: "verify",
-    }));
+    expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
   it("does not fill contact fields from the member profile when answers omit them", async () => {
@@ -278,6 +266,12 @@ describe("registerForEvent member persistence", () => {
   });
 
   it("rejects invalid email before pending registration write", async () => {
+    mockGetCurrentMemberAccount.mockResolvedValue({
+      user: { id: "user-1", email: "rider@example.com" },
+      profile,
+      emailConfirmed: true,
+    });
+
     const result = await registerForEvent("mammoth-weekend", {
       ...validInput(),
       answers: {
@@ -291,25 +285,36 @@ describe("registerForEvent member persistence", () => {
     expect(mockCreateOrRefreshPendingRegistration).not.toHaveBeenCalled();
   });
 
-  it("rejects duplicate pending email registrations for the same event", async () => {
-    mockHasPendingRegistrationForEmail.mockResolvedValue(true);
+  it("refreshes pending member registrations instead of rejecting duplicate pending submissions", async () => {
+    mockGetCurrentMemberAccount.mockResolvedValue({
+      user: { id: "user-1", email: "rider@example.com" },
+      profile,
+      emailConfirmed: true,
+    });
 
     const result = await registerForEvent("mammoth-weekend", validInput());
 
     expect(result).toEqual({
-      success: false,
-      error: "Check your email to confirm this registration before submitting again.",
+      success: true,
+      pending: true,
+      email: "rider@example.com",
+      confirmation: "member",
     });
-    expect(mockCreateOrRefreshPendingRegistration).not.toHaveBeenCalled();
+    expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledTimes(1);
     expect(mockCreateRegistration).not.toHaveBeenCalled();
   });
 
-  it("rejects duplicate email registrations for the same event even when the previous row is cancelled", async () => {
+  it("rejects duplicate member registrations for the same event even when the previous row is cancelled", async () => {
+    mockGetCurrentMemberAccount.mockResolvedValue({
+      user: { id: "user-1", email: "rider@example.com" },
+      profile,
+      emailConfirmed: true,
+    });
     mockGetRegistrations.mockResolvedValue([
       {
         ...registration,
         status: "cancelled",
-        contactEmail: "RIDER@example.com",
+        memberId: "member-1",
       },
     ]);
 
@@ -317,7 +322,7 @@ describe("registerForEvent member persistence", () => {
 
     expect(result).toEqual({
       success: false,
-      error: "This email is already registered for this event.",
+      error: "You are already registered for this event.",
     });
     expect(mockCreateRegistration).not.toHaveBeenCalled();
   });
