@@ -45,6 +45,7 @@ function financeSummary(registration: Registration) {
   }
   if (finance.settlementStatus === "settled") return "Settlement: settled";
   if (finance.depositStatus === "paid") return "Deposit: paid";
+  if (finance.depositStatus === "refunded") return "Deposit: refunded";
   if (finance.depositStatus === "waived") return "Deposit: waived";
   return finance.depositAmount === null ? "Deposit: pending" : `Deposit due: $${finance.depositAmount}`;
 }

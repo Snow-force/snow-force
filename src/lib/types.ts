@@ -44,7 +44,7 @@ export interface EventDetailModule {
 export type RegistrationAnswerValue = string | boolean | string[];
 export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
 
-export type RegistrationDepositStatus = "pending" | "paid" | "waived";
+export type RegistrationDepositStatus = "pending" | "paid" | "refunded" | "waived";
 export type RegistrationSettlementStatus =
   | "not_started"
   | "pending_balance"

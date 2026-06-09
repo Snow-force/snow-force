@@ -49,7 +49,7 @@ export function normalizeRegistrationFinance(
   return {
     ...merged,
     settlementAmount,
-    settlementStatus: settlementStatusForAmount(settlementAmount, merged.settlementStatus),
+    settlementStatus: merged.settlementStatus,
   };
 }
 
@@ -65,6 +65,6 @@ export function applyRegistrationFinanceInput(
   return {
     ...next,
     settlementAmount,
-    settlementStatus: settlementStatusForAmount(settlementAmount, input.settlementStatus ?? next.settlementStatus),
+    settlementStatus: input.settlementStatus ?? settlementStatusForAmount(settlementAmount, next.settlementStatus),
   };
 }
