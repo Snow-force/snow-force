@@ -100,3 +100,4 @@ supabase db push  # Apply migrations to linked project when schema changes
 - Local Next dev/build can corrupt `.next` if multiple Next processes write concurrently. Stop project Node/Next processes before clean rebuilds.
 - `.omo/`, `.playwright-mcp/`, `.superpowers/`, `.next/`, `node_modules/`, and `.data/` are tool/runtime state, not source knowledge.
 - Root `middleware.ts` delegates to `src/lib/supabase/middleware.ts`; `src/middleware.ts` is the deployable entry point.
+- After deploying any current workspace content to Vercel, commit and push the deployed source changes to GitHub in the same workflow unless explicitly told not to.

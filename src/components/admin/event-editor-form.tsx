@@ -6,6 +6,7 @@ import { useFormState } from "react-dom";
 import { saveEventAction, type EventEditorState } from "@/lib/events/actions";
 import { useLanguage } from "@/lib/language";
 import type { Event } from "@/lib/types";
+import { AdminTranslateMissingButton } from "./admin-translate-missing-button";
 import { adminCopy } from "./admin-copy";
 import { EventBasicStep } from "./event-basic-step";
 import { EventDetailModuleBuilder } from "./event-detail-module-builder";
@@ -14,6 +15,7 @@ import { EventPreviewPanel } from "./event-preview-panel";
 import { EventQuestionBuilder } from "./event-question-builder";
 import { EventRegistrationSettingsStep } from "./event-registration-settings-step";
 import { ensureRequiredRegistrationQuestions } from "@/lib/events/required-registration-questions";
+import { applyEventTranslations, collectEventTranslationItems } from "./translation-drafts";
 
 const initialState: EventEditorState = { success: false };
 
@@ -105,6 +107,8 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
   const state = formState ?? initialState;
   const { lang, t } = useLanguage();
   const isZh = lang === "zh";
+  const translateTargetLang: ActiveLang = activeLang === "zh" ? "en" : "zh";
+  const missingTranslationItems = collectEventTranslationItems(draftEvent, activeLang, translateTargetLang);
 
   function updateBilingualValue(key: BilingualEventKey, lang: ActiveLang, value: string) {
     setDraftEvent((current) => ({
@@ -141,21 +145,29 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {(["zh", "en"] as const).map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => setActiveLang(lang)}
-            className={`rounded border px-3 py-1 text-sm font-medium ${
-              activeLang === lang
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            {lang === "zh" ? "Chinese" : "English"}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {(["zh", "en"] as const).map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              onClick={() => setActiveLang(lang)}
+              className={`rounded border px-3 py-1 text-sm font-medium ${
+                activeLang === lang
+                  ? "border-gray-900 bg-gray-900 text-white"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              {lang === "zh" ? "Chinese" : "English"}
+            </button>
+          ))}
+        </div>
+        <AdminTranslateMissingButton
+          sourceLang={activeLang}
+          targetLang={translateTargetLang}
+          items={missingTranslationItems}
+          onApply={(translations) => setDraftEvent((current) => applyEventTranslations(current, translateTargetLang, translations))}
+        />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_320px]">

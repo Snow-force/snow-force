@@ -3,6 +3,7 @@
 import { useLanguage } from "@/lib/language";
 import type { EventRecap } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
+import type { ReactNode } from "react";
 
 type ActiveLang = "zh" | "en";
 
@@ -11,6 +12,7 @@ type RecapContentStepProps = {
   activeLang: ActiveLang;
   onLangChange(lang: ActiveLang): void;
   onChange(recap: EventRecap): void;
+  translateControl?: ReactNode;
 };
 
 function updateList(value: string) {
@@ -20,7 +22,7 @@ function updateList(value: string) {
     .filter(Boolean);
 }
 
-export function RecapContentStep({ recap, activeLang, onLangChange, onChange }: RecapContentStepProps) {
+export function RecapContentStep({ recap, activeLang, onLangChange, onChange, translateControl }: RecapContentStepProps) {
   const { t } = useLanguage();
   const languageLabel = activeLang === "zh" ? "中文" : "English";
 
@@ -28,7 +30,7 @@ export function RecapContentStep({ recap, activeLang, onLangChange, onChange }: 
     <section className="card space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-gray-900">{t(adminCopy.recapEditor.recapContent)}</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(["zh", "en"] as const).map((option) => (
             <button
               key={option}
@@ -43,6 +45,7 @@ export function RecapContentStep({ recap, activeLang, onLangChange, onChange }: 
               {option === "zh" ? "中文" : "English"}
             </button>
           ))}
+          {translateControl}
         </div>
       </div>
       {activeLang === "en" ? (

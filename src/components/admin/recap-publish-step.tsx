@@ -3,6 +3,7 @@
 import { useLanguage } from "@/lib/language";
 import type { EventRecap } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
+import type { ReactNode } from "react";
 
 type ActiveLang = "zh" | "en";
 
@@ -11,9 +12,10 @@ type RecapPublishStepProps = {
   activeLang: ActiveLang;
   onLangChange(lang: ActiveLang): void;
   onChange(recap: EventRecap): void;
+  translateControl?: ReactNode;
 };
 
-export function RecapPublishStep({ recap, activeLang, onLangChange, onChange }: RecapPublishStepProps) {
+export function RecapPublishStep({ recap, activeLang, onLangChange, onChange, translateControl }: RecapPublishStepProps) {
   const { t } = useLanguage();
   const complete = Boolean(recap.title.zh && recap.summary.zh && recap.content.zh && recap.location.zh && recap.media.length > 0);
 
@@ -21,7 +23,7 @@ export function RecapPublishStep({ recap, activeLang, onLangChange, onChange }: 
     <section className="card space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-gray-900">{t(adminCopy.editor.seoMedia)}</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(["zh", "en"] as const).map((option) => (
             <button
               key={option}
@@ -36,6 +38,7 @@ export function RecapPublishStep({ recap, activeLang, onLangChange, onChange }: 
               {option === "zh" ? "中文" : "English"}
             </button>
           ))}
+          {translateControl}
         </div>
       </div>
       <p className={complete ? "text-sm text-green-600" : "text-sm text-amber-600"}>
