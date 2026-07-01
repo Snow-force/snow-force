@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLanguage, type Lang } from "@/lib/language";
 import { isEventOpen, remainingCapacity } from "@/lib/events/availability";
 import { RegistrationForm } from "@/components/events/registration-form";
+import { EventShareBar } from "./event-share-bar";
 import type { Bilingual, Event, MemberProfile } from "@/lib/types";
 
 function localizedText(value: Bilingual, lang: Lang) {
@@ -116,6 +117,7 @@ export function EventDetailView({
                     </span>
                   ) : null
                 ) : null}
+                <EventShareBar slug={event.slug} title={eventTitle} />
               </div>
               <h1 className="mt-5 max-w-3xl text-[40px] font-semibold leading-[1.08] tracking-[-0.28px] sm:text-[56px]">
                 {eventTitle}
@@ -207,6 +209,9 @@ export function EventDetailView({
                   </p>
                 </div>
               )}
+              <div className="border-t border-gray-200 pt-4 mt-6">
+                <EventShareBar slug={event.slug} title={eventTitle} tone="light" />
+              </div>
             </div>
           </aside>
         </div>

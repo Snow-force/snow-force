@@ -58,6 +58,10 @@ export const seedEvents: Event[] = [
     allowWaitlist: true,
     allowCancellation: true,
     feeAmount: "Free",
+    paymentModel: "free",
+    depositAmount: null,
+    depositCurrency: "usd",
+    fullPaymentAmount: null,
     paymentInstructions: {
       en: "Lift ticket and meals are self-paid. Final details are confirmed in the WeChat group after registration.",
       zh: "活动免费，雪票与餐食自理。报名后会在微信群确认最终安排。",
@@ -160,6 +164,10 @@ export const seedEvents: Event[] = [
     allowWaitlist: true,
     allowCancellation: true,
     feeAmount: "¥600",
+    paymentModel: "free",
+    depositAmount: null,
+    depositCurrency: "usd",
+    fullPaymentAmount: null,
     paymentInstructions: {
       en: "Coaching fee only. Lift tickets, meals, and lodging are not included.",
       zh: "费用仅包含教学，雪票、餐食与住宿自理。",

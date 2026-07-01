@@ -21,6 +21,7 @@ export type NewPendingRegistration = Omit<PendingRegistration, "id" | "createdAt
 
 export type PendingRegistrationSource = {
   createOrRefresh(data: NewPendingRegistration): Promise<PendingRegistration>;
+  getById(id: string): Promise<PendingRegistration | undefined>;
   getByTokenHash(tokenHash: string): Promise<PendingRegistration | undefined>;
   listForMember(memberId: string, now?: Date): Promise<PendingRegistration[]>;
   hasForEmail(eventSlug: string, email: string, now?: Date): Promise<boolean>;
@@ -129,6 +130,9 @@ export function createPendingRegistrationStore(filePath: string): PendingRegistr
       await store.write([...rows, pending]);
       return pending;
     },
+    async getById(id) {
+      return (await store.read()).find((row) => row.id === id);
+    },
     async getByTokenHash(tokenHash) {
       return (await store.read()).find((row) => row.tokenHash === tokenHash);
     },
@@ -185,6 +189,15 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
       throwSupabaseError(error);
       return rowToPendingRegistration(row as PendingRegistrationRow);
     },
+    async getById(id) {
+      const { data, error } = await createAdminPendingRegistrationClient()
+        .from("pending_registrations")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      throwSupabaseError(error);
+      return data ? rowToPendingRegistration(data as PendingRegistrationRow) : undefined;
+    },
     async getByTokenHash(tokenHash) {
       const { data, error } = await createAdminPendingRegistrationClient()
         .from("pending_registrations")
@@ -240,6 +253,7 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
 export function createPendingRegistrationRepository(source: PendingRegistrationSource) {
   return {
     createOrRefreshPendingRegistration: source.createOrRefresh,
+    getPendingRegistrationById: source.getById,
     getPendingRegistrationByTokenHash: source.getByTokenHash,
     getPendingRegistrationsByMember: source.listForMember,
     hasPendingRegistrationForEmail: source.hasForEmail,
@@ -254,6 +268,7 @@ const pendingRegistrationStore = hasSupabaseConfig()
 const repository = createPendingRegistrationRepository(pendingRegistrationStore);
 
 export const createOrRefreshPendingRegistration = repository.createOrRefreshPendingRegistration;
+export const getPendingRegistrationById = repository.getPendingRegistrationById;
 export const getPendingRegistrationByTokenHash = repository.getPendingRegistrationByTokenHash;
 export const getPendingRegistrationsByMember = repository.getPendingRegistrationsByMember;
 export const hasPendingRegistrationForEmail = repository.hasPendingRegistrationForEmail;

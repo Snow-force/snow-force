@@ -61,6 +61,17 @@ The public RLS policy exposes only published events. The event admin writes
 through server actions after `/staff-login` authentication and uses the
 server-only Supabase key for draft and update operations.
 
+## Stripe Setup
+
+1. Create a Stripe account (US/HK/SG/etc.).
+2. Get your secret key + publishable key from Stripe Dashboard → Developers → API keys.
+3. Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL` in `.env.local`.
+4. For local development, install the Stripe CLI and run:
+   ```bash
+   stripe listen --forward-to http://localhost:3000/api/stripe/webhook
+   ```
+5. Configure the production webhook endpoint at `/api/stripe/webhook` in the Stripe Dashboard (Developers → Webhooks → Add endpoint). Use the `checkout.session.completed` event.
+
 ## Event Workflow
 
 Open `/staff-login`, then use `/admin/events`.
@@ -71,6 +82,7 @@ Open `/staff-login`, then use `/admin/events`.
 - Keep cover images as URLs or app-relative paths for this version.
 - Publish only after required bilingual and operational fields are complete.
 - Open or close registration from the event list.
+- Choose a payment model (Free / Deposit / Full prepay) in the registration settings step. Deposit and Full prepay events require Stripe Checkout for online payment.
 
 Existing examples in `src/lib/events/seed.ts` are import/reference data. Insert
 those records into Supabase once before relying on the admin workflow; after

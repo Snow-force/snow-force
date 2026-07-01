@@ -83,6 +83,10 @@ const openEvent: Event = {
   allowWaitlist: false,
   allowCancellation: true,
   feeAmount: "100",
+  paymentModel: "free",
+  depositAmount: null,
+  depositCurrency: "usd",
+  fullPaymentAmount: null,
   paymentInstructions: { en: "Pay later", zh: "稍后付款" },
   seoTitle: { en: "Mammoth Weekend", zh: "猛犸周末" },
   seoDescription: { en: "Ride", zh: "滑雪" },
@@ -201,6 +205,7 @@ describe("registerForEvent member persistence", () => {
       pending: true,
       email: "rider@example.com",
       confirmation: "member",
+      pendingRegistrationId: "pending-1",
     });
     expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledWith(expect.objectContaining({
       eventSlug: "mammoth-weekend",
@@ -299,6 +304,7 @@ describe("registerForEvent member persistence", () => {
       pending: true,
       email: "rider@example.com",
       confirmation: "member",
+      pendingRegistrationId: "pending-1",
     });
     expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledTimes(1);
     expect(mockCreateRegistration).not.toHaveBeenCalled();

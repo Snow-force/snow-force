@@ -16,3 +16,6 @@ tsconfig.tsbuildinfo
 client_secret_*.apps.googleusercontent.com.json
 
 .vercel
+
+.env.production.local
+.env.staging

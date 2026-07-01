@@ -26,6 +26,10 @@ export type EventCoreRow = {
   allow_waitlist: boolean;
   allow_cancellation: boolean;
   fee_amount: string;
+  payment_model: Event["paymentModel"];
+  deposit_amount: number | null;
+  deposit_currency: Event["depositCurrency"];
+  full_payment_amount: number | null;
   payment_instructions_zh: string;
   payment_instructions_en: string;
   seo_title_zh: string;
@@ -131,6 +135,10 @@ export function rowsToEvent(
     allowWaitlist: core.allow_waitlist,
     allowCancellation: core.allow_cancellation,
     feeAmount: core.fee_amount,
+    paymentModel: core.payment_model ?? "free",
+    depositAmount: core.deposit_amount ?? null,
+    depositCurrency: core.deposit_currency ?? "usd",
+    fullPaymentAmount: core.full_payment_amount ?? null,
     paymentInstructions: {
       en: core.payment_instructions_en,
       zh: core.payment_instructions_zh,
@@ -192,6 +200,10 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       allow_waitlist: event.allowWaitlist,
       allow_cancellation: event.allowCancellation,
       fee_amount: event.feeAmount,
+      payment_model: event.paymentModel,
+      deposit_amount: event.depositAmount,
+      deposit_currency: event.depositCurrency,
+      full_payment_amount: event.fullPaymentAmount,
       payment_instructions_zh: event.paymentInstructions.zh,
       payment_instructions_en: event.paymentInstructions.en,
       seo_title_zh: event.seoTitle.zh,

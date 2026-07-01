@@ -82,6 +82,10 @@ export interface Event {
   allowWaitlist: boolean;
   allowCancellation: boolean;
   feeAmount: string;
+  paymentModel: "free" | "deposit" | "full_prepay";
+  depositAmount: number | null;
+  depositCurrency: "usd" | "cny" | "eur" | "gbp" | "jpy";
+  fullPaymentAmount: number | null;
   paymentInstructions: Bilingual;
   seoTitle: Bilingual;
   seoDescription: Bilingual;

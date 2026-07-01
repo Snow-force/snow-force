@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
+import { createCheckoutSessionAction } from "@/lib/payments/actions";
 
 type Props = {
   event: Event;
@@ -179,6 +180,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [serverError, setServerError] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
   const [pendingConfirmation, setPendingConfirmation] = useState<"email" | "member">("email");
+  const [pendingRegistrationId, setPendingRegistrationId] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   function updateField(key: string, value: AnswerValue) {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -244,6 +248,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         if (result.success) {
           setPendingEmail(result.email);
           setPendingConfirmation(result.confirmation);
+          setPendingRegistrationId(result.pendingRegistrationId);
         } else {
           setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
         }
@@ -251,7 +256,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     });
   }
 
-  if (pendingEmail) {
+  if (pendingEmail && event.paymentModel === "free") {
     if (pendingConfirmation === "member") {
       return (
         <div className="card border-green-200 bg-green-50 text-center">
@@ -300,6 +305,48 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
             zh: "确认邮箱前，这条报名不会进入后台名单。",
           })}
         </p>
+      </div>
+    );
+  }
+
+  if (pendingRegistrationId && event.paymentModel !== "free") {
+    const amount = event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
+    const currency = event.depositCurrency.toUpperCase();
+    const label =
+      event.paymentModel === "deposit"
+        ? t({ en: `Pay deposit ${amount ?? ""} ${currency}`, zh: `支付押金 ${amount ?? ""} ${currency}` })
+        : t({ en: `Pay full ${amount ?? ""} ${currency}`, zh: `支付全款 ${amount ?? ""} ${currency}` });
+
+    return (
+      <div className="card border-blue-200 bg-blue-50 text-center">
+        <h3 className="text-lg font-semibold text-blue-950">{t({ en: "Payment required", zh: "需要支付" })}</h3>
+        <p className="mt-2 text-sm text-blue-900">
+          {t({
+            en: "Your registration is pending payment. Click below to pay via Stripe.",
+            zh: "你的报名待支付，点击下方按钮通过 Stripe 完成。",
+          })}
+        </p>
+        {checkoutError && <p className="mt-2 text-sm text-red-700">{checkoutError}</p>}
+        <button
+          type="button"
+          disabled={checkoutLoading}
+          onClick={async () => {
+            setCheckoutLoading(true);
+            setCheckoutError("");
+            const formData = new FormData();
+            formData.append("pendingRegistrationId", pendingRegistrationId);
+            const result = await createCheckoutSessionAction(formData);
+            if (result.success && result.url) {
+              window.location.href = result.url;
+            } else {
+              setCheckoutLoading(false);
+              setCheckoutError(result.success ? "No checkout URL returned" : result.error);
+            }
+          }}
+          className="mt-4 inline-flex rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          {checkoutLoading ? t({ en: "Redirecting...", zh: "跳转中..." }) : label}
+        </button>
       </div>
     );
   }
