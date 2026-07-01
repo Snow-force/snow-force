@@ -20,7 +20,7 @@ type RegisterInput = {
 };
 
 export type RegisterForEventResult =
-  | { success: true; pending: true; email: string; confirmation: "member" }
+  | { success: true; pending: true; email: string; confirmation: "member"; pendingRegistrationId: string }
   | { success: false; error: string };
 
 function getStringAnswer(answers: RegistrationAnswers, key: string) {
@@ -104,7 +104,7 @@ export async function registerForEvent(
     return { success: false, error: "You are already registered for this event." };
   }
 
-  await createOrRefreshPendingRegistration({
+  const pending = await createOrRefreshPendingRegistration({
     eventSlug,
     memberId: memberDecision.memberId,
     answers,
@@ -122,5 +122,6 @@ export async function registerForEvent(
     pending: true,
     email: normalizedContactEmail,
     confirmation: "member",
+    pendingRegistrationId: pending.id,
   };
 }
