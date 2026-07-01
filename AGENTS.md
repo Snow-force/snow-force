@@ -17,6 +17,7 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 │   ├── members/             # Supabase Auth flows, structured profiles, dashboard, supporting tables
 │   ├── registrations/       # Registration validation, actions, member gating, autofill
 │   │   └── member-gate.ts   # Verified-email gate + profile autofill for event forms
+│   ├── payments/            # Server-only Stripe client, checkout session action, webhook handler
 ├── supabase/migrations/     # Schema, RLS, member expansion, supporting tables
 ├── middleware.ts             # Supabase SSR session refresh (root-level)
 ├── PRODUCT.md               # Product register, users, principles
@@ -36,6 +37,9 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 | Staff admin auth | `src/lib/auth/admin.ts`, `src/app/staff-login`, `src/app/admin/layout.tsx` | Signed httpOnly cookie, not Supabase staff auth yet. |
 | Database/RLS changes | `supabase/migrations` | Apply migrations before relying on new statuses/columns/tables. |
 | Design/product rules | `PRODUCT.md`, `DESIGN.md` | Product register. Public pages may be energetic; admin stays practical. |
+| Event payment | `src/lib/payments/`, `src/lib/events/validation.ts` (paymentModel field), `src/components/events/registration-form.tsx` (CTA) | Stripe Checkout for deposit/full_prepay events. |
+| Stripe webhook | `src/app/api/stripe/webhook/route.ts` | Receives `checkout.session.completed`, promotes pending registration. |
+| Event sharing | `src/components/events/event-share-bar.tsx`, `src/lib/events/share-payload.ts` | Share URL + QR code builders for public event pages. |
 
 ## CODE MAP
 | Symbol | Type | Location | Role |
@@ -53,6 +57,10 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 | `normalizeMemberProfileRow()` | data mapper | `src/lib/members/profile-fields.ts` | DB row → typed MemberProfile with enum guards. |
 | `canSubmitMemberRegistration()` | registration gate | `src/lib/registrations/member-gate.ts` | Blocks unverified members; returns memberId or null. |
 | `autofillRegistrationAnswers()` | autofill | `src/lib/registrations/member-gate.ts` | Pre-fills event form from member profile. |
+| `createCheckoutSessionAction()` | server action | `src/lib/payments/actions.ts` | Create Stripe Checkout Session for a pending registration. |
+| `verifyStripeWebhookSignature()` | server helper | `src/lib/payments/stripe-server.ts` | Verify Stripe webhook signature. |
+| `buildShareUrl()` / `buildQrCodeDataUrl()` | pure helpers | `src/lib/events/share-payload.ts` | Share URL + QR code data URL builders. |
+| `getPendingRegistrationById()` | repository helper | `src/lib/registrations/pending-repository.ts` | Look up a pending registration by id (used by checkout + webhook). |
 
 ## CONVENTIONS
 - Path alias: `@/*` maps to `./src/*`.
@@ -67,6 +75,9 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 - Auth redirects route through `/auth/callback` for Supabase SSR code exchange; never directly to `/member`.
 - `member_profiles` uses structured fields (riderType/riderLevel) alongside legacy bilingual columns.
 - Supporting tables (`member_passes`, `member_equipment`, `saved_events`, `notifications`) back the new member portal.
+- Stripe webhook Events are deduplicated via `public.stripe_webhook_events.event_id` primary key; never process the same Stripe event id twice.
+- Stripe Checkout sessions carry `metadata.pendingRegistrationId` so the webhook can promote the pending registration on `checkout.session.completed`.
+- Per-event `paymentModel` (free | deposit | full_prepay) drives whether checkout is shown and how `RegistrationFinance` fields auto-populate on webhook.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Never import privileged Supabase admin/service client into client components.
@@ -78,6 +89,9 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 - Do not remove existing dirty worktree changes without explicit instruction.
 - Do not use `raw_user_meta_data` for authorization decisions.
 - Do not put `security definer` functions in public schema.
+- Do not import `stripe` or `qrcode` into client components; both are server-only.
+- Do not call `request.json()` in the Stripe webhook route; signature verification requires the raw body via `await request.text()`.
+- Do not trust `metadata.paymentModel` or `metadata.amount` in the webhook; re-read from the DB and `session.amount_total`.
 
 ## UNIQUE STYLES
 - Product register: public discovery can be lively; admin screens should be dense, calm, and scannable.
