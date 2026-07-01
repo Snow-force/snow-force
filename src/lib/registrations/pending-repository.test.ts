@@ -3,9 +3,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { PendingRegistrationSource, PendingRegistration } from "./pending-repository";
 import {
   createPendingRegistrationRepository,
   createPendingRegistrationStore,
+  getPendingRegistrationById,
   isMissingPendingRegistrationsTableError,
 } from "./pending-repository";
 
@@ -138,5 +140,32 @@ describe("pending registration repository", () => {
     expect(await repository.hasPendingRegistrationForMember("big-bear-day", "member-1")).toBe(true);
     expect(await repository.getPendingRegistrationByTokenHash("hash-1")).toBeUndefined();
     expect((await repository.getPendingRegistrationsByMember("member-1")).map((row) => row.contactEmail)).toEqual(["new@example.com"]);
+  });
+
+  it("retrieves a pending registration by ID and returns undefined for unknown IDs", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "snowforce-pending-"));
+    tempDirs.push(dir);
+    const repository = createPendingRegistrationRepository(
+      createPendingRegistrationStore(path.join(dir, "pending.json")),
+    );
+
+    const created = await repository.createOrRefreshPendingRegistration({
+      eventSlug: "big-bear-day",
+      memberId: null,
+      answers: { name: "Tai", email: "tai@example.com" },
+      consentGiven: true,
+      contactName: "Tai",
+      contactEmail: "tai@example.com",
+      contactPhone: "",
+      tokenHash: "hash-1",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+
+    const found = await repository.getPendingRegistrationById(created.id);
+    expect(found?.id).toBe(created.id);
+    expect(found?.contactEmail).toBe("tai@example.com");
+
+    const notFound = await repository.getPendingRegistrationById("non-existent-id");
+    expect(notFound).toBeUndefined();
   });
 });
