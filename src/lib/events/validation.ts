@@ -103,11 +103,30 @@ const editorSchema = z.object({
   allowWaitlist: z.boolean().default(false),
   allowCancellation: z.boolean().default(false),
   feeAmount: z.string().default(""),
+  paymentModel: z.enum(["free", "deposit", "full_prepay"]).default("free"),
+  depositAmount: z.coerce.number().min(0).nullable().default(null),
+  depositCurrency: z.enum(["usd", "cny", "eur", "gbp", "jpy"]).default("usd"),
+  fullPaymentAmount: z.coerce.number().min(0).nullable().default(null),
   paymentInstructions: bilingualText.default({ en: "", zh: "" }),
   seoTitle: bilingualText.default({ en: "", zh: "" }),
   seoDescription: bilingualText.default({ en: "", zh: "" }),
   registrationQuestions: z.array(questionSchema).default([]),
   detailModules: z.array(moduleSchema).default([]),
+}).superRefine((data, ctx) => {
+  if (data.paymentModel === "deposit" && (data.depositAmount === null || data.depositAmount <= 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["depositAmount"],
+      message: "Deposit amount must be greater than 0",
+    });
+  }
+  if (data.paymentModel === "full_prepay" && (data.fullPaymentAmount === null || data.fullPaymentAmount <= 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["fullPaymentAmount"],
+      message: "Full payment amount must be greater than 0",
+    });
+  }
 });
 
 export function parseEventEditorInput(input: unknown) {
@@ -118,6 +137,9 @@ export function parseEventEditorInput(input: unknown) {
     data: {
       ...result.data,
       registrationQuestions: ensureRequiredRegistrationQuestions(result.data.registrationQuestions),
+      ...(result.data.paymentModel === "free"
+        ? { depositAmount: null as null, fullPaymentAmount: null as null }
+        : {}),
     },
   };
 }
