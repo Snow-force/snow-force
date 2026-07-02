@@ -49,6 +49,7 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
         lang={lang}
         t={t}
       />
+      <ShopSection t={t} />
     </div>
   );
 }
@@ -392,6 +393,84 @@ function getRecapTiles(recaps: EventRecap[], t: Translate, locale: string): Reca
       })),
     ])
     .slice(0, 8);
+}
+
+const SHOP_ITEMS = [
+  {
+    key: "hoodie",
+    emoji: "🧥",
+    name: { en: "Club Hoodie", zh: "社团连帽卫衣" },
+    desc: { en: "Limited edition community collab", zh: "限定联名款" },
+    price: "¥298",
+  },
+  {
+    key: "goggles",
+    emoji: "🥽",
+    name: { en: "Snow Goggles UV400", zh: "滑雪护目镜 UV400" },
+    desc: { en: "Anti-fog, all-mountain lens", zh: "防雾全山镜片" },
+    price: "¥368",
+  },
+  {
+    key: "beanie",
+    emoji: "🧢",
+    name: { en: "Embroidered Beanie", zh: "刺绣 Logo 滑雪帽" },
+    desc: { en: "Merino wool blend", zh: "美利奴羊毛混纺" },
+    price: "¥128",
+  },
+  {
+    key: "gloves",
+    emoji: "🧤",
+    name: { en: "Waterproof Gloves", zh: "防水保暖手套" },
+    desc: { en: "Touchscreen compatible", zh: "支持触屏操作" },
+    price: "¥218",
+  },
+];
+
+function ShopSection({ t }: { t: Translate }) {
+  return (
+    <section className="bg-[#0d1117] px-4 py-20 sm:px-6 sm:py-28">
+      <div className="mx-auto max-w-[1120px]">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#7dd3fc]">
+              {t({ en: "Community shop", zh: "周边商城" })}
+            </p>
+            <h2 className="mt-4 text-[38px] font-semibold leading-[1.08] text-white sm:text-[56px]">
+              {t({ en: "Gear up with the community.", zh: "穿上社团，一起上山。" })}
+            </h2>
+          </div>
+          <Link href="/shop" className="shrink-0 text-[17px] leading-[1.47] text-[#7dd3fc]">
+            {t({ en: "All products", zh: "全部商品" })}
+          </Link>
+        </div>
+
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {SHOP_ITEMS.map((item) => (
+            <Link
+              key={item.key}
+              href="/shop"
+              className="group flex flex-col overflow-hidden rounded-[18px] border border-white/10 bg-[#131920] transition hover:-translate-y-0.5 hover:border-white/20 hover:shadow-md active:scale-[0.99]"
+            >
+              <div className="flex h-40 items-center justify-center bg-[linear-gradient(145deg,#1a2535,#0f1922)] text-[56px]">
+                {item.emoji}
+              </div>
+              <div className="flex flex-1 flex-col p-5">
+                <h3 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.28px] text-white group-hover:text-[#7dd3fc]">
+                  {t(item.name)}
+                </h3>
+                <p className="mt-1 text-[14px] leading-[1.43] tracking-[-0.224px] text-white/50">
+                  {t(item.desc)}
+                </p>
+                <p className="mt-4 text-[20px] font-semibold leading-none text-[#0066cc]">
+                  {item.price}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function StatusTile({ children, light = false }: { children: React.ReactNode; light?: boolean }) {

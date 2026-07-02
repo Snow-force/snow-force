@@ -77,8 +77,8 @@ export default function AboutPage() {
               {t({ en: "Contact Us", zh: "联系我们" })}
             </h2>
             <div className="mt-3 space-y-2 text-sm">
-              <p>Email: hello@snowforce.example.com</p>
-              <p>{t({ en: "WeChat: SnowForce_Official", zh: "微信：SnowForce_Official" })}</p>
+              <p>Email: Snowforceclub@gmail.com</p>
+              <p>{t({ en: "WeChat: Snowboarding_123", zh: "微信：Snowboarding_123" })}</p>
               <p>{t({ en: "Follow us on social media for event updates and community news.", zh: "关注我们的社交媒体获取活动更新和社群动态。" })}</p>
             </div>
           </section>
