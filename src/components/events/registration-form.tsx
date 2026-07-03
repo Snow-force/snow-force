@@ -172,7 +172,7 @@ function renderQuestion(
 
 export function RegistrationForm({ event, memberProfile = null, emailConfirmed = false }: Props) {
   const { lang, t } = useLanguage();
-  const [, startTransition] = useTransition();
+  const [isSubmitting, startTransition] = useTransition();
   const [formData, setFormData] = useState<FormDataState>({});
   const [consent, setConsent] = useState(false);
   const [waiverScrolled, setWaiverScrolled] = useState(false);
@@ -264,6 +264,8 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         } else {
           setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
         }
+      }).catch(() => {
+        setServerError(t({ en: "Something went wrong. Please try again.", zh: "发生错误，请重试。" }));
       });
     });
   }
@@ -449,8 +451,10 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</div>
       )}
 
-      <button type="submit" className="btn-primary w-full">
-        {t({ en: "Submit Registration", zh: "提交报名" })}
+      <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
+        {isSubmitting
+          ? t({ en: "Submitting...", zh: "提交中..." })
+          : t({ en: "Submit Registration", zh: "提交报名" })}
       </button>
     </form>
   );
