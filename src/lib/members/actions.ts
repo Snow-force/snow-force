@@ -393,7 +393,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     redirect("/member?registration=duplicate");
   }
 
-  const registration = await createRegistration({
+  const result = await createRegistration({
     eventSlug: pending.eventSlug,
     memberId: profile.id,
     answers: pending.answers,
@@ -403,9 +403,9 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     contactPhone: pending.contactPhone,
   });
 
-  if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName && registration) {
+  if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName && result.registration) {
     await createWaiverAcceptance({
-      registrationId: registration.id,
+      registrationId: result.registration.id,
       legalTextSnapshot: pending.waiverTextEn,
       waiverTextSha: pending.waiverTextSha,
       typedName: pending.typedName,
