@@ -63,6 +63,14 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+vi.mock("@/lib/registrations/waiver-repository", () => ({
+  getActiveWaiverForEvent: vi.fn(() => null),
+}));
+
+vi.mock("@/lib/registrations/waiver", () => ({
+  computeWaiverSha: vi.fn((text: string) => Promise.resolve(`sha-${text.slice(0, 8)}`)),
+}));
+
 import { registerForEvent } from "./actions";
 
 const openEvent: Event = {
@@ -116,6 +124,8 @@ const openEvent: Event = {
     },
   ],
   detailModules: [],
+  waiverTextEn: null,
+  waiverTextSha: null,
 };
 
 const profile: MemberProfile = {

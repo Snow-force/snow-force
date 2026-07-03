@@ -7,6 +7,7 @@ import { requireAdmin } from "../auth/admin";
 import { createAdminClient } from "../supabase/server";
 import type { Event, RegistrationState } from "../types";
 import { createRecapFromEvent } from "../recaps/actions";
+import { computeWaiverSha } from "../registrations/waiver";
 import { createEvent, getEventAdmin, updateEvent } from "./repository";
 import { parseEventEditorInput, validatePublishableEvent } from "./validation";
 
@@ -201,9 +202,14 @@ export async function saveEventAction(
 
   let saved: Event | undefined;
   try {
+    const serverComputedSha = parsed.data.waiverTextEn
+      ? await computeWaiverSha(parsed.data.waiverTextEn)
+      : null;
+    const eventData = { ...parsed.data, waiverTextSha: serverComputedSha };
+
     saved = originalSlug
-      ? await updateEvent(originalSlug, parsed.data)
-      : await createEvent(parsed.data);
+      ? await updateEvent(originalSlug, eventData)
+      : await createEvent(eventData);
   } catch (error) {
     return {
       success: false,

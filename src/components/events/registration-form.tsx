@@ -175,6 +175,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [, startTransition] = useTransition();
   const [formData, setFormData] = useState<FormDataState>({});
   const [consent, setConsent] = useState(false);
+  const [waiverScrolled, setWaiverScrolled] = useState(false);
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
+  const [typedName, setTypedName] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
@@ -226,7 +229,16 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
       }
     }
 
-    if (!consent) {
+    const activeWaiver = event.waiverTextEn ? { text: event.waiverTextEn, sha: event.waiverTextSha } : null;
+
+    if (activeWaiver) {
+      if (!waiverAccepted) {
+        newErrors.consent = t({ en: "You must read and accept the waiver", zh: "请阅读并接受免责声明" });
+      }
+      if (!typedName.trim()) {
+        newErrors.typedName = t({ en: "Please type your full name as your electronic signature", zh: "请键入全名作为电子签名" });
+      }
+    } else if (!consent) {
       newErrors.consent = t({ en: "You must agree to the terms", zh: "请同意相关条款" });
     }
 
@@ -238,8 +250,13 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     startTransition(() => {
       registerForEvent(event.slug, {
         answers: formData,
-        consentGiven: consent,
+        consentGiven: activeWaiver ? true : consent,
         lang,
+        ...(activeWaiver && {
+          waiverTextEn: activeWaiver.text,
+          waiverTextSha: activeWaiver.sha ?? undefined,
+          typedName: typedName.trim(),
+        }),
       }).then((result) => {
         if (result.success) {
           setPendingEmail(result.email);
@@ -349,26 +366,84 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
       )}
 
-      <div>
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500"
-            checked={consent}
-            onChange={(e) => {
-              setConsent(e.target.checked);
-              if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
+      {event.waiverTextEn ? (
+        <div className="space-y-3">
+          <div
+            className="max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700"
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              if (el.scrollTop + el.clientHeight >= el.scrollHeight - 5) {
+                setWaiverScrolled(true);
+              }
             }}
-          />
-          <span className="text-sm text-gray-600">
-            {t({
-              en: "I agree to the event terms and understand that SnowForce will use my contact information for event communications only.",
-              zh: "我同意活动条款，并了解 SnowForce 仅会将我的联系信息用于本次活动沟通。",
-            })}
-          </span>
-        </label>
-        {errors.consent && <p className="mt-1 text-xs text-red-500">{errors.consent}</p>}
-      </div>
+          >
+            {event.waiverTextEn.split("\n").map((line, i) => (
+              <p key={i} className="mb-2 last:mb-0">{line || "\u00A0"}</p>
+            ))}
+          </div>
+          {!waiverScrolled && (
+            <p className="text-xs text-gray-500">
+              {t({ en: "Scroll to the bottom to accept the waiver.", zh: "请滚动到底部后接受免责声明。" })}
+            </p>
+          )}
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              disabled={!waiverScrolled}
+              checked={waiverAccepted}
+              onChange={(e) => {
+                setWaiverAccepted(e.target.checked);
+                if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
+              }}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500 disabled:opacity-40"
+            />
+            <span className="text-sm text-gray-600">
+              {t({
+                en: "I have read and understood the terms of this Release Agreement.",
+                zh: "我已阅读并理解本免责声明的条款。",
+              })}
+            </span>
+          </label>
+          {errors.consent && <p className="mt-1 text-xs text-red-500">{errors.consent}</p>}
+          <div>
+            <label className="block text-sm text-gray-600">
+              {t({ en: "Full name (electronic signature)", zh: "全名（电子签名）" })}
+              <input
+                type="text"
+                value={typedName}
+                onChange={(e) => {
+                  setTypedName(e.target.value);
+                  if (errors.typedName) setErrors((prev) => ({ ...prev, typedName: "" }));
+                }}
+                placeholder={t({ en: "Type your full name", zh: "请键入全名" })}
+                className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm"
+              />
+            </label>
+            {errors.typedName && <p className="mt-1 text-xs text-red-500">{errors.typedName}</p>}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500"
+              checked={consent}
+              onChange={(e) => {
+                setConsent(e.target.checked);
+                if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
+              }}
+            />
+            <span className="text-sm text-gray-600">
+              {t({
+                en: "I agree to the event terms and understand that SnowForce will use my contact information for event communications only.",
+                zh: "我同意活动条款，并了解 SnowForce 仅会将我的联系信息用于本次活动沟通。",
+              })}
+            </span>
+          </label>
+          {errors.consent && <p className="mt-1 text-xs text-red-500">{errors.consent}</p>}
+        </div>
+      )}
 
       {serverError && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</div>
