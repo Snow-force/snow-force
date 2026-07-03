@@ -45,6 +45,7 @@ export async function registerForEvent(
   eventSlug: string,
   input: RegisterInput,
 ): Promise<RegisterForEventResult> {
+  try {
   if (!input.consentGiven) {
     return { success: false, error: "Consent is required" };
   }
@@ -147,4 +148,7 @@ export async function registerForEvent(
     email: normalizedContactEmail,
     confirmation: "member",
   };
+  } catch {
+    return { success: false, error: "Something went wrong. Please try again later." };
+  }
 }
