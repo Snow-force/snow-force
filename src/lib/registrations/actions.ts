@@ -148,7 +148,8 @@ export async function registerForEvent(
     email: normalizedContactEmail,
     confirmation: "member",
   };
-  } catch {
+  } catch (e) {
+    console.error("registerForEvent failed:", e);
     return { success: false, error: "Something went wrong. Please try again later." };
   }
 }
