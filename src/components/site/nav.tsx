@@ -7,7 +7,6 @@ import { useLanguage } from "@/lib/language";
 const navItems = [
   { href: "/events", label: { en: "Events", zh: "当前活动" } },
   { href: "/recaps", label: { en: "Recaps", zh: "往期回顾" } },
-  { href: "/shop", label: { en: "Shop", zh: "周边商城" } },
   { href: "/faq", label: { en: "FAQ", zh: "常见问题" } },
   { href: "/about", label: { en: "About", zh: "关于我们" } },
   { href: "/partner", label: { en: "Partner", zh: "合作咨询" } },

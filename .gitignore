@@ -16,5 +16,3 @@ tsconfig.tsbuildinfo
 client_secret_*.apps.googleusercontent.com.json
 
 .vercel
-docs/old-site-content.md
-oldversion content/
