@@ -63,3 +63,9 @@ drop policy if exists "Staff can delete waiver acceptances" on public.waiver_acc
 create policy "Staff can delete waiver acceptances"
   on public.waiver_acceptances
   for delete using (public.is_staff());
+
+-- 5. Add waiver snapshot columns to pending_registrations
+alter table public.pending_registrations
+  add column if not exists waiver_text_en text,
+  add column if not exists waiver_text_sha text,
+  add column if not exists typed_name text;
