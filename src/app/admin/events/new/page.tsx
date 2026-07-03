@@ -25,6 +25,8 @@ const draftEvent: Event = {
   seoDescription: { en: "", zh: "" },
   registrationQuestions: [],
   detailModules: [],
+  waiverTextEn: null,
+  waiverTextSha: null,
 };
 
 export default function NewEventPage() {

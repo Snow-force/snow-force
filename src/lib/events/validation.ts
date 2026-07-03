@@ -108,6 +108,8 @@ const editorSchema = z.object({
   seoDescription: bilingualText.default({ en: "", zh: "" }),
   registrationQuestions: z.array(questionSchema).default([]),
   detailModules: z.array(moduleSchema).default([]),
+  waiverTextEn: z.string().nullable().default(null),
+  waiverTextSha: z.string().nullable().default(null),
 });
 
 export function parseEventEditorInput(input: unknown) {

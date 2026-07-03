@@ -122,6 +122,26 @@ export function EventRegistrationSettingsStep({ event, activeLang, onChange }: E
           <p className="mt-1 text-xs text-gray-500">{paymentHint}</p>
         </label>
       </div>
+      <div>
+        <label className="block text-sm text-gray-600">
+          {t(adminCopy.editor.waiverSection)}
+          <textarea
+            value={event.waiverTextEn ?? ""}
+            onChange={(changeEvent) =>
+              updateEventValue("waiverTextEn", changeEvent.currentTarget.value || null)
+            }
+            placeholder="Enter English liability waiver text. Leave empty to use the standard consent checkbox."
+            rows={6}
+            className="mt-1 w-full rounded border border-gray-200 px-3 py-2 font-mono text-xs"
+          />
+        </label>
+        <p className="mt-1 text-xs text-gray-500">{t(adminCopy.editor.waiverHelp)}</p>
+        {event.waiverTextEn && event.waiverTextSha && (
+          <p className="mt-1 text-xs text-gray-400">
+            {t(adminCopy.editor.waiverSha)}: <span className="font-mono">{event.waiverTextSha.slice(0, 16)}…</span>
+          </p>
+        )}
+      </div>
     </section>
   );
 }
