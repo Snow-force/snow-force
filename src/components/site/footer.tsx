@@ -30,8 +30,8 @@ export function Footer() {
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Contact", zh: "联系方式" })}>
-            <li>hello@snowforce.example.com</li>
-            <li>{t({ en: "WeChat: SnowForce_Official", zh: "微信：SnowForce_Official" })}</li>
+<li>snowforceclub@gmail.com</li>
+          <li>{t({ en: "WeChat: SnowForceClub", zh: "微信：SnowForceClub" })}</li>
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Language", zh: "语言" })}>
