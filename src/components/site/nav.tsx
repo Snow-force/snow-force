@@ -20,8 +20,9 @@ export function Nav() {
     <header className="sticky top-0 z-50">
       <nav className="select-none h-16 border-b border-white/10 bg-black text-white">
         <div className="mx-auto flex h-full max-w-[980px] items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-[24px] font-semibold leading-none text-white">
-            SnowForce
+          <Link href="/" className="flex items-center gap-2.5 text-[24px] font-semibold leading-none text-white">
+            <img src="/logo.jpg" alt="SnowForce" className="h-9 w-9 rounded-[10px] object-cover" />
+            <span>SnowForce</span>
           </Link>
 
           <div className="hidden h-full items-center gap-5 lg:flex">
