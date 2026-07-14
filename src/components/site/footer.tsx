@@ -9,7 +9,6 @@ export function Footer() {
   return (
     <footer className="bg-[#f5f5f7] text-[#333333]">
       <div className="mx-auto max-w-[980px] px-4 py-16 sm:px-6">
-        <img src="/logo.jpg" alt="SnowForce" className="mb-6 h-20 w-20 rounded-2xl object-cover sm:mb-8" />
         <p className="max-w-3xl text-[12px] leading-[1.45] tracking-[-0.12px] text-[#7a7a7a]">
           {t({
             en: "SnowForce is a community snow sports platform for events, training, and mountain days across China.",

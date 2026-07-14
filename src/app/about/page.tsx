@@ -3,7 +3,7 @@
 import { useLanguage } from "@/lib/language";
 
 export default function AboutPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const teamMembers = [
     {
@@ -61,7 +61,7 @@ export default function AboutPage() {
             <p className="text-snow-600 font-semibold tracking-[0.16em] uppercase text-sm">
               {t({ en: "Our Team", zh: "团队介绍" })}
             </p>
-            <h1 className="mt-4 text-5xl sm:text-6xl font-bold tracking-tight text-gray-900">
+            <h1 className={`mt-4 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-gray-900 ${lang === "zh" ? "whitespace-nowrap" : ""}`}>
               {t({ en: "Born in the Snow. Driven by the Force.", zh: "生于雪，成于力。" })}
             </h1>
             <p className="mt-6 text-lg text-gray-500 max-w-prose">
@@ -171,9 +171,12 @@ export default function AboutPage() {
               <p className="mt-3 text-gray-600 leading-relaxed">{t({ en: "Grow together, explore together, create more possibilities together.", zh: "一起成长，一起探索，共创更多可能。" })}</p>
             </div>
           </div>
-          <div className="mt-8 rounded-3xl bg-gray-900 text-white p-10 sm:p-14 text-center">
-            <h3 className="text-2xl sm:text-3xl font-semibold">{t({ en: "Brand Vision", zh: "品牌愿景" })}</h3>
-            <p className="mt-3 text-lg text-gray-300">{t({ en: "To make SnowForce the spiritual home of every skier.", zh: "让 SnowForce 成为每一位滑雪爱好者的精神家园。" })}</p>
+          <div className="mt-8 rounded-3xl bg-gray-900 text-white p-8 sm:p-12 flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+            <img src="/logo.jpg" alt="SnowForce" className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl object-cover shrink-0" />
+            <div className="text-center sm:text-left">
+              <h3 className="text-2xl sm:text-3xl font-semibold">{t({ en: "Brand Vision", zh: "品牌愿景" })}</h3>
+              <p className="mt-3 text-lg text-gray-300">{t({ en: "To make SnowForce the spiritual home of every skier.", zh: "让 SnowForce 成为每一位滑雪爱好者的精神家园。" })}</p>
+            </div>
           </div>
         </div>
       </section>
