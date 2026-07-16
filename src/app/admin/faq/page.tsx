@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useLanguage } from "@/lib/language";
 import { getFAQs, deleteFAQ } from "@/lib/faqs/repository";
 
@@ -19,9 +20,17 @@ export default function AdminFAQPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
-          {t({ en: "FAQ Management", zh: "FAQ 管理" })}
-        </h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {t({ en: "FAQ Management", zh: "FAQ 管理" })}
+          </h2>
+          <Link
+            href="/admin/faq/new"
+            className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            {t({ en: "Add FAQ", zh: "添加 FAQ" })}
+          </Link>
+        </div>
         {message && <span className="text-sm text-green-600">{message}</span>}
       </div>
 
@@ -45,9 +54,17 @@ export default function AdminFAQPage() {
                 </td>
                 <td className="py-3 px-4 text-gray-500">{t(faq.category)}</td>
                 <td className="py-3 pl-4">
-                  <button onClick={() => handleDelete(faq.id)} className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50">
-                    {t({ en: "Delete", zh: "删除" })}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/faq/${faq.id}`}
+                      className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
+                    >
+                      {t({ en: "Edit", zh: "编辑" })}
+                    </Link>
+                    <button onClick={() => handleDelete(faq.id)} className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50">
+                      {t({ en: "Delete", zh: "删除" })}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
