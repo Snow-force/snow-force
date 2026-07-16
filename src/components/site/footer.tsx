@@ -11,8 +11,8 @@ export function Footer() {
       <div className="mx-auto max-w-[980px] px-4 py-16 sm:px-6">
         <p className="max-w-3xl text-[12px] leading-[1.45] tracking-[-0.12px] text-[#7a7a7a]">
           {t({
-            en: "SnowForce is a community snow sports platform for events, training, and mountain days across China.",
-            zh: "SnowForce 是面向中国滑雪社群的活动、训练与雪山体验平台。",
+            en: "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with activities in other regions too.",
+            zh: "SnowForce 是面向滑雪社群的活动、训练与雪山体验平台。我们主要在美国开展活动，也会在其他地区组织聚会。",
           })}
         </p>
 
