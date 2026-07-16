@@ -38,18 +38,18 @@ export function Nav() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1">
+            <div className="hidden items-center gap-1 sm:flex">
               <button
                 onClick={() => setLang("zh")}
-                className={`rounded-full px-2.5 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 sm:px-3 ${
+                className={`rounded-full px-3 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 ${
                   lang === "zh" ? "bg-white text-black" : "text-white/70 hover:text-white"
                 }`}
               >
-                中文
+                CN
               </button>
               <button
                 onClick={() => setLang("en")}
-                className={`rounded-full px-2.5 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 sm:px-3 ${
+                className={`rounded-full px-3 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 ${
                   lang === "en" ? "bg-white text-black" : "text-white/70 hover:text-white"
                 }`}
               >
@@ -59,13 +59,13 @@ export function Nav() {
 
             <Link
               href="/member"
-              className="rounded-full bg-[#0066cc] px-4 py-2 text-[14px] font-normal leading-none tracking-[-0.224px] text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3] sm:px-5 sm:py-3"
+              className="hidden rounded-full bg-[#0066cc] px-5 py-2.5 text-[14px] font-normal leading-none tracking-[-0.224px] text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3] sm:inline-flex"
             >
               {t({ en: "Member", zh: "会员" })}
             </Link>
 
             <button
-              className="flex h-11 w-11 items-center justify-center text-white/80 transition hover:text-white lg:hidden"
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-white/80 transition hover:text-white lg:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
             >
@@ -94,6 +94,36 @@ export function Nav() {
                 {t(item.label)}
               </Link>
             ))}
+
+            <Link
+              href="/member"
+              className="block rounded-lg bg-[#0066cc] px-3 py-3 text-[17px] font-medium tracking-[-0.374px] text-white"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t({ en: "Member", zh: "会员" })}
+            </Link>
+
+            <div className="flex items-center gap-2 px-3 pt-2">
+              <span className="text-[13px] text-white/50">
+                {t({ en: "Language", zh: "语言" })}:
+              </span>
+              <button
+                onClick={() => setLang("zh")}
+                className={`rounded-full px-3 py-1.5 text-[14px] leading-none transition active:scale-95 ${
+                  lang === "zh" ? "bg-white text-black" : "border border-white/20 text-white/70 hover:text-white"
+                }`}
+              >
+                CN
+              </button>
+              <button
+                onClick={() => setLang("en")}
+                className={`rounded-full px-3 py-1.5 text-[14px] leading-none transition active:scale-95 ${
+                  lang === "en" ? "bg-white text-black" : "border border-white/20 text-white/70 hover:text-white"
+                }`}
+              >
+                EN
+              </button>
+            </div>
           </div>
         </div>
       )}
