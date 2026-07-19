@@ -40,8 +40,16 @@ export function Footer() {
           </FooterColumn>
         </div>
 
-        <div className="mt-10 border-t border-[#e0e0e0] pt-6 text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
-          &copy; {new Date().getFullYear()} SnowForce. {t({ en: "All rights reserved.", zh: "保留所有权利。" })}
+        <div className="mt-10 border-t border-[#e0e0e0] pt-6 text-[12px] tracking-[-0.12px] text-[#7a7a7a]">
+          <p className="leading-none">
+            &copy; {new Date().getFullYear()} SnowForce. {t({ en: "All rights reserved.", zh: "保留所有权利。" })}
+          </p>
+          <p className="mt-4 max-w-3xl leading-[1.45]">
+            {t({
+              en: "Refund and itinerary change statement: In rare circumstances, SnowForce reserves the right to modify, postpone, or cancel an event due to weather, transportation, venue conditions, public safety, force majeure, or other reasons beyond SnowForce's control. SnowForce also reserves the right to cancel an event if the minimum group size is not met. Unless otherwise stated on the event page, cancellations after registration confirmation are subject to fees based on timing: 50% for cancellations 14-8 days before the event, and 100% for cancellations within 7 days of the event or on the event day.",
+              zh: "退款及行程变更声明：在极少数特殊情况下，因天气、交通、场地、公共安全、不可抗力或其他 SnowForce 无法控制的原因，SnowForce 保留更改、推迟或取消活动的权利。若因成团人数不足等原因无法成行，SnowForce 亦保留取消活动的权利。除活动页面另有说明外，报名确认后如需取消，将按活动开始前时间计算相关费用；活动开始前 14-8 日取消收取 50% 费用，活动开始前 7 日内或活动当天取消收取 100% 费用。",
+            })}
+          </p>
         </div>
       </div>
     </footer>
