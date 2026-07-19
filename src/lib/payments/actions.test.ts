@@ -1,11 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/members/actions", () => ({
+  getCurrentMemberAccount: vi.fn().mockResolvedValue(null),
+}));
 
 import type Stripe from "stripe";
 import type { Event } from "@/lib/types";
 import type { PendingRegistration } from "@/lib/registrations/pending-repository";
 import { createCheckoutSessionResult } from "./actions";
+
+const MEMBER_ID = "member-1";
 
 function createEvent(overrides: Partial<Event>): Event {
   const defaults: Event = {
@@ -43,7 +48,7 @@ function createPendingRegistration(overrides: Partial<PendingRegistration> = {})
   const defaults: PendingRegistration = {
     id: "p1",
     eventSlug: "test-event",
-    memberId: "member-1",
+    memberId: MEMBER_ID,
     answers: {},
     consentGiven: true,
     contactEmail: "tai@example.com",
@@ -56,33 +61,87 @@ function createPendingRegistration(overrides: Partial<PendingRegistration> = {})
   return { ...defaults, ...overrides };
 }
 
+function fakeStripeFactory(sessionsCreate: ReturnType<typeof vi.fn>) {
+  return { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
+}
+
 describe("createCheckoutSessionResult", () => {
   it("returns error when pending registration is not found", async () => {
     const sessionsCreate = vi.fn();
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const fakeGetPending = vi.fn().mockResolvedValue(undefined);
     const fakeGetEvent = vi.fn();
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       "unknown-id",
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: false, error: "Pending registration not found" });
     expect(sessionsCreate).not.toHaveBeenCalled();
   });
 
+  it("rejects a pending registration owned by another member without leaking existence", async () => {
+    const sessionsCreate = vi.fn();
+    const pending = createPendingRegistration({ memberId: "someone-else" });
+    const fakeGetPending = vi.fn().mockResolvedValue(pending);
+    const fakeGetEvent = vi.fn();
+
+    const result = await createCheckoutSessionResult(
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      pending.id,
+      { memberMemberId: MEMBER_ID },
+    );
+
+    expect(result).toEqual({ success: false, error: "Pending registration not found" });
+    expect(sessionsCreate).not.toHaveBeenCalled();
+    expect(fakeGetEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects a pending registration with no memberId", async () => {
+    const sessionsCreate = vi.fn();
+    const pending = createPendingRegistration({ memberId: null });
+    const fakeGetPending = vi.fn().mockResolvedValue(pending);
+    const fakeGetEvent = vi.fn();
+
+    const result = await createCheckoutSessionResult(
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      pending.id,
+      { memberMemberId: MEMBER_ID },
+    );
+
+    expect(result).toEqual({ success: false, error: "Pending registration not found" });
+    expect(sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expired pending registration", async () => {
+    const sessionsCreate = vi.fn();
+    const pending = createPendingRegistration({ expiresAt: "2020-01-01T00:00:00.000Z" });
+    const fakeGetPending = vi.fn().mockResolvedValue(pending);
+    const fakeGetEvent = vi.fn();
+
+    const result = await createCheckoutSessionResult(
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      pending.id,
+      { memberMemberId: MEMBER_ID, now: new Date("2099-06-10T00:00:00.000Z") },
+    );
+
+    expect(result).toEqual({ success: false, error: "Pending registration expired" });
+    expect(sessionsCreate).not.toHaveBeenCalled();
+    expect(fakeGetEvent).not.toHaveBeenCalled();
+  });
+
   it("returns error when event is free", async () => {
     const sessionsCreate = vi.fn();
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const pending = createPendingRegistration();
     const event = createEvent({ paymentModel: "free" });
     const fakeGetPending = vi.fn().mockResolvedValue(pending);
     const fakeGetEvent = vi.fn().mockResolvedValue(event);
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       pending.id,
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: false, error: "This event does not require online payment" });
@@ -91,15 +150,15 @@ describe("createCheckoutSessionResult", () => {
 
   it("creates a checkout session for a deposit event in USD", async () => {
     const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/test" });
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const pending = createPendingRegistration();
     const event = createEvent({ paymentModel: "deposit", depositAmount: 120, depositCurrency: "usd" });
     const fakeGetPending = vi.fn().mockResolvedValue(pending);
     const fakeGetEvent = vi.fn().mockResolvedValue(event);
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       pending.id,
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: true, url: "https://checkout.stripe.com/test" });
@@ -119,7 +178,6 @@ describe("createCheckoutSessionResult", () => {
 
   it("creates a checkout session for a full_prepay event in CNY", async () => {
     const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/cny-test" });
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const pending = createPendingRegistration();
     const event = createEvent({
       paymentModel: "full_prepay",
@@ -131,8 +189,9 @@ describe("createCheckoutSessionResult", () => {
     const fakeGetEvent = vi.fn().mockResolvedValue(event);
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       pending.id,
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: true, url: "https://checkout.stripe.com/cny-test" });
@@ -152,7 +211,6 @@ describe("createCheckoutSessionResult", () => {
 
   it("creates a checkout session for a full_prepay event in JPY (zero-decimal currency)", async () => {
     const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/jpy-test" });
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const pending = createPendingRegistration();
     const event = createEvent({
       paymentModel: "full_prepay",
@@ -164,8 +222,9 @@ describe("createCheckoutSessionResult", () => {
     const fakeGetEvent = vi.fn().mockResolvedValue(event);
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       pending.id,
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: true, url: "https://checkout.stripe.com/jpy-test" });
@@ -185,15 +244,15 @@ describe("createCheckoutSessionResult", () => {
 
   it("returns error when depositAmount is null", async () => {
     const sessionsCreate = vi.fn();
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const pending = createPendingRegistration();
     const event = createEvent({ paymentModel: "deposit", depositAmount: null });
     const fakeGetPending = vi.fn().mockResolvedValue(pending);
     const fakeGetEvent = vi.fn().mockResolvedValue(event);
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       pending.id,
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: false, error: "Invalid payment amount" });
@@ -202,15 +261,15 @@ describe("createCheckoutSessionResult", () => {
 
   it("returns error when depositAmount is zero", async () => {
     const sessionsCreate = vi.fn();
-    const fakeStripe = { checkout: { sessions: { create: sessionsCreate } } } as unknown as Stripe;
     const pending = createPendingRegistration();
     const event = createEvent({ paymentModel: "deposit", depositAmount: 0 });
     const fakeGetPending = vi.fn().mockResolvedValue(pending);
     const fakeGetEvent = vi.fn().mockResolvedValue(event);
 
     const result = await createCheckoutSessionResult(
-      { getStripe: () => fakeStripe, getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: fakeGetPending, getEvent: fakeGetEvent },
       pending.id,
+      { memberMemberId: MEMBER_ID },
     );
 
     expect(result).toEqual({ success: false, error: "Invalid payment amount" });

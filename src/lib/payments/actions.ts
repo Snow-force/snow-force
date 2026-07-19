@@ -7,6 +7,7 @@ import type { PendingRegistration } from "@/lib/registrations/pending-repository
 import { getStripeServer } from "@/lib/payments/stripe-server";
 import { getPendingRegistrationById } from "@/lib/registrations/pending-repository";
 import { getEvent } from "@/lib/events/repository";
+import { getCurrentMemberAccount } from "@/lib/members/actions";
 
 export type CheckoutResult =
   | { success: true; url: string }
@@ -18,12 +19,32 @@ export type CheckoutDeps = {
   getEvent: (slug: string) => Promise<Event | undefined>;
 };
 
+export type CheckoutOptions = {
+  /**
+   * Member profile id of the authenticated caller. The pending registration must
+   * belong to this member; otherwise we reject without disclosing existence.
+   */
+  memberMemberId: string;
+  now?: Date;
+};
+
 export async function createCheckoutSessionResult(
   deps: CheckoutDeps,
   pendingRegistrationId: string,
+  options: CheckoutOptions,
 ): Promise<CheckoutResult> {
   const pending = await deps.getPendingRegistration(pendingRegistrationId);
+  // Same message for "missing" and "not yours" so we don't leak pending ids.
   if (!pending) return { success: false, error: "Pending registration not found" };
+
+  if (!pending.memberId || pending.memberId !== options.memberMemberId) {
+    return { success: false, error: "Pending registration not found" };
+  }
+
+  const now = options.now ?? new Date();
+  if (!Number.isNaN(Date.parse(pending.expiresAt)) && Date.parse(pending.expiresAt) <= now.getTime()) {
+    return { success: false, error: "Pending registration expired" };
+  }
 
   const event = await deps.getEvent(pending.eventSlug);
   if (!event) return { success: false, error: "Event not found" };
@@ -68,8 +89,13 @@ export async function createCheckoutSessionResult(
 export async function createCheckoutSessionAction(formData: FormData): Promise<CheckoutResult> {
   const pendingRegistrationId = String(formData.get("pendingRegistrationId") ?? "").trim();
   if (!pendingRegistrationId) return { success: false, error: "Missing pendingRegistrationId" };
+
+  const account = await getCurrentMemberAccount();
+  if (!account?.profile) return { success: false, error: "Authentication required" };
+
   return createCheckoutSessionResult(
     { getStripe: getStripeServer, getPendingRegistration: getPendingRegistrationById, getEvent },
     pendingRegistrationId,
+    { memberMemberId: account.profile.id },
   );
 }
