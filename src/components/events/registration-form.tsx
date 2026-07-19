@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
@@ -173,6 +174,7 @@ function renderQuestion(
 
 export function RegistrationForm({ event, memberProfile = null, emailConfirmed = false }: Props) {
   const { lang, t } = useLanguage();
+  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const [formData, setFormData] = useState<FormDataState>({});
   const [consent, setConsent] = useState(false);
@@ -183,6 +185,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [pendingRegistrationId, setPendingRegistrationId] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const paymentCancelled = searchParams?.get("payment") === "cancelled";
 
   function updateField(key: string, value: AnswerValue) {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -391,6 +394,15 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
       <h3 className="text-lg font-semibold text-gray-900">
         {t({ en: "Register for this Event", zh: "报名参加此活动" })}
       </h3>
+
+      {paymentCancelled && event.paymentModel !== "free" ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          {t({
+            en: "Payment was cancelled. You can submit again here or resume payment from your member home while the pending registration is still active.",
+            zh: "支付已取消。你可以在这里重新提交，或在待确认报名仍有效时前往会员主页继续支付。",
+          })}
+        </div>
+      ) : null}
 
       {event.registrationQuestions.map((question) =>
         renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
