@@ -44,6 +44,9 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   if (searchParams.profileSaved) {
     return { tone: "success", text: "会员资料已保存。" };
   }
+  if (searchParams.payment === "success") {
+    return { tone: "success", text: "Payment received - your trip is confirmed. Find it under My Trips." };
+  }
   if (searchParams.registration === "confirmed") {
     return { tone: "success", text: "Registration confirmed. It now appears in your trips and the staff list." };
   }
