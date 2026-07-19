@@ -2,8 +2,10 @@ import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import type { MemberDashboardData, MemberDashboardTrip } from "@/lib/members/dashboard";
 import type { Event, MemberProfile, Registration } from "@/lib/types";
+import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
 import { confirmMemberPendingRegistrationAction, logoutMember } from "@/lib/members/actions";
 import { MemberStatusMessage } from "./member-status-message";
+import { PendingPaymentButton } from "./pending-payment-button";
 
 type MemberDashboardProps = {
   dashboard: MemberDashboardData;
@@ -68,6 +70,27 @@ function statusClassName(status: Registration["status"]) {
   if (status === "confirmed") return "bg-[#dcf8e8] text-[#159255]";
   if (status === "waitlist") return "bg-[#fff0d8] text-[#f28c18]";
   return "bg-[#eef1f6] text-[#667085]";
+}
+
+function financeSummary(registration: Registration) {
+  const finance = normalizeRegistrationFinance(registration.finance);
+  if (finance.settlementStatus === "pending_balance" && finance.settlementAmount !== null) {
+    return `Balance due: $${finance.settlementAmount}`;
+  }
+  if (finance.settlementStatus === "pending_refund" && finance.settlementAmount !== null) {
+    return `Refund due: $${Math.abs(finance.settlementAmount)}`;
+  }
+  if (finance.settlementStatus === "settled") return "Settlement: settled";
+  if (finance.depositStatus === "paid") return "Deposit: paid";
+  if (finance.depositStatus === "refunded") return "Deposit: refunded";
+  if (finance.depositStatus === "waived") return "Deposit: waived";
+  return finance.depositAmount === null ? "Deposit: pending" : `Deposit due: $${finance.depositAmount}`;
+}
+
+function pendingPaymentLabel(event: Event) {
+  const currency = event.depositCurrency.toUpperCase();
+  if (event.paymentModel === "deposit") return `Pay deposit ${event.depositAmount ?? ""} ${currency}`;
+  return `Pay full ${event.fullPaymentAmount ?? ""} ${currency}`;
 }
 
 function tripImage(event: Event | undefined) {
@@ -294,12 +317,13 @@ function RecentRegistrations({ trips }: { trips: MemberDashboardTrip[] }) {
       ) : (
         <div className="space-y-4">
           {preview.map((trip) => (
-            <Link key={trip.registration.id} href={`/events/${trip.event.slug}`} className="grid grid-cols-[76px_1fr_auto] items-center gap-4 rounded-[16px] transition hover:bg-[#f8fafc] md:grid-cols-[72px_1fr_auto_auto]">
+            <Link key={trip.registration.id} href={`/events/${trip.event.slug}`} className="grid grid-cols-[76px_1fr_auto] items-center gap-4 rounded-[16px] transition hover:bg-[#f8fafc] md:grid-cols-[72px_1fr_auto_auto_auto]">
               <img src={tripImage(trip.event)} alt="" className="h-[72px] w-[72px] rounded-[12px] object-cover" />
               <div className="min-w-0">
                 <p className="truncate text-[18px] font-semibold tracking-[-0.1px] md:text-[16px]">{display(trip.event.title)}</p>
                 <p className="mt-1 text-[15px] font-medium text-[#667085] md:text-[14px]">{formatDate(trip.event.eventDate)}</p>
               </div>
+              <span className="hidden rounded-full border border-[#dce3ed] px-3 py-1 text-[13px] font-semibold text-[#667085] lg:inline-flex">{financeSummary(trip.registration)}</span>
               <span className={`hidden rounded-full px-3 py-1 text-[13px] font-semibold sm:inline-flex ${statusClassName(trip.registration.status)}`}>{statusLabel(trip.registration.status)}</span>
               <Icon name="arrow" className="h-5 w-5 text-[#536079]" />
             </Link>
@@ -330,12 +354,16 @@ function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData })
               <p className="mt-1 text-[14px] font-medium text-[#667085]">{pending.contactName || pending.contactEmail}</p>
               <p className="mt-1 text-[13px] text-[#8a94a6]">{pending.contactEmail}</p>
             </div>
-            <form action={confirmMemberPendingRegistrationAction}>
-              <input type="hidden" name="pendingId" value={pending.id} />
-              <button className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0066ff] px-6 text-[15px] font-semibold text-white transition active:scale-95">
-                Confirm
-              </button>
-            </form>
+            {event.paymentModel === "free" ? (
+              <form action={confirmMemberPendingRegistrationAction}>
+                <input type="hidden" name="pendingId" value={pending.id} />
+                <button className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0066ff] px-6 text-[15px] font-semibold text-white transition active:scale-95">
+                  Confirm
+                </button>
+              </form>
+            ) : (
+              <PendingPaymentButton label={pendingPaymentLabel(event)} pendingRegistrationId={pending.id} />
+            )}
           </div>
         ))}
       </div>
