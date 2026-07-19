@@ -127,6 +127,12 @@ export const adminCopy = {
     seoDescriptionEn: { en: "SEO description EN", zh: "英文 SEO 描述" },
     seoDescriptionZh: { en: "SEO description ZH", zh: "中文 SEO 描述" },
     media: { en: "Media URLs, one per line", zh: "媒体链接，每行一条" },
+    waiverSection: { en: "Liability Waiver (English)", zh: "责任豁免（英文）" },
+    waiverHelp: {
+      en: "Participants must read and accept this waiver before registering. Leave empty to use the standard consent checkbox.",
+      zh: "参与者在报名前必须阅读并接受此免责声明。留空则使用标准同意复选框。",
+    },
+    waiverSha: { en: "SHA-256 (auto-computed on save)", zh: "SHA-256（保存时自动计算）" },
   },
   recapEditor: {
     editTitle: { en: "Edit Recap", zh: "编辑回顾" },

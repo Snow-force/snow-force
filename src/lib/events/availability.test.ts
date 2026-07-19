@@ -30,6 +30,8 @@ const openEvent: Event = {
   seoDescription: { en: "", zh: "" },
   registrationQuestions: [],
   detailModules: [],
+  waiverTextEn: null,
+  waiverTextSha: null,
 };
 
 describe("event availability", () => {

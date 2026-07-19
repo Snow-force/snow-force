@@ -5,8 +5,8 @@ export const seedFAQs: FAQItem[] = [
     id: "1",
     question: { en: "What is SnowForce?", zh: "SnowForce 是什么？" },
     answer: {
-      en: "SnowForce is a community-driven snow sports platform that organizes events, training sessions, and social gatherings for riders of all levels in China. We're about progression, community, and sharing the stoke.",
-      zh: "SnowForce 是一个社群驱动的滑雪平台，为中国各水平滑手组织活动、培训和社交聚会。我们关注进步、社群和分享热情。",
+      en: "SnowForce is a community-driven snow sports platform that organizes events, training sessions, and social gatherings for riders of all levels. We are based mainly in the United States, with activities in other regions too. We're about progression, community, and sharing the stoke.",
+      zh: "SnowForce 是一个社群驱动的滑雪平台，为各水平滑手组织活动、培训和社交聚会。我们主要在美国开展活动，也会在其他地区组织聚会。我们关注进步、社群和分享热情。",
     },
     category: { en: "General", zh: "一般问题" },
     order: 1,
@@ -75,8 +75,8 @@ export const seedFAQs: FAQItem[] = [
     id: "8",
     question: { en: "How do I get to the event locations?", zh: "如何到达活动地点？" },
     answer: {
-      en: "Most events are at ski resorts near Beijing and Zhangjiakou, accessible by high-speed train (Beijing–Zhangjiakou line, ~1 hour) or by car (~2-3 hours). We sometimes organize carpool groups in our community chat — check the event details for transportation info.",
-      zh: "大部分活动在北京和张家口周边的滑雪场，可乘京张高铁（约1小时）或自驾（约2-3小时）到达。我们偶尔会在社群里组织拼车 — 请查看活动详情了解交通信息。",
+      en: "Most events take place at ski resorts across the United States, with occasional trips to other regions. We share transportation details and carpool options in our community chat — check the event details for logistics info.",
+      zh: "大部分活动在美国的滑雪场，偶尔也会前往其他地区。我们会在社群里分享交通和拼车信息 — 请查看活动详情了解出行信息。",
     },
     category: { en: "Logistics", zh: "出行相关" },
     order: 8,

@@ -1,6 +1,7 @@
 import { EventEditorForm } from "@/components/admin/event-editor-form";
 import { EventEditorHeading } from "@/components/admin/event-editor-heading";
 import type { Event } from "@/lib/types";
+import { DEFAULT_WAIVER_TEXT } from "@/lib/registrations/waiver";
 
 const draftEvent: Event = {
   slug: "",
@@ -29,6 +30,8 @@ const draftEvent: Event = {
   seoDescription: { en: "", zh: "" },
   registrationQuestions: [],
   detailModules: [],
+  waiverTextEn: DEFAULT_WAIVER_TEXT,
+  waiverTextSha: null,
 };
 
 export default function NewEventPage() {

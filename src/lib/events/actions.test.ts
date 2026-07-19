@@ -87,6 +87,8 @@ const modularEvent: Event = {
       items: { en: [], zh: [] },
     },
   ],
+  waiverTextEn: null,
+  waiverTextSha: null,
 };
 
 describe("event admin action helpers", () => {

@@ -15,6 +15,9 @@ export type PendingRegistration = {
   tokenHash: string;
   expiresAt: string;
   createdAt: string;
+  waiverTextEn?: string | null;
+  waiverTextSha?: string | null;
+  typedName?: string | null;
 };
 
 export type NewPendingRegistration = Omit<PendingRegistration, "id" | "createdAt">;
@@ -41,6 +44,9 @@ type PendingRegistrationRow = {
   token_hash: string;
   expires_at: string;
   created_at: string;
+  waiver_text_en: string | null;
+  waiver_text_sha: string | null;
+  typed_name: string | null;
 };
 
 function normalizeEmail(value: string) {
@@ -90,6 +96,9 @@ function rowToPendingRegistration(row: PendingRegistrationRow): PendingRegistrat
     tokenHash: row.token_hash,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
+    waiverTextEn: row.waiver_text_en ?? null,
+    waiverTextSha: row.waiver_text_sha ?? null,
+    typedName: row.typed_name ?? null,
   };
 }
 
@@ -104,6 +113,9 @@ function pendingRegistrationToRow(data: NewPendingRegistration) {
     contact_phone: data.contactPhone,
     token_hash: data.tokenHash,
     expires_at: data.expiresAt,
+    waiver_text_en: data.waiverTextEn ?? null,
+    waiver_text_sha: data.waiverTextSha ?? null,
+    typed_name: data.typedName ?? null,
   };
 }
 

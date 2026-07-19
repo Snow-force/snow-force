@@ -11,12 +11,17 @@ import {
 } from "@/lib/registrations/pending-repository";
 import { getRegistrationCountForEvent, getRegistrations } from "@/lib/registrations/repository";
 import { validateRegistrationAnswers } from "@/lib/registrations/validation";
+import { getActiveWaiverForEvent } from "@/lib/registrations/waiver-repository";
+import { computeWaiverSha } from "@/lib/registrations/waiver";
 import type { RegistrationAnswers } from "@/lib/types";
 
 type RegisterInput = {
   answers: RegistrationAnswers;
   consentGiven: boolean;
   lang: "en" | "zh";
+  waiverTextEn?: string;
+  waiverTextSha?: string;
+  typedName?: string;
 };
 
 export type RegisterForEventResult =
@@ -40,6 +45,7 @@ export async function registerForEvent(
   eventSlug: string,
   input: RegisterInput,
 ): Promise<RegisterForEventResult> {
+  try {
   if (!input.consentGiven) {
     return { success: false, error: "Consent is required" };
   }
@@ -65,6 +71,22 @@ export async function registerForEvent(
   }
 
   const answers = answerValidation.data;
+
+  let resolvedWaiverTextEn: string | undefined;
+  let resolvedWaiverTextSha: string | undefined;
+
+  if (event.waiverTextEn) {
+    if (!input.typedName?.trim()) {
+      return { success: false, error: "Electronic signature is required" };
+    }
+    const activeWaiver = await getActiveWaiverForEvent(event.slug);
+    if (!activeWaiver) {
+      return { success: false, error: "Waiver not available for this event" };
+    }
+    const serverSha = await computeWaiverSha(activeWaiver.text);
+    resolvedWaiverTextEn = activeWaiver.text;
+    resolvedWaiverTextSha = serverSha;
+  }
   const account = await getCurrentMemberAccount();
   const memberDecision = canSubmitMemberRegistration(
     account?.profile ? { profile: account.profile, emailConfirmed: account.emailConfirmed } : null,
@@ -114,6 +136,9 @@ export async function registerForEvent(
     contactPhone,
     tokenHash: `member-pending-${crypto.randomUUID()}`,
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    waiverTextEn: resolvedWaiverTextEn ?? null,
+    waiverTextSha: resolvedWaiverTextSha ?? null,
+    typedName: input.typedName?.trim() ?? null,
   });
 
   revalidatePath("/member");
@@ -124,4 +149,8 @@ export async function registerForEvent(
     confirmation: "member",
     pendingRegistrationId: pending.id,
   };
+  } catch (e) {
+    console.error("registerForEvent failed:", e);
+    return { success: false, error: "Something went wrong. Please try again later." };
+  }
 }

@@ -101,6 +101,8 @@ export const seedEvents: Event[] = [
         },
       },
     ],
+    waiverTextEn: null,
+    waiverTextSha: null,
     detailModules: [
       {
         id: "module-intro",
@@ -192,6 +194,8 @@ export const seedEvents: Event[] = [
         },
       },
     ],
+    waiverTextEn: null,
+    waiverTextSha: null,
     detailModules: [
       {
         id: "module-intro",

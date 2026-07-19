@@ -15,6 +15,7 @@ import {
   getRegistrationCountForEvent,
   getRegistrations,
 } from "@/lib/registrations/repository";
+import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
 import { createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
 import { memberAuthCallbackUrl, sanitizeMemberNextPath } from "./auth-results";
@@ -392,7 +393,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     redirect("/member?registration=duplicate");
   }
 
-  await createRegistration({
+  const result = await createRegistration({
     eventSlug: pending.eventSlug,
     memberId: profile.id,
     answers: pending.answers,
@@ -401,6 +402,17 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     contactName: pending.contactName,
     contactPhone: pending.contactPhone,
   });
+
+  if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName && result.registration) {
+    await createWaiverAcceptance({
+      registrationId: result.registration.id,
+      legalTextSnapshot: pending.waiverTextEn,
+      waiverTextSha: pending.waiverTextSha,
+      typedName: pending.typedName,
+      acceptedAt: new Date().toISOString(),
+    }).catch(() => {});
+  }
+
   await deletePendingRegistration(pending.id);
 
   const eventTitle = event.title.en || event.title.zh || event.slug;

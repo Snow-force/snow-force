@@ -36,6 +36,8 @@ const eventColumns = [
   "full_payment_amount",
   "payment_instructions_zh",
   "payment_instructions_en",
+  "waiver_text_en",
+  "waiver_text_sha",
   "seo_title_zh",
   "seo_title_en",
   "seo_description_zh",

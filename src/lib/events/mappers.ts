@@ -36,6 +36,8 @@ export type EventCoreRow = {
   seo_title_en: string;
   seo_description_zh: string;
   seo_description_en: string;
+  waiver_text_en: string | null;
+  waiver_text_sha: string | null;
 };
 
 export type EventRegistrationQuestionRow = {
@@ -148,6 +150,8 @@ export function rowsToEvent(
       en: core.seo_description_en,
       zh: core.seo_description_zh,
     },
+    waiverTextEn: core.waiver_text_en,
+    waiverTextSha: core.waiver_text_sha,
     registrationQuestions: ensureRequiredRegistrationQuestions(
       questions.toSorted((left, right) => left.sort_order - right.sort_order).map((question) => ({
         id: question.id,
@@ -210,6 +214,8 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       seo_title_en: event.seoTitle.en,
       seo_description_zh: event.seoDescription.zh,
       seo_description_en: event.seoDescription.en,
+      waiver_text_en: event.waiverTextEn ?? null,
+      waiver_text_sha: event.waiverTextSha ?? null,
     },
     questions: ensureRequiredRegistrationQuestions(event.registrationQuestions).map((question, index) => ({
       event_slug: event.slug,

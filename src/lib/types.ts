@@ -91,6 +91,18 @@ export interface Event {
   seoDescription: Bilingual;
   registrationQuestions: EventRegistrationQuestion[];
   detailModules: EventDetailModule[];
+  waiverTextEn: string | null;
+  waiverTextSha: string | null;
+}
+
+export interface WaiverAcceptance {
+  id: number;
+  registrationId: string;
+  legalTextSnapshot: string;
+  waiverTextSha: string;
+  typedName: string;
+  acceptedAt: string;
+  createdAt: string;
 }
 
 export interface Registration {

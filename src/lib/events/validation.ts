@@ -112,6 +112,8 @@ const editorSchema = z.object({
   seoDescription: bilingualText.default({ en: "", zh: "" }),
   registrationQuestions: z.array(questionSchema).default([]),
   detailModules: z.array(moduleSchema).default([]),
+  waiverTextEn: z.string().nullable().default(null),
+  waiverTextSha: z.string().nullable().default(null),
 }).superRefine((data, ctx) => {
   if (data.paymentModel === "deposit" && (data.depositAmount === null || data.depositAmount <= 0)) {
     ctx.addIssue({

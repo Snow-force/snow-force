@@ -15,18 +15,14 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function getInitialLang(): Lang {
-  if (typeof document === "undefined") return "zh";
+  if (typeof document === "undefined") return "en";
   const cookie = document.cookie.split("; ").find((r) => r.startsWith("lang="));
   if (cookie) return cookie.split("=")[1] as Lang;
-  return "zh";
+  return "en";
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("zh");
-
-  useState(() => {
-    setLangState(getInitialLang());
-  });
+  const [lang, setLangState] = useState<Lang>(getInitialLang);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

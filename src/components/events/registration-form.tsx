@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
@@ -175,9 +175,12 @@ function renderQuestion(
 export function RegistrationForm({ event, memberProfile = null, emailConfirmed = false }: Props) {
   const { lang, t } = useLanguage();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isSubmitting, startTransition] = useTransition();
   const [formData, setFormData] = useState<FormDataState>({});
   const [consent, setConsent] = useState(false);
+  const [waiverScrolled, setWaiverScrolled] = useState(false);
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
+  const [typedName, setTypedName] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
@@ -186,6 +189,16 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const paymentCancelled = searchParams?.get("payment") === "cancelled";
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
+
+  useEffect(() => {
+    if (!showWaiverModal) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowWaiverModal(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showWaiverModal]);
 
   function updateField(key: string, value: AnswerValue) {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -195,6 +208,32 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   function isValidChoice(question: EventRegistrationQuestion, value: string) {
     const options = [...question.options.en, ...question.options.zh];
     return options.includes(value);
+  }
+
+  function submitRegistration(input: { consentGiven: boolean; waiverTextEn?: string; waiverTextSha?: string; typedName?: string }) {
+    startTransition(() => {
+      registerForEvent(event.slug, {
+        answers: formData,
+        consentGiven: input.consentGiven,
+        lang,
+        ...(input.waiverTextEn && {
+          waiverTextEn: input.waiverTextEn,
+          waiverTextSha: input.waiverTextSha,
+          typedName: input.typedName,
+        }),
+      }).then((result) => {
+        if (result.success) {
+          setShowWaiverModal(false);
+          setPendingEmail(result.email);
+          setPendingConfirmation(result.confirmation);
+          setPendingRegistrationId(result.pendingRegistrationId);
+        } else {
+          setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
+        }
+      }).catch(() => {
+        setServerError(t({ en: "Something went wrong. Please try again.", zh: "发生错误，请重试。" }));
+      });
+    });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -233,8 +272,33 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
       }
     }
 
-    if (!consent) {
-      newErrors.consent = t({ en: "You must agree to the terms", zh: "请同意相关条款" });
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    if (event.waiverTextEn) {
+      setShowWaiverModal(true);
+    } else {
+      if (!consent) {
+        setErrors({ consent: t({ en: "You must agree to the terms", zh: "请同意相关条款" }) });
+        return;
+      }
+      submitRegistration({ consentGiven: true });
+    }
+  }
+
+  function handleConfirmWaiver() {
+    const newErrors: FormErrors = {};
+
+    if (!waiverScrolled) {
+      newErrors.waiverScrolled = t({ en: "Please scroll to the bottom of the waiver", zh: "请滚动到免责声明底部" });
+    }
+    if (!waiverAccepted) {
+      newErrors.waiverAccepted = t({ en: "You must accept the waiver", zh: "请接受免责声明" });
+    }
+    if (!typedName.trim()) {
+      newErrors.typedName = t({ en: "Please type your full name as your electronic signature", zh: "请键入全名作为电子签名" });
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -242,20 +306,11 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
       return;
     }
 
-    startTransition(() => {
-      registerForEvent(event.slug, {
-        answers: formData,
-        consentGiven: consent,
-        lang,
-      }).then((result) => {
-        if (result.success) {
-          setPendingEmail(result.email);
-          setPendingConfirmation(result.confirmation);
-          setPendingRegistrationId(result.pendingRegistrationId);
-        } else {
-          setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
-        }
-      });
+    submitRegistration({
+      consentGiven: true,
+      waiverTextEn: event.waiverTextEn!,
+      waiverTextSha: event.waiverTextSha ?? undefined,
+      typedName: typedName.trim(),
     });
   }
 
@@ -390,52 +445,165 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card space-y-5">
-      <h3 className="text-lg font-semibold text-gray-900">
-        {t({ en: "Register for this Event", zh: "报名参加此活动" })}
-      </h3>
+    <>
+      <form onSubmit={handleSubmit} className="card space-y-5">
+        <h3 className="text-lg font-semibold text-gray-900">
+          {t({ en: "Register for this Event", zh: "报名参加此活动" })}
+        </h3>
 
-      {paymentCancelled && event.paymentModel !== "free" ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          {t({
-            en: "Payment was cancelled. You can submit again here or resume payment from your member home while the pending registration is still active.",
-            zh: "支付已取消。你可以在这里重新提交，或在待确认报名仍有效时前往会员主页继续支付。",
-          })}
-        </div>
-      ) : null}
-
-      {event.registrationQuestions.map((question) =>
-        renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
-      )}
-
-      <div>
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500"
-            checked={consent}
-            onChange={(e) => {
-              setConsent(e.target.checked);
-              if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
-            }}
-          />
-          <span className="text-sm text-gray-600">
+        {paymentCancelled && event.paymentModel !== "free" ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             {t({
-              en: "I agree to the event terms and understand that SnowForce will use my contact information for event communications only.",
-              zh: "我同意活动条款，并了解 SnowForce 仅会将我的联系信息用于本次活动沟通。",
+              en: "Payment was cancelled. You can submit again here or resume payment from your member home while the pending registration is still active.",
+              zh: "支付已取消。你可以在这里重新提交，或在待确认报名仍有效时前往会员主页继续支付。",
             })}
-          </span>
-        </label>
-        {errors.consent && <p className="mt-1 text-xs text-red-500">{errors.consent}</p>}
-      </div>
+          </div>
+        ) : null}
 
-      {serverError && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</div>
+        {event.registrationQuestions.map((question) =>
+          renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
+        )}
+
+        {!event.waiverTextEn && (
+          <div>
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500"
+                checked={consent}
+                onChange={(e) => {
+                  setConsent(e.target.checked);
+                  if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
+                }}
+              />
+              <span className="text-sm text-gray-600">
+                {t({
+                  en: "I agree to the event terms and understand that SnowForce will use my contact information for event communications only.",
+                  zh: "我同意活动条款，并了解 SnowForce 仅会将我的联系信息用于本次活动沟通。",
+                })}
+              </span>
+            </label>
+            {errors.consent && <p className="mt-1 text-xs text-red-500">{errors.consent}</p>}
+          </div>
+        )}
+
+        {serverError && (
+          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</div>
+        )}
+
+        <button type="submit" className="btn-primary flex w-full items-center justify-center gap-2" disabled={isSubmitting}>
+          {isSubmitting && (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {isSubmitting
+            ? t({ en: "Submitting...", zh: "提交中..." })
+            : t({ en: "Submit Registration", zh: "提交报名" })}
+        </button>
+      </form>
+
+      {showWaiverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowWaiverModal(false)} />
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="border-b px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {t({ en: "Waiver & Release of Liability", zh: "免责声明与责任豁免" })}
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                {t({ en: "Please read carefully and accept below to complete your registration.", zh: "请仔细阅读并接受以下条款以完成报名。" })}
+              </p>
+            </div>
+
+            <div
+              className="flex-1 overflow-y-auto px-6 py-4 text-sm text-gray-700"
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 5) {
+                  setWaiverScrolled(true);
+                }
+              }}
+            >
+              {event.waiverTextEn!.split("\n").map((line, i) => (
+                <p key={i} className="mb-2 last:mb-0">{line || "\u00A0"}</p>
+              ))}
+            </div>
+
+            <div className="border-t px-6 py-4 space-y-3">
+              {!waiverScrolled && (
+                <p className="text-xs text-gray-500">
+                  {t({ en: "Scroll to the bottom of the waiver to continue.", zh: "请滚动到免责声明底部以继续。" })}
+                </p>
+              )}
+
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  disabled={!waiverScrolled}
+                  checked={waiverAccepted}
+                  onChange={(e) => {
+                    setWaiverAccepted(e.target.checked);
+                    if (errors.waiverAccepted) setErrors((prev) => ({ ...prev, waiverAccepted: "" }));
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-snow-600 focus:ring-snow-500 disabled:opacity-40"
+                />
+                <span className="text-sm text-gray-600">
+                  {t({
+                    en: "I have read and understood the terms of this Release Agreement.",
+                    zh: "我已阅读并理解本免责声明的条款。",
+                  })}
+                </span>
+              </label>
+              {errors.waiverAccepted && <p className="text-xs text-red-500">{errors.waiverAccepted}</p>}
+
+              <div>
+                <label className="block text-sm text-gray-600">
+                  {t({ en: "Full name (electronic signature)", zh: "全名（电子签名）" })}
+                  <input
+                    type="text"
+                    value={typedName}
+                    onChange={(e) => {
+                      setTypedName(e.target.value);
+                      if (errors.typedName) setErrors((prev) => ({ ...prev, typedName: "" }));
+                    }}
+                    placeholder={t({ en: "Type your full name", zh: "请键入全名" })}
+                    className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </label>
+                {errors.typedName && <p className="text-xs text-red-500">{errors.typedName}</p>}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowWaiverModal(false)}
+                className="rounded-full px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              >
+                {t({ en: "Cancel", zh: "取消" })}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmWaiver}
+                disabled={isSubmitting}
+                className="btn-primary flex items-center gap-2"
+              >
+                {isSubmitting && (
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                )}
+                {isSubmitting
+                  ? t({ en: "Submitting...", zh: "提交中..." })
+                  : t({ en: "Confirm & Submit", zh: "确认并提交" })}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-
-      <button type="submit" className="btn-primary w-full">
-        {t({ en: "Submit Registration", zh: "提交报名" })}
-      </button>
-    </form>
+    </>
   );
 }

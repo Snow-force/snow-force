@@ -56,6 +56,10 @@ vi.mock("@/lib/registrations/repository", () => ({
   getRegistrations: vi.fn(),
 }));
 
+vi.mock("@/lib/registrations/waiver-repository", () => ({
+  createWaiverAcceptance: vi.fn(),
+}));
+
 vi.mock("./member-entry", () => ({
   parseMemberEmail: mockParseMemberEmail,
   parseMemberEntry: mockParseMemberEntry,
