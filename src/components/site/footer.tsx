@@ -21,6 +21,7 @@ export function Footer() {
             <FooterLink href="/events">{t({ en: "Events", zh: "当前活动" })}</FooterLink>
             <FooterLink href="/recaps">{t({ en: "Recaps", zh: "往期回顾" })}</FooterLink>
             <FooterLink href="/faq">{t({ en: "FAQ", zh: "常见问题" })}</FooterLink>
+            <FooterLink href="#refund-policy">{t({ en: "Refund Policy", zh: "退款政策" })}</FooterLink>
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Community", zh: "社群" })}>
@@ -40,7 +41,7 @@ export function Footer() {
           </FooterColumn>
         </div>
 
-        <div className="mt-10 border-t border-[#e0e0e0] pt-6 text-[12px] tracking-[-0.12px] text-[#7a7a7a]">
+        <div id="refund-policy" className="mt-10 scroll-mt-24 border-t border-[#e0e0e0] pt-6 text-[12px] tracking-[-0.12px] text-[#7a7a7a]">
           <p className="leading-none">
             &copy; {new Date().getFullYear()} SnowForce. {t({ en: "All rights reserved.", zh: "保留所有权利。" })}
           </p>
