@@ -59,6 +59,7 @@ export async function createCheckoutSessionResult(
 
   const session = await deps.getStripe().checkout.sessions.create({
     mode: "payment",
+    payment_method_types: ["card"],
     line_items: [
       {
         price_data: {

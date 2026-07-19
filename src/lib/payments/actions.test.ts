@@ -164,6 +164,7 @@ describe("createCheckoutSessionResult", () => {
     expect(result).toEqual({ success: true, url: "https://checkout.stripe.com/test" });
     expect(sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
+        payment_method_types: ["card"],
         line_items: [
           expect.objectContaining({
             price_data: expect.objectContaining({
