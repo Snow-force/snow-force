@@ -4,15 +4,19 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/language";
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
 
   return (
     <footer className="bg-[#f5f5f7] text-[#333333]">
       <div className="mx-auto max-w-[980px] px-4 py-16 sm:px-6">
-        <p className="max-w-3xl text-[12px] leading-[1.45] tracking-[-0.12px] text-[#7a7a7a]">
+        <p className={`max-w-3xl text-[12px] leading-[1.45] tracking-[-0.12px] text-[#7a7a7a] ${lang === "zh" ? "break-keep" : ""}`}>
           {t({
             en: "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with activities in other regions too.",
-            zh: "SnowForce 是面向滑雪社群的活动、训练与雪山体验平台。我们主要在美国开展活动，也会在其他地区组织聚会。",
+            zh: (
+              <>
+                SnowForce 是面向滑雪社群的活动、训练与雪山体验平台。<wbr />主要在美国开展活动，也会在其他地区组织聚会。
+              </>
+            ),
           })}
         </p>
 
@@ -21,7 +25,7 @@ export function Footer() {
             <FooterLink href="/events">{t({ en: "Events", zh: "当前活动" })}</FooterLink>
             <FooterLink href="/recaps">{t({ en: "Recaps", zh: "往期回顾" })}</FooterLink>
             <FooterLink href="/faq">{t({ en: "FAQ", zh: "常见问题" })}</FooterLink>
-            <FooterLink href="#refund-policy">{t({ en: "Refund Policy", zh: "退款政策" })}</FooterLink>
+            <FooterLink href="/refund-policy">{t({ en: "Refund Policy", zh: "退款政策" })}</FooterLink>
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Community", zh: "社群" })}>
@@ -41,16 +45,8 @@ export function Footer() {
           </FooterColumn>
         </div>
 
-        <div id="refund-policy" className="mt-10 scroll-mt-24 border-t border-[#e0e0e0] pt-6 text-[12px] tracking-[-0.12px] text-[#7a7a7a]">
-          <p className="leading-none">
-            &copy; {new Date().getFullYear()} SnowForce. {t({ en: "All rights reserved.", zh: "保留所有权利。" })}
-          </p>
-          <p className="mt-4 max-w-3xl leading-[1.45]">
-            {t({
-              en: "Refund and itinerary change statement: In rare circumstances, SnowForce reserves the right to modify, postpone, or cancel an event due to weather, transportation, venue conditions, public safety, force majeure, or other reasons beyond SnowForce's control. SnowForce also reserves the right to cancel an event if the minimum group size is not met. Unless otherwise stated on the event page, cancellations after registration confirmation are subject to fees based on timing: 50% for cancellations 14-8 days before the event, and 100% for cancellations within 7 days of the event or on the event day.",
-              zh: "退款及行程变更声明：在极少数特殊情况下，因天气、交通、场地、公共安全、不可抗力或其他 SnowForce 无法控制的原因，SnowForce 保留更改、推迟或取消活动的权利。若因成团人数不足等原因无法成行，SnowForce 亦保留取消活动的权利。除活动页面另有说明外，报名确认后如需取消，将按活动开始前时间计算相关费用；活动开始前 14-8 日取消收取 50% 费用，活动开始前 7 日内或活动当天取消收取 100% 费用。",
-            })}
-          </p>
+        <div className="mt-10 border-t border-[#e0e0e0] pt-6 text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
+          &copy; {new Date().getFullYear()} SnowForce. {t({ en: "All rights reserved.", zh: "保留所有权利。" })}
         </div>
       </div>
     </footer>
