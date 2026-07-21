@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { EventCard } from "@/components/events/event-card";
+import { isEventOpen } from "@/lib/events/availability";
 import { useLanguage, type Lang } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
 
@@ -33,7 +34,7 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
   const { lang, t } = useLanguage();
   const locale = lang === "zh" ? "zh-CN" : "en-US";
   const recentRecaps = recaps.slice(0, 4);
-  const openEvents = events.filter((event) => event.registrationState === "open").slice(0, 4);
+  const openEvents = events.filter(isEventOpen).slice(0, 4);
 
   return (
     <div className="bg-[#07090c] text-white">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLanguage, type Lang } from "@/lib/language";
-import { isEventOpen, remainingCapacity } from "@/lib/events/availability";
+import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
 import { RegistrationForm } from "@/components/events/registration-form";
 import { EventShareBar } from "./event-share-bar";
 import type { Bilingual, Event, MemberProfile } from "@/lib/types";
@@ -57,7 +57,8 @@ export function EventDetailView({
     );
   }
 
-  const open = isEventOpen(event);
+  const availability = getEventAvailabilitySnapshot(event);
+  const open = availability.open;
   const eventDate = event.eventDate ? new Date(`${event.eventDate}T00:00:00`) : undefined;
   const eventTitle = localizedText(event.title, lang);
   const activityLocation = localizedText(event.activityLocation, lang);
@@ -65,8 +66,7 @@ export function EventDetailView({
   const paymentInstructions = localizedText(event.paymentInstructions, lang);
   const introModule = event.detailModules.find((moduleRow) => moduleRow.type === "intro");
   const heroSummary = introModule ? localizedText(introModule.content, lang) : "";
-  const remaining = remainingCapacity(event);
-  const capacityPercent = remaining === undefined ? 0 : Math.min((event.registrationCount / event.capacity) * 100, 100);
+  const remaining = availability.remaining;
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     weekday: "long",
@@ -146,7 +146,7 @@ export function EventDetailView({
                   </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f5f5f7]">
-                  <div className="h-full rounded-full bg-[#0066cc]" style={{ width: `${capacityPercent}%` }} />
+                  <div className="h-full rounded-full bg-[#0066cc]" style={{ width: `${availability.percentFull}%` }} />
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { remainingCapacity } from "@/lib/events/availability";
+import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
 import type { Lang } from "@/lib/language";
 import type { Bilingual, Event } from "@/lib/types";
 
@@ -14,9 +14,13 @@ type EventCardProps = {
 
 export function EventCard({ event, lang, t, featured = false }: EventCardProps) {
   const locale = lang === "zh" ? "zh-CN" : "en-US";
-  const remaining = remainingCapacity(event);
-  const percentFull = remaining === undefined ? 0 : Math.min(Math.round((event.registrationCount / event.capacity) * 100), 100);
-  const state = getRegistrationState(event.registrationState, t);
+  const availability = getEventAvailabilitySnapshot(event);
+  const effectiveRegistrationState = availability.open
+    ? "open"
+    : event.registrationState === "full" || (event.registrationState === "open" && availability.remaining === 0)
+      ? "full"
+      : "closed";
+  const state = getRegistrationState(effectiveRegistrationState, t);
   const intro = event.detailModules.find((moduleItem) => moduleItem.type === "intro") ?? event.detailModules[0];
   const summary = intro ? localizedText(intro.content, lang) : "";
   const tags = event.detailModules
@@ -68,13 +72,13 @@ export function EventCard({ event, lang, t, featured = false }: EventCardProps) 
           <div className="flex items-center justify-between text-[12px] leading-none tracking-[-0.12px] text-[#7a7a7a]">
             <span>{t({ en: "Spots left", zh: "剩余名额" })}</span>
             <span>
-              {remaining === undefined ? t({ en: "Unlimited", zh: "不限名额" }) : `${remaining}/${event.capacity}`}
+              {availability.remaining === undefined ? t({ en: "Unlimited", zh: "不限名额" }) : `${availability.remaining}/${event.capacity}`}
             </span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f5f5f7]">
             <div
               className={`h-full rounded-full ${state.progressClassName}`}
-              style={{ width: `${percentFull}%` }}
+              style={{ width: `${availability.percentFull}%` }}
             />
           </div>
         </div>
