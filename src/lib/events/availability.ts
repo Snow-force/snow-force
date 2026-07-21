@@ -1,5 +1,11 @@
 import type { Event } from "../types";
 
+export type EventAvailabilitySnapshot = {
+  readonly open: boolean;
+  readonly remaining: number | undefined;
+  readonly percentFull: number;
+};
+
 export function isUnlimitedCapacity(event: Event): boolean {
   return event.capacity === 0;
 }
@@ -21,4 +27,13 @@ export function isEventOpen(event: Event): boolean {
   if (event.registrationCloseAt && new Date(event.registrationCloseAt) < now) return false;
 
   return hasRemainingCapacity(event);
+}
+
+export function getEventAvailabilitySnapshot(event: Event): EventAvailabilitySnapshot {
+  const remaining = remainingCapacity(event);
+  return {
+    open: isEventOpen(event),
+    remaining,
+    percentFull: remaining === undefined ? 0 : Math.min(Math.round((event.registrationCount / event.capacity) * 100), 100),
+  };
 }

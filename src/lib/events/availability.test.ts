@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Event } from "@/lib/types";
-import { isEventOpen } from "./availability";
+import { getEventAvailabilitySnapshot, isEventOpen } from "./availability";
 
 const openEvent: Event = {
   slug: "open-unlimited",
@@ -45,5 +45,42 @@ describe("event availability", () => {
 
   it("keeps full registration states closed", () => {
     expect(isEventOpen({ ...openEvent, registrationState: "full" })).toBe(false);
+  });
+
+  it("returns a shared snapshot for finite-capacity event displays", () => {
+    const snapshot = getEventAvailabilitySnapshot({
+      ...openEvent,
+      capacity: 20,
+      registrationCount: 7,
+    });
+
+    expect(snapshot).toEqual({
+      open: true,
+      remaining: 13,
+      percentFull: 35,
+    });
+  });
+
+  it("uses detail registration semantics for closed preview snapshots", () => {
+    const snapshot = getEventAvailabilitySnapshot({
+      ...openEvent,
+      capacity: 10,
+      registrationCount: 10,
+      registrationState: "open",
+    });
+
+    expect(snapshot).toEqual({
+      open: false,
+      remaining: 0,
+      percentFull: 100,
+    });
+  });
+
+  it("keeps unlimited snapshots open without a remaining count or filled progress", () => {
+    expect(getEventAvailabilitySnapshot(openEvent)).toEqual({
+      open: true,
+      remaining: undefined,
+      percentFull: 0,
+    });
   });
 });
