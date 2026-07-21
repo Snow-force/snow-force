@@ -12,6 +12,12 @@ type AdminTranslateMissingButtonProps = {
   onApply(translations: AdminTranslationResult[]): void;
 };
 
+const maxItemsPerTranslationRequest = 50;
+
+type TranslationChunkResult =
+  | { readonly kind: "success"; readonly translations: AdminTranslationResult[] }
+  | { readonly kind: "failure"; readonly message: string };
+
 function langLabel(lang: AdminTranslationLang) {
   return lang === "zh" ? "中文" : "English";
 }
@@ -31,6 +37,43 @@ function isTranslationResponse(value: unknown): value is { translations: AdminTr
   );
 }
 
+function chunkTranslationItems(items: AdminTranslationItem[]): AdminTranslationItem[][] {
+  const chunks: AdminTranslationItem[][] = [];
+  for (let index = 0; index < items.length; index += maxItemsPerTranslationRequest) {
+    chunks.push(items.slice(index, index + maxItemsPerTranslationRequest));
+  }
+  return chunks;
+}
+
+function responseErrorMessage(payload: unknown) {
+  return payload !== null && typeof payload === "object" && typeof (payload as { message?: unknown }).message === "string"
+    ? (payload as { message: string }).message
+    : "Translation failed.";
+}
+
+async function translateChunk(
+  sourceLang: AdminTranslationLang,
+  targetLang: AdminTranslationLang,
+  items: AdminTranslationItem[],
+): Promise<TranslationChunkResult> {
+  const response = await fetch("/admin/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sourceLang, targetLang, items }),
+  });
+  const payload = (await response.json()) as unknown;
+
+  if (!response.ok) {
+    return { kind: "failure", message: responseErrorMessage(payload) };
+  }
+
+  if (!isTranslationResponse(payload)) {
+    return { kind: "failure", message: "Unexpected translation response." };
+  }
+
+  return { kind: "success", translations: payload.translations };
+}
+
 export function AdminTranslateMissingButton({
   sourceLang,
   targetLang,
@@ -47,34 +90,26 @@ export function AdminTranslateMissingButton({
     setMessage("");
     startTransition(async () => {
       try {
-        const response = await fetch("/admin/translate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sourceLang, targetLang, items }),
-        });
-        const payload = (await response.json()) as unknown;
-
-        if (!response.ok) {
-          const errorMessage =
-            payload !== null && typeof payload === "object" && typeof (payload as { message?: unknown }).message === "string"
-              ? (payload as { message: string }).message
-              : "Translation failed.";
-          setMessage(errorMessage);
-          return;
+        const translations: AdminTranslationResult[] = [];
+        for (const chunk of chunkTranslationItems(items)) {
+          const result = await translateChunk(sourceLang, targetLang, chunk);
+          if (result.kind === "failure") {
+            setMessage(result.message === "Unexpected translation response." && lang === "zh" ? "翻译结果格式异常。" : result.message);
+            return;
+          }
+          translations.push(...result.translations);
         }
 
-        if (!isTranslationResponse(payload)) {
-          setMessage(lang === "zh" ? "翻译结果格式异常。" : "Unexpected translation response.");
-          return;
-        }
-
-        onApply(payload.translations);
+        onApply(translations);
         setMessage(
           lang === "zh"
-            ? `已填补 ${payload.translations.length} 个字段。`
-            : `Filled ${payload.translations.length} field${payload.translations.length === 1 ? "" : "s"}.`,
+            ? `已填补 ${translations.length} 个字段。`
+            : `Filled ${translations.length} field${translations.length === 1 ? "" : "s"}.`,
         );
-      } catch {
+      } catch (error) {
+        if (!(error instanceof Error)) {
+          throw error;
+        }
         setMessage(lang === "zh" ? "翻译请求失败。" : "Translation request failed.");
       }
     });
