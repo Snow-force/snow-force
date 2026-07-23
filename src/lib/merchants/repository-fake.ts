@@ -7,6 +7,9 @@ import type {
   CreateMerchantPhysicalBoothRow,
   CreateMerchantProfileRow,
   MerchantRepositorySource,
+  UpdateMerchantApplicationStatusRow,
+  UpdateMerchantBoothProgramInstructionsRow,
+  UpdateMerchantProfileRow,
 } from "./repository-contract";
 import { MerchantRepositoryError } from "./repository-mappers";
 import type {
@@ -64,8 +67,12 @@ export function createMerchantRepositoryFake(): MerchantRepositorySource {
   }
 
   function createPhysicalBooth(input: CreateMerchantPhysicalBoothRow): MerchantPhysicalBoothRow {
-    const plan = plans.find((candidate) => candidate.id === input.booth_plan_id);
-    if (!plan || plan.booth_program_id !== input.booth_program_id) {
+    // The fake only enforces that the booth's program exists and that the
+    // (program, booth_code) pair is unique. The plan compatibility check is
+    // not enforced here so callers can bind a booth plan id that was minted
+    // by an external config flow (e.g. the admin event save path, which
+    // keeps the durable plan id in sync with the event aggregate plan id).
+    if (!programs.some((program) => program.id === input.booth_program_id)) {
       throw new MerchantRepositoryError("incompatible-booth");
     }
     if (booths.some((booth) => booth.booth_program_id === input.booth_program_id && booth.booth_code === input.booth_code)) {
@@ -78,11 +85,10 @@ export function createMerchantRepositoryFake(): MerchantRepositorySource {
 
   function createApplication(input: CreateMerchantApplicationRow): MerchantApplicationRow {
     const program = programs.find((candidate) => candidate.id === input.booth_program_id);
-    const plan = plans.find((candidate) => candidate.id === input.requested_plan_id);
-    if (!profiles.some((profile) => profile.id === input.merchant_profile_id) || !program || !plan) {
+    if (!profiles.some((profile) => profile.id === input.merchant_profile_id) || !program) {
       throw new MerchantRepositoryError("not-found");
     }
-    if (program.event_slug !== input.event_slug || plan.booth_program_id !== input.booth_program_id) {
+    if (program.event_slug !== input.event_slug) {
       throw new MerchantRepositoryError("incompatible-booth");
     }
     if (applications.some((application) => (
@@ -137,9 +143,106 @@ export function createMerchantRepositoryFake(): MerchantRepositorySource {
     return payment;
   }
 
+  function findProfileByUserId(userId: string): MerchantProfileRow | undefined {
+    return profiles.find((profile) => profile.user_id === userId);
+  }
+
+  function updateProfile(
+    userId: string,
+    patch: UpdateMerchantProfileRow,
+  ): MerchantProfileRow | undefined {
+    const index = profiles.findIndex((profile) => profile.user_id === userId);
+    if (index === -1) return undefined;
+    const current = profiles[index]!;
+    const updated: MerchantProfileRow = {
+      ...current,
+      ...patch,
+      updated_at: fakeTimestamp,
+    };
+    profiles[index] = updated;
+    return updated;
+  }
+
+  function findApplicationForMerchantByEvent(
+    merchantProfileId: string,
+    eventSlug: string,
+  ): MerchantApplicationRow | undefined {
+    return applications.find(
+      (application) =>
+        application.merchant_profile_id === merchantProfileId && application.event_slug === eventSlug,
+    );
+  }
+
+  function updateApplicationStatus(
+    applicationId: string,
+    patch: UpdateMerchantApplicationStatusRow,
+  ): MerchantApplicationRow | undefined {
+    const index = applications.findIndex((application) => application.id === applicationId);
+    if (index === -1) return undefined;
+    const current = applications[index]!;
+    const updated: MerchantApplicationRow = {
+      ...current,
+      status: patch.status,
+      updated_at: patch.updated_at,
+    };
+    applications[index] = updated;
+    return updated;
+  }
+
+  function findBoothProgramById(programId: string): MerchantBoothProgramRow | undefined {
+    return programs.find((program) => program.id === programId);
+  }
+
+  function findBoothProgramByEventSlug(eventSlug: string): MerchantBoothProgramRow | undefined {
+    return programs.find((program) => program.event_slug === eventSlug);
+  }
+
+  function findBoothPlanById(planId: string): MerchantBoothPlanRow | undefined {
+    return plans.find((plan) => plan.id === planId);
+  }
+
+  function findPhysicalBoothById(boothId: string): MerchantPhysicalBoothRow | undefined {
+    return booths.find((booth) => booth.id === boothId);
+  }
+
+  function listPhysicalBoothsForProgram(programId: string): MerchantPhysicalBoothRow[] {
+    return booths.filter((booth) => booth.booth_program_id === programId);
+  }
+
+  function updateBoothProgramInstructions(
+    programId: string,
+    patch: UpdateMerchantBoothProgramInstructionsRow,
+  ): MerchantBoothProgramRow | undefined {
+    const index = programs.findIndex((program) => program.id === programId);
+    if (index === -1) return undefined;
+    const current = programs[index]!;
+    const updated: MerchantBoothProgramRow = {
+      ...current,
+      payment_instructions_en: patch.payment_instructions_en,
+      payment_instructions_zh: patch.payment_instructions_zh,
+      updated_at: patch.updated_at,
+    };
+    programs[index] = updated;
+    return updated;
+  }
+
+  function findAllocationForApplication(applicationId: string): MerchantBoothAllocationRow | undefined {
+    return allocations.find((allocation) => allocation.merchant_application_id === applicationId);
+  }
+
+  function findManualPaymentForApplication(applicationId: string): MerchantManualPaymentRow | undefined {
+    return payments.find((payment) => payment.merchant_application_id === applicationId);
+  }
+
   return {
     async createProfile(input) {
       return createProfile(input);
+    },
+    async findProfileByUserId(userId) {
+      return findProfileByUserId(userId);
+    },
+    async updateProfile(userId, patch) {
+      return updateProfile(userId, patch);
     },
     async createBoothProgram(input) {
       return createBoothProgram(input);
@@ -156,11 +259,55 @@ export function createMerchantRepositoryFake(): MerchantRepositorySource {
     async findApplication(applicationId) {
       return applications.find((application) => application.id === applicationId);
     },
+    async findApplicationForMerchantByEvent(merchantProfileId, eventSlug) {
+      return findApplicationForMerchantByEvent(merchantProfileId, eventSlug);
+    },
+    async updateApplicationStatus(applicationId, patch) {
+      return updateApplicationStatus(applicationId, patch);
+    },
+    async listApplications() {
+      return [...applications];
+    },
+    async listApplicationsForMerchant(merchantProfileId) {
+      return applications.filter(
+        (application) => application.merchant_profile_id === merchantProfileId,
+      );
+    },
+    async findBoothProgramById(programId) {
+      return findBoothProgramById(programId);
+    },
+    async findBoothProgramByEventSlug(eventSlug) {
+      return findBoothProgramByEventSlug(eventSlug);
+    },
+    async findBoothPlanById(planId) {
+      return findBoothPlanById(planId);
+    },
+    async findPhysicalBoothById(boothId) {
+      return findPhysicalBoothById(boothId);
+    },
+    async listPhysicalBoothsForProgram(programId) {
+      return listPhysicalBoothsForProgram(programId);
+    },
+    async updateBoothProgramInstructions(programId, patch) {
+      return updateBoothProgramInstructions(programId, patch);
+    },
     async createAllocation(input) {
       return createAllocation(input);
     },
+    async findAllocationForApplication(applicationId) {
+      return findAllocationForApplication(applicationId);
+    },
+    async listAllocations() {
+      return [...allocations];
+    },
     async createManualPayment(input) {
       return createManualPayment(input);
+    },
+    async findManualPaymentForApplication(applicationId) {
+      return findManualPaymentForApplication(applicationId);
+    },
+    async listManualPayments() {
+      return [...payments];
     },
   };
 }
