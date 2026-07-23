@@ -1,14 +1,34 @@
+import { Resend } from "resend";
+
+const FROM = "SnowForce <onboarding@resend.dev>";
+
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
+
 export type EmailPayload = {
   to: string;
   subject: string;
   html: string;
 };
 
-export async function sendEmail(payload: EmailPayload): Promise<{ success: boolean; error?: string }> {
+export async function sendEmail(
+  payload: EmailPayload,
+): Promise<{ success: boolean; error?: string }> {
+  const resend = getResend();
+  if (!resend) {
+    console.log("[EMAIL] RESEND_API_KEY not set — logged instead:", payload.to, payload.subject);
+    return { success: true };
+  }
+
   try {
-    // In production, integrate with SendGrid, Resend, or Supabase email.
-    // For now, log to console so the app is runnable without credentials.
-    console.log("[EMAIL] Would send:", payload.to, payload.subject);
+    const { error } = await resend.emails.send({ from: FROM, ...payload });
+    if (error) {
+      console.error("[EMAIL] Resend error:", error);
+      return { success: false, error: error.message };
+    }
     return { success: true };
   } catch (e) {
     console.error("[EMAIL] Failed:", e);
