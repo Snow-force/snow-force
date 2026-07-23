@@ -58,6 +58,12 @@ export function Nav() {
             </div>
 
             <Link
+              href="/merchant"
+              className="hidden rounded-full border border-white/25 px-5 py-2.5 text-[14px] font-normal leading-none tracking-[-0.224px] text-white/80 transition hover:border-white/50 hover:text-white active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+            >
+              {t({ en: "Merchant", zh: "商家" })}
+            </Link>
+            <Link
               href="/member"
               className="hidden rounded-full bg-[#0066cc] px-5 py-2.5 text-[14px] font-normal leading-none tracking-[-0.224px] text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3] sm:inline-flex"
             >
@@ -94,6 +100,14 @@ export function Nav() {
                 {t(item.label)}
               </Link>
             ))}
+
+            <Link
+              href="/merchant"
+              className="block rounded-lg border border-white/20 px-3 py-3 text-[17px] font-medium tracking-[-0.374px] text-white/80 hover:bg-white/10 hover:text-white"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t({ en: "Merchant", zh: "商家" })}
+            </Link>
 
             <Link
               href="/member"
