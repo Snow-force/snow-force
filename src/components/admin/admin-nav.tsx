@@ -14,6 +14,7 @@ const adminLinks: AdminLink[] = [
   { href: "/admin", label: { en: "Dashboard", zh: "仪表盘" }, exact: true },
   { href: "/admin/events", label: { en: "Events", zh: "活动管理" } },
   { href: "/admin/registrations", label: { en: "Registrations", zh: "报名管理" } },
+  { href: "/admin/merchants", label: { en: "Merchants", zh: "商家摊位" } },
   { href: "/admin/recaps", label: { en: "Recaps", zh: "回顾管理" } },
   { href: "/admin/faq", label: { en: "FAQs", zh: "FAQ 管理" } },
 ];

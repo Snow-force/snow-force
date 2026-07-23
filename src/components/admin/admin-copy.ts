@@ -134,6 +134,48 @@ export const adminCopy = {
     },
     waiverSha: { en: "SHA-256 (auto-computed on save)", zh: "SHA-256（保存时自动计算）" },
   },
+  merchantBooth: {
+    title: { en: "Merchant booth program", zh: "商家摊位计划" },
+    enabled: { en: "Enable merchant booth program for this event", zh: "为本活动启用商家摊位计划" },
+    enabledHelp: {
+      en: "When enabled, venue merchants can apply for a booth at this event. Booth plans and physical booth codes are configured below.",
+      zh: "启用后，场馆商家可申请本活动的摊位。下方可配置摊位方案与现场摊位编号。",
+    },
+    paymentInstructionsLabel: {
+      en: "Offline payment instructions (for approved merchants)",
+      zh: "线下付款说明（用于已批准商家）",
+    },
+    paymentInstructionsHelp: {
+      en: "Shown to merchants after their booth is approved. Payment is recorded manually by staff.",
+      zh: "商家摊位获批后可见。付款由工作人员线下手动登记。",
+    },
+    plansTitle: { en: "Booth plans", zh: "摊位方案" },
+    plansEmpty: {
+      en: "No booth plans yet. Add a plan to define a price and inventory.",
+      zh: "暂无摊位方案。新增方案以设置价格与库存。",
+    },
+    addPlan: { en: "Add booth plan", zh: "新增摊位方案" },
+    planNameEn: { en: "Plan name (English)", zh: "方案名称（英文）" },
+    planNameZh: { en: "Plan name (Chinese)", zh: "方案名称（中文）" },
+    planDescriptionEn: { en: "Plan description (English)", zh: "方案说明（英文）" },
+    planDescriptionZh: { en: "Plan description (Chinese)", zh: "方案说明（中文）" },
+    planPrice: { en: "Price", zh: "价格" },
+    planCurrency: { en: "Currency", zh: "币种" },
+    deletePlan: { en: "Delete plan", zh: "删除方案" },
+    boothsTitle: { en: "Physical booth identifiers", zh: "现场摊位编号" },
+    boothsEmpty: {
+      en: "No physical booth identifiers yet. Add booth codes so staff can assign them to merchants.",
+      zh: "暂无现场摊位编号。新增摊位编号以便工作人员分配给商家。",
+    },
+    addBooth: { en: "Add booth identifier", zh: "新增摊位编号" },
+    boothPlan: { en: "Booth plan", zh: "所属方案" },
+    boothCode: { en: "Booth code", zh: "摊位编号" },
+    deleteBooth: { en: "Delete booth", zh: "删除摊位" },
+    disabledNotice: {
+      en: "Merchant booth registration is not available for this event. Enable the program above to add booth plans and physical booth codes.",
+      zh: "本活动暂未开放商家摊位登记。开启上方开关后可配置方案与现场摊位编号。",
+    },
+  },
   recapEditor: {
     editTitle: { en: "Edit Recap", zh: "编辑回顾" },
     saved: { en: "Recap saved.", zh: "回顾已保存。" },
