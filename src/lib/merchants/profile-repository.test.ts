@@ -8,7 +8,7 @@ describe("merchant profile ownership migration", () => {
     const migration = readFileSync(
       resolve(
         process.cwd(),
-        "supabase/migrations/20260723211316_merchant_profile_owner_writes_and_booth_program_save.sql",
+        "supabase/migrations/20260723223333_merchant_profile_owner_writes_and_booth_program_save.sql",
       ),
       "utf8",
     );
