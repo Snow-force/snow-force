@@ -70,7 +70,7 @@ const moduleRow: EventDetailModuleRow = {
 
 describe("modular event mappers", () => {
   it("maps rows into an event aggregate", () => {
-    expect(rowsToEvent(core, [question], [moduleRow])).toMatchObject({
+    expect(rowsToEvent(core, [question], [moduleRow], null)).toMatchObject({
       slug: "big-bear-day",
       registrationQuestions: [
         { key: "name", type: "text", required: true },
@@ -78,11 +78,12 @@ describe("modular event mappers", () => {
         { key: "level", type: "single_choice" },
       ],
       detailModules: [{ id: "module-intro", type: "intro" }],
+      merchantBoothProgram: null,
     });
   });
 
   it("maps an event aggregate into core, question, and module write rows", () => {
-    const event = rowsToEvent(core, [question], [moduleRow]);
+    const event = rowsToEvent(core, [question], [moduleRow], null);
     const rows = eventAggregateToWriteRows(event);
 
     expect(rows.core.slug).toBe("big-bear-day");
@@ -92,6 +93,7 @@ describe("modular event mappers", () => {
     expect(rows.modules[0]).toMatchObject({ module_type: "intro", sort_order: 0 });
     expect("id" in rows.questions[0]).toBe(false);
     expect("id" in rows.modules[0]).toBe(false);
+    expect(rows.merchantBoothProgram).toBeNull();
   });
 
   it("preserves valid strings from mixed JSON row arrays", () => {
@@ -111,6 +113,7 @@ describe("modular event mappers", () => {
           items_zh: [0, "helmet", "layers"],
         },
       ],
+      null,
     );
 
     expect(event.registrationQuestions.find((item) => item.key === "level")?.options).toEqual({

@@ -4,9 +4,12 @@ import type { EventDetailModule, EventRegistrationQuestion } from "@/lib/types";
 import {
   rowsToEvent,
   type EventAggregateWriteRows,
+  type EventBoothPlanRow,
+  type EventBoothProgramRows,
   type EventCoreRow,
   type EventDetailModuleRow,
   type EventDetailModuleWriteRow,
+  type EventPhysicalBoothRow,
   type EventRegistrationQuestionRow,
   type EventRegistrationQuestionWriteRow,
 } from "./mappers";
@@ -102,29 +105,48 @@ function eventSource({
   events,
   questions,
   modules,
+  boothPrograms,
 }: {
   events: EventCoreRow[];
   questions: EventRegistrationQuestionRow[];
   modules: EventDetailModuleRow[];
+  boothPrograms?: Map<string, EventBoothProgramRows>;
 }): EventSource & {
   savedQuestions: EventRegistrationQuestionWriteRow[];
   savedModules: EventDetailModuleWriteRow[];
+  savedBoothProgram: EventAggregateWriteRows["merchantBoothProgram"];
 } {
   const savedQuestions: EventRegistrationQuestionWriteRow[] = [];
   const savedModules: EventDetailModuleWriteRow[] = [];
+  const savedBoothProgramRef: { current: EventAggregateWriteRows["merchantBoothProgram"] } = {
+    current: null,
+  };
+  const programMap: Map<string, EventBoothProgramRows> = boothPrograms
+    ? new Map(boothPrograms)
+    : new Map();
 
   return {
     savedQuestions,
     savedModules,
+    get savedBoothProgram() {
+      return savedBoothProgramRef.current;
+    },
     listPublicEvents: async () => events,
     listAdminEvents: async () => events,
     getPublicEvent: async (slug) => events.find((row) => row.slug === slug),
     getAdminEvent: async (slug) => events.find((row) => row.slug === slug),
     listQuestions: async (slugs) => questions.filter((row) => slugs.includes(row.event_slug)),
     listModules: async (slugs) => modules.filter((row) => slugs.includes(row.event_slug)),
+    loadBoothProgram: async (slug) => programMap.get(slug) ?? null,
     saveAggregate: async (rows: EventAggregateWriteRows) => {
       savedQuestions.splice(0, savedQuestions.length, ...rows.questions);
       savedModules.splice(0, savedModules.length, ...rows.modules);
+      savedBoothProgramRef.current = rows.merchantBoothProgram;
+      if (rows.merchantBoothProgram) {
+        programMap.set(rows.core.slug, rows.merchantBoothProgram);
+      } else {
+        programMap.delete(rows.core.slug);
+      }
       return rows.core;
     },
   };
@@ -209,12 +231,93 @@ describe("event repository", () => {
     const repository = createEventRepository(source);
 
     await repository.createEvent({
-      ...rowsToEvent(eventCoreRow("draft", "draft"), [], []),
+      ...rowsToEvent(eventCoreRow("draft", "draft"), [], [], null),
       registrationQuestions: [eventQuestion("level")],
       detailModules: [eventModule("intro")],
     });
 
     expect(source.savedQuestions.map((row) => row.question_key)).toEqual(["name", "email", "level"]);
     expect(source.savedModules.map((row) => row.module_type)).toEqual(["intro"]);
+  });
+
+  it("round-trips an enabled merchant-booth program when saving and loading", async () => {
+    const source = eventSource({
+      events: [eventCoreRow("venue", "draft")],
+      questions: [],
+      modules: [],
+    });
+    const repository = createEventRepository(source);
+
+    const saved = await repository.createEvent({
+      ...rowsToEvent(eventCoreRow("venue", "draft"), [], [], null),
+      merchantBoothProgram: {
+        enabled: true,
+        paymentInstructions: { en: "Pay staff offline.", zh: "请线下向工作人员付款。" },
+        plans: [
+          {
+            id: "plan-standard",
+            name: { en: "Standard booth", zh: "标准摊位" },
+            description: { en: "One table", zh: "一张桌子" },
+            priceAmount: 250,
+            priceCurrency: "usd",
+          },
+        ],
+        booths: [
+          {
+            id: "booth-a-01",
+            boothPlanId: "plan-standard",
+            boothCode: "A-01",
+          },
+        ],
+      },
+    });
+
+    expect(source.savedBoothProgram).toEqual({
+      program: {
+        event_slug: "venue",
+        enabled: true,
+        payment_instructions_en: "Pay staff offline.",
+        payment_instructions_zh: "请线下向工作人员付款。",
+      },
+      plans: [
+        {
+          id: "plan-standard",
+          name_en: "Standard booth",
+          name_zh: "标准摊位",
+          description_en: "One table",
+          description_zh: "一张桌子",
+          price_amount: 250,
+          price_currency: "usd",
+        },
+      ],
+      booths: [
+        {
+          id: "booth-a-01",
+          booth_plan_id: "plan-standard",
+          booth_code: "A-01",
+        },
+      ],
+    });
+    expect(saved?.merchantBoothProgram).toMatchObject({
+      enabled: true,
+      plans: [{ id: "plan-standard", priceAmount: 250, priceCurrency: "usd" }],
+      booths: [{ boothPlanId: "plan-standard", boothCode: "A-01" }],
+    });
+  });
+
+  it("removes the merchant-booth program when the event has none", async () => {
+    const source = eventSource({
+      events: [eventCoreRow("plain", "draft")],
+      questions: [],
+      modules: [],
+    });
+    const repository = createEventRepository(source);
+
+    const saved = await repository.createEvent({
+      ...rowsToEvent(eventCoreRow("plain", "draft"), [], [], null),
+    });
+
+    expect(source.savedBoothProgram).toBeNull();
+    expect(saved?.merchantBoothProgram).toBeNull();
   });
 });

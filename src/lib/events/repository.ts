@@ -4,8 +4,11 @@ import {
   eventAggregateToWriteRows,
   rowsToEvent,
   type EventAggregateWriteRows,
+  type EventBoothPlanRow,
+  type EventBoothProgramRows,
   type EventCoreRow,
   type EventDetailModuleRow,
+  type EventPhysicalBoothRow,
   type EventRegistrationQuestionRow,
 } from "./mappers";
 import { seedEvents } from "./seed";
@@ -73,6 +76,33 @@ const moduleColumns = [
   "items_en",
 ].join(",");
 
+const boothProgramColumns = [
+  "event_slug",
+  "enabled",
+  "payment_instructions_en",
+  "payment_instructions_zh",
+].join(",");
+
+const boothPlanColumns = [
+  "id",
+  "booth_program_id",
+  "name_en",
+  "name_zh",
+  "description_en",
+  "description_zh",
+  "price_amount",
+  "price_currency",
+].join(",");
+
+const physicalBoothColumns = [
+  "id",
+  "booth_program_id",
+  "booth_plan_id",
+  "booth_code",
+].join(",");
+
+export type EventBoothProgramSourceData = EventBoothProgramRows | null;
+
 export type EventSource = {
   listPublicEvents(): Promise<EventCoreRow[]>;
   listAdminEvents(): Promise<EventCoreRow[]>;
@@ -80,11 +110,29 @@ export type EventSource = {
   getAdminEvent(slug: string): Promise<EventCoreRow | undefined>;
   listQuestions(slugs: string[]): Promise<EventRegistrationQuestionRow[]>;
   listModules(slugs: string[]): Promise<EventDetailModuleRow[]>;
+  loadBoothProgram(slug: string): Promise<EventBoothProgramSourceData>;
   saveAggregate(rows: EventAggregateWriteRows): Promise<EventCoreRow>;
 };
 
 export type RegistrationCountSource = {
   countForEvents(slugs: string[]): Promise<Map<string, number>>;
+};
+
+type EventAggregateSaveArguments = {
+  readonly p_core: EventAggregateWriteRows["core"];
+  readonly p_questions: EventAggregateWriteRows["questions"];
+  readonly p_modules: EventAggregateWriteRows["modules"];
+  readonly p_merchant_booth_program: EventAggregateWriteRows["merchantBoothProgram"];
+};
+
+type EventAggregateSaveClient = {
+  readonly rpc: (
+    functionName: "save_event_aggregate",
+    arguments_: EventAggregateSaveArguments,
+  ) => PromiseLike<{
+    readonly data: EventCoreRow | null;
+    readonly error: { readonly message: string } | null;
+  }>;
 };
 
 function throwSupabaseError(error: { message: string } | null) {
@@ -115,6 +163,21 @@ function createAdminEventClient() {
   return createClient(getSupabaseUrl(), key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+}
+
+export async function saveEventAggregate(
+  client: EventAggregateSaveClient,
+  rows: EventAggregateWriteRows,
+): Promise<EventCoreRow> {
+  const { data, error } = await client.rpc("save_event_aggregate", {
+    p_core: rows.core,
+    p_questions: rows.questions,
+    p_modules: rows.modules,
+    p_merchant_booth_program: rows.merchantBoothProgram,
+  });
+  throwSupabaseError(error);
+  if (!data) throw new Error("Event aggregate save returned no event row.");
+  return data;
 }
 
 function supabaseEventSource(): EventSource {
@@ -175,41 +238,44 @@ function supabaseEventSource(): EventSource {
       throwSupabaseError(error);
       return (data ?? []) as unknown as EventDetailModuleRow[];
     },
+    async loadBoothProgram(slug) {
+      const admin = createAdminEventClient();
+      const { data: programRow, error: programError } = await admin
+        .from("merchant_booth_programs")
+        .select("id,event_slug,enabled,payment_instructions_en,payment_instructions_zh")
+        .eq("event_slug", slug)
+        .maybeSingle();
+      throwSupabaseError(programError);
+      if (!programRow) return null;
+      const programId = (programRow as { id: string }).id;
+      const [{ data: planRows, error: planError }, { data: boothRows, error: boothError }] =
+        await Promise.all([
+          admin
+            .from("merchant_booth_plans")
+            .select(boothPlanColumns)
+            .eq("booth_program_id", programId),
+          admin
+            .from("merchant_physical_booths")
+            .select(physicalBoothColumns)
+            .eq("booth_program_id", programId),
+        ]);
+      throwSupabaseError(planError);
+      throwSupabaseError(boothError);
+      return {
+        program: {
+          event_slug: (programRow as { event_slug: string }).event_slug,
+          enabled: (programRow as { enabled: boolean }).enabled,
+          payment_instructions_en: (programRow as { payment_instructions_en: string })
+            .payment_instructions_en,
+          payment_instructions_zh: (programRow as { payment_instructions_zh: string })
+            .payment_instructions_zh,
+        },
+        plans: (planRows ?? []) as unknown as EventBoothPlanRow[],
+        booths: (boothRows ?? []) as unknown as EventPhysicalBoothRow[],
+      };
+    },
     async saveAggregate(rows) {
-      const client = createAdminEventClient();
-
-      const { error: eventError } = await client.from("events").upsert(rows.core);
-      throwSupabaseError(eventError);
-
-      const { error: questionDeleteError } = await client
-        .from("event_registration_questions")
-        .delete()
-        .eq("event_slug", rows.core.slug);
-      throwSupabaseError(questionDeleteError);
-
-      const { error: moduleDeleteError } = await client
-        .from("event_detail_modules")
-        .delete()
-        .eq("event_slug", rows.core.slug);
-      throwSupabaseError(moduleDeleteError);
-
-      if (rows.questions.length > 0) {
-        const { error } = await client.from("event_registration_questions").insert(rows.questions);
-        throwSupabaseError(error);
-      }
-
-      if (rows.modules.length > 0) {
-        const { error } = await client.from("event_detail_modules").insert(rows.modules);
-        throwSupabaseError(error);
-      }
-
-      const { data, error } = await client
-        .from("events")
-        .select(eventColumns)
-        .eq("slug", rows.core.slug)
-        .single();
-      throwSupabaseError(error);
-      return data as unknown as EventCoreRow;
+      return saveEventAggregate(createAdminEventClient(), rows);
     },
   };
 }
@@ -221,12 +287,18 @@ export function createEventRepository(source: EventSource, countSource?: Registr
 
   async function rowsToEvents(rows: EventCoreRow[]) {
     const slugs = rows.map((row) => row.slug);
-    const [questions, modules] = await Promise.all([
+    const [questions, modules, boothPrograms] = await Promise.all([
       source.listQuestions(slugs),
       source.listModules(slugs),
+      Promise.all(slugs.map((slug) => source.loadBoothProgram(slug))),
     ]);
-    return rows.map((row) =>
-      rowsToEvent(row, rowsForSlug(questions, row.slug), rowsForSlug(modules, row.slug)),
+    return rows.map((row, index) =>
+      rowsToEvent(
+        row,
+        rowsForSlug(questions, row.slug),
+        rowsForSlug(modules, row.slug),
+        boothPrograms[index] ?? null,
+      ),
     );
   }
 

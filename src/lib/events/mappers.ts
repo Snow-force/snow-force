@@ -2,7 +2,11 @@ import type {
   Event,
   EventDetailDisplayMode,
   EventDetailModuleType,
+  EventMerchantBoothPhysicalBooth,
+  EventMerchantBoothPlan,
+  EventMerchantBoothProgram,
   EventQuestionType,
+  MerchantBoothCurrency,
 } from "@/lib/types";
 import { ensureRequiredRegistrationQuestions } from "./required-registration-questions";
 
@@ -96,10 +100,40 @@ export type EventDetailModuleWriteRow = {
   items_en: string[];
 };
 
+export type EventBoothProgramRow = {
+  event_slug: string;
+  enabled: boolean;
+  payment_instructions_en: string;
+  payment_instructions_zh: string;
+};
+
+export type EventBoothPlanRow = {
+  id: string;
+  name_en: string;
+  name_zh: string;
+  description_en: string;
+  description_zh: string;
+  price_amount: number;
+  price_currency: MerchantBoothCurrency;
+};
+
+export type EventPhysicalBoothRow = {
+  id: string;
+  booth_plan_id: string;
+  booth_code: string;
+};
+
+export type EventBoothProgramRows = {
+  program: EventBoothProgramRow;
+  plans: EventBoothPlanRow[];
+  booths: EventPhysicalBoothRow[];
+};
+
 export type EventAggregateWriteRows = {
   core: EventCoreRow;
   questions: EventRegistrationQuestionWriteRow[];
   modules: EventDetailModuleWriteRow[];
+  merchantBoothProgram: EventBoothProgramRows | null;
 };
 
 function stringArray(value: unknown): string[] {
@@ -114,10 +148,75 @@ function nullableValue(value: string) {
   return value || null;
 }
 
+function boothProgramFromRows(rows: EventBoothProgramRows): EventMerchantBoothProgram {
+  return {
+    enabled: rows.program.enabled,
+    paymentInstructions: {
+      en: rows.program.payment_instructions_en,
+      zh: rows.program.payment_instructions_zh,
+    },
+    plans: rows.plans.map(
+      (plan): EventMerchantBoothPlan => ({
+        id: plan.id,
+        name: { en: plan.name_en, zh: plan.name_zh },
+        description: { en: plan.description_en, zh: plan.description_zh },
+        priceAmount: plan.price_amount,
+        priceCurrency: plan.price_currency,
+      }),
+    ),
+    booths: rows.booths.map(
+      (booth): EventMerchantBoothPhysicalBooth => ({
+        id: booth.id,
+        boothPlanId: booth.booth_plan_id,
+        boothCode: booth.booth_code,
+      }),
+    ),
+  };
+}
+
+function emptyBoothProgram(): EventMerchantBoothProgram {
+  return {
+    enabled: false,
+    paymentInstructions: { en: "", zh: "" },
+    plans: [],
+    booths: [],
+  };
+}
+
+function normalizeBoothProgramForWrite(
+  program: EventMerchantBoothProgram | null,
+  eventSlug: string,
+): EventBoothProgramRows | null {
+  if (!program || !program.enabled) return null;
+  return {
+    program: {
+      event_slug: eventSlug,
+      enabled: true,
+      payment_instructions_en: program.paymentInstructions.en,
+      payment_instructions_zh: program.paymentInstructions.zh,
+    },
+    plans: program.plans.map((plan) => ({
+      id: plan.id,
+      name_en: plan.name.en,
+      name_zh: plan.name.zh,
+      description_en: plan.description.en,
+      description_zh: plan.description.zh,
+      price_amount: plan.priceAmount,
+      price_currency: plan.priceCurrency,
+    })),
+    booths: program.booths.map((booth) => ({
+      id: booth.id,
+      booth_plan_id: booth.boothPlanId,
+      booth_code: booth.boothCode,
+    })),
+  };
+}
+
 export function rowsToEvent(
   core: EventCoreRow,
   questions: EventRegistrationQuestionRow[],
   modules: EventDetailModuleRow[],
+  boothProgram: EventBoothProgramRows | null,
 ): Event {
   return {
     slug: core.slug,
@@ -179,6 +278,7 @@ export function rowsToEvent(
           zh: stringArray(moduleRow.items_zh),
         },
       })),
+    merchantBoothProgram: boothProgram && boothProgram.program.enabled ? boothProgramFromRows(boothProgram) : null,
   };
 }
 
@@ -242,5 +342,6 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       items_zh: moduleRow.items.zh,
       items_en: moduleRow.items.en,
     })),
+    merchantBoothProgram: normalizeBoothProgramForWrite(event.merchantBoothProgram, event.slug),
   };
 }

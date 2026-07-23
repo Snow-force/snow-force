@@ -89,6 +89,7 @@ const modularEvent: Event = {
   ],
   waiverTextEn: null,
   waiverTextSha: null,
+  merchantBoothProgram: null,
 };
 
 describe("event admin action helpers", () => {

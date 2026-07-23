@@ -41,6 +41,29 @@ export interface EventDetailModule {
   items: Bilingual<string[]>;
 }
 
+export type MerchantBoothCurrency = "usd" | "cny" | "eur" | "gbp" | "jpy";
+
+export interface EventMerchantBoothPlan {
+  id: string;
+  name: Bilingual;
+  description: Bilingual;
+  priceAmount: number;
+  priceCurrency: MerchantBoothCurrency;
+}
+
+export interface EventMerchantBoothPhysicalBooth {
+  id: string;
+  boothPlanId: string;
+  boothCode: string;
+}
+
+export interface EventMerchantBoothProgram {
+  enabled: boolean;
+  paymentInstructions: Bilingual;
+  plans: EventMerchantBoothPlan[];
+  booths: EventMerchantBoothPhysicalBooth[];
+}
+
 export type RegistrationAnswerValue = string | boolean | string[];
 export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
 
@@ -93,6 +116,7 @@ export interface Event {
   detailModules: EventDetailModule[];
   waiverTextEn: string | null;
   waiverTextSha: string | null;
+  merchantBoothProgram: EventMerchantBoothProgram | null;
 }
 
 export interface WaiverAcceptance {

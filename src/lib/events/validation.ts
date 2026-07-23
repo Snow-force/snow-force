@@ -13,6 +13,81 @@ const bilingualList = z.object({
   zh: z.array(z.string()).default([]),
 });
 
+const merchantBoothCurrency = z.enum(["usd", "cny", "eur", "gbp", "jpy"]);
+
+const merchantBoothPlanSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    name: bilingualText,
+    description: bilingualText.default({ en: "", zh: "" }),
+    priceAmount: z.coerce.number().min(0),
+    priceCurrency: merchantBoothCurrency.default("usd"),
+  })
+  .superRefine((plan, ctx) => {
+    if (!hasMeaningfulText(plan.name.zh)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["name", "zh"],
+        message: "Booth plans need a Chinese name.",
+      });
+    }
+    if (!Number.isFinite(plan.priceAmount) || plan.priceAmount <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["priceAmount"],
+        message: "Booth plan price must be greater than 0.",
+      });
+    }
+  });
+
+const merchantBoothBoothSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    boothPlanId: z.string().trim().min(1),
+    boothCode: z.string().trim().min(1),
+  })
+  .superRefine((booth, ctx) => {
+    if (!hasMeaningfulText(booth.boothCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["boothCode"],
+        message: "Booth identifier cannot be blank.",
+      });
+    }
+  });
+
+const merchantBoothProgramSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    paymentInstructions: bilingualText.default({ en: "", zh: "" }),
+    plans: z.array(merchantBoothPlanSchema).default([]),
+    booths: z.array(merchantBoothBoothSchema).default([]),
+  })
+  .superRefine((program, ctx) => {
+    const planIds = new Set(program.plans.map((plan) => plan.id));
+    program.booths.forEach((booth, index) => {
+      if (!planIds.has(booth.boothPlanId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["booths", index, "boothPlanId"],
+          message: "Booth plan does not match a configured booth plan.",
+        });
+      }
+    });
+    const seenCodes = new Set<string>();
+    program.booths.forEach((booth, index) => {
+      const normalized = booth.boothCode.trim().toLowerCase();
+      if (seenCodes.has(normalized)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["booths", index, "boothCode"],
+          message: "Booth identifier must be unique within the program.",
+        });
+      }
+      seenCodes.add(normalized);
+    });
+  });
+
 function hasMeaningfulText(value: string) {
   return value.trim().length > 0;
 }
@@ -114,6 +189,7 @@ const editorSchema = z.object({
   detailModules: z.array(moduleSchema).default([]),
   waiverTextEn: z.string().nullable().default(null),
   waiverTextSha: z.string().nullable().default(null),
+  merchantBoothProgram: merchantBoothProgramSchema.nullable().default(null),
 }).superRefine((data, ctx) => {
   if (data.paymentModel === "deposit" && (data.depositAmount === null || data.depositAmount <= 0)) {
     ctx.addIssue({
@@ -134,6 +210,7 @@ const editorSchema = z.object({
 export function parseEventEditorInput(input: unknown) {
   const result = editorSchema.safeParse(input);
   if (!result.success) return result;
+  const programEnabled = result.data.merchantBoothProgram?.enabled === true;
   return {
     ...result,
     data: {
@@ -142,6 +219,7 @@ export function parseEventEditorInput(input: unknown) {
       ...(result.data.paymentModel === "free"
         ? { depositAmount: null as null, fullPaymentAmount: null as null }
         : {}),
+      merchantBoothProgram: programEnabled ? result.data.merchantBoothProgram : null,
     },
   };
 }

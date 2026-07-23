@@ -32,6 +32,7 @@ const openEvent: Event = {
   detailModules: [],
   waiverTextEn: null,
   waiverTextSha: null,
+  merchantBoothProgram: null,
 };
 
 describe("event availability", () => {

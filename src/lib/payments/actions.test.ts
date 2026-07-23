@@ -40,6 +40,7 @@ function createEvent(overrides: Partial<Event>): Event {
     seoDescription: { en: "", zh: "" },
     registrationQuestions: [],
     detailModules: [],
+    merchantBoothProgram: null,
   };
   return { ...defaults, ...overrides };
 }
