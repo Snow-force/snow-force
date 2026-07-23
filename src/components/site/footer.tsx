@@ -32,6 +32,7 @@ export function Footer() {
             <FooterLink href="/about">{t({ en: "About Us", zh: "关于我们" })}</FooterLink>
             <FooterLink href="/member">{t({ en: "Member Area", zh: "会员中心" })}</FooterLink>
             <FooterLink href="/partner">{t({ en: "Partner With Us", zh: "合作咨询" })}</FooterLink>
+            <FooterLink href="/merchant">{t({ en: "Merchant", zh: "商家入驻" })}</FooterLink>
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Contact", zh: "联系方式" })}>
