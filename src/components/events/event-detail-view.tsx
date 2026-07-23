@@ -5,6 +5,7 @@ import { useLanguage, type Lang } from "@/lib/language";
 import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
 import { RegistrationForm } from "@/components/events/registration-form";
 import { EventShareBar } from "./event-share-bar";
+import { MerchantBoothCta } from "./merchant-booth-cta";
 import type { Bilingual, Event, MemberProfile } from "@/lib/types";
 
 function localizedText(value: Bilingual, lang: Lang) {
@@ -209,6 +210,7 @@ export function EventDetailView({
                   </p>
                 </div>
               )}
+              <MerchantBoothCta event={event} />
               <div className="border-t border-gray-200 pt-4 mt-6">
                 <EventShareBar slug={event.slug} title={eventTitle} tone="light" />
               </div>

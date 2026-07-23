@@ -11,6 +11,7 @@ import { adminCopy } from "./admin-copy";
 import { EventBasicStep } from "./event-basic-step";
 import { EventDetailModuleBuilder } from "./event-detail-module-builder";
 import { EventEditorStepper, type StepId } from "./event-editor-stepper";
+import { EventMerchantBoothSettingsStep } from "./event-merchant-booth-settings-step";
 import { EventPreviewPanel } from "./event-preview-panel";
 import { EventQuestionBuilder } from "./event-question-builder";
 import { EventRegistrationSettingsStep } from "./event-registration-settings-step";
@@ -125,6 +126,13 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
     registration: isZh
       ? `${draftEvent.registrationState}，${draftEvent.capacity === 0 ? "不限名额" : `${draftEvent.capacity} 人`}`
       : `${draftEvent.registrationState}, ${draftEvent.capacity === 0 ? "unlimited" : draftEvent.capacity} spots`,
+    merchants: draftEvent.merchantBoothProgram?.enabled
+      ? isZh
+        ? `已启用 · ${draftEvent.merchantBoothProgram.plans.length} 方案 · ${draftEvent.merchantBoothProgram.booths.length} 摊位`
+        : `Enabled · ${draftEvent.merchantBoothProgram.plans.length} plan${draftEvent.merchantBoothProgram.plans.length === 1 ? "" : "s"} · ${draftEvent.merchantBoothProgram.booths.length} booth${draftEvent.merchantBoothProgram.booths.length === 1 ? "" : "s"}`
+      : isZh
+        ? "未启用"
+        : "Disabled",
     questions: isZh
       ? `${draftEvent.registrationQuestions.length} 个问题`
       : `${draftEvent.registrationQuestions.length} question${draftEvent.registrationQuestions.length === 1 ? "" : "s"}`,
@@ -191,6 +199,13 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
             <div className="space-y-2">
               <EventRegistrationSettingsStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} />
               <FieldError errors={state.fieldErrors?.capacity} />
+            </div>
+          ) : null}
+
+          {activeStep === "merchants" ? (
+            <div className="space-y-2">
+              <EventMerchantBoothSettingsStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} />
+              <FieldErrorSummary fieldErrors={state.fieldErrors} />
             </div>
           ) : null}
 

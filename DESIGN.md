@@ -19,7 +19,8 @@ colors:
   surface: "#ffffff"
   surface-soft: "#f5f5f7"
   border-soft: "#e0e0e0"
-  control-muted: "#d2d2d7"
+ control-muted: "#d2d2d7"
+  status-error: "#ef4444"
 typography:
   display:
     fontFamily: "SF Pro Display, system-ui, -apple-system, BlinkMacSystemFont, Inter, sans-serif"
@@ -132,6 +133,7 @@ The palette is cool, high-clarity, and snow-sport aligned: blue action color, ne
 - **Night Run Charcoal**: Dark public feature bands for event and partner sections. It appears as `charcoal` and `charcoal-deep`.
 - **Trail Gray**: Secondary copy and metadata. It appears as `text-strong`, `text-muted`, and `text-inverse-muted`.
 - **Packed Snow Border**: The standard border and divider color. It appears as `border-soft`.
+- **Status Error**: The error color for validation and failed form recovery. It appears as `status-error` and is reserved for error states.
 
 ### Named Rules
 **The Blue Has a Job Rule.** Blue is for action, direction, state, and progress. Do not use it as random decoration.
@@ -194,6 +196,11 @@ SnowForce is mostly flat, using tonal bands, borders, and spacing to create hier
 - **Focus:** Border and ring move to Focus Blue. Focus state must remain visible on light and dark surfaces.
 - **Error / Disabled:** Error text uses red. Disabled fields reduce opacity or use soft gray backgrounds without hiding the value.
 
+### Merchant Portal
+- **Portal band:** Merchant account, application, and status surfaces use the existing Icy Surface page band with Powder Surface cards. Keep the layout practical and route all primary actions through Lift-Line Blue.
+- **Status notice:** Use one bordered, rounded notice primitive for submitted, review, allocation, offline-payment, and failure states. Blue communicates in-progress/action; green communicates confirmed payment; red is reserved for rejection or form failure. Status is always paired with plain-language copy, never color alone.
+- **Field feedback:** Public merchant forms use the standard pill input and visible Focus Blue ring. Each invalid field has a linked red help message; use a single live region for server-result recovery.
+
 ### Navigation
 - **Style:** Two-tier public nav: black global strip above a translucent icy local bar. Compact 14px links, white-on-black global items, near-black local brand text, and blue hover/action states.
 - **Mobile Treatment:** Use a compact menu button in the global strip and keep language controls accessible inside the mobile menu.
@@ -201,6 +208,12 @@ SnowForce is mostly flat, using tonal bands, borders, and spacing to create hier
 
 ### Event Cards
 Event cards are the signature product object. They combine tags, title, subtitle, registration state, date, location, and audience level. They should feel like an activity invitation with enough logistical clarity for riders to decide quickly.
+
+### Merchant Portal Surfaces
+- **Merchant Portal Shell:** An icy field with one active charcoal overview band. It may use snow-blue only for links, verified access, selected plans, and application state; it must not imitate the member ticket or payment flow.
+- **Merchant Portal Card:** A standard `card` with the system `18px` radius, `24px` padding, packed-snow border, and no resting shadow. Use it for applications, profile details, and event plan choices.
+- **Merchant Field:** Use the shared `input-field`/`label` primitives with an associated `label` and control id. Invalid fields add the error state, and every form result uses a polite live region.
+- **Merchant Status Strip:** A compact, text-first status panel that explains the current review/payment state, allocated booth code, and staff-published offline instructions. It never contains an online-payment CTA.
 
 ## 6. Do's and Don'ts
 

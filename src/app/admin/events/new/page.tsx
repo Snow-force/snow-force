@@ -32,6 +32,7 @@ const draftEvent: Event = {
   detailModules: [],
   waiverTextEn: DEFAULT_WAIVER_TEXT,
   waiverTextSha: null,
+  merchantBoothProgram: null,
 };
 
 export default function NewEventPage() {

@@ -93,4 +93,43 @@ describe("EventDetailView", () => {
       screen.queryAllByRole("button", { name: /share|copy link|qr/i }),
     ).toHaveLength(0);
   });
+
+  it("shows a bilingual merchant CTA only for a published event with an enabled booth program", () => {
+    renderWithLanguage(
+      <EventDetailView
+        event={{
+          ...minimalEvent,
+          merchantBoothProgram: {
+            enabled: true,
+            paymentInstructions: { en: "Pay staff", zh: "向工作人员付款" },
+            plans: [{ id: "standard", name: { en: "Standard", zh: "标准" }, description: { en: "Table", zh: "桌位" }, priceAmount: 200, priceCurrency: "usd" }],
+            booths: [{ id: "booth-a", boothPlanId: "standard", boothCode: "A-01" }],
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Apply for a booth" })).toHaveAttribute("href", "/merchant/applications?event=test-event");
+    document.cookie = "lang=zh;path=/";
+    render(
+      <LanguageProvider>
+        <EventDetailView event={{ ...minimalEvent, merchantBoothProgram: { enabled: true, paymentInstructions: { en: "", zh: "" }, plans: [{ id: "standard", name: { en: "Standard", zh: "标准" }, description: { en: "", zh: "" }, priceAmount: 200, priceCurrency: "usd" }], booths: [{ id: "booth-a", boothPlanId: "standard", boothCode: "A-01" }] } }} />
+      </LanguageProvider>,
+    );
+    expect(screen.getAllByRole("link", { name: "申请摊位" })).toHaveLength(1);
+  });
+
+  it("does not show a merchant CTA for a disabled booth program", () => {
+    renderWithLanguage(
+      <EventDetailView
+        event={{
+          ...minimalEvent,
+          merchantBoothProgram: { enabled: false, paymentInstructions: { en: "", zh: "" }, plans: [], booths: [] },
+        }}
+      />,
+    );
+
+    expect(screen.queryByRole("link", { name: /apply for a booth|申请摊位/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Registration is currently closed for this event.")).toBeInTheDocument();
+  });
 });
