@@ -157,6 +157,12 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
               ← Back to <span className="font-semibold text-[#7dd3fc]">sign in</span>
             </button>
           )}
+          <Link
+            href="/merchant"
+            className="text-white/40 transition hover:text-white"
+          >
+            Looking to set up a booth? Visit the&nbsp;<span className="font-semibold text-[#7dd3fc]">Merchant Portal</span>
+          </Link>
         </div>
       )}
 

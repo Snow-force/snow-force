@@ -271,16 +271,34 @@ export async function saveMerchantProfile(formData: FormData) {
   const account = await getCurrentMerchantAccount();
   if (!account) redirect("/merchant?error=login");
   if (!account.emailConfirmed) redirect("/merchant?error=verification-email");
-  if (!account.profile) redirect("/merchant?error=profile");
 
   const entry = parseMerchantProfileUpdate(formData);
   if (!entry.success) {
     redirect(`/merchant/settings?profileError=${entry.error}`);
   }
 
-  const updated = await updateMerchantProfile(account.user.id, entry.data);
-  if (!updated) {
-    redirect("/merchant/settings?profileError=missing");
+  if (account.profile) {
+    const updated = await updateMerchantProfile(account.user.id, entry.data);
+    if (!updated) {
+      redirect("/merchant/settings?profileError=missing");
+    }
+  } else {
+    try {
+      await createMerchantProfile({
+        userId: account.user.id,
+        businessName: entry.data.businessName,
+        contactName: entry.data.contactName,
+        contactEmail: entry.data.contactEmail,
+        contactPhone: entry.data.contactPhone,
+        category: entry.data.category,
+        description: entry.data.description,
+      });
+    } catch (err) {
+      if (err instanceof MerchantProfileError) {
+        redirect(`/merchant/settings?profileError=${err.code === "duplicate" ? "missing" : "register"}`);
+      }
+      redirect("/merchant/settings?profileError=register");
+    }
   }
 
   revalidatePath("/merchant");

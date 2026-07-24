@@ -90,6 +90,23 @@ export default function PartnerPage() {
             </button>
           </form>
         )}
+
+        <div className="mt-10 flex flex-col items-start gap-3 rounded-2xl border border-snow-100 bg-snow-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-snow-900">
+              {t({ en: "Want to set up a booth?", zh: "想申请摊位吗？" })}
+            </h3>
+            <p className="mt-1 text-sm text-snow-700">
+              {t({
+                en: "Apply to be a merchant vendor at eligible SnowForce events.",
+                zh: "申请成为 SnowForce 活动合作的线下商家。",
+              })}
+            </p>
+          </div>
+          <a href="/merchant" className="btn-primary shrink-0">
+            {t({ en: "Go to Merchant Portal", zh: "进入商家入口" })}
+          </a>
+        </div>
       </div>
     </div>
   );
