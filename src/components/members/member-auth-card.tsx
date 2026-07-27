@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   loginMemberProfile,
   loginMemberWithGoogle,
@@ -27,11 +27,38 @@ function GoogleIcon() {
   );
 }
 
+function RegisterSubmitButton({ pending }: { readonly pending: boolean }) {
+  return (
+    <button
+      type="submit"
+      className="auth-primary-button mt-1"
+      disabled={pending}
+      aria-busy={pending}
+    >
+      {pending ? "Creating account..." : "Create SnowForce account"}
+      <span className="sr-only" aria-live="polite">
+        {pending ? "Creating your SnowForce account." : ""}
+      </span>
+    </button>
+  );
+}
+
 export function MemberAuthCard({ searchParams }: AuthCardProps) {
   const initialMode = searchParams.mode === "register" || searchParams.mode === "magic" ? searchParams.mode : "login";
   const [mode, setMode] = useState<"login" | "register" | "magic">(initialMode);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [registerPending, setRegisterPending] = useState(false);
   const next = searchParams.next ?? "/member";
+
+  async function handleRegistrationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRegisterPending(true);
+    try {
+      await registerMemberProfile(new FormData(event.currentTarget));
+    } finally {
+      setRegisterPending(false);
+    }
+  }
 
   const heading = mode === "register" ? "Create profile" : mode === "magic" ? "Magic link" : "Welcome";
   const subtext = forgotOpen
@@ -77,12 +104,13 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
         /* ─── Main form area ─── */
         <div className="mt-4">
           {mode === "register" ? (
-            <form action={registerMemberProfile} className="space-y-3">
+            <form onSubmit={handleRegistrationSubmit} className="space-y-3">
               <input type="hidden" name="next" value={next} />
               <AuthField label="Display name" id="register-member-name" name="displayName" autoComplete="name" />
               <AuthField label="Email" id="register-member-email" name="email" type="email" autoComplete="email" />
               <AuthField label="Password" id="register-member-password" name="password" type="password" autoComplete="new-password" minLength={6} />
-              <button className="auth-primary-button mt-1">Create SnowForce account</button>
+              <AuthField label="Confirm password" id="register-member-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength={6} />
+              <RegisterSubmitButton pending={registerPending} />
             </form>
           ) : mode === "magic" ? (
             <form action={requestMemberMagicLink} className="space-y-3">

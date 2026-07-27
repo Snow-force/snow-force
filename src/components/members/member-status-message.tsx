@@ -91,6 +91,24 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
       },
     };
   }
+  if (searchParams.error === "register_password") {
+    return {
+      tone: "error",
+      text: {
+        en: "Password must be at least 6 characters.",
+        zh: "密码至少需要 6 个字符。",
+      },
+    };
+  }
+  if (searchParams.error === "register_confirm") {
+    return {
+      tone: "error",
+      text: {
+        en: "The two passwords do not match.",
+        zh: "两次输入的密码不一致。",
+      },
+    };
+  }
   if (searchParams.error === "register_rate") {
     return {
       tone: "error",
