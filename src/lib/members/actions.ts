@@ -115,7 +115,13 @@ export async function getCurrentMemberProfile() {
 export async function registerMemberProfile(formData: FormData) {
   const entry = parseMemberEntry("register", formData);
   if (!entry.success) {
-    redirect("/member?mode=register&error=register");
+    const code =
+      entry.error === "password"
+        ? "register_password"
+        : entry.error === "confirm"
+          ? "register_confirm"
+          : "register";
+    redirect(`/member?mode=register&error=${code}`);
   }
 
   const supabase = createClient();

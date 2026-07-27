@@ -103,6 +103,19 @@ beforeEach(() => {
 });
 
 describe("registerMemberProfile", () => {
+  it.each([
+    ["password", "register_password"],
+    ["confirm", "register_confirm"],
+    ["register_fields", "register"],
+  ])("redirects parser error %s without calling Supabase", async (parserError, redirectError) => {
+    mockParseMemberEntry.mockReturnValueOnce({ success: false, error: parserError });
+
+    await expect(registerMemberProfile(new FormData())).rejects.toThrow(
+      `REDIRECT:/member?mode=register&error=${redirectError}`,
+    );
+    expect(mockSignUp).not.toHaveBeenCalled();
+  });
+
   it("S2-signup-sends-confirmation-email-through-auth-callback", async () => {
     mockSignUp.mockResolvedValueOnce({ error: null });
 
