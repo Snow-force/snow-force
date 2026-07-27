@@ -32,18 +32,23 @@ export function parseMemberEntry(mode: MemberEntryMode, formData: FormData) {
   const email = readString(formData, "email").trim().toLowerCase();
   const displayName = readString(formData, "displayName").trim();
   const password = readString(formData, "password");
+  const confirmPassword = readString(formData, "confirmPassword");
   const remember = readBoolean(formData, "remember");
 
   if (!emailPattern.test(email)) {
     return { success: false as const, error: "email" as const };
   }
 
-  if (!password) {
+  if (mode === "register" && !displayName) {
+    return { success: false as const, error: "register_fields" as const };
+  }
+
+  if (!password || (mode === "register" && password.length < 6)) {
     return { success: false as const, error: "password" as const };
   }
 
-  if (mode === "register" && !displayName) {
-    return { success: false as const, error: "register_fields" as const };
+  if (mode === "register" && password !== confirmPassword) {
+    return { success: false as const, error: "confirm" as const };
   }
 
   return { success: true as const, email, displayName, password, remember };

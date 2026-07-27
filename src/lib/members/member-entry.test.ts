@@ -48,6 +48,64 @@ describe("parseMemberEntry", () => {
 
     expect(result).toEqual({ success: false, error: "register_fields" });
   });
+
+  it("returns the normalized registration entry without confirmation password", () => {
+    const result = parseMemberEntry(
+      "register",
+      form({
+        displayName: " Rider One ",
+        email: " Rider@Example.COM ",
+        password: "secret",
+        confirmPassword: "secret",
+      }),
+    );
+
+    expect(result).toEqual({
+      success: true,
+      email: "rider@example.com",
+      displayName: "Rider One",
+      password: "secret",
+      remember: false,
+    });
+    expect(result).not.toHaveProperty("confirmPassword");
+  });
+
+  it("rejects registration passwords shorter than six characters", () => {
+    const result = parseMemberEntry(
+      "register",
+      form({
+        displayName: "Rider One",
+        email: "rider@example.com",
+        password: "short",
+        confirmPassword: "short",
+      }),
+    );
+
+    expect(result).toEqual({ success: false, error: "password" });
+  });
+
+  it("rejects registration passwords that do not match confirmation", () => {
+    const result = parseMemberEntry(
+      "register",
+      form({
+        displayName: "Rider One",
+        email: "rider@example.com",
+        password: "secret123",
+        confirmPassword: "secret456",
+      }),
+    );
+
+    expect(result).toEqual({ success: false, error: "confirm" });
+  });
+
+  it("keeps login password validation unchanged", () => {
+    const result = parseMemberEntry(
+      "login",
+      form({ email: "rider@example.com", password: "short" }),
+    );
+
+    expect(result).toMatchObject({ success: true, password: "short" });
+  });
 });
 
 describe("parseMemberMagicLink", () => {
