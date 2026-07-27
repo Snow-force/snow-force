@@ -115,7 +115,7 @@ export async function getCurrentMemberProfile() {
 export async function registerMemberProfile(formData: FormData) {
   const entry = parseMemberEntry("register", formData);
   if (!entry.success) {
-    redirect("/member?error=register");
+    redirect("/member?mode=register&error=register");
   }
 
   const supabase = createClient();
@@ -129,7 +129,26 @@ export async function registerMemberProfile(formData: FormData) {
   });
 
   if (error) {
-    redirect("/member?error=register");
+    console.error("[member.registerMemberProfile] signUp failed", {
+      name: error.name,
+      code: error.code,
+      status: error.status,
+      message: error.message,
+    });
+
+    const code =
+      error.status === 429 ||
+      error.code === "over_email_send_rate_limit" ||
+      error.code === "email_rate_limit_exceeded"
+        ? "register_rate"
+        : error.code === "email_exists" ||
+            error.code === "user_already_exists" ||
+            error.code === "user_already_registered" ||
+            error.message?.toLowerCase?.().includes("already")
+          ? "register_taken"
+          : "register_failed";
+
+    redirect(`/member?mode=register&error=${code}`);
   }
 
   revalidatePath("/member");

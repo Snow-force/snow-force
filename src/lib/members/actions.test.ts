@@ -119,11 +119,23 @@ describe("registerMemberProfile", () => {
     });
   });
 
-  it("S2-signup-error-redirects-register-error", async () => {
+  it("S2-signup-error-keeps-the-registration-form-open", async () => {
     mockSignUp.mockResolvedValueOnce({ error: new Error("signup failed") });
 
     await expect(registerMemberProfile(new FormData())).rejects.toThrow(
-      "REDIRECT:/member?error=register",
+      "REDIRECT:/member?mode=register&error=register_failed",
+    );
+  });
+
+  it("S2-signup-rate-limit-explains-the-email-send-limit", async () => {
+    const rateLimitError = Object.assign(new Error("email rate limit exceeded"), {
+      code: "over_email_send_rate_limit",
+      status: 429,
+    });
+    mockSignUp.mockResolvedValueOnce({ error: rateLimitError });
+
+    await expect(registerMemberProfile(new FormData())).rejects.toThrow(
+      "REDIRECT:/member?mode=register&error=register_rate",
     );
   });
 });
