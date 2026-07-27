@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import { useLanguage } from "@/lib/language";
 import {
@@ -22,6 +23,20 @@ function DraftPayloadInput({ value }: { value: string }) {
   return <input type="hidden" name="recapPayload" value={value} />;
 }
 
+function UploadSubmitButton({ label }: { label: string }) {
+  const { t } = useLanguage();
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-60"
+    >
+      {pending ? t({ en: "Uploading…", zh: "上传中…" }) : label}
+    </button>
+  );
+}
+
 export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProps) {
   const { t } = useLanguage();
   const [advancedId, setAdvancedId] = useState<string | undefined>();
@@ -35,7 +50,7 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
         </p>
       </div>
 
-      <form action={uploadRecapMediaAction} className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+      <form action={uploadRecapMediaAction} encType="multipart/form-data" className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
         <input type="hidden" name="slug" value={recap.slug} />
         <DraftPayloadInput value={draftPayload} />
         <label className="block text-sm font-medium text-gray-700">
@@ -48,9 +63,7 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
             className="mt-2 block w-full text-sm text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
           />
         </label>
-        <button className="btn-primary mt-3 px-4 py-2 text-sm">
-          {t(adminCopy.recapEditor.uploadSelectedPhotos)}
-        </button>
+        <UploadSubmitButton label={t(adminCopy.recapEditor.uploadSelectedPhotos)} />
       </form>
 
       {recap.media.length === 0 ? (
