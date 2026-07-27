@@ -4,6 +4,7 @@ import Link from "next/link";
 import { localizedList, localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
 import type { EventRecap } from "@/lib/types";
+import { ScrollingMediaStream } from "./scrolling-media-stream";
 
 export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
   const { lang, t } = useLanguage();
@@ -62,28 +63,7 @@ export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
             <h2 className="text-xl font-semibold text-gray-900">
               {t({ en: "Photos", zh: "活动照片" })}
             </h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {recap.media.map((m) => {
-                const caption = localizedText(
-                  { en: m.caption?.en ?? "", zh: m.caption?.zh ?? "" },
-                  lang,
-                );
-                return (
-                <figure key={m.id} className="overflow-hidden rounded-lg border border-gray-200">
-                  <div className="aspect-video bg-gray-100">
-                    <img
-                      src={m.url}
-                      alt={caption}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  {caption ? (
-                    <figcaption className="p-3 text-xs text-gray-500">{caption}</figcaption>
-                  ) : null}
-                </figure>
-                );
-              })}
-            </div>
+            <ScrollingMediaStream media={recap.media} />
           </div>
         ) : null}
       </div>
