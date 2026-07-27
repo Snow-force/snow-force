@@ -29,6 +29,7 @@ export const RECAP_MEDIA_ERRORS = {
   missing: { en: "No file selected. Choose at least one photo before uploading.", zh: "未选择文件。请先至少选择一张照片再上传。" },
   invalid: { en: "Some files were rejected. Use JPG, PNG, WebP, or GIF under 10 MB each.", zh: "部分文件被拒绝。仅支持 JPG、PNG、WebP、GIF，且单张不超过 10MB。" },
   upload: { en: "Upload failed. Storage rejected the file — check server logs and Supabase config.", zh: "上传失败，存储服务拒绝了文件，请查看服务端日志与 Supabase 配置。" },
+  db: { en: "Files uploaded but the recap record could not be saved — check server logs and database connectivity.", zh: "文件已上传但回顾记录保存失败，请查看服务端日志与数据库连接。" },
 } as const;
 
 export type RecapMediaErrorKey = keyof typeof RECAP_MEDIA_ERRORS;

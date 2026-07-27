@@ -16,6 +16,16 @@ import {
   updateMediaCaption,
 } from "./media-helpers";
 
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest: unknown }).digest === "string" &&
+    ((error as { digest: string }).digest.startsWith("NEXT_REDIRECT"))
+  );
+}
+
 const RECAP_MEDIA_BUCKET = "recap-media";
 const RECAP_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
 const RECAP_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -259,42 +269,65 @@ export async function updateRecapAction(formData: FormData) {
 export async function uploadRecapMediaAction(formData: FormData) {
   await requireAdmin();
   const slug = formText(formData, "slug");
-  const recap = await getRecapAdmin(slug);
-  if (!recap) redirect("/admin/recaps");
+  try {
+    const recap = await getRecapAdmin(slug);
+    if (!recap) redirect("/admin/recaps");
 
-  const files = formData.getAll("mediaFiles").filter(isUploadFile).filter((file) => file.size > 0);
-  if (files.length === 0) redirect(`/admin/recaps/${slug}/edit?mediaError=missing`);
-  if (files.some((file) => !RECAP_MEDIA_TYPES.has(file.type) || file.size > RECAP_MEDIA_MAX_BYTES)) {
-    redirect(`/admin/recaps/${slug}/edit?mediaError=invalid`);
+    const files = formData.getAll("mediaFiles").filter(isUploadFile).filter((file) => file.size > 0);
+    if (files.length === 0) redirect(`/admin/recaps/${slug}/edit?mediaError=missing`);
+    if (files.some((file) => !RECAP_MEDIA_TYPES.has(file.type) || file.size > RECAP_MEDIA_MAX_BYTES)) {
+      redirect(`/admin/recaps/${slug}/edit?mediaError=invalid`);
+    }
+
+    const workingRecap = applyDraftPayloadFallback(recap, formData);
+    const bucket = createAdminClient().storage.from(RECAP_MEDIA_BUCKET);
+    const uploaded: EventRecap["media"] = [];
+
+    for (const file of files) {
+      const path = safeRecapMediaPath(slug, file.name);
+      const { error } = await bucket.upload(path, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+      if (error) {
+        console.error("[uploadRecapMediaAction] storage.upload failed", { path, message: error.message });
+        redirect(`/admin/recaps/${slug}/edit?mediaError=upload`);
+      }
+      const { data } = bucket.getPublicUrl(path);
+      uploaded.push({
+        id: `${Date.now()}-${uploaded.length}`,
+        type: "image",
+        url: data.publicUrl,
+        storagePath: path,
+        order: workingRecap.media.length + uploaded.length,
+        isCover: false,
+      });
+    }
+
+    const next = addMediaItems(workingRecap, uploaded);
+    let savedRecap: EventRecap | undefined;
+    try {
+      savedRecap = await updateRecap(slug, {
+        ...workingRecap,
+        media: next.media,
+        coverImage: next.coverImage,
+      });
+    } catch (dbError) {
+      console.error("[uploadRecapMediaAction] updateRecap threw", dbError);
+      redirect(`/admin/recaps/${slug}/edit?mediaError=db`);
+    }
+    if (!savedRecap) {
+      console.error("[uploadRecapMediaAction] updateRecap returned undefined for slug", { slug });
+      redirect(`/admin/recaps/${slug}/edit?mediaError=db`);
+    }
+    refreshRecapPaths(slug);
+    redirect(`/admin/recaps/${slug}/edit?saved=1`);
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
+    console.error("[uploadRecapMediaAction] uncaught", error);
+    redirect(`/admin/recaps/${slug}/edit?mediaError=upload`);
   }
-
-  const workingRecap = applyDraftPayloadFallback(recap, formData);
-  const bucket = createAdminClient().storage.from(RECAP_MEDIA_BUCKET);
-  const uploaded: EventRecap["media"] = [];
-
-  for (const file of files) {
-    const path = safeRecapMediaPath(slug, file.name);
-    const { error } = await bucket.upload(path, file, {
-      cacheControl: "3600",
-      contentType: file.type,
-      upsert: false,
-    });
-    if (error) redirect(`/admin/recaps/${slug}/edit?mediaError=upload`);
-    const { data } = bucket.getPublicUrl(path);
-    uploaded.push({
-      id: `${Date.now()}-${uploaded.length}`,
-      type: "image",
-      url: data.publicUrl,
-      storagePath: path,
-      order: workingRecap.media.length + uploaded.length,
-      isCover: false,
-    });
-  }
-
-  const next = addMediaItems(workingRecap, uploaded);
-  await updateRecap(slug, { ...workingRecap, media: next.media, coverImage: next.coverImage });
-  refreshRecapPaths(slug);
-  redirect(`/admin/recaps/${slug}/edit?saved=1`);
 }
 
 export async function deleteRecapMediaAction(formData: FormData) {
