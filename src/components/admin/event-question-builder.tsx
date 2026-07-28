@@ -58,14 +58,6 @@ function createQuestion(type: EventQuestionType, existingQuestions: EventRegistr
   };
 }
 
-function optionsToText(options: string[]) {
-  return options.join("\n");
-}
-
-function textToOptions(value: string) {
-  return value.split("\n").map((item) => item.trim()).filter(Boolean);
-}
-
 function isChoiceQuestion(type: EventQuestionType) {
   return type === "single_choice" || type === "multiple_choice";
 }
@@ -116,6 +108,38 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
+    });
+  }
+
+  function updateOption(questionIndex: number, optionIndex: number, value: string) {
+    const question = visibleQuestions[questionIndex];
+    if (!question) return;
+    const options = [...question.options[activeLang]];
+    options[optionIndex] = value;
+    updateQuestion(questionIndex, {
+      ...question,
+      options: { ...question.options, [activeLang]: options },
+    });
+  }
+
+  function addOption(questionIndex: number) {
+    const question = visibleQuestions[questionIndex];
+    if (!question) return;
+    updateQuestion(questionIndex, {
+      ...question,
+      options: { ...question.options, [activeLang]: [...question.options[activeLang], ""] },
+    });
+  }
+
+  function removeOption(questionIndex: number, optionIndex: number) {
+    const question = visibleQuestions[questionIndex];
+    if (!question) return;
+    updateQuestion(questionIndex, {
+      ...question,
+      options: {
+        ...question.options,
+        [activeLang]: question.options[activeLang].filter((_, index) => index !== optionIndex),
+      },
     });
   }
 
@@ -247,18 +271,40 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
                     {t(adminCopy.editor.questionRequired)}
                   </label>
                   {isChoiceQuestion(question.type) ? (
-                    <label className="block text-sm text-gray-600 md:col-span-2">
-                      {t(activeLang === "zh" ? adminCopy.editor.questionOptionsZh : adminCopy.editor.questionOptionsEn)}
-                      <textarea
-                        value={optionsToText(question.options[activeLang])}
-                        onChange={(changeEvent) => updateQuestion(index, {
-                          ...question,
-                          options: { ...question.options, [activeLang]: textToOptions(changeEvent.currentTarget.value) },
-                        })}
-                        rows={4}
-                        className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
-                      />
-                    </label>
+                    <div className="space-y-2 md:col-span-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600">
+                        <span>{t(activeLang === "zh" ? { en: "Chinese options", zh: "中文选项" } : { en: "English options", zh: "英文选项" })}</span>
+                        <button type="button" onClick={() => addOption(index)} className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600">
+                          {t({ en: "Add option", zh: "添加选项" })}
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {(question.options[activeLang].length > 0 ? question.options[activeLang] : [""]).map((option, optionIndex) => (
+                          <div key={`${question.id}-${activeLang}-${optionIndex}`} className="flex items-center gap-2">
+                            <input
+                              value={option}
+                              onChange={(changeEvent) => {
+                                if (question.options[activeLang].length === 0) {
+                                  updateQuestion(index, {
+                                    ...question,
+                                    options: { ...question.options, [activeLang]: [changeEvent.currentTarget.value] },
+                                  });
+                                  return;
+                                }
+                                updateOption(index, optionIndex, changeEvent.currentTarget.value);
+                              }}
+                              placeholder={t({ en: "Option", zh: "选项" })}
+                              className="w-full rounded border border-gray-200 px-3 py-2"
+                            />
+                            {question.options[activeLang].length > 0 ? (
+                              <button type="button" onClick={() => removeOption(index, optionIndex)} className="rounded border border-red-200 px-2 py-1 text-xs text-red-600">
+                                {t(adminCopy.editor.delete)}
+                              </button>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ) : null}
                 </div>
               ) : null}
