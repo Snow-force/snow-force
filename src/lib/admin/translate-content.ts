@@ -39,6 +39,7 @@ export async function translateEventToChinese(event: Event): Promise<Event> {
   const entries: TranslationEntry[] = [];
   ["title", "meetLocation", "activityLocation", "paymentInstructions", "seoTitle", "seoDescription"]
     .forEach((key) => text(entries, `event.${key}`, event[key as keyof Event] as Bilingual));
+  if (event.summary) text(entries, "event.summary", event.summary);
   event.registrationQuestions.forEach((question) => {
     text(entries, `question.${question.id}.label`, question.label);
     text(entries, `question.${question.id}.helpText`, question.helpText);
@@ -60,6 +61,7 @@ export async function translateEventToChinese(event: Event): Promise<Event> {
   return {
     ...event,
     title: translatedText(event.title, "event.title", translations),
+    ...(event.summary ? { summary: translatedText(event.summary, "event.summary", translations) } : {}),
     meetLocation: translatedText(event.meetLocation, "event.meetLocation", translations),
     activityLocation: translatedText(event.activityLocation, "event.activityLocation", translations),
     paymentInstructions: translatedText(event.paymentInstructions, "event.paymentInstructions", translations),

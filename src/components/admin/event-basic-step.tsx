@@ -46,7 +46,7 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
     onChange({ ...event, [key]: value });
   }
 
-  function updateBilingualValue(key: "title" | "meetLocation" | "activityLocation", value: string) {
+  function updateBilingualValue(key: "title" | "summary" | "meetLocation" | "activityLocation", value: string) {
     onChange({
       ...event,
       [key]: {
@@ -102,6 +102,16 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
             value={event.title[activeLang]}
             placeholder={activeLang === "zh" ? "示例: Big Bear 周末滑雪活动" : "Example: Big Bear Weekend Trip"}
             onChange={(changeEvent) => updateBilingualValue("title", changeEvent.currentTarget.value)}
+            className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
+          />
+        </label>
+        <label className="block text-sm text-gray-600 md:col-span-2">
+          {t({ en: "Summary", zh: "活动摘要" })}
+          <textarea
+            value={event.summary?.[activeLang] ?? ""}
+            placeholder={activeLang === "zh" ? "显示在活动标题下方的简短摘要" : "A short summary shown below the event title"}
+            onChange={(changeEvent) => updateBilingualValue("summary", changeEvent.currentTarget.value)}
+            rows={3}
             className="mt-1 w-full rounded border border-gray-200 px-3 py-2"
           />
         </label>

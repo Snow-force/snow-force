@@ -208,7 +208,7 @@ export async function saveEventAction(
       ? await computeWaiverSha(parsed.data.waiverTextEn)
       : null;
     const eventData = { ...parsed.data, waiverTextSha: serverComputedSha };
-    let translatedEventData = eventData;
+    let translatedEventData: Event = eventData;
     try {
       translatedEventData = await translateEventToChinese(eventData);
     } catch (error) {

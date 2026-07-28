@@ -65,9 +65,7 @@ export function EventDetailView({
   const activityLocation = localizedText(event.activityLocation, lang);
   const meetLocation = localizedText(event.meetLocation, lang);
   const paymentInstructions = localizedText(event.paymentInstructions, lang);
-  const introModule = event.detailModules.find((moduleRow) => moduleRow.type === "intro");
-  const heroSummary = introModule ? localizedText(introModule.content, lang) : "";
-  const detailModules = event.detailModules.filter((moduleRow) => moduleRow.type !== "intro");
+  const heroSummary = event.summary ? localizedText(event.summary, lang) : "";
   const remaining = availability.remaining;
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -182,7 +180,7 @@ export function EventDetailView({
               </InfoCard>
             </div>
 
-            {detailModules.map((moduleRow) => (
+            {event.detailModules.map((moduleRow) => (
               <ContentSection key={moduleRow.id} title={localizedText(moduleRow.title, lang)}>
                 {moduleRow.displayMode === "list" ? (
                   <ul className="space-y-3">

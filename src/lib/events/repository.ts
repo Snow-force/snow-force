@@ -19,6 +19,8 @@ const eventColumns = [
   "registration_state",
   "title_zh",
   "title_en",
+  "summary_zh",
+  "summary_en",
   "event_date",
   "meet_time",
   "meet_location_zh",
