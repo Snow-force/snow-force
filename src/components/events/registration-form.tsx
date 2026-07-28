@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
@@ -18,6 +18,16 @@ type AnswerValue = string | boolean | string[];
 type FormDataState = Record<string, AnswerValue>;
 type FormErrors = Record<string, string>;
 type OptionPair = { value: string; label: string };
+
+type EventSelectProps = {
+  id: string;
+  label: string;
+  options: OptionPair[];
+  placeholder: string;
+  value: string;
+  error?: string;
+  onChange(value: string): void;
+};
 
 function localizedText(value: { en: string; zh: string }, lang: "en" | "zh") {
   return lang === "en" ? value.en || value.zh : value.zh || value.en;
@@ -54,6 +64,92 @@ function isStringArrayAnswer(value: AnswerValue | undefined): value is string[] 
   return Array.isArray(value);
 }
 
+function EventSelect({ id, label, options, placeholder, value, error, onChange }: EventSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (!selectRef.current?.contains(event.target as Node)) setIsOpen(false);
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  function selectOption(nextValue: string) {
+    onChange(nextValue);
+    setIsOpen(false);
+  }
+
+  return (
+    <div ref={selectRef} className="relative">
+      <button
+        id={id}
+        type="button"
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            setIsOpen(true);
+          }
+        }}
+        className={`flex h-11 w-full items-center justify-between gap-3 rounded-full border bg-white px-5 text-left text-[17px] font-normal transition focus:outline-none focus:ring-4 ${
+          error
+            ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
+            : "border-black/10 text-[#1d1d1f] hover:border-[#0066cc]/40 focus:border-[#0071e3] focus:ring-[#0071e3]/10"
+        }`}
+      >
+        <span className={selectedOption ? "truncate" : "truncate text-[#7a7a7a]"}>{selectedOption?.label || placeholder}</span>
+        <svg aria-hidden="true" viewBox="0 0 16 16" className={`h-4 w-4 shrink-0 text-[#0066cc] transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none">
+          <path d="m3 6 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {isOpen ? (
+        <div role="listbox" aria-label={label} className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-[18px] border border-[#dce3ed] bg-white p-2 shadow-[0_18px_42px_rgba(29,29,31,0.16)]">
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            onClick={() => selectOption("")}
+            className={`flex w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${!value ? "bg-[#e0effe] font-medium text-[#0066cc]" : "text-[#555] hover:bg-[#f5f5f7]"}`}
+          >
+            {placeholder}
+          </button>
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => selectOption(option.value)}
+                className={`flex w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${isSelected ? "bg-[#0066cc] font-medium text-white" : "text-[#1d1d1f] hover:bg-[#f0f7ff]"}`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function renderQuestion(
   question: EventRegistrationQuestion,
   value: AnswerValue | undefined,
@@ -69,23 +165,18 @@ function renderQuestion(
   if (question.type === "single_choice") {
     return (
       <div key={question.key}>
-        <label className="label" htmlFor={`field-${question.key}`}>
+        <p className="label">
           {label} {question.required && <span className="text-red-500">*</span>}
-        </label>
-        <select
+        </p>
+        <EventSelect
           id={`field-${question.key}`}
-          className={inputClass}
+          label={label}
+          options={options}
+          placeholder={lang === "en" ? "Select an option" : "请选择选项"}
           value={isStringAnswer(value) ? value : ""}
-          aria-invalid={Boolean(error) || undefined}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          <option value="">{lang === "en" ? "-- Select --" : "-- 请选择 --"}</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          error={error}
+          onChange={onChange}
+        />
         {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
         {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
