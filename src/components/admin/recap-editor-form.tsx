@@ -6,14 +6,12 @@ import { localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
 import { updateRecapAction } from "@/lib/recaps/actions";
 import type { EventRecap } from "@/lib/types";
-import { AdminTranslateMissingButton } from "./admin-translate-missing-button";
 import { adminCopy } from "./admin-copy";
 import { RecapBasicStep } from "./recap-basic-step";
 import { RecapContentStep } from "./recap-content-step";
 import { RecapEditorStepper, type RecapStepId } from "./recap-editor-stepper";
 import { RecapMediaManager } from "./recap-media-manager";
 import { RecapPublishStep } from "./recap-publish-step";
-import { applyRecapTranslations, collectRecapTranslationItems } from "./translation-drafts";
 
 type ActiveLang = "zh" | "en";
 
@@ -23,21 +21,11 @@ function recapPayload(recap: EventRecap) {
 
 export function RecapEditorForm({ recap }: { recap: EventRecap }) {
   const [draftRecap, setDraftRecap] = useState(recap);
-  const [activeLang, setActiveLang] = useState<ActiveLang>("zh");
+  const activeLang: ActiveLang = "en";
   const [activeStep, setActiveStep] = useState<RecapStepId>("basic");
   const { lang, t } = useLanguage();
   const payload = recapPayload(draftRecap);
   const saveFormId = `recap-save-${recap.slug}`;
-  const translateTargetLang: ActiveLang = activeLang === "zh" ? "en" : "zh";
-  const missingTranslationItems = collectRecapTranslationItems(draftRecap, activeLang, translateTargetLang);
-  const translateControl = (
-    <AdminTranslateMissingButton
-      sourceLang={activeLang}
-      targetLang={translateTargetLang}
-      items={missingTranslationItems}
-      onApply={(translations) => setDraftRecap((current) => applyRecapTranslations(current, translateTargetLang, translations))}
-    />
-  );
 
   const summaries: Record<RecapStepId, string> = {
     basic: `${draftRecap.date || "—"} · ${localizedText(draftRecap.location, "zh") || draftRecap.slug}`,
@@ -72,20 +60,14 @@ export function RecapEditorForm({ recap }: { recap: EventRecap }) {
           {activeStep === "content" ? (
             <RecapContentStep
               recap={draftRecap}
-              activeLang={activeLang}
-              onLangChange={setActiveLang}
               onChange={setDraftRecap}
-              translateControl={translateControl}
             />
           ) : null}
           {activeStep === "media" ? <RecapMediaManager recap={draftRecap} draftPayload={payload} /> : null}
           {activeStep === "publish" ? (
             <RecapPublishStep
               recap={draftRecap}
-              activeLang={activeLang}
-              onLangChange={setActiveLang}
               onChange={setDraftRecap}
-              translateControl={translateControl}
             />
           ) : null}
         </div>

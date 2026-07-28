@@ -258,9 +258,10 @@ describe("event admin action helpers", () => {
     const formData = new FormData();
     formData.set("eventPayload", JSON.stringify(modularEvent));
 
-    await expect(saveEventAction({ success: false }, formData)).rejects.toThrow(
-      "NEXT_REDIRECT:/admin/events/modular-event/edit?saved=1",
-    );
+    await expect(saveEventAction({ success: false }, formData)).resolves.toMatchObject({
+      success: true,
+      message: "Saved in English. Chinese translation could not be refreshed.",
+    });
 
     expect(actionMocks.createEvent).toHaveBeenCalledWith({
       ...modularEvent,
@@ -331,7 +332,7 @@ describe("event admin action helpers", () => {
 
     expect(result).toMatchObject({
       success: false,
-      missingFields: expect.arrayContaining(["title.zh", "detailModules"]),
+      missingFields: expect.arrayContaining(["title.en", "detailModules"]),
     });
   });
 

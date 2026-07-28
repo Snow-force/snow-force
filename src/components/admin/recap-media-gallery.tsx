@@ -110,16 +110,7 @@ export function RecapMediaGallery({ recap, draftPayload, busy }: RecapMediaGalle
                 <input type="hidden" name="mediaId" value={item.id} />
                 <DraftPayloadInput value={draftPayload} />
                 <label className="block text-xs text-gray-600">
-                  {t(adminCopy.recapEditor.captionZhOptional)}
-                  <input
-                    name="caption.zh"
-                    defaultValue={item.caption?.zh ?? ""}
-                    disabled={busy}
-                    className="mt-1 w-full rounded border border-gray-200 px-2 py-1 disabled:opacity-60"
-                  />
-                </label>
-                <label className="block text-xs text-gray-600">
-                  {t(adminCopy.recapEditor.captionEnOptional)}
+                  Caption (English)
                   <input
                     name="caption.en"
                     defaultValue={item.caption?.en ?? ""}

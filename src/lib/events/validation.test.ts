@@ -103,7 +103,7 @@ describe("event editor validation", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects participant questions without Chinese labels", () => {
+  it("accepts participant questions when English labels are present", () => {
     const result = parseEventEditorInput({
       ...draftInput,
       registrationQuestions: [
@@ -119,10 +119,10 @@ describe("event editor validation", () => {
       ],
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it("requires core Chinese content and one meaningful detail module before publishing", () => {
+  it("requires core English content and one meaningful detail module before publishing", () => {
     const result = parseEventEditorInput({
       slug: "big-bear-day",
       title: { zh: "", en: "" },
@@ -138,16 +138,16 @@ describe("event editor validation", () => {
     if (!result.success) return;
     expect(validatePublishableEvent(result.data)).toEqual(
       expect.arrayContaining([
-        "title.zh",
+        "title.en",
         "eventDate",
         "meetTime",
-        "activityLocation.zh",
+        "activityLocation.en",
         "detailModules",
       ]),
     );
   });
 
-  it("requires non-blank Chinese detail module content or items before publishing", () => {
+  it("requires non-blank English detail module content or items before publishing", () => {
     const result = parseEventEditorInput({
       slug: "big-bear-day",
       title: { zh: "大熊山一日滑雪", en: "" },
@@ -318,8 +318,8 @@ describe("event editor validation", () => {
 
     expect(validatePublishableEvent(parsed.data)).toEqual(
       expect.arrayContaining([
-        "title.zh",
-        "activityLocation.zh",
+        "title.en",
+        "activityLocation.en",
         "detailModules",
       ]),
     );

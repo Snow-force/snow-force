@@ -188,6 +188,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [pendingRegistrationId, setPendingRegistrationId] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
   const paymentCancelled = searchParams?.get("payment") === "cancelled";
   const [showWaiverModal, setShowWaiverModal] = useState(false);
 
@@ -216,6 +217,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         answers: formData,
         consentGiven: input.consentGiven,
         lang,
+        couponCode,
         ...(input.waiverTextEn && {
           waiverTextEn: input.waiverTextEn,
           waiverTextSha: input.waiverTextSha,
@@ -463,6 +465,26 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         {event.registrationQuestions.map((question) =>
           renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
         )}
+
+        {event.paymentModel !== "free" ? (
+          <div>
+            <label className="label" htmlFor="coupon-code">
+              {t({ en: "Coupon code (optional)", zh: "优惠码（选填）" })}
+            </label>
+            <input
+              id="coupon-code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              maxLength={32}
+              autoCapitalize="characters"
+              className="input-field"
+              placeholder={t({ en: "Enter coupon code", zh: "输入优惠码" })}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {t({ en: "The discount will be checked securely when you continue to payment.", zh: "继续付款时将安全验证并计算优惠。" })}
+            </p>
+          </div>
+        ) : null}
 
         {!event.waiverTextEn && (
           <div>

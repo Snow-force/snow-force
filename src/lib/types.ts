@@ -85,6 +85,8 @@ export interface RegistrationFinance {
   settlementAmount: number | null;
   settlementStatus: RegistrationSettlementStatus;
   settlementNote: string;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
 export interface Event {

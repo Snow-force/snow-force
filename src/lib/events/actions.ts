@@ -10,6 +10,7 @@ import { createRecapFromEvent } from "../recaps/actions";
 import { computeWaiverSha } from "../registrations/waiver";
 import { createEvent, getEventAdmin, updateEvent } from "./repository";
 import { parseEventEditorInput, validatePublishableEvent } from "./validation";
+import { translateEventToChinese } from "../admin/translate-content";
 
 export type EventEditorState = {
   success: boolean;
@@ -201,15 +202,23 @@ export async function saveEventAction(
   }
 
   let saved: Event | undefined;
+  let translationWarning = false;
   try {
     const serverComputedSha = parsed.data.waiverTextEn
       ? await computeWaiverSha(parsed.data.waiverTextEn)
       : null;
     const eventData = { ...parsed.data, waiverTextSha: serverComputedSha };
+    let translatedEventData = eventData;
+    try {
+      translatedEventData = await translateEventToChinese(eventData);
+    } catch (error) {
+      translationWarning = true;
+      console.error("[saveEventAction] Chinese translation failed", error);
+    }
 
     saved = originalSlug
-      ? await updateEvent(originalSlug, eventData)
-      : await createEvent(eventData);
+      ? await updateEvent(originalSlug, translatedEventData)
+      : await createEvent(translatedEventData);
   } catch (error) {
     return {
       success: false,
@@ -220,6 +229,9 @@ export async function saveEventAction(
   if (!saved) return { success: false, message: "Event could not be saved." };
 
   refreshEventPaths(saved.slug);
+  if (translationWarning) {
+    return { success: true, message: "Saved in English. Chinese translation could not be refreshed." };
+  }
   redirect(`/admin/events/${saved.slug}/edit?saved=1`);
 }
 

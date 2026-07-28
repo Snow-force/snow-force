@@ -98,10 +98,10 @@ function hasMeaningfulListItem(items: string[]) {
 
 function hasMeaningfulDetailModule(moduleRow: Event["detailModules"][number]) {
   if (moduleRow.displayMode === "list") {
-    return hasMeaningfulListItem(moduleRow.items.zh);
+    return hasMeaningfulListItem(moduleRow.items.en);
   }
 
-  return hasMeaningfulText(moduleRow.content.zh);
+  return hasMeaningfulText(moduleRow.content.en);
 }
 
 const dateTime = z
@@ -131,22 +131,22 @@ const questionSchema = z
     options: bilingualList.default({ en: [], zh: [] }),
   })
   .superRefine((question, ctx) => {
-    if (!hasMeaningfulText(question.label.zh)) {
+    if (!hasMeaningfulText(question.label.en)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["label", "zh"],
-        message: "Participant questions need Chinese labels.",
+        path: ["label", "en"],
+        message: "Participant questions need English labels.",
       });
     }
 
     if (
       (question.type === "single_choice" || question.type === "multiple_choice") &&
-      !hasMeaningfulListItem(question.options.zh)
+      !hasMeaningfulListItem(question.options.en)
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["options", "zh"],
-        message: "Choice questions need Chinese options.",
+        path: ["options", "en"],
+        message: "Choice questions need English options.",
       });
     }
   });
@@ -226,10 +226,10 @@ export function parseEventEditorInput(input: unknown) {
 
 export function validatePublishableEvent(event: Event) {
   const requiredFields: Array<[string, unknown]> = [
-    ["title.zh", event.title.zh],
+    ["title.en", event.title.en],
     ["eventDate", event.eventDate],
     ["meetTime", event.meetTime],
-    ["activityLocation.zh", event.activityLocation.zh],
+    ["activityLocation.en", event.activityLocation.en],
   ];
 
   const missingFields = requiredFields

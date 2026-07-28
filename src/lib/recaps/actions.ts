@@ -8,6 +8,7 @@ import { updateEvent } from "../events/repository";
 import { createAdminClient } from "../supabase/server";
 import type { Event, EventRecap, RecapMediaItem } from "../types";
 import { insertRecap, getRecapAdmin, updateRecap } from "./repository";
+import { translateRecapToChinese } from "../admin/translate-content";
 import {
   addMediaItems,
   deleteMediaItem,
@@ -248,10 +249,20 @@ export async function updateRecapAction(formData: FormData) {
 
   const slug = formText(formData, "slug");
   const data = readRecapPayload(formData) ?? recapEditorInput(formData);
+  let savedData = data;
+  let translationWarning = false;
+  if (isRecapPayload(data)) {
+    try {
+      savedData = await translateRecapToChinese(data);
+    } catch (error) {
+      translationWarning = true;
+      console.error("[updateRecapAction] Chinese translation failed", error);
+    }
+  }
 
-  await updateRecap(slug, data);
+  await updateRecap(slug, savedData);
   refreshRecapPaths(slug);
-  redirect(`/admin/recaps/${slug}/edit?saved=1`);
+  redirect(`/admin/recaps/${slug}/edit?saved=1${translationWarning ? "&translationWarning=1" : ""}`);
 }
 
 export type SignErrorCode =
@@ -732,10 +743,28 @@ export async function updateRecapMediaCaptionAction(formData: FormData) {
   const recap = await getRecapAdmin(slug);
   if (!recap) redirect("/admin/recaps");
   const workingRecap = applyDraftPayloadFallback(recap, formData);
-  const next = updateMediaCaption(workingRecap, mediaId, {
-    zh: formText(formData, "caption.zh"),
-    en: formText(formData, "caption.en"),
-  });
+  const existingMedia = workingRecap.media.find((media) => media.id === mediaId);
+  const englishCaption = formText(formData, "caption.en");
+  let caption = { en: englishCaption, zh: "" };
+  try {
+    const translated = await translateRecapToChinese({ ...workingRecap, media: [{
+      id: mediaId,
+      type: "image",
+      url: "",
+      storagePath: "",
+      order: 0,
+      isCover: false,
+      caption,
+    }] });
+    const translatedCaption = translated.media[0]?.caption;
+    caption = translatedCaption
+      ? { en: translatedCaption.en ?? englishCaption, zh: translatedCaption.zh ?? "" }
+      : caption;
+  } catch (error) {
+    console.error("[updateRecapMediaCaptionAction] Chinese translation failed", error);
+    caption.zh = existingMedia?.caption?.zh ?? "";
+  }
+  const next = updateMediaCaption(workingRecap, mediaId, caption);
   await updateRecap(slug, { ...workingRecap, media: next.media });
   refreshRecapPaths(slug);
   redirect(`/admin/recaps/${slug}/edit?saved=1`);

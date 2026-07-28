@@ -42,6 +42,8 @@ type RegistrationRow = {
   settlement_amount: number | null;
   settlement_status: RegistrationFinance["settlementStatus"] | null;
   settlement_note: string | null;
+  coupon_code: string | null;
+  discount_amount: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -91,6 +93,8 @@ function rowToRegistration(row: RegistrationRow): Registration {
       settlementAmount: row.settlement_amount,
       settlementStatus: row.settlement_status ?? defaultRegistrationFinance.settlementStatus,
       settlementNote: row.settlement_note ?? "",
+      ...(row.coupon_code ? { couponCode: row.coupon_code } : {}),
+      ...(row.discount_amount ? { discountAmount: row.discount_amount } : {}),
     }),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -116,6 +120,8 @@ function registrationToInsert(data: NewRegistration) {
     settlement_amount: data.finance?.settlementAmount ?? null,
     settlement_status: data.finance?.settlementStatus ?? defaultRegistrationFinance.settlementStatus,
     settlement_note: data.finance?.settlementNote ?? "",
+    coupon_code: data.finance?.couponCode || null,
+    discount_amount: data.finance?.discountAmount ?? 0,
   };
 }
 
@@ -131,6 +137,8 @@ function financeToUpdate(finance: RegistrationFinance) {
     settlement_amount: finance.settlementAmount,
     settlement_status: finance.settlementStatus,
     settlement_note: finance.settlementNote,
+    coupon_code: finance.couponCode || null,
+    discount_amount: finance.discountAmount ?? 0,
   };
 }
 

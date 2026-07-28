@@ -117,6 +117,19 @@ export async function POST(request: Request): Promise<Response> {
   }
   const paidAmount = currency === "jpy" ? session.amount_total : session.amount_total / 100;
 
+  const baseAmount = paymentModel === "deposit" ? dbEvent.depositAmount : dbEvent.fullPaymentAmount;
+  if (baseAmount === null || baseAmount <= 0) return new Response("OK", { status: 200 });
+  let couponCode = "";
+  let discountAmount = 0;
+  if (pending.couponCode) {
+    if (paidAmount > baseAmount) return new Response("OK", { status: 200 });
+    couponCode = pending.couponCode;
+    discountAmount = Math.round((baseAmount - paidAmount) * 100) / 100;
+  } else {
+    const expectedAmount = currency === "jpy" ? Math.round(baseAmount) : Math.round(baseAmount * 100) / 100;
+    if (paidAmount !== expectedAmount) return new Response("OK", { status: 200 });
+  }
+
   const paidAt = new Date().toISOString();
   const finance: RegistrationFinance = {
     ...defaultRegistrationFinance,
@@ -127,6 +140,8 @@ export async function POST(request: Request): Promise<Response> {
     finalAmount: paymentModel === "full_prepay" ? paidAmount : null,
     settlementAmount: paymentModel === "full_prepay" ? 0 : null,
     settlementStatus: paymentModel === "full_prepay" ? "settled" : "not_started",
+    couponCode,
+    discountAmount,
   };
 
   try {

@@ -10,6 +10,8 @@ export type RegistrationFinanceInput = Partial<{
   finalAmount: number | null;
   settlementStatus: RegistrationSettlementStatus;
   settlementNote: string;
+  couponCode: string;
+  discountAmount: number;
 }>;
 
 export const defaultRegistrationFinance: RegistrationFinance = {

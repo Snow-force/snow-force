@@ -22,6 +22,7 @@ type RegisterInput = {
   waiverTextEn?: string;
   waiverTextSha?: string;
   typedName?: string;
+  couponCode?: string;
 };
 
 export type RegisterForEventResult =
@@ -139,6 +140,7 @@ export async function registerForEvent(
     waiverTextEn: resolvedWaiverTextEn ?? null,
     waiverTextSha: resolvedWaiverTextSha ?? null,
     typedName: input.typedName?.trim() ?? null,
+    couponCode: input.couponCode?.trim().toUpperCase() || null,
   });
 
   revalidatePath("/member");

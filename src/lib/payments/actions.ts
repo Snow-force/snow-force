@@ -8,6 +8,8 @@ import { getStripeServer } from "@/lib/payments/stripe-server";
 import { getPendingRegistrationById } from "@/lib/registrations/pending-repository";
 import { getEvent } from "@/lib/events/repository";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
+import { getCoupon, getCouponRedemptionCount } from "@/lib/coupons/repository";
+import { quoteCoupon } from "@/lib/coupons/validation";
 
 export type CheckoutResult =
   | { success: true; url: string }
@@ -17,6 +19,8 @@ export type CheckoutDeps = {
   getStripe: () => Stripe;
   getPendingRegistration: (id: string) => Promise<PendingRegistration | undefined>;
   getEvent: (slug: string) => Promise<Event | undefined>;
+  getCoupon?: typeof getCoupon;
+  getCouponRedemptionCount?: typeof getCouponRedemptionCount;
 };
 
 export type CheckoutOptions = {
@@ -54,7 +58,21 @@ export async function createCheckoutSessionResult(
   const currency = event.depositCurrency;
   if (amount === null || amount <= 0) return { success: false, error: "Invalid payment amount" };
 
-  const unitAmount = currency === "jpy" ? Math.round(amount) : Math.round(amount * 100);
+  let couponCode = "";
+  let discountAmount = 0;
+  let checkoutAmount = amount;
+  if (pending.couponCode) {
+    const coupon = await (deps.getCoupon ?? getCoupon)(pending.couponCode);
+    if (!coupon) return { success: false, error: "Coupon code is invalid" };
+    const redemptionCount = await (deps.getCouponRedemptionCount ?? getCouponRedemptionCount)(coupon.code);
+    const quote = quoteCoupon(coupon, amount, redemptionCount, now);
+    if ("error" in quote) return { success: false, error: quote.error };
+    couponCode = quote.code;
+    discountAmount = quote.discountAmount;
+    checkoutAmount = quote.finalAmount;
+  }
+
+  const unitAmount = currency === "jpy" ? Math.round(checkoutAmount) : Math.round(checkoutAmount * 100);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const session = await deps.getStripe().checkout.sessions.create({
@@ -77,8 +95,10 @@ export async function createCheckoutSessionResult(
       eventSlug: event.slug,
       memberId: pending.memberId ?? "",
       paymentModel: event.paymentModel,
-      amount: String(amount),
+      amount: String(checkoutAmount),
       currency,
+      couponCode,
+      discountAmount: String(discountAmount),
     },
     expires_at: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
   });
@@ -95,7 +115,7 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
   if (!account?.profile) return { success: false, error: "Authentication required" };
 
   return createCheckoutSessionResult(
-    { getStripe: getStripeServer, getPendingRegistration: getPendingRegistrationById, getEvent },
+    { getStripe: getStripeServer, getPendingRegistration: getPendingRegistrationById, getEvent, getCoupon, getCouponRedemptionCount },
     pendingRegistrationId,
     { memberMemberId: account.profile.id },
   );
