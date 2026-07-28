@@ -8,8 +8,8 @@ import {
   registerMemberProfile,
   requestMemberMagicLink,
   requestMemberPasswordReset,
-  resendMemberVerification,
 } from "@/lib/members/actions";
+import { MemberResendVerification } from "./member-resend-verification";
 import { MemberStatusMessage } from "./member-status-message";
 
 type AuthCardProps = {
@@ -83,6 +83,9 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
 
       <div className="mt-4">
         <MemberStatusMessage searchParams={searchParams} />
+        {searchParams.error === "callback" && (
+          <MemberResendVerification variant="prominent" />
+        )}
       </div>
 
       {forgotOpen ? (
@@ -194,19 +197,9 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
         </div>
       )}
 
-      {/* Resend verification — always at the very bottom */}
-      <form action={resendMemberVerification} className="mt-3 flex gap-2">
-        <input
-          name="email"
-          type="email"
-          placeholder="Resend verification email"
-          className="auth-input-dark min-h-9 flex-1 text-[12px]"
-          required
-        />
-        <button className="rounded-full border border-white/10 px-3.5 text-[11px] font-semibold text-white/60 transition hover:bg-white/10 hover:text-white">
-          Resend
-        </button>
-      </form>
+      {searchParams.error !== "callback" && (
+        <MemberResendVerification variant="compact" />
+      )}
     </div>
   );
 }

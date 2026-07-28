@@ -152,7 +152,31 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
     return { tone: "error", text: { en: "Google sign-in could not start. Try again or use email sign-in.", zh: "Google 登录暂时无法启动，请稍后再试或使用邮箱登录。" } };
   }
   if (searchParams.error === "callback") {
-    return { tone: "error", text: { en: "The sign-in link has expired. Please sign in again.", zh: "登录链接已失效，请重新登录。" } };
+    return {
+      tone: "error",
+      text: {
+        en: "This verification link has expired or was already used. If you are verifying a new account, use the form below to resend the verification email. Otherwise, sign in or request a new sign-in link.",
+        zh: "此验证链接已失效或已被使用。如果你正在验证新账户，请使用下方表单重新发送验证邮件。否则，请登录或请求新的登录链接。",
+      },
+    };
+  }
+  if (searchParams.error === "verification-rate") {
+    return {
+      tone: "error",
+      text: {
+        en: "Too many verification emails in a short time. Wait a few minutes and try again.",
+        zh: "短时间内验证邮件发送过多，请稍候几分钟再试。",
+      },
+    };
+  }
+  if (searchParams.error === "verification-send") {
+    return {
+      tone: "error",
+      text: {
+        en: "Could not send the verification email. Please try again shortly.",
+        zh: "暂时无法发送验证邮件，请稍后重试。",
+      },
+    };
   }
   if (searchParams.error === "verification-email") {
     return { tone: "error", text: { en: "Enter a valid email before resending the verification link.", zh: "请输入有效邮箱后重新发送验证邮件。" } };
