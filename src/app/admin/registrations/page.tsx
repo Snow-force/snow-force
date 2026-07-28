@@ -208,21 +208,19 @@ export default async function AdminRegistrationsPage({
             <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-400">
               <th className="py-3 pr-4">Registrant</th>
               <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Event</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Deposit</th>
               <th className="px-4 py-3">Deposit Status</th>
               <th className="px-4 py-3">Settlement Status</th>
               <th className="px-4 py-3">Date</th>
               <th className="py-3 pl-4">Finance</th>
-              <th className="py-3 pl-4">Registration</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {registrations.length === 0 ? (
-              <tr><td colSpan={10} className="py-8 text-center text-gray-400">No registrations found.</td></tr>
+              <tr><td colSpan={8} className="py-8 text-center text-gray-400">No registrations found.</td></tr>
             ) : view.selectedRegistrations.length === 0 ? (
-              <tr><td colSpan={10} className="py-8 text-center text-gray-400">No registrations for this event.</td></tr>
+              <tr><td colSpan={8} className="py-8 text-center text-gray-400">No registrations for this event.</td></tr>
             ) : view.selectedRegistrations.map((registration) => {
               const finance = normalizeRegistrationFinance(registration.finance);
               return (
@@ -231,22 +229,10 @@ export default async function AdminRegistrationsPage({
                     <p className="font-medium text-gray-900">{registrationDisplayName(registration)}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-500">{registrationDisplayEmail(registration)}</td>
-                  <td className="px-4 py-3 text-gray-500">
-                    <p className="text-gray-700">{view.selectedEventLabel}</p>
-                    <p className="text-xs text-gray-400">{registration.eventSlug}</p>
-                  </td>
-                  <td className="px-4 py-3">{registration.status}</td>
-                  <RegistrationFinanceControl
-                    action={updateFinance}
-                    createdAt={registration.createdAt}
-                    finance={finance}
-                    isSaved={financeSavedId === registration.id}
-                    registrationId={registration.id}
-                    returnEvent={view.selectedEventSlug}
-                  />
-                  <td className="py-3 pl-4">
+                  <td className="px-4 py-3">
+                    <p>{registration.status}</p>
                     {registration.status === "cancelled" ? (
-                      <span className="text-xs font-medium text-gray-400">Cancelled</span>
+                      <span className="mt-1 block text-xs font-medium text-gray-400">Cancelled</span>
                     ) : (
                       <RegistrationCancellationControl
                         action={cancelRegistration}
@@ -255,6 +241,14 @@ export default async function AdminRegistrationsPage({
                       />
                     )}
                   </td>
+                  <RegistrationFinanceControl
+                    action={updateFinance}
+                    createdAt={registration.createdAt}
+                    finance={finance}
+                    isSaved={financeSavedId === registration.id}
+                    registrationId={registration.id}
+                    returnEvent={view.selectedEventSlug}
+                  />
                 </tr>
               );
             })}
