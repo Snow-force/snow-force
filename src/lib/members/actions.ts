@@ -259,7 +259,10 @@ export async function resendMemberVerification(formData: FormData) {
     },
   });
   if (error) {
-    redirect("/member?error=verification-email");
+    if (error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "email_rate_limit_exceeded") {
+      redirect("/member?error=verification-rate");
+    }
+    redirect("/member?error=verification-send");
   }
 
   redirect("/member?verificationSent=1");

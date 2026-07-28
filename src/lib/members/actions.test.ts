@@ -154,11 +154,20 @@ describe("registerMemberProfile", () => {
 });
 
 describe("resendMemberVerification", () => {
-  it("S3-redirects-with-verification-email-error-when-Supabase-resend-fails", async () => {
-    mockResend.mockResolvedValueOnce({ error: new Error("resend failed") });
+  it("S3-redirects-with-verification-email-when-email-parser-fails", async () => {
+    mockParseMemberEmail.mockReturnValueOnce({ success: false, error: "email" });
 
     await expect(resendMemberVerification(new FormData())).rejects.toThrow(
       "REDIRECT:/member?error=verification-email",
+    );
+    expect(mockResend).not.toHaveBeenCalled();
+  });
+
+  it("S3-redirects-with-verification-send-when-Supabase-resend-fails", async () => {
+    mockResend.mockResolvedValueOnce({ error: new Error("resend failed") });
+
+    await expect(resendMemberVerification(new FormData())).rejects.toThrow(
+      "REDIRECT:/member?error=verification-send",
     );
     expect(mockResend).toHaveBeenCalledWith({
       type: "signup",
@@ -167,6 +176,18 @@ describe("resendMemberVerification", () => {
         emailRedirectTo: "https://snowforce.test/auth/callback?next=%2Fmember",
       },
     });
+  });
+
+  it.each([
+    ["status-429", { status: 429, code: "over_email_send_rate_limit" }],
+    ["email_rate_limit_exceeded", { code: "email_rate_limit_exceeded" }],
+  ])("S3-redirects-with-verification-rate-when-rate-limited-%s", async (_, errProps) => {
+    const rateLimitError = Object.assign(new Error("rate limited"), errProps);
+    mockResend.mockResolvedValueOnce({ error: rateLimitError });
+
+    await expect(resendMemberVerification(new FormData())).rejects.toThrow(
+      "REDIRECT:/member?error=verification-rate",
+    );
   });
 
   it("S3-redirects-with-verificationSent-when-Supabase-resend-succeeds", async () => {
