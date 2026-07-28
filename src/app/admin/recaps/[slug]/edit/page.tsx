@@ -13,7 +13,7 @@ export default async function RecapEditPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { saved?: string; mediaError?: string };
+  searchParams: { saved?: string; mediaError?: string; translationWarning?: string };
 }) {
   const recap = await getRecapAdmin(params.slug);
 
@@ -28,8 +28,11 @@ export default async function RecapEditPage({
   const saved = searchParams.saved === "1";
   const mediaErrorKey = searchParams.mediaError as RecapMediaErrorKey | undefined;
   const mediaError = mediaErrorKey && mediaErrorKey in RECAP_MEDIA_ERRORS ? RECAP_MEDIA_ERRORS[mediaErrorKey] : null;
+  const translationWarning = searchParams.translationWarning === "1";
   const noticeKind = saved ? "success" : mediaError ? "error" : null;
-  const noticeText = saved ? SAVED_NOTICE : mediaError ?? { en: "", zh: "" };
+  const noticeText = translationWarning
+    ? { en: "Recap saved in English. Chinese translation could not be refreshed.", zh: "Recap saved in English. Chinese translation could not be refreshed." }
+    : saved ? SAVED_NOTICE : mediaError ?? { en: "", zh: "" };
 
   return (
     <div className="space-y-4">
