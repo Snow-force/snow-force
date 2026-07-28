@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { EventCard } from "@/components/events/event-card";
-import { isEventOpen } from "@/lib/events/availability";
 import { useLanguage, type Lang } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
 
@@ -17,7 +16,6 @@ type HomePageViewProps = {
 
 type OpenEventsSectionProps = {
   events: Event[];
-  allEventCount: number;
   eventLoadError: boolean;
   lang: Lang;
   t: Translate;
@@ -34,7 +32,6 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
   const { lang, t } = useLanguage();
   const locale = lang === "zh" ? "zh-CN" : "en-US";
   const recentRecaps = recaps.slice(0, 4);
-  const openEvents = events.filter(isEventOpen).slice(0, 4);
 
   return (
     <div className="bg-[#07090c] text-white">
@@ -44,8 +41,7 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
       <CommunityExperienceSection t={t} />
       <PhotoWallSection recaps={recentRecaps} t={t} locale={locale} />
       <OpenEventsSection
-        events={openEvents}
-        allEventCount={events.length}
+        events={events}
         eventLoadError={eventLoadError}
         lang={lang}
         t={t}
@@ -332,14 +328,14 @@ function PhotoTile({ tile, index }: { tile: RecapTile; index: number }) {
   );
 }
 
-function OpenEventsSection({ events, allEventCount, eventLoadError, lang, t }: OpenEventsSectionProps) {
+function OpenEventsSection({ events, eventLoadError, lang, t }: OpenEventsSectionProps) {
   return (
     <section id="open-events" className="bg-[#f5f5f7] px-4 py-20 text-[#1d1d1f] sm:px-6 sm:py-24">
       <div className="mx-auto max-w-[1120px]">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#0066cc]">
-              {t({ en: "Open registration", zh: "正在报名" })}
+              {t({ en: "Current events", zh: "当前活动" })}
             </p>
             <h2 className="mt-4 text-[38px] font-semibold leading-[1.08] sm:text-[56px]">
               {t({ en: "Join the next community ride.", zh: "加入下一场集体活动。" })}
@@ -360,12 +356,7 @@ function OpenEventsSection({ events, allEventCount, eventLoadError, lang, t }: O
             </StatusTile>
           ) : events.length === 0 ? (
             <StatusTile light>
-              {allEventCount > 0
-                ? t({
-                    en: "No events are open for registration right now. You can still browse all events.",
-                    zh: "目前没有正在报名的活动，可以先查看全部活动。",
-                  })
-                : t({ en: "No upcoming events right now. Check back soon.", zh: "暂时没有活动，敬请期待。" })}
+              {t({ en: "No current events right now. Check back soon.", zh: "暂无当前活动，敬请期待。" })}
             </StatusTile>
           ) : (
             events.map((event) => <EventCard key={event.slug} event={event} lang={lang} t={t} />)

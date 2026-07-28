@@ -12,6 +12,7 @@ import {
   type EventRegistrationQuestionRow,
 } from "./mappers";
 import { seedEvents } from "./seed";
+import { selectPublicDisplayEvents } from "./public-display";
 
 const eventColumns = [
   "slug",
@@ -327,6 +328,13 @@ export function createEventRepository(source: EventSource, countSource?: Registr
         (await source.listPublicEvents()).filter((row) => row.status === "published"),
       );
     },
+    async getPublicDisplayEvents() {
+      return selectPublicDisplayEvents(
+        await withRegistrationCounts(
+          (await source.listPublicEvents()).filter((row) => row.status === "published"),
+        ),
+      );
+    },
     async getAllEvents() {
       return withRegistrationCounts(
         (await source.listAdminEvents()).filter((row) => row.status !== "archived"),
@@ -379,6 +387,7 @@ const repository = createEventRepository(supabaseEventSource(), supabaseRegistra
 const registrations: Map<string, number> = new Map(seedEvents.map((e) => [e.slug, e.registrationCount]));
 
 export const getEvents = repository.getEvents;
+export const getPublicDisplayEvents = repository.getPublicDisplayEvents;
 export const getAllEvents = repository.getAllEvents;
 export const getEvent = repository.getEvent;
 export const getEventAdmin = repository.getEventAdmin;
