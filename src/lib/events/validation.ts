@@ -165,7 +165,6 @@ const editorSchema = z.object({
   status: z.enum(["draft", "published", "archived"]).default("draft"),
   registrationState: z.enum(["open", "closed", "full"]).default("closed"),
   title: bilingualText.default({ en: "", zh: "" }),
-  summary: bilingualText.default({ en: "", zh: "" }),
   eventDate: dateString.default(""),
   meetTime: z.string().trim().default(""),
   meetLocation: bilingualText.default({ en: "", zh: "" }),
@@ -228,7 +227,6 @@ export function parseEventEditorInput(input: unknown) {
 export function validatePublishableEvent(event: Event) {
   const requiredFields: Array<[string, unknown]> = [
     ["title.en", event.title.en],
-    ["summary.en", event.summary?.en ?? ""],
     ["eventDate", event.eventDate],
     ["meetTime", event.meetTime],
     ["activityLocation.en", event.activityLocation.en],
@@ -238,8 +236,8 @@ export function validatePublishableEvent(event: Event) {
     .filter(([, value]) => typeof value !== "string" || !value.trim())
     .map(([field]) => field);
 
-  if (!event.detailModules.some((moduleRow) => moduleRow.type === "intro" && hasMeaningfulDetailModule(moduleRow))) {
-    missingFields.push("intro");
+  if (!event.detailModules.some(hasMeaningfulDetailModule)) {
+    missingFields.push("detailModules");
   }
 
   return missingFields;

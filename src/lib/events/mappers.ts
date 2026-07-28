@@ -16,8 +16,6 @@ export type EventCoreRow = {
   registration_state: Event["registrationState"];
   title_zh: string;
   title_en: string;
-  summary_zh?: string;
-  summary_en?: string;
   event_date: string | null;
   meet_time: string | null;
   meet_location_zh: string;
@@ -225,7 +223,6 @@ export function rowsToEvent(
     status: core.status,
     registrationState: core.registration_state,
     title: { en: core.title_en, zh: core.title_zh },
-    summary: { en: core.summary_en ?? "", zh: core.summary_zh ?? "" },
     eventDate: core.event_date ?? "",
     meetTime: timeValue(core.meet_time),
     meetLocation: { en: core.meet_location_en, zh: core.meet_location_zh },
@@ -293,8 +290,6 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       registration_state: event.registrationState,
       title_zh: event.title.zh,
       title_en: event.title.en,
-      summary_zh: event.summary?.zh ?? "",
-      summary_en: event.summary?.en ?? "",
       event_date: nullableValue(event.eventDate),
       meet_time: nullableValue(event.meetTime),
       meet_location_zh: event.meetLocation.zh,

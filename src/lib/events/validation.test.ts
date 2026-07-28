@@ -126,7 +126,6 @@ describe("event editor validation", () => {
     const result = parseEventEditorInput({
       slug: "big-bear-day",
       title: { zh: "", en: "" },
-      summary: { zh: "", en: "" },
       eventDate: "",
       meetTime: "",
       activityLocation: { zh: "", en: "" },
@@ -140,11 +139,10 @@ describe("event editor validation", () => {
     expect(validatePublishableEvent(result.data)).toEqual(
       expect.arrayContaining([
         "title.en",
-        "summary.en",
         "eventDate",
         "meetTime",
         "activityLocation.en",
-        "intro",
+        "detailModules",
       ]),
     );
   });
@@ -173,7 +171,7 @@ describe("event editor validation", () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(validatePublishableEvent(result.data)).toEqual(
-      expect.arrayContaining(["summary.en", "intro"]),
+      expect.arrayContaining(["detailModules"]),
     );
   });
 
@@ -201,7 +199,7 @@ describe("event editor validation", () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(validatePublishableEvent(result.data)).toEqual(
-      expect.arrayContaining(["summary.en", "intro"]),
+      expect.arrayContaining(["detailModules"]),
     );
   });
 
@@ -229,7 +227,7 @@ describe("event editor validation", () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(validatePublishableEvent(result.data)).toEqual(
-      expect.arrayContaining(["summary.en", "intro"]),
+      expect.arrayContaining(["detailModules"]),
     );
   });
 
@@ -322,8 +320,7 @@ describe("event editor validation", () => {
       expect.arrayContaining([
         "title.en",
         "activityLocation.en",
-        "summary.en",
-        "intro",
+        "detailModules",
       ]),
     );
   });

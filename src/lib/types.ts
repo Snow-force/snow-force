@@ -94,7 +94,6 @@ export interface Event {
   status: EventStatus;
   registrationState: RegistrationState;
   title: Bilingual;
-  summary?: Bilingual;
   eventDate: string;
   meetTime: string;
   meetLocation: Bilingual;

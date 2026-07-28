@@ -21,7 +21,7 @@ const initialState: EventEditorState = { success: false };
 type ActiveLang = "zh" | "en";
 
 type BilingualEventKey = {
-  [Key in keyof Event]-?: NonNullable<Event[Key]> extends { en: string; zh: string } ? Key : never;
+  [Key in keyof Event]: Event[Key] extends { en: string; zh: string } ? Key : never;
 }[keyof Event];
 
 function normalizeQuestionKey(value: string) {
@@ -68,8 +68,6 @@ function friendlyFieldName(field: string) {
     slug: "链接标识 Slug",
     title: "活动标题",
     "title.zh": "活动标题（中文）",
-    "summary.en": "活动摘要（英文）",
-    intro: "活动介绍",
     eventDate: "活动日期",
     meetTime: "集合时间",
     meetLocation: "集合地点",
@@ -162,8 +160,6 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
               <EventBasicStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} isNew={isNew} />
               <FieldError errors={state.fieldErrors?.slug} />
               <FieldError errors={state.fieldErrors?.title} />
-              <FieldError errors={state.fieldErrors?.summary} />
-              <FieldError errors={state.fieldErrors?.intro} />
               <FieldError errors={state.fieldErrors?.eventDate} />
               <FieldError errors={state.fieldErrors?.meetTime} />
               <FieldError errors={state.fieldErrors?.activityLocation} />

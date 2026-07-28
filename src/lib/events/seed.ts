@@ -39,10 +39,6 @@ export const seedEvents: Event[] = [
       en: "SnowForce 2026 Season Kickoff",
       zh: "SnowForce 2026 雪季开板活动",
     },
-    summary: {
-      en: "A full-day kickoff with level-based workshops, group riding, and an easy social finish.",
-      zh: "包含分级练习、团队滑行和轻松雪后社交的全天开板活动。",
-    },
     eventDate: "2026-11-15",
     meetTime: "09:00",
     meetLocation: {
@@ -151,10 +147,6 @@ export const seedEvents: Event[] = [
     title: {
       en: "Park Skills Weekend",
       zh: "公园技巧周末",
-    },
-    summary: {
-      en: "A small-group freestyle progression weekend for intermediate riders.",
-      zh: "面向进阶滑手的小班自由式进阶周末活动。",
     },
     eventDate: "2026-12-13",
     meetTime: "09:00",

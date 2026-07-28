@@ -94,19 +94,18 @@ describe("EventDetailView", () => {
     ).toHaveLength(0);
   });
 
-  it("shows the summary below the title and keeps the intro in the detail sections", () => {
+  it("uses the intro as the hero summary without repeating it in the detail sections", () => {
     renderWithLanguage(
       <EventDetailView
         event={{
           ...minimalEvent,
-          summary: { en: "A concise day on the mountain.", zh: "轻松的一天雪山活动。" },
           detailModules: [
             {
               id: "intro",
               type: "intro",
               displayMode: "rich_text",
               title: { en: "Introduction", zh: "活动介绍" },
-              content: { en: "Full activity information for the day.", zh: "全天活动详细介绍。" },
+              content: { en: "A concise day on the mountain.", zh: "轻松的一天雪山活动。" },
               items: { en: [], zh: [] },
             },
             {
@@ -123,7 +122,7 @@ describe("EventDetailView", () => {
     );
 
     expect(screen.getByText("A concise day on the mountain.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Introduction" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Introduction" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Itinerary" })).toBeInTheDocument();
   });
 
