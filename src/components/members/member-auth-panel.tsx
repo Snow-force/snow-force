@@ -23,7 +23,7 @@ export function MemberAuthPanel({ searchParams }: MemberAuthPanelProps) {
         SnowForce
       </Link>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 lg:bottom-auto lg:right-8 lg:top-1/2 lg:w-auto lg:-translate-y-1/2">
+      <div className="relative z-20 flex min-h-[calc(100svh-64px)] flex-col justify-end pb-6 pt-16 lg:items-center lg:justify-center lg:pb-0 lg:pt-0">
         <MemberAuthCard searchParams={searchParams} />
       </div>
     </div>
