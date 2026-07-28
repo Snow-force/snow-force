@@ -1,16 +1,8 @@
-import { createCouponAction, deleteCouponAction, setCouponActiveAction } from "@/lib/coupons/actions";
+import { AdminCouponsView } from "@/components/admin/admin-coupons-view";
 import { getCouponRedemptionCount, getCoupons } from "@/lib/coupons/repository";
-
-function dateValue(value: string | null) { return value ? new Date(value).toLocaleString() : "—"; }
 
 export default async function AdminCouponsPage() {
   const coupons = await getCoupons();
   const redemptionCounts = await Promise.all(coupons.map((coupon) => getCouponRedemptionCount(coupon.code)));
-  return <div className="space-y-8"><div><h2 className="text-xl font-semibold text-gray-900">优惠码管理</h2><p className="mt-1 text-sm text-gray-500">优惠会在 Stripe 结账前由服务器重新验证。</p></div>
-    <form action={createCouponAction} className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50 p-5 md:grid-cols-3">
-      <label className="text-sm font-medium text-gray-700">优惠码<input name="code" required maxLength={32} pattern="[A-Za-z0-9_-]{3,32}" className="input-field mt-1" placeholder="SNOW10" /></label><label className="text-sm font-medium text-gray-700">类型<select name="discountType" className="input-field mt-1" defaultValue="percent"><option value="percent">百分比 (%)</option><option value="fixed">固定金额</option></select></label><label className="text-sm font-medium text-gray-700">优惠值<input name="discountValue" required min="0.01" step="0.01" type="number" className="input-field mt-1" /></label>
-      <label className="text-sm font-medium text-gray-700">生效时间（选填）<input name="startsAt" type="datetime-local" className="input-field mt-1" /></label><label className="text-sm font-medium text-gray-700">失效时间（选填）<input name="expiresAt" type="datetime-local" className="input-field mt-1" /></label><label className="text-sm font-medium text-gray-700">最多使用次数（选填）<input name="maxRedemptions" min="1" step="1" type="number" className="input-field mt-1" /></label><div className="md:col-span-3"><button className="btn-primary px-5 py-2 text-sm">创建优惠码</button></div>
-    </form>
-    <div className="overflow-x-auto rounded-xl border border-gray-200"><table className="w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3">Code</th><th className="px-4 py-3">优惠</th><th className="px-4 py-3">使用</th><th className="px-4 py-3">有效期</th><th className="px-4 py-3">状态</th><th className="px-4 py-3">操作</th></tr></thead><tbody className="divide-y divide-gray-100">{coupons.map((coupon, index) => <tr key={coupon.code}><td className="px-4 py-3 font-mono font-medium">{coupon.code}</td><td className="px-4 py-3">{coupon.discountType === "percent" ? `${coupon.discountValue}%` : coupon.discountValue}</td><td className="px-4 py-3">{redemptionCounts[index]}{coupon.maxRedemptions !== null ? ` / ${coupon.maxRedemptions}` : ""}</td><td className="px-4 py-3 text-xs text-gray-600">{dateValue(coupon.startsAt)} → {dateValue(coupon.expiresAt)}</td><td className="px-4 py-3">{coupon.active ? "启用" : "停用"}</td><td className="px-4 py-3"><div className="flex gap-2"><form action={setCouponActiveAction}><input type="hidden" name="code" value={coupon.code} /><button className="text-snow-700 hover:underline">{coupon.active ? "停用" : "启用"}</button></form><form action={deleteCouponAction}><input type="hidden" name="code" value={coupon.code} /><button className="text-red-700 hover:underline">删除</button></form></div></td></tr>)}{coupons.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">暂无优惠码</td></tr> : null}</tbody></table></div>
-  </div>;
+  return <AdminCouponsView coupons={coupons} redemptionCounts={redemptionCounts} />;
 }
