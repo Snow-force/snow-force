@@ -146,7 +146,15 @@ export function EventQuestionBuilder({ questions, activeLang, onChange }: EventQ
   return (
     <section className="card space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-gray-900">{t(adminCopy.editor.participantQuestions)}</h3>
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">{t(adminCopy.editor.participantQuestions)}</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            {t({
+              en: `${visibleQuestions.length} question${visibleQuestions.length === 1 ? "" : "s"} in this registration form`,
+              zh: `此报名表共有 ${visibleQuestions.length} 个问题`,
+            })}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <select
             value={newType}

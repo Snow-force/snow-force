@@ -38,7 +38,9 @@ export function EventEditorStepper({ activeStep, onStepChange, summaries }: Even
             }`}
           >
             <span className="block text-sm font-semibold">{label}</span>
-            {!isActive ? <span className="mt-1 block break-words text-xs leading-5 text-gray-500">{summaries[step.id]}</span> : null}
+            <span className={`mt-1 block break-words text-xs leading-5 ${isActive ? "text-blue-800" : "text-gray-500"}`}>
+              {summaries[step.id]}
+            </span>
           </button>
         );
       })}
