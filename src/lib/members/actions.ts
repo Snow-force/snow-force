@@ -244,28 +244,29 @@ export async function requestMemberPasswordReset(formData: FormData) {
   redirect("/member/forgot-password?sent=1");
 }
 
-export async function resendMemberVerification(formData: FormData) {
-  const entry = parseMemberEmail(formData);
-  if (!entry.success) {
-    redirect("/member?error=verification-email");
+/**
+ * Confirms a signup only after the person has explicitly pressed the button
+ * on /auth/confirm.  Keeping verification behind a POST prevents email-link
+ * scanners from consuming Supabase's single-use confirmation token.
+ */
+export async function confirmMemberEmail(formData: FormData) {
+  const tokenHash = String(formData.get("tokenHash") ?? "").trim();
+  if (!tokenHash || tokenHash.length > 512) {
+    redirect("/member?error=callback");
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email: entry.email,
-    options: {
-      emailRedirectTo: memberCallback("/member"),
-    },
+  const { error } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "email",
   });
+
   if (error) {
-    if (error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "email_rate_limit_exceeded") {
-      redirect("/member?error=verification-rate");
-    }
-    redirect("/member?error=verification-send");
+    redirect("/member?error=callback");
   }
 
-  redirect("/member?verificationSent=1");
+  revalidatePath("/member");
+  redirect(nextPathFromForm(formData));
 }
 
 export async function resetMemberPassword(formData: FormData) {

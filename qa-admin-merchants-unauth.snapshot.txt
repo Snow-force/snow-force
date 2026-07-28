@@ -1,0 +1,138 @@
+uid=10_0 RootWebArea "SnowForce - Community Snow Sports" url="http://localhost:3001/staff-login"
+  uid=10_1 ignored
+    uid=10_2 ignored
+      uid=10_3 banner
+        uid=10_4 navigation
+          uid=10_5 ignored
+            uid=10_6 link "SnowForce SnowForce" url="http://localhost:3001/"
+              uid=10_7 image "SnowForce" url="http://localhost:3001/logo.jpg"
+              uid=10_8 ignored
+                uid=10_9 StaticText "SnowForce"
+                  uid=10_10 InlineTextBox "SnowForce"
+            uid=10_11 ignored
+              uid=10_12 link "Events" url="http://localhost:3001/events"
+                uid=10_13 StaticText "Events"
+                  uid=10_10 InlineTextBox "Events"
+              uid=10_14 link "Recaps" url="http://localhost:3001/recaps"
+                uid=10_15 StaticText "Recaps"
+                  uid=10_10 InlineTextBox "Recaps"
+              uid=10_16 link "FAQ" url="http://localhost:3001/faq"
+                uid=10_17 StaticText "FAQ"
+                  uid=10_10 InlineTextBox "FAQ"
+              uid=10_18 link "About" url="http://localhost:3001/about"
+                uid=10_19 StaticText "About"
+                  uid=10_10 InlineTextBox "About"
+              uid=10_20 link "Partner" url="http://localhost:3001/partner"
+                uid=10_21 StaticText "Partner"
+                  uid=10_10 InlineTextBox "Partner"
+            uid=10_22 ignored
+              uid=10_23 ignored
+                uid=10_24 button "CN"
+                  uid=10_25 StaticText "CN"
+                    uid=10_10 InlineTextBox "CN"
+                uid=10_26 button "EN"
+                  uid=10_27 StaticText "EN"
+                    uid=10_10 InlineTextBox "EN"
+              uid=10_28 link "Member" url="http://localhost:3001/member"
+                uid=10_29 StaticText "Member"
+                  uid=10_10 InlineTextBox "Member"
+      uid=10_30 main
+        uid=10_31 ignored
+          uid=10_32 ignored
+            uid=10_33 heading "Staff Admin" level="1"
+              uid=10_34 StaticText "Staff Admin"
+                uid=10_10 InlineTextBox "Staff Admin"
+            uid=10_35 form
+              uid=10_36 ignored
+                uid=10_37 LabelText
+                  uid=10_38 StaticText "Email"
+                    uid=10_10 InlineTextBox "Email"
+                uid=10_39 textbox "Email" required
+                  uid=10_40 generic
+              uid=10_41 ignored
+                uid=10_42 LabelText
+                  uid=10_43 StaticText "Password"
+                    uid=10_10 InlineTextBox "Password"
+                uid=10_44 textbox "Password" required
+                  uid=10_45 generic
+              uid=10_46 button "Sign in"
+                uid=10_47 StaticText "Sign in"
+                  uid=10_10 InlineTextBox "Sign in"
+      uid=10_48 contentinfo
+        uid=10_49 ignored
+          uid=10_50 paragraph
+            uid=10_51 StaticText "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with activities in other regions too."
+              uid=10_10 InlineTextBox "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with "
+              uid=10_10 InlineTextBox "activities in other regions too."
+          uid=10_52 ignored
+            uid=10_53 ignored
+              uid=10_54 heading "SnowForce" level="3"
+                uid=10_55 StaticText "SnowForce"
+                  uid=10_10 InlineTextBox "SnowForce"
+              uid=10_56 list
+                uid=10_57 listitem level="1"
+                  uid=10_58 link "Events" url="http://localhost:3001/events"
+                    uid=10_59 StaticText "Events"
+                      uid=10_10 InlineTextBox "Events"
+                uid=10_60 listitem level="1"
+                  uid=10_61 link "Recaps" url="http://localhost:3001/recaps"
+                    uid=10_62 StaticText "Recaps"
+                      uid=10_10 InlineTextBox "Recaps"
+                uid=10_63 listitem level="1"
+                  uid=10_64 link "FAQ" url="http://localhost:3001/faq"
+                    uid=10_65 StaticText "FAQ"
+                      uid=10_10 InlineTextBox "FAQ"
+                uid=10_66 listitem level="1"
+                  uid=10_67 link "Refund Policy" url="http://localhost:3001/refund-policy"
+                    uid=10_68 StaticText "Refund Policy"
+                      uid=10_10 InlineTextBox "Refund Policy"
+            uid=10_69 ignored
+              uid=10_70 heading "Community" level="3"
+                uid=10_71 StaticText "Community"
+                  uid=10_10 InlineTextBox "Community"
+              uid=10_72 list
+                uid=10_73 listitem level="1"
+                  uid=10_74 link "About Us" url="http://localhost:3001/about"
+                    uid=10_75 StaticText "About Us"
+                      uid=10_10 InlineTextBox "About Us"
+                uid=10_76 listitem level="1"
+                  uid=10_77 link "Member Area" url="http://localhost:3001/member"
+                    uid=10_78 StaticText "Member Area"
+                      uid=10_10 InlineTextBox "Member Area"
+                uid=10_79 listitem level="1"
+                  uid=10_80 link "Partner With Us" url="http://localhost:3001/partner"
+                    uid=10_81 StaticText "Partner With Us"
+                      uid=10_10 InlineTextBox "Partner With Us"
+            uid=10_82 ignored
+              uid=10_83 heading "Contact" level="3"
+                uid=10_84 StaticText "Contact"
+                  uid=10_10 InlineTextBox "Contact"
+              uid=10_85 list
+                uid=10_86 listitem level="1"
+                  uid=10_87 StaticText "snowforceclub@gmail.com"
+                    uid=10_10 InlineTextBox "snowforceclub@gmail.com"
+                uid=10_88 listitem level="1"
+                  uid=10_89 StaticText "WeChat: SnowForceClub"
+                    uid=10_10 InlineTextBox "WeChat: SnowForceClub"
+            uid=10_90 ignored
+              uid=10_91 heading "Language" level="3"
+                uid=10_92 StaticText "Language"
+                  uid=10_10 InlineTextBox "Language"
+              uid=10_93 list
+                uid=10_94 listitem level="1"
+                  uid=10_95 StaticText "中文"
+                    uid=10_10 InlineTextBox "中文"
+                uid=10_96 listitem level="1"
+                  uid=10_97 StaticText "English"
+                    uid=10_10 InlineTextBox "English"
+          uid=10_98 generic
+            uid=10_99 StaticText "© "
+              uid=10_10 InlineTextBox "© "
+            uid=10_100 StaticText "2026"
+              uid=10_10 InlineTextBox "2026"
+            uid=10_101 StaticText " SnowForce. "
+              uid=10_10 InlineTextBox " SnowForce. "
+            uid=10_102 StaticText "All rights reserved."
+              uid=10_10 InlineTextBox "All rights reserved."
+      uid=10_103 generic
+        uid=10_104 alert atomic live="assertive" relevant="additions text"

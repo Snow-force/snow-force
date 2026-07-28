@@ -15,6 +15,19 @@ import {
   setCoverMediaItem,
   updateMediaCaption,
 } from "./media-helpers";
+import {
+  RECAP_MEDIA_BUCKET,
+  RECAP_MEDIA_MAX_BYTES,
+  RECAP_MEDIA_TYPES,
+  parseFinalizeEntries,
+  safeRecapMediaPath,
+  safeRecapPrefix,
+  validateRecapPath,
+  validateUploadCandidate,
+  type FinalizeEntry,
+  type UploadCandidate,
+  type ValidationCode,
+} from "./upload-signing";
 
 function isNextRedirectError(error: unknown): boolean {
   return (
@@ -24,25 +37,6 @@ function isNextRedirectError(error: unknown): boolean {
     typeof (error as { digest: unknown }).digest === "string" &&
     ((error as { digest: string }).digest.startsWith("NEXT_REDIRECT"))
   );
-}
-
-const RECAP_MEDIA_BUCKET = "recap-media";
-const RECAP_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
-const RECAP_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-
-function safePathSegment(value: string, fallback: string) {
-  const normalized = value.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").replace(/^-+|-+$/g, "");
-  return normalized || fallback;
-}
-
-function safeRecapMediaPath(slug: string, fileName: string) {
-  const recapSegment = safePathSegment(slug, "recap");
-  const fileSegment = safePathSegment(fileName, "media");
-  return `recaps/${recapSegment}/${Date.now()}-${fileSegment}`;
-}
-
-function isUploadFile(value: FormDataEntryValue | null): value is File {
-  return typeof File !== "undefined" && value instanceof File;
 }
 
 function formText(formData: FormData, key: string) {
@@ -181,12 +175,6 @@ function readRecapPayload(formData: FormData) {
   }
 }
 
-async function saveDraftPayload(slug: string, formData: FormData) {
-  const data = readRecapPayload(formData);
-  if (!data) return undefined;
-  return updateRecap(slug, data);
-}
-
 function applyDraftPayloadFallback(recap: EventRecap, formData: FormData) {
   return readRecapPayload(formData) ?? recap;
 }
@@ -266,68 +254,431 @@ export async function updateRecapAction(formData: FormData) {
   redirect(`/admin/recaps/${slug}/edit?saved=1`);
 }
 
-export async function uploadRecapMediaAction(formData: FormData) {
+export type SignErrorCode =
+  | "recap_not_found"
+  | "empty"
+  | ValidationCode;
+
+export type SignedUploadEntry = {
+  path: string;
+  token: string;
+  signedUrl: string;
+  name: string;
+  type: string;
+  size: number;
+  publicUrl: string;
+};
+
+export type SignDependencies = {
+  loadRecap(slug: string): Promise<EventRecap | undefined>;
+  now(): number;
+  createSignedUploadUrl(
+    path: string,
+    options: { upsert: boolean },
+  ): Promise<{ signedUrl: string; token: string; path: string }>;
+  getPublicUrl(path: string): { publicUrl: string };
+};
+
+export type SignInput = {
+  slug: string;
+  candidates: UploadCandidate[];
+};
+
+export type SignResult =
+  | { ok: true; signed: SignedUploadEntry[] }
+  | { ok: false; code: SignErrorCode; reason: string; index?: number };
+
+export async function signRecapMediaUploadResult(
+  dependencies: SignDependencies,
+  input: SignInput,
+): Promise<SignResult> {
+  if (input.candidates.length === 0) {
+    return { ok: false, code: "empty", reason: "At least one candidate is required." };
+  }
+  const recap = await dependencies.loadRecap(input.slug);
+  if (!recap) {
+    return { ok: false, code: "recap_not_found", reason: `Recap not found: ${input.slug}` };
+  }
+
+  const timestamp = dependencies.now();
+  const validated: UploadCandidate[] = [];
+  for (let i = 0; i < input.candidates.length; i += 1) {
+    const candidate = input.candidates[i];
+    const validation = validateUploadCandidate(candidate.name, candidate.type, candidate.size);
+    if (!validation.ok) {
+      return { ok: false, code: validation.code, reason: validation.reason, index: i };
+    }
+    validated.push(validation.candidate);
+  }
+  const signed: SignedUploadEntry[] = [];
+  for (let i = 0; i < validated.length; i += 1) {
+    const candidate = validated[i];
+    // Per-candidate index in the path keeps duplicate filenames unique within
+    // one batch so uploadToSignedUrl (upsert:false) cannot collide.
+    const path = safeRecapMediaPath(input.slug, candidate.name, timestamp, i);
+    const sign = await dependencies.createSignedUploadUrl(path, { upsert: false });
+    const publicUrl = dependencies.getPublicUrl(path).publicUrl;
+    signed.push({
+      path,
+      token: sign.token,
+      signedUrl: sign.signedUrl,
+      name: candidate.name,
+      type: candidate.type,
+      size: candidate.size,
+      publicUrl,
+    });
+  }
+  return { ok: true, signed };
+}
+
+export type SignedUploadInput = SignInput;
+
+export async function signRecapMediaUploadAction(
+  input: SignedUploadInput,
+): Promise<SignResult> {
+  await requireAdmin();
+  const admin = createAdminClient().storage.from(RECAP_MEDIA_BUCKET);
+  const deps: SignDependencies = {
+    loadRecap: getRecapAdmin,
+    now: () => Date.now(),
+    createSignedUploadUrl: async (path, options) => {
+      const { data, error } = await admin.createSignedUploadUrl(path, options);
+      if (error || !data) {
+        throw new Error(error?.message ?? "createSignedUploadUrl failed");
+      }
+      return data;
+    },
+    getPublicUrl: (path) => admin.getPublicUrl(path).data,
+  };
+  return signRecapMediaUploadResult(deps, input);
+}
+
+type RecapStorageObject = {
+  name: string;
+  id: string | null;
+  metadata: { size?: number; mimetype?: string } | null;
+};
+
+export type FinalizeDependencies = {
+  loadRecap(slug: string): Promise<EventRecap | undefined>;
+  saveRecap(slug: string, data: Partial<EventRecap>): Promise<EventRecap | undefined>;
+  listRecapObjects(slug: string, prefix: string): Promise<RecapStorageObject[]>;
+  removeRecapObjects(paths: string[]): Promise<unknown>;
+  getPublicUrl(path: string): { publicUrl: string };
+  now(): number;
+};
+
+export type FinalizeInput = {
+  slug: string;
+  recapPayload?: EventRecap;
+  uploaded: FinalizeEntry[];
+};
+
+export type FinalizeErrorCode =
+  | "empty_upload"
+  | "bad_path"
+  | "missing_object"
+  | "metadata_invalid"
+  | "recap_not_found"
+  | "save_failed";
+
+export type FinalizeResult =
+  | { ok: true; media: RecapMediaItem[]; recap: EventRecap }
+  | { ok: false; code: FinalizeErrorCode; reason: string; cleanedUp: string[] };
+
+async function cleanupPaths(
+  deps: FinalizeDependencies,
+  paths: string[],
+): Promise<string[]> {
+  if (paths.length === 0) return [];
+  try {
+    await deps.removeRecapObjects(paths);
+    return paths;
+  } catch (error) {
+    console.error("[finalizeRecapMediaUploadResult] cleanup failed", { paths, error });
+    return [];
+  }
+}
+
+export async function finalizeRecapMediaUploadResult(
+  deps: FinalizeDependencies,
+  input: FinalizeInput,
+): Promise<FinalizeResult> {
+  const slug = input.slug;
+
+  if (input.uploaded.length === 0) {
+    return {
+      ok: false,
+      code: "empty_upload",
+      reason: "At least one uploaded entry is required.",
+      cleanedUp: [],
+    };
+  }
+
+  // Validate every uploaded path independently before any service-role call.
+  // Paths that fail validation are reported but never passed to removeRecapObjects,
+  // so a browser-supplied path under another slug or with traversal cannot be
+  // used to delete objects outside the recap's namespace.
+  const safePaths: string[] = [];
+  const safeEntries: { entry: FinalizeEntry; basename: string }[] = [];
+  for (const entry of input.uploaded) {
+    const result = validateRecapPath(entry.path, slug);
+    if (!result.ok) {
+      const cleanedUp = await cleanupPaths(deps, safePaths);
+      return {
+        ok: false,
+        code: "bad_path",
+        reason: result.reason,
+        cleanedUp,
+      };
+    }
+    safePaths.push(entry.path);
+    safeEntries.push({ entry, basename: result.basename });
+  }
+
+  const prefix = safeRecapPrefix(slug);
+  const objects = await deps.listRecapObjects(slug, prefix);
+  const objectsByName = new Map<string, RecapStorageObject>();
+  for (const obj of objects) {
+    if (obj.id !== null) objectsByName.set(obj.name, obj);
+  }
+
+  for (const { entry, basename } of safeEntries) {
+    const obj = objectsByName.get(basename);
+    const mimetype = obj?.metadata?.mimetype;
+    const size = obj?.metadata?.size;
+    if (!obj || mimetype === undefined || size === undefined) {
+      const cleanedUp = await cleanupPaths(deps, safePaths);
+      return {
+        ok: false,
+        code: "missing_object",
+        reason: `Uploaded object not found in storage: ${entry.path}`,
+        cleanedUp,
+      };
+    }
+    if (!RECAP_MEDIA_TYPES.has(mimetype) || size > RECAP_MEDIA_MAX_BYTES) {
+      const cleanedUp = await cleanupPaths(deps, safePaths);
+      return {
+        ok: false,
+        code: "metadata_invalid",
+        reason: `Storage metadata for ${entry.path} failed validation (mimetype=${mimetype}, size=${size})`,
+        cleanedUp,
+      };
+    }
+  }
+
+  const storedRecap = await deps.loadRecap(slug);
+  if (!storedRecap) {
+    const cleanedUp = await cleanupPaths(deps, safePaths);
+    return {
+      ok: false,
+      code: "recap_not_found",
+      reason: `Recap not found: ${slug}`,
+      cleanedUp,
+    };
+  }
+  const baseRecap = input.recapPayload ?? storedRecap;
+
+  const newItems: RecapMediaItem[] = input.uploaded.map((entry, index) => ({
+    id: `${deps.now()}-${index}-${entry.name}`,
+    type: "image",
+    url: deps.getPublicUrl(entry.path).publicUrl,
+    storagePath: entry.path,
+    order: baseRecap.media.length + index,
+    isCover: false,
+  }));
+
+  const next = addMediaItems(baseRecap, newItems);
+
+  let saved: EventRecap | undefined;
+  try {
+    saved = await deps.saveRecap(slug, {
+      ...baseRecap,
+      media: next.media,
+      coverImage: next.coverImage,
+    });
+  } catch (error) {
+    console.error("[finalizeRecapMediaUploadResult] saveRecap threw", error);
+    const cleanedUp = await cleanupPaths(deps, safePaths);
+    return {
+      ok: false,
+      code: "save_failed",
+      reason: error instanceof Error ? error.message : "save failed",
+      cleanedUp,
+    };
+  }
+  if (!saved) {
+    const cleanedUp = await cleanupPaths(deps, safePaths);
+    return {
+      ok: false,
+      code: "save_failed",
+      reason: `updateRecap returned undefined for slug ${slug}`,
+      cleanedUp,
+    };
+  }
+
+  return { ok: true, media: next.media, recap: saved };
+}
+
+export type FinalizeActionInput = {
+  slug: string;
+  recapPayload?: string;
+  uploaded?: string;
+};
+
+function buildFinalizeDeps(): FinalizeDependencies {
+  const admin = createAdminClient().storage.from(RECAP_MEDIA_BUCKET);
+  return {
+    loadRecap: getRecapAdmin,
+    saveRecap: updateRecap,
+    now: () => Date.now(),
+    getPublicUrl: (path) => admin.getPublicUrl(path).data,
+    listRecapObjects: async (_slug, prefix) => {
+      const { data, error } = await admin.list(prefix, { limit: 1000 });
+      if (error) {
+        throw new Error(error.message);
+      }
+      return (data ?? []).map((obj) => ({
+        name: obj.name,
+        id: obj.id,
+        metadata: obj.metadata
+          ? { size: obj.metadata.size, mimetype: obj.metadata.mimetype }
+          : null,
+      }));
+    },
+    removeRecapObjects: async (paths) => {
+      const { error } = await admin.remove(paths);
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+  };
+}
+
+export async function finalizeRecapMediaUploadAction(formData: FormData) {
   await requireAdmin();
   const slug = formText(formData, "slug");
-  try {
-    const recap = await getRecapAdmin(slug);
-    if (!recap) redirect("/admin/recaps");
+  const recapPayloadRaw = formText(formData, "recapPayload");
+  const uploadedRaw = formText(formData, "uploaded");
+  const deps = buildFinalizeDeps();
 
-    const files = formData.getAll("mediaFiles").filter(isUploadFile).filter((file) => file.size > 0);
-    if (files.length === 0) redirect(`/admin/recaps/${slug}/edit?mediaError=missing`);
-    if (files.some((file) => !RECAP_MEDIA_TYPES.has(file.type) || file.size > RECAP_MEDIA_MAX_BYTES)) {
-      redirect(`/admin/recaps/${slug}/edit?mediaError=invalid`);
-    }
-
-    const workingRecap = applyDraftPayloadFallback(recap, formData);
-    const bucket = createAdminClient().storage.from(RECAP_MEDIA_BUCKET);
-    const uploaded: EventRecap["media"] = [];
-
-    for (const file of files) {
-      const path = safeRecapMediaPath(slug, file.name);
-      const { error } = await bucket.upload(path, file, {
-        cacheControl: "3600",
-        contentType: file.type,
-        upsert: false,
-      });
-      if (error) {
-        console.error("[uploadRecapMediaAction] storage.upload failed", { path, message: error.message });
-        redirect(`/admin/recaps/${slug}/edit?mediaError=upload`);
-      }
-      const { data } = bucket.getPublicUrl(path);
-      uploaded.push({
-        id: `${Date.now()}-${uploaded.length}`,
-        type: "image",
-        url: data.publicUrl,
-        storagePath: path,
-        order: workingRecap.media.length + uploaded.length,
-        isCover: false,
-      });
-    }
-
-    const next = addMediaItems(workingRecap, uploaded);
-    let savedRecap: EventRecap | undefined;
+  let recapPayload: EventRecap | undefined;
+  if (recapPayloadRaw) {
     try {
-      savedRecap = await updateRecap(slug, {
-        ...workingRecap,
-        media: next.media,
-        coverImage: next.coverImage,
-      });
-    } catch (dbError) {
-      console.error("[uploadRecapMediaAction] updateRecap threw", dbError);
-      redirect(`/admin/recaps/${slug}/edit?mediaError=db`);
+      const parsed: unknown = JSON.parse(recapPayloadRaw);
+      recapPayload = isRecapPayload(parsed) ? parsed : undefined;
+    } catch {
+      recapPayload = undefined;
     }
-    if (!savedRecap) {
-      console.error("[uploadRecapMediaAction] updateRecap returned undefined for slug", { slug });
-      redirect(`/admin/recaps/${slug}/edit?mediaError=db`);
-    }
-    refreshRecapPaths(slug);
-    redirect(`/admin/recaps/${slug}/edit?saved=1`);
-  } catch (error) {
-    if (isNextRedirectError(error)) throw error;
-    console.error("[uploadRecapMediaAction] uncaught", error);
-    redirect(`/admin/recaps/${slug}/edit?mediaError=upload`);
   }
+
+  let uploaded: FinalizeEntry[] = [];
+  if (uploadedRaw) {
+    try {
+      const parsed: unknown = JSON.parse(uploadedRaw);
+      const result = parseFinalizeEntries(parsed);
+      if (result.ok) uploaded = result.entries;
+    } catch {
+      // Malformed JSON; treat as empty upload list.
+    }
+  }
+
+  const result = await finalizeRecapMediaUploadResult(deps, {
+    slug,
+    ...(recapPayload ? { recapPayload } : {}),
+    uploaded,
+  });
+
+  if (!result.ok) {
+    redirect(`/admin/recaps/${slug}/edit?mediaError=${result.code}`);
+  }
+  refreshRecapPaths(slug);
+  redirect(`/admin/recaps/${slug}/edit?saved=1`);
+}
+
+export type AbortDependencies = {
+  removeRecapObjects(paths: string[]): Promise<unknown>;
+};
+
+export type AbortInput = {
+  slug: string;
+  paths: string[];
+};
+
+export type AbortResult = {
+  ok: true;
+  removed: string[];
+  skipped: string[];
+};
+
+export async function abortRecapMediaUploadResult(
+  deps: AbortDependencies,
+  input: AbortInput,
+): Promise<AbortResult> {
+  const safe: string[] = [];
+  const skipped: string[] = [];
+  for (const path of input.paths) {
+    const result = validateRecapPath(path, input.slug);
+    if (!result.ok) {
+      skipped.push(path);
+      continue;
+    }
+    safe.push(path);
+  }
+  if (safe.length === 0) {
+    return { ok: true, removed: [], skipped };
+  }
+  let removed: string[] = [];
+  try {
+    await deps.removeRecapObjects(safe);
+    removed = safe;
+  } catch (error) {
+    console.error("[abortRecapMediaUploadResult] remove failed", { safe, error });
+  }
+  const attempted = new Set(safe);
+  return {
+    ok: true,
+    removed,
+    skipped: [...skipped, ...input.paths.filter((p) => attempted.has(p) && !removed.includes(p))],
+  };
+}
+
+export type AbortActionInput = AbortInput | { formData: FormData };
+
+function readAbortInput(input: AbortActionInput): AbortInput {
+  if ("formData" in input) {
+    const formData = input.formData;
+    const slug = formText(formData, "slug");
+    const raw = formText(formData, "paths");
+    let paths: string[] = [];
+    if (raw) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          paths = parsed.filter((p): p is string => typeof p === "string");
+        }
+      } catch {
+        // Best-effort: leave paths empty.
+      }
+    }
+    return { slug, paths };
+  }
+  return input;
+}
+
+export async function abortRecapMediaUploadAction(
+  input: AbortActionInput,
+): Promise<AbortResult> {
+  await requireAdmin();
+  const normalized = readAbortInput(input);
+  const admin = createAdminClient().storage.from(RECAP_MEDIA_BUCKET);
+  const deps: AbortDependencies = {
+    removeRecapObjects: async (paths) => {
+      const { error } = await admin.remove(paths);
+      if (error) throw new Error(error.message);
+    },
+  };
+  return abortRecapMediaUploadResult(deps, normalized);
 }
 
 export async function deleteRecapMediaAction(formData: FormData) {

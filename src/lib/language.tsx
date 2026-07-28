@@ -16,13 +16,21 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function getInitialLang(): Lang {
   if (typeof document === "undefined") return "en";
-  const cookie = document.cookie.split("; ").find((r) => r.startsWith("lang="));
-  if (cookie) return cookie.split("=")[1] as Lang;
-  return "en";
+
+  const cookie = document.cookie.split("; ").find((value) => value.startsWith("lang="));
+  const value = cookie?.split("=")[1];
+
+  return value === "zh" ? "zh" : "en";
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(getInitialLang);
+export function LanguageProvider({
+  children,
+  initialLang,
+}: {
+  children: ReactNode;
+  initialLang?: Lang;
+}) {
+  const [lang, setLangState] = useState<Lang>(() => initialLang ?? getInitialLang());
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

@@ -1,0 +1,186 @@
+uid=7_0 RootWebArea "SnowForce - Community Snow Sports" url="http://localhost:3001/merchant"
+  uid=7_1 ignored
+    uid=7_2 ignored
+      uid=7_3 banner
+        uid=7_4 navigation
+          uid=7_5 ignored
+            uid=7_6 link "SnowForce SnowForce" url="http://localhost:3001/"
+              uid=7_7 image "SnowForce" url="http://localhost:3001/logo.jpg"
+              uid=7_8 ignored
+                uid=7_9 StaticText "SnowForce"
+                  uid=7_10 InlineTextBox "SnowForce"
+            uid=7_11 ignored
+              uid=7_12 link "Events" url="http://localhost:3001/events"
+                uid=7_13 StaticText "Events"
+                  uid=7_10 InlineTextBox "Events"
+              uid=7_14 link "Recaps" url="http://localhost:3001/recaps"
+                uid=7_15 StaticText "Recaps"
+                  uid=7_10 InlineTextBox "Recaps"
+              uid=7_16 link "FAQ" url="http://localhost:3001/faq"
+                uid=7_17 StaticText "FAQ"
+                  uid=7_10 InlineTextBox "FAQ"
+              uid=7_18 link "About" url="http://localhost:3001/about"
+                uid=7_19 StaticText "About"
+                  uid=7_10 InlineTextBox "About"
+              uid=7_20 link "Partner" url="http://localhost:3001/partner"
+                uid=7_21 StaticText "Partner"
+                  uid=7_10 InlineTextBox "Partner"
+            uid=7_22 ignored
+              uid=7_23 ignored
+                uid=7_24 button "CN"
+                  uid=7_25 StaticText "CN"
+                    uid=7_10 InlineTextBox "CN"
+                uid=7_26 button "EN"
+                  uid=7_27 StaticText "EN"
+                    uid=7_10 InlineTextBox "EN"
+              uid=7_28 link "Member" url="http://localhost:3001/member"
+                uid=7_29 StaticText "Member"
+                  uid=7_10 InlineTextBox "Member"
+      uid=7_30 main
+        uid=7_31 main
+          uid=7_32 ignored
+            uid=7_33 generic
+              uid=7_34 paragraph
+                uid=7_35 StaticText "SNOWFORCE MERCHANT"
+                  uid=7_10 InlineTextBox "SNOWFORCE MERCHANT"
+              uid=7_36 heading "Make the mountain community your next storefront." level="1"
+                uid=7_37 StaticText "Make the mountain community your next storefront."
+                  uid=7_10 InlineTextBox "Make the mountain "
+                  uid=7_10 InlineTextBox "community your next "
+                  uid=7_10 InlineTextBox "storefront."
+              uid=7_38 paragraph
+                uid=7_39 StaticText "Apply to bring your business to eligible SnowForce events. Booths are reviewed and payment is coordinated offline."
+                  uid=7_10 InlineTextBox "Apply to bring your business to eligible SnowForce events. Booths are "
+                  uid=7_10 InlineTextBox "reviewed and payment is coordinated offline."
+              uid=7_40 link "Explore events" url="http://localhost:3001/events"
+                uid=7_41 StaticText "Explore events"
+                  uid=7_10 InlineTextBox "Explore events"
+            uid=7_42 region "Manage your booth applications"
+              uid=7_43 paragraph
+                uid=7_44 StaticText "MERCHANT ACCESS"
+                  uid=7_10 InlineTextBox "MERCHANT ACCESS"
+              uid=7_45 heading "Manage your booth applications" level="2"
+                uid=7_46 StaticText "Manage your booth applications"
+                  uid=7_10 InlineTextBox "Manage your booth "
+                  uid=7_10 InlineTextBox "applications"
+              uid=7_47 form
+                uid=7_48 ignored
+                  uid=7_49 LabelText
+                    uid=7_50 StaticText "Email"
+                      uid=7_10 InlineTextBox "Email"
+                  uid=7_51 textbox "Email" required
+                    uid=7_52 generic
+                uid=7_53 ignored
+                  uid=7_54 LabelText
+                    uid=7_55 StaticText "Password"
+                      uid=7_10 InlineTextBox "Password"
+                  uid=7_56 textbox "Password" required
+                    uid=7_57 generic
+                uid=7_58 ignored
+                  uid=7_59 checkbox "Keep me signed in"
+                  uid=7_60 ignored
+                uid=7_61 button "Sign in"
+                  uid=7_62 StaticText "Sign in"
+                    uid=7_10 InlineTextBox "Sign in"
+              uid=7_63 form
+                uid=7_64 button "Continue with Google"
+                  uid=7_65 StaticText "Continue with Google"
+                    uid=7_10 InlineTextBox "Continue with Google"
+              uid=7_66 ignored
+                uid=7_67 button "New business? Create an account"
+                  uid=7_68 StaticText "New business? Create an account"
+                    uid=7_10 InlineTextBox "New business? Create an account"
+                uid=7_69 button "Use a magic link"
+                  uid=7_70 StaticText "Use a magic link"
+                    uid=7_10 InlineTextBox "Use a magic link"
+                uid=7_71 button "Forgot password?"
+                  uid=7_72 StaticText "Forgot password?"
+                    uid=7_10 InlineTextBox "Forgot password?"
+              uid=7_73 form
+                uid=7_74 LabelText
+                  uid=7_75 StaticText "Email for verification"
+                    uid=7_10 InlineTextBox "Email for verification"
+                uid=7_76 textbox "Email for verification" required
+                  uid=7_77 ignored
+                  uid=7_78 generic
+                uid=7_79 button "Resend"
+                  uid=7_80 StaticText "Resend"
+                    uid=7_10 InlineTextBox "Resend"
+      uid=7_81 contentinfo
+        uid=7_82 ignored
+          uid=7_83 paragraph
+            uid=7_84 StaticText "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with activities in other regions too."
+              uid=7_10 InlineTextBox "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with "
+              uid=7_10 InlineTextBox "activities in other regions too."
+          uid=7_85 ignored
+            uid=7_86 ignored
+              uid=7_87 heading "SnowForce" level="3"
+                uid=7_88 StaticText "SnowForce"
+                  uid=7_10 InlineTextBox "SnowForce"
+              uid=7_89 list
+                uid=7_90 listitem level="1"
+                  uid=7_91 link "Events" url="http://localhost:3001/events"
+                    uid=7_92 StaticText "Events"
+                      uid=7_10 InlineTextBox "Events"
+                uid=7_93 listitem level="1"
+                  uid=7_94 link "Recaps" url="http://localhost:3001/recaps"
+                    uid=7_95 StaticText "Recaps"
+                      uid=7_10 InlineTextBox "Recaps"
+                uid=7_96 listitem level="1"
+                  uid=7_97 link "FAQ" url="http://localhost:3001/faq"
+                    uid=7_98 StaticText "FAQ"
+                      uid=7_10 InlineTextBox "FAQ"
+                uid=7_99 listitem level="1"
+                  uid=7_100 link "Refund Policy" url="http://localhost:3001/refund-policy"
+                    uid=7_101 StaticText "Refund Policy"
+                      uid=7_10 InlineTextBox "Refund Policy"
+            uid=7_102 ignored
+              uid=7_103 heading "Community" level="3"
+                uid=7_104 StaticText "Community"
+                  uid=7_10 InlineTextBox "Community"
+              uid=7_105 list
+                uid=7_106 listitem level="1"
+                  uid=7_107 link "About Us" url="http://localhost:3001/about"
+                    uid=7_108 StaticText "About Us"
+                      uid=7_10 InlineTextBox "About Us"
+                uid=7_109 listitem level="1"
+                  uid=7_110 link "Member Area" url="http://localhost:3001/member"
+                    uid=7_111 StaticText "Member Area"
+                      uid=7_10 InlineTextBox "Member Area"
+                uid=7_112 listitem level="1"
+                  uid=7_113 link "Partner With Us" url="http://localhost:3001/partner"
+                    uid=7_114 StaticText "Partner With Us"
+                      uid=7_10 InlineTextBox "Partner With Us"
+            uid=7_115 ignored
+              uid=7_116 heading "Contact" level="3"
+                uid=7_117 StaticText "Contact"
+                  uid=7_10 InlineTextBox "Contact"
+              uid=7_118 list
+                uid=7_119 listitem level="1"
+                  uid=7_120 StaticText "snowforceclub@gmail.com"
+                    uid=7_10 InlineTextBox "snowforceclub@gmail.com"
+                uid=7_121 listitem level="1"
+                  uid=7_122 StaticText "WeChat: SnowForceClub"
+                    uid=7_10 InlineTextBox "WeChat: SnowForceClub"
+            uid=7_123 ignored
+              uid=7_124 heading "Language" level="3"
+                uid=7_125 StaticText "Language"
+                  uid=7_10 InlineTextBox "Language"
+              uid=7_126 list
+                uid=7_127 listitem level="1"
+                  uid=7_128 StaticText "中文"
+                    uid=7_10 InlineTextBox "中文"
+                uid=7_129 listitem level="1"
+                  uid=7_130 StaticText "English"
+                    uid=7_10 InlineTextBox "English"
+          uid=7_131 generic
+            uid=7_132 StaticText "© "
+              uid=7_10 InlineTextBox "© "
+            uid=7_133 StaticText "2026"
+              uid=7_10 InlineTextBox "2026"
+            uid=7_134 StaticText " SnowForce. "
+              uid=7_10 InlineTextBox " SnowForce. "
+            uid=7_135 StaticText "All rights reserved."
+              uid=7_10 InlineTextBox "All rights reserved."
+      uid=7_136 generic
+        uid=7_137 alert atomic live="assertive" relevant="additions text"

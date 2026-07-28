@@ -155,7 +155,7 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
     return {
       tone: "error",
       text: {
-        en: "This verification link has expired or was already used. If you are verifying a new account, use the form below to resend the verification email. Otherwise, sign in or request a new sign-in link.",
+        en: "This verification link is invalid or has already been used. Return to the sign-in page and try again.",
         zh: "此验证链接已失效或已被使用。如果你正在验证新账户，请使用下方表单重新发送验证邮件。否则，请登录或请求新的登录链接。",
       },
     };

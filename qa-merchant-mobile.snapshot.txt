@@ -1,0 +1,163 @@
+uid=9_0 RootWebArea "SnowForce - Community Snow Sports" url="http://localhost:3001/merchant"
+  uid=9_1 ignored
+    uid=9_2 ignored
+      uid=9_3 banner
+        uid=9_4 navigation
+          uid=9_5 ignored
+            uid=9_6 link "SnowForce SnowForce" url="http://localhost:3001/"
+              uid=9_7 image "SnowForce" url="http://localhost:3001/logo.jpg"
+              uid=9_8 ignored
+                uid=9_9 StaticText "SnowForce"
+                  uid=9_10 InlineTextBox "SnowForce"
+            uid=9_11 ignored
+              uid=9_12 button "Open menu"
+                uid=9_13 image
+      uid=9_14 main
+        uid=9_15 main
+          uid=9_16 ignored
+            uid=9_17 generic
+              uid=9_18 paragraph
+                uid=9_19 StaticText "SNOWFORCE MERCHANT"
+                  uid=9_10 InlineTextBox "SNOWFORCE MERCHANT"
+              uid=9_20 heading "Make the mountain community your next storefront." level="1"
+                uid=9_21 StaticText "Make the mountain community your next storefront."
+                  uid=9_10 InlineTextBox "Make the mountain "
+                  uid=9_10 InlineTextBox "community your next "
+                  uid=9_10 InlineTextBox "storefront."
+              uid=9_22 paragraph
+                uid=9_23 StaticText "Apply to bring your business to eligible SnowForce events. Booths are reviewed and payment is coordinated offline."
+                  uid=9_10 InlineTextBox "Apply to bring your business to eligible SnowForce "
+                  uid=9_10 InlineTextBox "events. Booths are reviewed and payment is "
+                  uid=9_10 InlineTextBox "coordinated offline."
+              uid=9_24 link "Explore events" url="http://localhost:3001/events"
+                uid=9_25 StaticText "Explore events"
+                  uid=9_10 InlineTextBox "Explore events"
+            uid=9_26 region "Manage your booth applications"
+              uid=9_27 paragraph
+                uid=9_28 StaticText "MERCHANT ACCESS"
+                  uid=9_10 InlineTextBox "MERCHANT ACCESS"
+              uid=9_29 heading "Manage your booth applications" level="2"
+                uid=9_30 StaticText "Manage your booth applications"
+                  uid=9_10 InlineTextBox "Manage your booth applications"
+              uid=9_31 form
+                uid=9_32 ignored
+                  uid=9_33 LabelText
+                    uid=9_34 StaticText "Email"
+                      uid=9_10 InlineTextBox "Email"
+                  uid=9_35 textbox "Email" required
+                    uid=9_36 generic
+                uid=9_37 ignored
+                  uid=9_38 LabelText
+                    uid=9_39 StaticText "Password"
+                      uid=9_10 InlineTextBox "Password"
+                  uid=9_40 textbox "Password" required
+                    uid=9_41 generic
+                uid=9_42 ignored
+                  uid=9_43 checkbox "Keep me signed in"
+                  uid=9_44 ignored
+                uid=9_45 button "Sign in"
+                  uid=9_46 StaticText "Sign in"
+                    uid=9_10 InlineTextBox "Sign in"
+              uid=9_47 form
+                uid=9_48 button "Continue with Google"
+                  uid=9_49 StaticText "Continue with Google"
+                    uid=9_10 InlineTextBox "Continue with Google"
+              uid=9_50 ignored
+                uid=9_51 button "New business? Create an account"
+                  uid=9_52 StaticText "New business? Create an account"
+                    uid=9_10 InlineTextBox "New business? Create an account"
+                uid=9_53 button "Use a magic link"
+                  uid=9_54 StaticText "Use a magic link"
+                    uid=9_10 InlineTextBox "Use a magic link"
+                uid=9_55 button "Forgot password?"
+                  uid=9_56 StaticText "Forgot password?"
+                    uid=9_10 InlineTextBox "Forgot password?"
+              uid=9_57 form
+                uid=9_58 LabelText
+                  uid=9_59 StaticText "Email for verification"
+                    uid=9_10 InlineTextBox "Email for verification"
+                uid=9_60 textbox "Email for verification" required
+                  uid=9_61 ignored
+                  uid=9_62 generic
+                uid=9_63 button "Resend"
+                  uid=9_64 StaticText "Resend"
+                    uid=9_10 InlineTextBox "Resend"
+      uid=9_65 contentinfo
+        uid=9_66 ignored
+          uid=9_67 paragraph
+            uid=9_68 StaticText "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with activities in other regions too."
+              uid=9_10 InlineTextBox "SnowForce is a community snow sports platform for events, training, and "
+              uid=9_10 InlineTextBox "mountain days. We are based mainly in the United States, with activities in other "
+              uid=9_10 InlineTextBox "regions too."
+          uid=9_69 ignored
+            uid=9_70 ignored
+              uid=9_71 heading "SnowForce" level="3"
+                uid=9_72 StaticText "SnowForce"
+                  uid=9_10 InlineTextBox "SnowForce"
+              uid=9_73 list
+                uid=9_74 listitem level="1"
+                  uid=9_75 link "Events" url="http://localhost:3001/events"
+                    uid=9_76 StaticText "Events"
+                      uid=9_10 InlineTextBox "Events"
+                uid=9_77 listitem level="1"
+                  uid=9_78 link "Recaps" url="http://localhost:3001/recaps"
+                    uid=9_79 StaticText "Recaps"
+                      uid=9_10 InlineTextBox "Recaps"
+                uid=9_80 listitem level="1"
+                  uid=9_81 link "FAQ" url="http://localhost:3001/faq"
+                    uid=9_82 StaticText "FAQ"
+                      uid=9_10 InlineTextBox "FAQ"
+                uid=9_83 listitem level="1"
+                  uid=9_84 link "Refund Policy" url="http://localhost:3001/refund-policy"
+                    uid=9_85 StaticText "Refund Policy"
+                      uid=9_10 InlineTextBox "Refund Policy"
+            uid=9_86 ignored
+              uid=9_87 heading "Community" level="3"
+                uid=9_88 StaticText "Community"
+                  uid=9_10 InlineTextBox "Community"
+              uid=9_89 list
+                uid=9_90 listitem level="1"
+                  uid=9_91 link "About Us" url="http://localhost:3001/about"
+                    uid=9_92 StaticText "About Us"
+                      uid=9_10 InlineTextBox "About Us"
+                uid=9_93 listitem level="1"
+                  uid=9_94 link "Member Area" url="http://localhost:3001/member"
+                    uid=9_95 StaticText "Member Area"
+                      uid=9_10 InlineTextBox "Member Area"
+                uid=9_96 listitem level="1"
+                  uid=9_97 link "Partner With Us" url="http://localhost:3001/partner"
+                    uid=9_98 StaticText "Partner With Us"
+                      uid=9_10 InlineTextBox "Partner With Us"
+            uid=9_99 ignored
+              uid=9_100 heading "Contact" level="3"
+                uid=9_101 StaticText "Contact"
+                  uid=9_10 InlineTextBox "Contact"
+              uid=9_102 list
+                uid=9_103 listitem level="1"
+                  uid=9_104 StaticText "snowforceclub@gmail.com"
+                    uid=9_10 InlineTextBox "snowforceclub@gmail.com"
+                uid=9_105 listitem level="1"
+                  uid=9_106 StaticText "WeChat: SnowForceClub"
+                    uid=9_10 InlineTextBox "WeChat: SnowForceClub"
+            uid=9_107 ignored
+              uid=9_108 heading "Language" level="3"
+                uid=9_109 StaticText "Language"
+                  uid=9_10 InlineTextBox "Language"
+              uid=9_110 list
+                uid=9_111 listitem level="1"
+                  uid=9_112 StaticText "中文"
+                    uid=9_10 InlineTextBox "中文"
+                uid=9_113 listitem level="1"
+                  uid=9_114 StaticText "English"
+                    uid=9_10 InlineTextBox "English"
+          uid=9_115 generic
+            uid=9_116 StaticText "© "
+              uid=9_10 InlineTextBox "© "
+            uid=9_117 StaticText "2026"
+              uid=9_10 InlineTextBox "2026"
+            uid=9_118 StaticText " SnowForce. "
+              uid=9_10 InlineTextBox " SnowForce. "
+            uid=9_119 StaticText "All rights reserved."
+              uid=9_10 InlineTextBox "All rights reserved."
+      uid=9_120 generic
+        uid=9_121 alert atomic live="assertive" relevant="additions text"

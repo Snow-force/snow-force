@@ -7,8 +7,7 @@ export type MemberAuthStatusCode =
   | "passwordReset"
   | "register"
   | "registered"
-  | "resetSession"
-  | "verificationSent";
+  | "resetSession";
 
 export type MemberAuthStatusMessage = {
   tone: "error" | "success" | "info";
@@ -49,13 +48,6 @@ export function authStatusMessage(code: MemberAuthStatusCode): MemberAuthStatusM
       tone: "success",
       title: "Verify your email",
       body: "We sent a confirmation link. Verify your email before registering for member-linked trips.",
-    };
-  }
-  if (code === "verificationSent") {
-    return {
-      tone: "success",
-      title: "Verification email sent",
-      body: "If this email belongs to a SnowForce account, a new verification link has been sent.",
     };
   }
   if (code === "passwordReset") {

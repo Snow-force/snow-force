@@ -198,6 +198,10 @@ export const adminCopy = {
     },
     selectPhotos: { en: "Select photos", zh: "选择照片" },
     uploadSelectedPhotos: { en: "Upload selected photos", zh: "上传所选照片" },
+    signingMedia: { en: "Requesting upload links…", zh: "正在请求上传链接…" },
+    uploadingMedia: { en: "Uploading {done}/{total}…", zh: "正在上传 {done}/{total}…" },
+    finalizingMedia: { en: "Finalizing upload…", zh: "正在完成上传…" },
+    uploadFailed: { en: "Upload failed: {reason}", zh: "上传失败：{reason}" },
     noPhotos: {
       en: "No photos yet. Upload photos to build the recap wall.",
       zh: "暂无照片。上传照片后即可生成回顾照片墙。",

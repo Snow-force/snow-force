@@ -1,0 +1,129 @@
+uid=8_0 RootWebArea "SnowForce - Community Snow Sports" url="http://localhost:3001/events"
+  uid=8_1 ignored
+    uid=8_2 ignored
+      uid=8_3 banner
+        uid=8_4 navigation
+          uid=8_5 ignored
+            uid=8_6 link "SnowForce SnowForce" url="http://localhost:3001/"
+              uid=8_7 image "SnowForce" url="http://localhost:3001/logo.jpg"
+              uid=8_8 ignored
+                uid=8_9 StaticText "SnowForce"
+                  uid=8_10 InlineTextBox "SnowForce"
+            uid=8_11 ignored
+              uid=8_12 link "Events" url="http://localhost:3001/events"
+                uid=8_13 StaticText "Events"
+                  uid=8_10 InlineTextBox "Events"
+              uid=8_14 link "Recaps" url="http://localhost:3001/recaps"
+                uid=8_15 StaticText "Recaps"
+                  uid=8_10 InlineTextBox "Recaps"
+              uid=8_16 link "FAQ" url="http://localhost:3001/faq"
+                uid=8_17 StaticText "FAQ"
+                  uid=8_10 InlineTextBox "FAQ"
+              uid=8_18 link "About" url="http://localhost:3001/about"
+                uid=8_19 StaticText "About"
+                  uid=8_10 InlineTextBox "About"
+              uid=8_20 link "Partner" url="http://localhost:3001/partner"
+                uid=8_21 StaticText "Partner"
+                  uid=8_10 InlineTextBox "Partner"
+            uid=8_22 ignored
+              uid=8_23 ignored
+                uid=8_24 button "CN"
+                  uid=8_25 StaticText "CN"
+                    uid=8_10 InlineTextBox "CN"
+                uid=8_26 button "EN"
+                  uid=8_27 StaticText "EN"
+                    uid=8_10 InlineTextBox "EN"
+              uid=8_28 link "Member" url="http://localhost:3001/member"
+                uid=8_29 StaticText "Member"
+                  uid=8_10 InlineTextBox "Member"
+      uid=8_30 main
+        uid=8_31 ignored
+          uid=8_32 ignored
+            uid=8_33 ignored
+              uid=8_34 heading "Current Events" level="1"
+                uid=8_35 StaticText "Current Events"
+                  uid=8_10 InlineTextBox "Current Events"
+              uid=8_36 paragraph
+                uid=8_37 StaticText "Discover and register for upcoming SnowForce events."
+                  uid=8_10 InlineTextBox "Discover and register for upcoming SnowForce events."
+            uid=8_38 generic
+              uid=8_39 StaticText "Event data is not ready yet. Check the Supabase event setup."
+                uid=8_10 InlineTextBox "Event data is not ready yet. Check the Supabase event setup."
+      uid=8_40 contentinfo
+        uid=8_41 ignored
+          uid=8_42 paragraph
+            uid=8_43 StaticText "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with activities in other regions too."
+              uid=8_10 InlineTextBox "SnowForce is a community snow sports platform for events, training, and mountain days. We are based mainly in the United States, with "
+              uid=8_10 InlineTextBox "activities in other regions too."
+          uid=8_44 ignored
+            uid=8_45 ignored
+              uid=8_46 heading "SnowForce" level="3"
+                uid=8_47 StaticText "SnowForce"
+                  uid=8_10 InlineTextBox "SnowForce"
+              uid=8_48 list
+                uid=8_49 listitem level="1"
+                  uid=8_50 link "Events" url="http://localhost:3001/events"
+                    uid=8_51 StaticText "Events"
+                      uid=8_10 InlineTextBox "Events"
+                uid=8_52 listitem level="1"
+                  uid=8_53 link "Recaps" url="http://localhost:3001/recaps"
+                    uid=8_54 StaticText "Recaps"
+                      uid=8_10 InlineTextBox "Recaps"
+                uid=8_55 listitem level="1"
+                  uid=8_56 link "FAQ" url="http://localhost:3001/faq"
+                    uid=8_57 StaticText "FAQ"
+                      uid=8_10 InlineTextBox "FAQ"
+                uid=8_58 listitem level="1"
+                  uid=8_59 link "Refund Policy" url="http://localhost:3001/refund-policy"
+                    uid=8_60 StaticText "Refund Policy"
+                      uid=8_10 InlineTextBox "Refund Policy"
+            uid=8_61 ignored
+              uid=8_62 heading "Community" level="3"
+                uid=8_63 StaticText "Community"
+                  uid=8_10 InlineTextBox "Community"
+              uid=8_64 list
+                uid=8_65 listitem level="1"
+                  uid=8_66 link "About Us" url="http://localhost:3001/about"
+                    uid=8_67 StaticText "About Us"
+                      uid=8_10 InlineTextBox "About Us"
+                uid=8_68 listitem level="1"
+                  uid=8_69 link "Member Area" url="http://localhost:3001/member"
+                    uid=8_70 StaticText "Member Area"
+                      uid=8_10 InlineTextBox "Member Area"
+                uid=8_71 listitem level="1"
+                  uid=8_72 link "Partner With Us" url="http://localhost:3001/partner"
+                    uid=8_73 StaticText "Partner With Us"
+                      uid=8_10 InlineTextBox "Partner With Us"
+            uid=8_74 ignored
+              uid=8_75 heading "Contact" level="3"
+                uid=8_76 StaticText "Contact"
+                  uid=8_10 InlineTextBox "Contact"
+              uid=8_77 list
+                uid=8_78 listitem level="1"
+                  uid=8_79 StaticText "snowforceclub@gmail.com"
+                    uid=8_10 InlineTextBox "snowforceclub@gmail.com"
+                uid=8_80 listitem level="1"
+                  uid=8_81 StaticText "WeChat: SnowForceClub"
+                    uid=8_10 InlineTextBox "WeChat: SnowForceClub"
+            uid=8_82 ignored
+              uid=8_83 heading "Language" level="3"
+                uid=8_84 StaticText "Language"
+                  uid=8_10 InlineTextBox "Language"
+              uid=8_85 list
+                uid=8_86 listitem level="1"
+                  uid=8_87 StaticText "中文"
+                    uid=8_10 InlineTextBox "中文"
+                uid=8_88 listitem level="1"
+                  uid=8_89 StaticText "English"
+                    uid=8_10 InlineTextBox "English"
+          uid=8_90 generic
+            uid=8_91 StaticText "© "
+              uid=8_10 InlineTextBox "© "
+            uid=8_92 StaticText "2026"
+              uid=8_10 InlineTextBox "2026"
+            uid=8_93 StaticText " SnowForce. "
+              uid=8_10 InlineTextBox " SnowForce. "
+            uid=8_94 StaticText "All rights reserved."
+              uid=8_10 InlineTextBox "All rights reserved."
+      uid=8_95 generic
+        uid=8_96 alert atomic live="assertive" relevant="additions text"

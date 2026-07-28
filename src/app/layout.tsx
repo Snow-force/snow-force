@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { LanguageProvider } from "@/lib/language";
+import { cookies } from "next/headers";
+import { LanguageProvider, type Lang } from "@/lib/language";
 import { Nav } from "@/components/site/nav";
 import { Footer } from "@/components/site/footer";
 import "./globals.css";
@@ -11,10 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieLang = cookies().get("lang")?.value;
+  const initialLang: Lang = cookieLang === "en" || cookieLang === "zh" ? cookieLang : "en";
+
   return (
-    <html lang="zh">
+    <html lang={initialLang}>
       <body className="flex min-h-screen flex-col">
-        <LanguageProvider>
+        <LanguageProvider initialLang={initialLang}>
           <Nav />
           <main className="flex-1">{children}</main>
           <Footer />

@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockResend = vi.hoisted(() => vi.fn());
 const mockSignUp = vi.hoisted(() => vi.fn());
+const mockVerifyOtp = vi.hoisted(() => vi.fn());
 const mockParseMemberEmail = vi.hoisted(() => vi.fn());
 const mockParseMemberEntry = vi.hoisted(() => vi.fn());
 const mockCreateClient = vi.hoisted(() =>
   vi.fn(() => ({
     auth: {
-      resend: mockResend,
       signUp: mockSignUp,
+      verifyOtp: mockVerifyOtp,
     },
   })),
 );
@@ -88,7 +88,7 @@ vi.mock("./supporting", () => ({
   upsertMemberEquipment: vi.fn(),
 }));
 
-import { registerMemberProfile, resendMemberVerification } from "./actions";
+import { confirmMemberEmail, registerMemberProfile } from "./actions";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -153,48 +153,26 @@ describe("registerMemberProfile", () => {
   });
 });
 
-describe("resendMemberVerification", () => {
-  it("S3-redirects-with-verification-email-when-email-parser-fails", async () => {
-    mockParseMemberEmail.mockReturnValueOnce({ success: false, error: "email" });
+describe("confirmMemberEmail", () => {
+  it("S1-confirms-a-token-only-after-the-confirmation-page-posts-it", async () => {
+    mockVerifyOtp.mockResolvedValueOnce({ error: null });
+    const formData = new FormData();
+    formData.set("tokenHash", "safe-token-hash");
+    formData.set("next", "/events/mammoth-weekend");
 
-    await expect(resendMemberVerification(new FormData())).rejects.toThrow(
-      "REDIRECT:/member?error=verification-email",
+    await expect(confirmMemberEmail(formData)).rejects.toThrow(
+      "REDIRECT:/events/mammoth-weekend",
     );
-    expect(mockResend).not.toHaveBeenCalled();
-  });
-
-  it("S3-redirects-with-verification-send-when-Supabase-resend-fails", async () => {
-    mockResend.mockResolvedValueOnce({ error: new Error("resend failed") });
-
-    await expect(resendMemberVerification(new FormData())).rejects.toThrow(
-      "REDIRECT:/member?error=verification-send",
-    );
-    expect(mockResend).toHaveBeenCalledWith({
-      type: "signup",
-      email: "rider@example.com",
-      options: {
-        emailRedirectTo: "https://snowforce.test/auth/callback?next=%2Fmember",
-      },
+    expect(mockVerifyOtp).toHaveBeenCalledWith({
+      token_hash: "safe-token-hash",
+      type: "email",
     });
   });
 
-  it.each([
-    ["status-429", { status: 429, code: "over_email_send_rate_limit" }],
-    ["email_rate_limit_exceeded", { code: "email_rate_limit_exceeded" }],
-  ])("S3-redirects-with-verification-rate-when-rate-limited-%s", async (_, errProps) => {
-    const rateLimitError = Object.assign(new Error("rate limited"), errProps);
-    mockResend.mockResolvedValueOnce({ error: rateLimitError });
-
-    await expect(resendMemberVerification(new FormData())).rejects.toThrow(
-      "REDIRECT:/member?error=verification-rate",
+  it("S1-rejects-a-missing-token-without-calling-Supabase", async () => {
+    await expect(confirmMemberEmail(new FormData())).rejects.toThrow(
+      "REDIRECT:/member?error=callback",
     );
-  });
-
-  it("S3-redirects-with-verificationSent-when-Supabase-resend-succeeds", async () => {
-    mockResend.mockResolvedValueOnce({ error: null });
-
-    await expect(resendMemberVerification(new FormData())).rejects.toThrow(
-      "REDIRECT:/member?verificationSent=1",
-    );
+    expect(mockVerifyOtp).not.toHaveBeenCalled();
   });
 });

@@ -9,7 +9,6 @@ import {
   requestMemberMagicLink,
   requestMemberPasswordReset,
 } from "@/lib/members/actions";
-import { MemberResendVerification } from "./member-resend-verification";
 import { MemberStatusMessage } from "./member-status-message";
 
 type AuthCardProps = {
@@ -83,9 +82,6 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
 
       <div className="mt-4">
         <MemberStatusMessage searchParams={searchParams} />
-        {searchParams.error === "callback" && (
-          <MemberResendVerification variant="prominent" />
-        )}
       </div>
 
       {forgotOpen ? (
@@ -195,10 +191,6 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
             Looking to set up a booth? Visit the&nbsp;<span className="font-semibold text-[#7dd3fc]">Merchant Portal</span>
           </Link>
         </div>
-      )}
-
-      {searchParams.error !== "callback" && (
-        <MemberResendVerification variant="compact" />
       )}
     </div>
   );
