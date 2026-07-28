@@ -94,6 +94,38 @@ describe("EventDetailView", () => {
     ).toHaveLength(0);
   });
 
+  it("uses the intro as the hero summary without repeating it in the detail sections", () => {
+    renderWithLanguage(
+      <EventDetailView
+        event={{
+          ...minimalEvent,
+          detailModules: [
+            {
+              id: "intro",
+              type: "intro",
+              displayMode: "rich_text",
+              title: { en: "Introduction", zh: "活动介绍" },
+              content: { en: "A concise day on the mountain.", zh: "轻松的一天雪山活动。" },
+              items: { en: [], zh: [] },
+            },
+            {
+              id: "itinerary",
+              type: "itinerary",
+              displayMode: "rich_text",
+              title: { en: "Itinerary", zh: "行程" },
+              content: { en: "Meet at 9:00 AM.", zh: "上午 9 点集合。" },
+              items: { en: [], zh: [] },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("A concise day on the mountain.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Introduction" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Itinerary" })).toBeInTheDocument();
+  });
+
   it("shows a bilingual merchant CTA only for a published event with an enabled booth program", () => {
     renderWithLanguage(
       <EventDetailView
