@@ -117,7 +117,7 @@ describe("registerMemberProfile", () => {
   });
 
   it("S2-signup-sends-confirmation-email-through-auth-callback", async () => {
-    mockSignUp.mockResolvedValueOnce({ error: null });
+    mockSignUp.mockResolvedValueOnce({ data: { user: { identities: [{}] } }, error: null });
 
     await expect(registerMemberProfile(new FormData())).rejects.toThrow(
       "REDIRECT:/member?registered=1",
@@ -137,6 +137,14 @@ describe("registerMemberProfile", () => {
 
     await expect(registerMemberProfile(new FormData())).rejects.toThrow(
       "REDIRECT:/member?mode=register&error=register_failed",
+    );
+  });
+
+  it("S2-existing-confirmed-account-opens-sign-in-instead-of-claiming-a-new-email-was-sent", async () => {
+    mockSignUp.mockResolvedValueOnce({ data: { user: { identities: [] } }, error: null });
+
+    await expect(registerMemberProfile(new FormData())).rejects.toThrow(
+      "REDIRECT:/member?mode=login&error=register_taken",
     );
   });
 

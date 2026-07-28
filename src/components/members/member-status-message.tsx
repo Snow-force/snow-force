@@ -122,7 +122,7 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
     return {
       tone: "error",
       text: {
-        en: "An account already exists for this email. Sign in or use a different email.",
+        en: "An account already exists for this email. Sign in, or use Forgot password to reset your password.",
         zh: "该邮箱已注册。请直接登录或使用其他邮箱。",
       },
     };

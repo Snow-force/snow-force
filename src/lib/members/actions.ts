@@ -125,7 +125,7 @@ export async function registerMemberProfile(formData: FormData) {
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: entry.email,
     password: entry.password,
     options: {
@@ -155,6 +155,10 @@ export async function registerMemberProfile(formData: FormData) {
           : "register_failed";
 
     redirect(`/member?mode=register&error=${code}`);
+  }
+
+  if (data.user?.identities?.length === 0) {
+    redirect("/member?mode=login&error=register_taken");
   }
 
   revalidatePath("/member");
