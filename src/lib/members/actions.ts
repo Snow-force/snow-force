@@ -421,6 +421,19 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
       (registration) => registration.memberId === profile.id,
     )
   ) {
+    const existingRegistration = existingRegistrations.find(
+      (registration) => registration.memberId === profile.id,
+    );
+    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName && existingRegistration) {
+      await createWaiverAcceptance({
+        registrationId: existingRegistration.id,
+        legalTextSnapshot: pending.waiverTextEn,
+        waiverTextSha: pending.waiverTextSha,
+        typedName: pending.typedName,
+        handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
+        acceptedAt: new Date().toISOString(),
+      });
+    }
     await deletePendingRegistration(pending.id);
     revalidatePath("/member");
     redirect("/member?registration=duplicate");
@@ -442,8 +455,9 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
       legalTextSnapshot: pending.waiverTextEn,
       waiverTextSha: pending.waiverTextSha,
       typedName: pending.typedName,
+      handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
       acceptedAt: new Date().toISOString(),
-    }).catch(() => {});
+    });
   }
 
   await deletePendingRegistration(pending.id);

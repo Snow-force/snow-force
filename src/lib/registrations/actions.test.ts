@@ -9,6 +9,7 @@ const mockCreateRegistration = vi.hoisted(() => vi.fn());
 const mockCreateOrRefreshPendingRegistration = vi.hoisted(() => vi.fn());
 const mockGetCurrentMemberAccount = vi.hoisted(() => vi.fn());
 const mockSendEmail = vi.hoisted(() => vi.fn());
+const mockGetActiveWaiverForEvent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/events/availability", () => ({
   hasRemainingCapacity: vi.fn(() => true),
@@ -64,7 +65,7 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("@/lib/registrations/waiver-repository", () => ({
-  getActiveWaiverForEvent: vi.fn(() => null),
+  getActiveWaiverForEvent: mockGetActiveWaiverForEvent,
 }));
 
 vi.mock("@/lib/registrations/waiver", () => ({
@@ -199,6 +200,7 @@ beforeEach(() => {
   });
   mockGetCurrentMemberAccount.mockResolvedValue(null);
   mockSendEmail.mockResolvedValue(undefined);
+  mockGetActiveWaiverForEvent.mockResolvedValue(null);
 });
 
 describe("registerForEvent member persistence", () => {
@@ -319,6 +321,36 @@ describe("registerForEvent member persistence", () => {
     });
     expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledTimes(1);
     expect(mockCreateRegistration).not.toHaveBeenCalled();
+  });
+
+  it("requires and persists a valid handwritten signature for waiver events", async () => {
+    mockGetCurrentMemberAccount.mockResolvedValue({
+      user: { id: "user-1", email: "rider@example.com" },
+      profile,
+      emailConfirmed: true,
+    });
+    mockGetEvent.mockResolvedValue({ ...openEvent, waiverTextEn: "Release terms" });
+    mockGetActiveWaiverForEvent.mockResolvedValue({ text: "Release terms", sha: "sha-release" });
+
+    const missing = await registerForEvent("mammoth-weekend", {
+      ...validInput(),
+      typedName: "Rider One",
+    });
+    expect(missing).toEqual({ success: false, error: "A handwritten signature is required" });
+
+    const signature = "data:image/png;base64,c2lnbmF0dXJl";
+    const result = await registerForEvent("mammoth-weekend", {
+      ...validInput(),
+      typedName: "Rider One",
+      handwrittenSignatureDataUrl: signature,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockCreateOrRefreshPendingRegistration).toHaveBeenLastCalledWith(expect.objectContaining({
+      typedName: "Rider One",
+      handwrittenSignatureDataUrl: signature,
+      waiverTextEn: "Release terms",
+    }));
   });
 
   it("rejects duplicate member registrations for the same event even when the previous row is cancelled", async () => {

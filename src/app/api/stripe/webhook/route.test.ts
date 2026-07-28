@@ -26,6 +26,11 @@ vi.mock("@/lib/registrations/repository", () => ({
   getRegistrationCountForEvent: mockGetRegistrationCountForEvent,
 }));
 
+const mockCreateWaiverAcceptance = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/registrations/waiver-repository", () => ({
+  createWaiverAcceptance: mockCreateWaiverAcceptance,
+}));
+
 const mockGetEvent = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/events/repository", () => ({
   getEvent: mockGetEvent,
@@ -188,7 +193,7 @@ describe("Stripe webhook route", () => {
     expect(mockCreateRegistration).not.toHaveBeenCalled();
   });
 
-  it("(b) returns 200 OK already processed and does NOT create a registration when event_id is already recorded (23505)", async () => {
+  it("(b) retries incomplete completed-checkout work when event_id is already recorded (23505)", async () => {
     const body = buildEventJson("evt_2", "checkout.session.completed", {
       amount_total: 10000,
       metadata: { pendingRegistrationId: "pending-1" },
@@ -206,9 +211,9 @@ describe("Stripe webhook route", () => {
     const response = await POST(buildRequest(body));
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toBe("OK already processed");
+    expect(await response.text()).toBe("OK");
     expect(mockCreateRegistration).not.toHaveBeenCalled();
-    expect(mockGetPendingRegistrationById).not.toHaveBeenCalled();
+    expect(mockGetPendingRegistrationById).toHaveBeenCalledWith("pending-1");
   });
 
   it("(c) creates a paid deposit registration, deletes pending, and returns 200", async () => {
@@ -251,9 +256,40 @@ describe("Stripe webhook route", () => {
     expect(callArg.finance.depositAmount).toBe(100);
     expect(callArg.finance.finalAmount).toBeNull();
     expect(callArg.finance.settlementStatus).toBe("not_started");
+    expect(mockCreateWaiverAcceptance).not.toHaveBeenCalled();
     expect(mockDeletePendingRegistration).toHaveBeenCalledWith("pending-1");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/member");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/events/mammoth-weekend");
+  });
+
+  it("(c2) stores the pending waiver snapshot with the paid registration", async () => {
+    const body = buildEventJson("evt_waiver", "checkout.session.completed", {
+      amount_total: 10000,
+      metadata: { pendingRegistrationId: "pending-1" },
+    });
+    mockVerifyStripeWebhookSignature.mockReturnValue({
+      id: "evt_waiver",
+      type: "checkout.session.completed",
+      data: { object: { amount_total: 10000, metadata: { pendingRegistrationId: "pending-1" } } },
+    } as unknown as Stripe.Event);
+    mockGetPendingRegistrationById.mockResolvedValue(buildPendingRegistration({
+      waiverTextEn: "Release terms",
+      waiverTextSha: "a".repeat(64),
+      typedName: "Rider",
+      handwrittenSignatureDataUrl: "data:image/png;base64,c2lnbmF0dXJl",
+    }));
+    mockGetEvent.mockResolvedValue(buildEvent());
+
+    const response = await POST(buildRequest(body));
+
+    expect(response.status).toBe(200);
+    expect(mockCreateWaiverAcceptance).toHaveBeenCalledWith(expect.objectContaining({
+      registrationId: "reg-1",
+      legalTextSnapshot: "Release terms",
+      typedName: "Rider",
+      handwrittenSignatureDataUrl: "data:image/png;base64,c2lnbmF0dXJl",
+    }));
+    expect(mockDeletePendingRegistration).toHaveBeenCalledWith("pending-1");
   });
 
   it("(d) stamps finalAmount=paidAmount and settlementStatus=settled for full_prepay events", async () => {
@@ -374,6 +410,7 @@ describe("Stripe webhook route", () => {
     mockGetEvent.mockResolvedValue(
       buildEvent({ paymentModel: "deposit", depositAmount: 100, depositCurrency: "usd" }),
     );
+    mockGetRegistrations.mockResolvedValueOnce([]).mockResolvedValueOnce([buildRegistration()]);
     mockCreateRegistration.mockImplementation(() => {
       throw new Error(
         'duplicate key value violates unique constraint "registrations_one_member_per_event"',

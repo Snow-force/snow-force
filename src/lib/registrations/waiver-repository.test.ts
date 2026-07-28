@@ -11,6 +11,7 @@ async function buildFakeAcceptance(overrides: Partial<WaiverAcceptance> = {}): P
     legalTextSnapshot: testWaiverText,
     waiverTextSha: await computeWaiverSha(testWaiverText),
     typedName: "Jane Rider",
+    handwrittenSignatureDataUrl: null,
     acceptedAt: "2026-07-01T12:00:00.000Z",
     createdAt: "2026-07-01T12:00:00.000Z",
     ...overrides,

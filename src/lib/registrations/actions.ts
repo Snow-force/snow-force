@@ -22,6 +22,7 @@ type RegisterInput = {
   waiverTextEn?: string;
   waiverTextSha?: string;
   typedName?: string;
+  handwrittenSignatureDataUrl?: string;
   couponCode?: string;
 };
 
@@ -40,6 +41,14 @@ function normalizeEmail(value: string) {
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidHandwrittenSignature(value: string | undefined) {
+  return Boolean(
+    value &&
+      value.length <= 1_000_000 &&
+      /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(value),
+  );
 }
 
 export async function registerForEvent(
@@ -75,10 +84,14 @@ export async function registerForEvent(
 
   let resolvedWaiverTextEn: string | undefined;
   let resolvedWaiverTextSha: string | undefined;
+  let resolvedHandwrittenSignatureDataUrl: string | undefined;
 
   if (event.waiverTextEn) {
     if (!input.typedName?.trim()) {
       return { success: false, error: "Electronic signature is required" };
+    }
+    if (!isValidHandwrittenSignature(input.handwrittenSignatureDataUrl)) {
+      return { success: false, error: "A handwritten signature is required" };
     }
     const activeWaiver = await getActiveWaiverForEvent(event.slug);
     if (!activeWaiver) {
@@ -87,6 +100,7 @@ export async function registerForEvent(
     const serverSha = await computeWaiverSha(activeWaiver.text);
     resolvedWaiverTextEn = activeWaiver.text;
     resolvedWaiverTextSha = serverSha;
+    resolvedHandwrittenSignatureDataUrl = input.handwrittenSignatureDataUrl;
   }
   const account = await getCurrentMemberAccount();
   const memberDecision = canSubmitMemberRegistration(
@@ -140,6 +154,7 @@ export async function registerForEvent(
     waiverTextEn: resolvedWaiverTextEn ?? null,
     waiverTextSha: resolvedWaiverTextSha ?? null,
     typedName: input.typedName?.trim() ?? null,
+    handwrittenSignatureDataUrl: resolvedHandwrittenSignatureDataUrl ?? null,
     couponCode: input.couponCode?.trim().toUpperCase() || null,
   });
 

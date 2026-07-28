@@ -18,6 +18,7 @@ export type PendingRegistration = {
   waiverTextEn?: string | null;
   waiverTextSha?: string | null;
   typedName?: string | null;
+  handwrittenSignatureDataUrl?: string | null;
   couponCode?: string | null;
 };
 
@@ -48,6 +49,7 @@ type PendingRegistrationRow = {
   waiver_text_en: string | null;
   waiver_text_sha: string | null;
   typed_name: string | null;
+  handwritten_signature_data_url: string | null;
   coupon_code: string | null;
 };
 
@@ -101,6 +103,7 @@ function rowToPendingRegistration(row: PendingRegistrationRow): PendingRegistrat
     waiverTextEn: row.waiver_text_en ?? null,
     waiverTextSha: row.waiver_text_sha ?? null,
     typedName: row.typed_name ?? null,
+    handwrittenSignatureDataUrl: row.handwritten_signature_data_url ?? null,
     couponCode: row.coupon_code ?? null,
   };
 }
@@ -119,6 +122,7 @@ function pendingRegistrationToRow(data: NewPendingRegistration) {
     waiver_text_en: data.waiverTextEn ?? null,
     waiver_text_sha: data.waiverTextSha ?? null,
     typed_name: data.typedName ?? null,
+    handwritten_signature_data_url: data.handwrittenSignatureDataUrl ?? null,
     coupon_code: data.couponCode?.trim().toUpperCase() || null,
   };
 }

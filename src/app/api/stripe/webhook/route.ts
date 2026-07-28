@@ -15,6 +15,7 @@ import {
 import { getEvent } from "@/lib/events/repository";
 import { hasRemainingCapacity } from "@/lib/events/availability";
 import { defaultRegistrationFinance } from "@/lib/registrations/finance";
+import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
 import type { RegistrationFinance } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -64,10 +65,8 @@ export async function POST(request: Request): Promise<Response> {
     .select()
     .maybeSingle();
 
-  if (insertError && insertError.code === "23505") {
-    return new Response("OK already processed", { status: 200 });
-  }
-  if (insertError) {
+  const webhookAlreadyRecorded = insertError?.code === "23505";
+  if (insertError && !webhookAlreadyRecorded) {
     return new Response("Server error", { status: 500 });
   }
 
@@ -103,12 +102,22 @@ export async function POST(request: Request): Promise<Response> {
 
   // Re-check duplicate (non-cancelled registrations for this member).
   const existing = await getRegistrations(dbEvent.slug);
-  const alreadyRegistered = existing.some(
+  const existingRegistration = existing.find(
     (r) => r.memberId === pending.memberId && r.status !== "cancelled",
   );
-  if (alreadyRegistered) {
+  if (existingRegistration) {
+    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+      await createWaiverAcceptance({
+        registrationId: existingRegistration.id,
+        legalTextSnapshot: pending.waiverTextEn,
+        waiverTextSha: pending.waiverTextSha,
+        typedName: pending.typedName,
+        handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
+        acceptedAt: new Date().toISOString(),
+      });
+    }
     await deletePendingRegistration(pending.id);
-    return new Response("OK", { status: 200 });
+    return new Response(webhookAlreadyRecorded ? "OK already processed" : "OK", { status: 200 });
   }
 
   // Compute paid amount from session.amount_total (smallest currency unit) → decimal.
@@ -145,7 +154,7 @@ export async function POST(request: Request): Promise<Response> {
   };
 
   try {
-    await createRegistration({
+    const result = await createRegistration({
       eventSlug: dbEvent.slug,
       memberId: pending.memberId,
       answers: pending.answers,
@@ -155,11 +164,35 @@ export async function POST(request: Request): Promise<Response> {
       contactPhone: pending.contactPhone,
       finance,
     });
+    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+      await createWaiverAcceptance({
+        registrationId: result.registration.id,
+        legalTextSnapshot: pending.waiverTextEn,
+        waiverTextSha: pending.waiverTextSha,
+        typedName: pending.typedName,
+        handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
+        acceptedAt: new Date().toISOString(),
+      });
+    }
   } catch (err) {
     // Race-safe: if a parallel webhook delivery already created the registration (unique index
     // registrations_one_member_per_event), treat as success.
     const msg = err instanceof Error ? err.message : String(err);
     if (isDuplicateRegistrationError(msg)) {
+      const registration = (await getRegistrations(dbEvent.slug)).find(
+        (item) => item.memberId === pending.memberId && item.status !== "cancelled",
+      );
+      if (!registration) return new Response("Server error", { status: 500 });
+      if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+        await createWaiverAcceptance({
+          registrationId: registration.id,
+          legalTextSnapshot: pending.waiverTextEn,
+          waiverTextSha: pending.waiverTextSha,
+          typedName: pending.typedName,
+          handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
+          acceptedAt: new Date().toISOString(),
+        });
+      }
       await deletePendingRegistration(pending.id);
       return new Response("OK", { status: 200 });
     }

@@ -127,6 +127,7 @@ export interface WaiverAcceptance {
   legalTextSnapshot: string;
   waiverTextSha: string;
   typedName: string;
+  handwrittenSignatureDataUrl: string | null;
   acceptedAt: string;
   createdAt: string;
 }

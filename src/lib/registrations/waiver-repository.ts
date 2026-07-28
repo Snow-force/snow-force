@@ -16,6 +16,7 @@ type WaiverAcceptanceRow = {
   legal_text_snapshot: string;
   waiver_text_sha: string;
   typed_name: string;
+  handwritten_signature_data_url: string | null;
   accepted_at: string;
   created_at: string;
 };
@@ -45,6 +46,7 @@ function rowToWaiverAcceptance(row: WaiverAcceptanceRow): WaiverAcceptance {
     legalTextSnapshot: row.legal_text_snapshot,
     waiverTextSha: row.waiver_text_sha,
     typedName: row.typed_name,
+    handwrittenSignatureDataUrl: row.handwritten_signature_data_url,
     acceptedAt: row.accepted_at,
     createdAt: row.created_at,
   };
@@ -84,24 +86,35 @@ export async function createWaiverAcceptance(input: {
   legalTextSnapshot: string;
   waiverTextSha: string;
   typedName: string;
+  handwrittenSignatureDataUrl: string | null;
   acceptedAt: string;
 }): Promise<WaiverAcceptance> {
   const supabase = createWaiverAdminClient();
 
   const { data, error } = await supabase
     .from("waiver_acceptances")
-    .insert({
+    .upsert({
       registration_id: input.registrationId,
       legal_text_snapshot: input.legalTextSnapshot,
       waiver_text_sha: input.waiverTextSha,
       typed_name: input.typedName,
+      handwritten_signature_data_url: input.handwrittenSignatureDataUrl,
       accepted_at: input.acceptedAt,
+    }, {
+      onConflict: "registration_id",
+      ignoreDuplicates: true,
     })
     .select()
-    .single<WaiverAcceptanceRow>();
+    .maybeSingle<WaiverAcceptanceRow>();
 
-  if (error || !data) {
+  if (error) {
     throw new Error(error?.message ?? "Failed to create waiver acceptance.");
+  }
+
+  if (!data) {
+    const existing = await getWaiverAcceptanceForRegistration(input.registrationId);
+    if (existing) return existing;
+    throw new Error("Failed to create waiver acceptance.");
   }
 
   return rowToWaiverAcceptance(data);

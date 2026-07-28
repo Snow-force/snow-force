@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
 import { createCheckoutSessionAction } from "@/lib/payments/actions";
+import { WaiverSignaturePad } from "./waiver-signature-pad";
 
 type Props = {
   event: Event;
@@ -181,6 +182,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [waiverScrolled, setWaiverScrolled] = useState(false);
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [typedName, setTypedName] = useState("");
+  const [handwrittenSignatureDataUrl, setHandwrittenSignatureDataUrl] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
@@ -211,7 +213,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     return options.includes(value);
   }
 
-  function submitRegistration(input: { consentGiven: boolean; waiverTextEn?: string; waiverTextSha?: string; typedName?: string }) {
+  function submitRegistration(input: { consentGiven: boolean; waiverTextEn?: string; waiverTextSha?: string; typedName?: string; handwrittenSignatureDataUrl?: string }) {
     startTransition(() => {
       registerForEvent(event.slug, {
         answers: formData,
@@ -222,6 +224,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           waiverTextEn: input.waiverTextEn,
           waiverTextSha: input.waiverTextSha,
           typedName: input.typedName,
+          handwrittenSignatureDataUrl: input.handwrittenSignatureDataUrl,
         }),
       }).then((result) => {
         if (result.success) {
@@ -302,6 +305,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     if (!typedName.trim()) {
       newErrors.typedName = t({ en: "Please type your full name as your electronic signature", zh: "请键入全名作为电子签名" });
     }
+    if (!handwrittenSignatureDataUrl) {
+      newErrors.handwrittenSignature = t({ en: "Please provide your handwritten signature", zh: "请提供手写签名" });
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -313,6 +319,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
       waiverTextEn: event.waiverTextEn!,
       waiverTextSha: event.waiverTextSha ?? undefined,
       typedName: typedName.trim(),
+      handwrittenSignatureDataUrl,
     });
   }
 
@@ -596,6 +603,15 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
                 </label>
                 {errors.typedName && <p className="text-xs text-red-500">{errors.typedName}</p>}
               </div>
+
+              <WaiverSignaturePad
+                onChange={(value) => {
+                  setHandwrittenSignatureDataUrl(value);
+                  if (errors.handwrittenSignature) setErrors((prev) => ({ ...prev, handwrittenSignature: "" }));
+                }}
+                error={errors.handwrittenSignature}
+                lang={lang}
+              />
             </div>
 
             <div className="flex justify-end gap-3 border-t px-6 py-4">
