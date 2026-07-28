@@ -305,10 +305,6 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     if (!typedName.trim()) {
       newErrors.typedName = t({ en: "Please type your full name as your electronic signature", zh: "请键入全名作为电子签名" });
     }
-    if (!handwrittenSignatureDataUrl) {
-      newErrors.handwrittenSignature = t({ en: "Please provide your handwritten signature", zh: "请提供手写签名" });
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -607,10 +603,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
               <WaiverSignaturePad
                 onChange={(value) => {
                   setHandwrittenSignatureDataUrl(value);
-                  if (errors.handwrittenSignature) setErrors((prev) => ({ ...prev, handwrittenSignature: "" }));
                 }}
-                error={errors.handwrittenSignature}
                 lang={lang}
+                typedName={typedName}
               />
             </div>
 

@@ -90,8 +90,8 @@ export async function registerForEvent(
     if (!input.typedName?.trim()) {
       return { success: false, error: "Electronic signature is required" };
     }
-    if (!isValidHandwrittenSignature(input.handwrittenSignatureDataUrl)) {
-      return { success: false, error: "A handwritten signature is required" };
+    if (input.handwrittenSignatureDataUrl && !isValidHandwrittenSignature(input.handwrittenSignatureDataUrl)) {
+      return { success: false, error: "Handwritten signature is invalid" };
     }
     const activeWaiver = await getActiveWaiverForEvent(event.slug);
     if (!activeWaiver) {
@@ -100,7 +100,7 @@ export async function registerForEvent(
     const serverSha = await computeWaiverSha(activeWaiver.text);
     resolvedWaiverTextEn = activeWaiver.text;
     resolvedWaiverTextSha = serverSha;
-    resolvedHandwrittenSignatureDataUrl = input.handwrittenSignatureDataUrl;
+    resolvedHandwrittenSignatureDataUrl = input.handwrittenSignatureDataUrl || undefined;
   }
   const account = await getCurrentMemberAccount();
   const memberDecision = canSubmitMemberRegistration(

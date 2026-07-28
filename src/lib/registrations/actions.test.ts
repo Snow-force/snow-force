@@ -323,7 +323,7 @@ describe("registerForEvent member persistence", () => {
     expect(mockCreateRegistration).not.toHaveBeenCalled();
   });
 
-  it("requires and persists a valid handwritten signature for waiver events", async () => {
+  it("allows typed signatures and persists an optional handwritten signature for waiver events", async () => {
     mockGetCurrentMemberAccount.mockResolvedValue({
       user: { id: "user-1", email: "rider@example.com" },
       profile,
@@ -332,11 +332,11 @@ describe("registerForEvent member persistence", () => {
     mockGetEvent.mockResolvedValue({ ...openEvent, waiverTextEn: "Release terms" });
     mockGetActiveWaiverForEvent.mockResolvedValue({ text: "Release terms", sha: "sha-release" });
 
-    const missing = await registerForEvent("mammoth-weekend", {
+    const typedOnly = await registerForEvent("mammoth-weekend", {
       ...validInput(),
       typedName: "Rider One",
     });
-    expect(missing).toEqual({ success: false, error: "A handwritten signature is required" });
+    expect(typedOnly.success).toBe(true);
 
     const signature = "data:image/png;base64,c2lnbmF0dXJl";
     const result = await registerForEvent("mammoth-weekend", {

@@ -4,11 +4,12 @@ import { useRef, useState, type PointerEvent } from "react";
 
 type Props = {
   onChange: (value: string) => void;
+  typedName: string;
   error?: string;
   lang: "en" | "zh";
 };
 
-export function WaiverSignaturePad({ onChange, error, lang }: Props) {
+export function WaiverSignaturePad({ onChange, typedName, error, lang }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
 
@@ -59,15 +60,41 @@ export function WaiverSignaturePad({ onChange, error, lang }: Props) {
     onChange("");
   }
 
+  function generateFromTypedName() {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    const name = typedName.trim();
+    if (!canvas || !context || !name) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.save();
+    context.translate(28, 122);
+    context.rotate(-0.035);
+    context.fillStyle = "#111827";
+    context.font = "italic 62px cursive";
+    context.fillText(name, 0, 0, canvas.width - 56);
+    context.restore();
+    onChange(canvas.toDataURL("image/png"));
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-gray-600">
-          {lang === "zh" ? "手写签名" : "Handwritten signature"}
+          {lang === "zh" ? "签名（可选）" : "Signature (optional)"}
         </p>
-        <button type="button" onClick={clear} className="text-xs font-medium text-snow-700 underline">
-          {lang === "zh" ? "清除" : "Clear"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={generateFromTypedName}
+            disabled={!typedName.trim()}
+            className="text-xs font-medium text-snow-700 underline disabled:cursor-not-allowed disabled:text-gray-400"
+          >
+            {lang === "zh" ? "用姓名生成签名" : "Generate from name"}
+          </button>
+          <button type="button" onClick={clear} className="text-xs font-medium text-snow-700 underline">
+            {lang === "zh" ? "清除" : "Clear"}
+          </button>
+        </div>
       </div>
       <canvas
         ref={canvasRef}
@@ -81,7 +108,7 @@ export function WaiverSignaturePad({ onChange, error, lang }: Props) {
         aria-label={lang === "zh" ? "请在此手写签名" : "Sign here by hand"}
       />
       <p className="mt-1 text-xs text-gray-500">
-        {lang === "zh" ? "请用鼠标或触控笔在框内签名。" : "Sign in the box with your mouse, finger, or stylus."}
+        {lang === "zh" ? "可用鼠标、手指或触控笔直接签名，或先输入全名再生成模拟手写签名。" : "Draw with your mouse, finger, or stylus, or generate a simulated handwritten signature from your typed name."}
       </p>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
