@@ -108,6 +108,12 @@ npm run lint      # Next lint script, if Next lint support is available
 supabase db push  # Apply migrations to linked project when schema changes
 ```
 
+## TESTING REQUIREMENTS
+- For every source, configuration, migration, or dependency change, add or update focused tests for the changed behavior.
+- Before handing off, committing, or deploying a change, run `npm test` and `npm run build`; both must pass. Do not deploy when either command fails.
+- Run `npm run test:coverage` when adding or materially changing tests, and use its report to identify uncovered security or payment paths.
+- Treat unexpected test-console output, React `act(...)` warnings, and build warnings as follow-up work; do not suppress failures with skipped tests, broad mocks, or lowered checks.
+
 ## NOTES
 - TypeScript LSP is not installed in this environment; use `npm run build`, AST-grep, and targeted tests for verification.
 - `.env.local` contains real local credentials. Do not print or copy values into logs/docs.
