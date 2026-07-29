@@ -6,6 +6,7 @@ export type CouponDiscountType = "percent" | "fixed";
 
 export type EventCoupon = {
   code: string;
+  eventSlug: string | null;
   discountType: CouponDiscountType;
   discountValue: number;
   active: boolean;
@@ -17,6 +18,7 @@ export type EventCoupon = {
 
 type CouponRow = {
   code: string;
+  event_slug: string | null;
   discount_type: CouponDiscountType;
   discount_value: number;
   active: boolean;
@@ -42,6 +44,7 @@ function throwError(error: { message: string } | null) {
 function fromRow(row: CouponRow): EventCoupon {
   return {
     code: row.code,
+    eventSlug: row.event_slug,
     discountType: row.discount_type,
     discountValue: Number(row.discount_value),
     active: row.active,
@@ -55,7 +58,7 @@ function fromRow(row: CouponRow): EventCoupon {
 export async function getCoupon(code: string): Promise<EventCoupon | undefined> {
   const { data, error } = await getClient()
     .from("event_coupon_codes")
-    .select("code,discount_type,discount_value,active,starts_at,expires_at,max_redemptions,created_at")
+    .select("code,event_slug,discount_type,discount_value,active,starts_at,expires_at,max_redemptions,created_at")
     .eq("code", code.trim().toUpperCase())
     .maybeSingle();
   throwError(error);
@@ -65,7 +68,7 @@ export async function getCoupon(code: string): Promise<EventCoupon | undefined> 
 export async function getCoupons(): Promise<EventCoupon[]> {
   const { data, error } = await getClient()
     .from("event_coupon_codes")
-    .select("code,discount_type,discount_value,active,starts_at,expires_at,max_redemptions,created_at")
+    .select("code,event_slug,discount_type,discount_value,active,starts_at,expires_at,max_redemptions,created_at")
     .order("created_at", { ascending: false });
   throwError(error);
   return (data ?? []).map((row) => fromRow(row as CouponRow));
@@ -76,6 +79,7 @@ export async function saveCoupon(input: CouponInput): Promise<EventCoupon> {
     .from("event_coupon_codes")
     .upsert({
       code: input.code.trim().toUpperCase(),
+      event_slug: input.eventSlug,
       discount_type: input.discountType,
       discount_value: input.discountValue,
       active: input.active,
@@ -84,7 +88,7 @@ export async function saveCoupon(input: CouponInput): Promise<EventCoupon> {
       max_redemptions: input.maxRedemptions,
       updated_at: new Date().toISOString(),
     })
-    .select("code,discount_type,discount_value,active,starts_at,expires_at,max_redemptions,created_at")
+    .select("code,event_slug,discount_type,discount_value,active,starts_at,expires_at,max_redemptions,created_at")
     .single();
   throwError(error);
   return fromRow(data as CouponRow);

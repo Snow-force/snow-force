@@ -6,8 +6,10 @@ export function quoteCoupon(
   coupon: EventCoupon,
   amount: number,
   redemptionCount: number,
+  eventSlug: string,
   now = new Date(),
 ): CouponQuote | { error: string } {
+  if (coupon.eventSlug !== eventSlug) return { error: "This coupon is not valid for this event" };
   if (!coupon.active) return { error: "This coupon is inactive" };
   if (coupon.startsAt && Date.parse(coupon.startsAt) > now.getTime()) return { error: "This coupon is not active yet" };
   if (coupon.expiresAt && Date.parse(coupon.expiresAt) <= now.getTime()) return { error: "This coupon has expired" };
@@ -18,6 +20,5 @@ export function quoteCoupon(
     : coupon.discountValue;
   const discountAmount = Math.min(amount, Math.round(rawDiscount * 100) / 100);
   const finalAmount = Math.round((amount - discountAmount) * 100) / 100;
-  if (finalAmount <= 0) return { error: "This coupon cannot reduce an online payment to zero" };
   return { code: coupon.code, discountAmount, finalAmount };
 }

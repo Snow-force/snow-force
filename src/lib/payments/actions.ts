@@ -10,9 +10,15 @@ import { getEvent } from "@/lib/events/repository";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getCoupon, getCouponRedemptionCount } from "@/lib/coupons/repository";
 import { quoteCoupon } from "@/lib/coupons/validation";
+import { createRegistration, getRegistrationCountForEvent, getRegistrations } from "@/lib/registrations/repository";
+import { deletePendingRegistration } from "@/lib/registrations/pending-repository";
+import { hasRemainingCapacity } from "@/lib/events/availability";
+import { defaultRegistrationFinance } from "@/lib/registrations/finance";
+import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
+import { revalidatePath } from "next/cache";
 
 export type CheckoutResult =
-  | { success: true; url: string }
+  | { success: true; url: string; completed?: boolean }
   | { success: false; error: string };
 
 export type CheckoutDeps = {
@@ -65,12 +71,14 @@ export async function createCheckoutSessionResult(
     const coupon = await (deps.getCoupon ?? getCoupon)(pending.couponCode);
     if (!coupon) return { success: false, error: "Coupon code is invalid" };
     const redemptionCount = await (deps.getCouponRedemptionCount ?? getCouponRedemptionCount)(coupon.code);
-    const quote = quoteCoupon(coupon, amount, redemptionCount, now);
+    const quote = quoteCoupon(coupon, amount, redemptionCount, event.slug, now);
     if ("error" in quote) return { success: false, error: quote.error };
     couponCode = quote.code;
     discountAmount = quote.discountAmount;
     checkoutAmount = quote.finalAmount;
   }
+
+  if (checkoutAmount === 0) return { success: true, url: "", completed: true };
 
   const unitAmount = currency === "jpy" ? Math.round(checkoutAmount) : Math.round(checkoutAmount * 100);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -114,9 +122,62 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
   const account = await getCurrentMemberAccount();
   if (!account?.profile) return { success: false, error: "Authentication required" };
 
-  return createCheckoutSessionResult(
+  const result = await createCheckoutSessionResult(
     { getStripe: getStripeServer, getPendingRegistration: getPendingRegistrationById, getEvent, getCoupon, getCouponRedemptionCount },
     pendingRegistrationId,
     { memberMemberId: account.profile.id },
   );
+  if (!result.success || !result.completed) return result;
+
+  const pending = await getPendingRegistrationById(pendingRegistrationId);
+  if (!pending || pending.memberId !== account.profile.id) return { success: false, error: "Pending registration not found" };
+  const event = await getEvent(pending.eventSlug);
+  if (!event || !pending.couponCode) return { success: false, error: "Coupon code is invalid" };
+  const coupon = await getCoupon(pending.couponCode);
+  if (!coupon) return { success: false, error: "Coupon code is invalid" };
+  const amount = event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
+  if (amount === null) return { success: false, error: "Invalid payment amount" };
+  const quote = quoteCoupon(coupon, amount, await getCouponRedemptionCount(coupon.code), event.slug);
+  if ("error" in quote || quote.finalAmount !== 0) return { success: false, error: "Coupon is no longer valid" };
+  if ((await getRegistrations(event.slug)).some((registration) => registration.memberId === pending.memberId && registration.status !== "cancelled")) {
+    return { success: false, error: "You are already registered for this event" };
+  }
+  const registrationCount = await getRegistrationCountForEvent(event.slug);
+  if (!hasRemainingCapacity({ ...event, registrationCount })) return { success: false, error: "Event is not open for registration" };
+
+  try {
+    const created = await createRegistration({
+      eventSlug: event.slug,
+      memberId: pending.memberId,
+      answers: pending.answers,
+      consentGiven: pending.consentGiven,
+      contactEmail: pending.contactEmail,
+      contactName: pending.contactName,
+      contactPhone: pending.contactPhone,
+      finance: {
+        ...defaultRegistrationFinance,
+        depositAmount: 0,
+        depositStatus: "waived",
+        paymentMethod: "coupon",
+        paymentNote: "100% coupon redemption",
+        finalAmount: event.paymentModel === "full_prepay" ? 0 : null,
+        settlementStatus: event.paymentModel === "full_prepay" ? "settled" : "not_started",
+        couponCode: quote.code,
+        discountAmount: quote.discountAmount,
+      },
+    });
+    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+      await createWaiverAcceptance({ registrationId: created.registration.id, legalTextSnapshot: pending.waiverTextEn, waiverTextSha: pending.waiverTextSha, typedName: pending.typedName, handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null, acceptedAt: new Date().toISOString() });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("registrations_coupon_code_used_once")) return { success: false, error: "This coupon has already been redeemed" };
+    return { success: false, error: "Could not complete coupon registration" };
+  }
+
+  await deletePendingRegistration(pending.id);
+  revalidatePath("/member");
+  revalidatePath(`/events/${event.slug}`);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return { success: true, url: `${siteUrl}/member?payment=success`, completed: true };
 }

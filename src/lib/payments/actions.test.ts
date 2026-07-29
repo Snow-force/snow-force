@@ -182,7 +182,7 @@ describe("createCheckoutSessionResult", () => {
     const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/coupon" });
     const pending = createPendingRegistration({ couponCode: "SNOW20" });
     const event = createEvent({ depositAmount: 120 });
-    const coupon = { code: "SNOW20", discountType: "percent" as const, discountValue: 20, active: true, startsAt: null, expiresAt: null, maxRedemptions: null, createdAt: "2026-07-28T00:00:00.000Z" };
+    const coupon = { code: "SNOW20", eventSlug: "test-event", discountType: "percent" as const, discountValue: 20, active: true, startsAt: null, expiresAt: null, maxRedemptions: 1, createdAt: "2026-07-28T00:00:00.000Z" };
 
     await createCheckoutSessionResult(
       { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: vi.fn().mockResolvedValue(pending), getEvent: vi.fn().mockResolvedValue(event), getCoupon: vi.fn().mockResolvedValue(coupon), getCouponRedemptionCount: vi.fn().mockResolvedValue(0) },
@@ -194,6 +194,19 @@ describe("createCheckoutSessionResult", () => {
       line_items: [expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 9600 }) })],
       metadata: expect.objectContaining({ couponCode: "SNOW20", discountAmount: "24" }),
     }));
+  });
+
+  it("does not create a Stripe session for a 100% event coupon", async () => {
+    const sessionsCreate = vi.fn();
+    const pending = createPendingRegistration({ couponCode: "FREE100" });
+    const coupon = { code: "FREE100", eventSlug: "test-event", discountType: "percent" as const, discountValue: 100, active: true, startsAt: null, expiresAt: null, maxRedemptions: 1, createdAt: "2026-07-29T00:00:00.000Z" };
+    const result = await createCheckoutSessionResult(
+      { getStripe: () => fakeStripeFactory(sessionsCreate), getPendingRegistration: vi.fn().mockResolvedValue(pending), getEvent: vi.fn().mockResolvedValue(createEvent({ depositAmount: 120 })), getCoupon: vi.fn().mockResolvedValue(coupon), getCouponRedemptionCount: vi.fn().mockResolvedValue(0) },
+      pending.id,
+      { memberMemberId: MEMBER_ID },
+    );
+    expect(result).toEqual({ success: true, url: "", completed: true });
+    expect(sessionsCreate).not.toHaveBeenCalled();
   });
 
   it("creates a checkout session for a full_prepay event in CNY", async () => {
