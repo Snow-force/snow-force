@@ -1,4 +1,5 @@
 import type { Event } from "@/lib/types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 const coreQuestions = [
   {
@@ -104,6 +105,7 @@ export const seedEvents: Event[] = [
     waiverTextEn: null,
     waiverTextSha: null,
     merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     detailModules: [
       {
         id: "module-intro",
@@ -198,6 +200,7 @@ export const seedEvents: Event[] = [
     waiverTextEn: null,
     waiverTextSha: null,
     merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     detailModules: [
       {
         id: "module-intro",

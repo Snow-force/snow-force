@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { localizedList, localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
-import type { EventRecap } from "@/lib/types";
+import type { EventRecap, PublicEventReview } from "@/lib/types";
 import { ScrollingMediaStream } from "./scrolling-media-stream";
 
-export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
+export function RecapDetailView({
+  recap,
+  reviews,
+}: {
+  recap: EventRecap | undefined;
+  reviews: PublicEventReview[];
+}) {
   const { lang, t } = useLanguage();
 
   if (!recap) {
@@ -65,6 +71,42 @@ export function RecapDetailView({ recap }: { recap: EventRecap | undefined }) {
             </h2>
             <ScrollingMediaStream media={recap.media} />
           </div>
+        ) : null}
+
+        {reviews.length > 0 ? (
+          <section className="mt-12 border-t border-gray-200 pt-10">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {t({ en: "Member feedback", zh: "会员反馈" })}
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {t({
+                    en: "Published with member consent after SnowForce moderation.",
+                    zh: "经会员同意并由 SnowForce 审核后发布。",
+                  })}
+                </p>
+              </div>
+              <p className="text-sm font-semibold text-snow-700">
+                {(reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length).toFixed(1)}/5
+              </p>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {reviews.map((review) => (
+                <article key={review.id} className="rounded-xl border border-gray-200 bg-white p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-gray-900">{review.authorLabel}</p>
+                    <p className="text-sm font-semibold text-snow-700">{review.overallRating}/5</p>
+                  </div>
+                  {typeof review.answers.best_part === "string" ? (
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
+                      {review.answers.best_part}
+                    </p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </section>
         ) : null}
       </div>
     </div>

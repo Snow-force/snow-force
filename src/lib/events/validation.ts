@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { Event } from "@/lib/types";
 import { ensureRequiredRegistrationQuestions } from "./required-registration-questions";
+import { createDefaultReviewConfig, eventReviewConfigSchema } from "../reviews/config";
 
 const bilingualText = z.object({
   en: z.string().default(""),
@@ -190,6 +191,7 @@ const editorSchema = z.object({
   waiverTextEn: z.string().nullable().default(null),
   waiverTextSha: z.string().nullable().default(null),
   merchantBoothProgram: merchantBoothProgramSchema.nullable().default(null),
+  reviewConfig: eventReviewConfigSchema.default(createDefaultReviewConfig()),
 }).superRefine((data, ctx) => {
   if (data.paymentModel === "deposit" && (data.depositAmount === null || data.depositAmount <= 0)) {
     ctx.addIssue({

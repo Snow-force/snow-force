@@ -14,6 +14,7 @@ import { EventMerchantBoothSettingsStep } from "./event-merchant-booth-settings-
 import { EventPreviewPanel } from "./event-preview-panel";
 import { EventQuestionBuilder } from "./event-question-builder";
 import { EventRegistrationSettingsStep } from "./event-registration-settings-step";
+import { EventReviewSettingsStep } from "./event-review-settings-step";
 import { ensureRequiredRegistrationQuestions } from "@/lib/events/required-registration-questions";
 
 const initialState: EventEditorState = { success: false };
@@ -132,6 +133,9 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
     questions: isZh
       ? `${draftEvent.registrationQuestions.length} 个问题`
       : `${draftEvent.registrationQuestions.length} question${draftEvent.registrationQuestions.length === 1 ? "" : "s"}`,
+    review: isZh
+      ? `${draftEvent.reviewConfig.questions.length} 个问题`
+      : `${draftEvent.reviewConfig.questions.length} question${draftEvent.reviewConfig.questions.length === 1 ? "" : "s"}`,
     modules: isZh
       ? `${draftEvent.detailModules.length} 个模块`
       : `${draftEvent.detailModules.length} module${draftEvent.detailModules.length === 1 ? "" : "s"}`,
@@ -188,6 +192,13 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
                 onChange={(registrationQuestions) => setDraftEvent((current) => ({ ...current, registrationQuestions }))}
               />
               <FieldError errors={state.fieldErrors?.registrationQuestions} />
+            </div>
+          ) : null}
+
+          {activeStep === "review" ? (
+            <div className="space-y-2">
+              <EventReviewSettingsStep event={draftEvent} onChange={setDraftEvent} />
+              <FieldError errors={state.fieldErrors?.reviewConfig} />
             </div>
           ) : null}
 

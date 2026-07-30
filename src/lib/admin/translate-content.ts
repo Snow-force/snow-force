@@ -56,6 +56,15 @@ export async function translateEventToChinese(event: Event): Promise<Event> {
       text(entries, `merchant.plan.${plan.id}.description`, plan.description);
     });
   }
+  event.reviewConfig.questions.forEach((question) => {
+    text(entries, `review.${question.id}.label`, question.label);
+    text(entries, `review.${question.id}.helpText`, question.helpText);
+    list(entries, `review.${question.id}.options`, question.options);
+  });
+  text(entries, "review.thankYouTitle", event.reviewConfig.thankYouTitle);
+  text(entries, "review.thankYouBody", event.reviewConfig.thankYouBody);
+  text(entries, "review.reward.description", event.reviewConfig.reward.description);
+  text(entries, "review.reward.redemptionInstructions", event.reviewConfig.reward.redemptionInstructions);
   const translations = await translate(entries);
   return {
     ...event,
@@ -82,6 +91,26 @@ export async function translateEventToChinese(event: Event): Promise<Event> {
         description: translatedText(plan.description, `merchant.plan.${plan.id}.description`, translations),
       })),
     } : null,
+    reviewConfig: {
+      ...event.reviewConfig,
+      questions: event.reviewConfig.questions.map((question) => ({
+        ...question,
+        label: translatedText(question.label, `review.${question.id}.label`, translations),
+        helpText: translatedText(question.helpText, `review.${question.id}.helpText`, translations),
+        options: translatedList(question.options, `review.${question.id}.options`, translations),
+      })),
+      thankYouTitle: translatedText(event.reviewConfig.thankYouTitle, "review.thankYouTitle", translations),
+      thankYouBody: translatedText(event.reviewConfig.thankYouBody, "review.thankYouBody", translations),
+      reward: {
+        ...event.reviewConfig.reward,
+        description: translatedText(event.reviewConfig.reward.description, "review.reward.description", translations),
+        redemptionInstructions: translatedText(
+          event.reviewConfig.reward.redemptionInstructions,
+          "review.reward.redemptionInstructions",
+          translations,
+        ),
+      },
+    },
   };
 }
 

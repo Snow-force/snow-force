@@ -10,6 +10,8 @@ describe("member auth callback results", () => {
     expect(sanitizeMemberNextPath("/member")).toBe("/member");
     expect(sanitizeMemberNextPath("/member/reset-password")).toBe("/member/reset-password");
     expect(sanitizeMemberNextPath("/events/mammoth-weekend")).toBe("/events/mammoth-weekend");
+    expect(sanitizeMemberNextPath("/check-in/secure-code")).toBe("/check-in/secure-code");
+    expect(sanitizeMemberNextPath("/reviews/access/secure-code")).toBe("/reviews/access/secure-code");
   });
 
   it("S2-callback-rejects-external-next", () => {

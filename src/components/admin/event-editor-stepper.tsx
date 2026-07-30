@@ -2,7 +2,14 @@
 
 import { useLanguage } from "@/lib/language";
 
-export type StepId = "basic" | "registration" | "merchants" | "questions" | "modules" | "preview";
+export type StepId =
+  | "basic"
+  | "registration"
+  | "merchants"
+  | "questions"
+  | "review"
+  | "modules"
+  | "preview";
 
 type EventEditorStepperProps = {
   activeStep: StepId;
@@ -15,6 +22,7 @@ const steps: Array<{ id: StepId; label: { zh: string; en: string } }> = [
   { id: "registration", label: { zh: "报名设置", en: "Registration" } },
   { id: "merchants", label: { zh: "商家摊位", en: "Merchants" } },
   { id: "questions", label: { zh: "参与者问题", en: "Questions" } },
+  { id: "review", label: { zh: "活动反馈", en: "Review" } },
   { id: "modules", label: { zh: "详情模块", en: "Details" } },
   { id: "preview", label: { zh: "预览发布", en: "Preview" } },
 ];
