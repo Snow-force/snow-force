@@ -1,11 +1,14 @@
 .data/
 .claude/
+.claudian/
+.obsidian/
 .superpowers/
 .impeccable/
 .playwright-cli/
 .playwright-mcp/
 .omo/
 artifacts/
+tmp/
 .env.local
 .stripe-live.env
 .next/
