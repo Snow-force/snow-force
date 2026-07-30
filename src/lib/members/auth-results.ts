@@ -15,7 +15,7 @@ export type MemberAuthStatusMessage = {
   body: string;
 };
 
-const allowedNextPrefixes = ["/member", "/events", "/recaps"];
+const allowedNextPrefixes = ["/member", "/events", "/recaps", "/check-in", "/reviews"];
 
 export function sanitizeMemberNextPath(value: string | null | undefined) {
   if (!value) return "/member";

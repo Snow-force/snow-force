@@ -42,6 +42,7 @@ const eventColumns = [
   "payment_instructions_en",
   "waiver_text_en",
   "waiver_text_sha",
+  "review_config",
   "seo_title_zh",
   "seo_title_en",
   "seo_description_zh",
@@ -124,6 +125,7 @@ type EventAggregateSaveArguments = {
   readonly p_questions: EventAggregateWriteRows["questions"];
   readonly p_modules: EventAggregateWriteRows["modules"];
   readonly p_merchant_booth_program: EventAggregateWriteRows["merchantBoothProgram"];
+  readonly p_review_config: EventAggregateWriteRows["reviewConfig"];
 };
 
 type EventAggregateSaveClient = {
@@ -175,6 +177,7 @@ export async function saveEventAggregate(
     p_questions: rows.questions,
     p_modules: rows.modules,
     p_merchant_booth_program: rows.merchantBoothProgram,
+    p_review_config: rows.reviewConfig,
   });
   throwSupabaseError(error);
   if (!data) throw new Error("Event aggregate save returned no event row.");
@@ -340,6 +343,9 @@ export function createEventRepository(source: EventSource, countSource?: Registr
         (await source.listAdminEvents()).filter((row) => row.status !== "archived"),
       );
     },
+    async getAdminEventHistory() {
+      return withRegistrationCounts(await source.listAdminEvents());
+    },
     async getEvent(slug: string) {
       const row = await source.getPublicEvent(slug);
       return row?.status === "published" ? withRegistrationCount(row) : undefined;
@@ -389,6 +395,7 @@ const registrations: Map<string, number> = new Map(seedEvents.map((e) => [e.slug
 export const getEvents = repository.getEvents;
 export const getPublicDisplayEvents = repository.getPublicDisplayEvents;
 export const getAllEvents = repository.getAllEvents;
+export const getAdminEventHistory = repository.getAdminEventHistory;
 export const getEvent = repository.getEvent;
 export const getEventAdmin = repository.getEventAdmin;
 export const createEvent = repository.createEvent;

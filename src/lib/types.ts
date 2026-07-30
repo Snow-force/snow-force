@@ -11,6 +11,14 @@ export type EventQuestionType =
   | "yes_no"
   | "date"
   | "phone";
+export type ReviewQuestionType =
+  | "rating_5"
+  | "single_choice"
+  | "multiple_choice"
+  | "yes_no"
+  | "short_text"
+  | "long_text";
+export type ReviewQuestionVisibility = "public" | "internal";
 export type EventDetailModuleType =
   | "intro"
   | "highlights"
@@ -89,6 +97,34 @@ export interface RegistrationFinance {
   discountAmount?: number;
 }
 
+export interface EventReviewQuestion {
+  id: string;
+  key: string;
+  type: ReviewQuestionType;
+  required: boolean;
+  visibility: ReviewQuestionVisibility;
+  label: Bilingual;
+  helpText: Bilingual;
+  options: Bilingual<string[]>;
+  minLength: number | null;
+  maxLength: number | null;
+  maxSelections: number | null;
+}
+
+export interface EventReviewReward {
+  enabled: boolean;
+  description: Bilingual;
+  redemptionInstructions: Bilingual;
+}
+
+export interface EventReviewConfig {
+  version: 1;
+  questions: EventReviewQuestion[];
+  thankYouTitle: Bilingual;
+  thankYouBody: Bilingual;
+  reward: EventReviewReward;
+}
+
 export interface Event {
   slug: string;
   status: EventStatus;
@@ -119,6 +155,7 @@ export interface Event {
   waiverTextEn: string | null;
   waiverTextSha: string | null;
   merchantBoothProgram: EventMerchantBoothProgram | null;
+  reviewConfig: EventReviewConfig;
 }
 
 export interface WaiverAcceptance {
@@ -142,9 +179,58 @@ export interface Registration {
   contactName: string;
   contactPhone: string;
   status: "confirmed" | "cancelled" | "waitlist";
+  attendanceStatus: "unmarked" | "attended" | "no_show";
+  attendanceSource: "checkin_qr" | "admin" | null;
+  attendanceMarkedAt: string | null;
   finance?: RegistrationFinance;
   createdAt: string;
   updatedAt: string;
+}
+
+export type EventQrCampaignPurpose = "checkin" | "review";
+export type EventQrCampaignStatus = "draft" | "open" | "closed";
+
+export interface EventQrCampaign {
+  id: string;
+  eventSlug: string;
+  purpose: EventQrCampaignPurpose;
+  accessCode: string;
+  status: EventQrCampaignStatus;
+  openedAt: string | null;
+  closesAt: string | null;
+  closedAt: string | null;
+  reviewConfigSnapshot: EventReviewConfig | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EventReviewAnswerValue = string | boolean | number | string[] | null;
+export type EventReviewAnswers = Record<string, EventReviewAnswerValue>;
+export type EventReviewModerationStatus = "pending" | "approved" | "rejected";
+
+export interface EventReview {
+  id: string;
+  registrationId: string;
+  campaignId: string;
+  eventSlug: string;
+  memberId: string;
+  overallRating: number;
+  answers: EventReviewAnswers;
+  consentToPublish: boolean;
+  submissionLanguage: "en" | "zh";
+  moderationStatus: EventReviewModerationStatus;
+  moderationNote: string;
+  moderatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicEventReview {
+  id: string;
+  overallRating: number;
+  answers: EventReviewAnswers;
+  authorLabel: string;
+  createdAt: string;
 }
 
 export interface MemberEquipment {

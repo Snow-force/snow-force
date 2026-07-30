@@ -9,6 +9,7 @@ import type {
   MerchantBoothCurrency,
 } from "@/lib/types";
 import { ensureRequiredRegistrationQuestions } from "./required-registration-questions";
+import { normalizeReviewConfig } from "../reviews/config";
 
 export type EventCoreRow = {
   slug: string;
@@ -42,6 +43,7 @@ export type EventCoreRow = {
   seo_description_en: string;
   waiver_text_en: string | null;
   waiver_text_sha: string | null;
+  review_config: unknown;
 };
 
 export type EventRegistrationQuestionRow = {
@@ -134,6 +136,7 @@ export type EventAggregateWriteRows = {
   questions: EventRegistrationQuestionWriteRow[];
   modules: EventDetailModuleWriteRow[];
   merchantBoothProgram: EventBoothProgramRows | null;
+  reviewConfig: Event["reviewConfig"];
 };
 
 function stringArray(value: unknown): string[] {
@@ -279,6 +282,7 @@ export function rowsToEvent(
         },
       })),
     merchantBoothProgram: boothProgram && boothProgram.program.enabled ? boothProgramFromRows(boothProgram) : null,
+    reviewConfig: normalizeReviewConfig(core.review_config),
   };
 }
 
@@ -316,6 +320,7 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       seo_description_en: event.seoDescription.en,
       waiver_text_en: event.waiverTextEn ?? null,
       waiver_text_sha: event.waiverTextSha ?? null,
+      review_config: event.reviewConfig,
     },
     questions: ensureRequiredRegistrationQuestions(event.registrationQuestions).map((question, index) => ({
       event_slug: event.slug,
@@ -343,5 +348,6 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       items_en: moduleRow.items.en,
     })),
     merchantBoothProgram: normalizeBoothProgramForWrite(event.merchantBoothProgram, event.slug),
+    reviewConfig: event.reviewConfig,
   };
 }

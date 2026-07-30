@@ -270,6 +270,14 @@ describe("event admin action helpers", () => {
         expect.objectContaining({ key: "email", type: "text", required: true }),
         ...modularEvent.registrationQuestions,
       ],
+      reviewConfig: expect.objectContaining({
+        version: 1,
+        questions: expect.arrayContaining([
+          expect.objectContaining({ key: "overall_rating", required: true }),
+          expect.objectContaining({ key: "improvement", required: true }),
+        ]),
+        reward: expect.objectContaining({ enabled: false }),
+      }),
     });
   });
 

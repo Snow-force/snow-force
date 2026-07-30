@@ -1,0 +1,27 @@
+{
+  "id": "conv-1785297831918-tdscsdai4",
+  "providerId": "codex",
+  "title": "总结我现在用到的所有外部服务，包含前端，后端，database，api服务等",
+  "titleGenerationStatus": "failed",
+  "createdAt": 1785297831918,
+  "updatedAt": 1785308249293,
+  "lastResponseAt": 1785308249293,
+  "sessionId": "019fac0b-0bba-7123-a8e0-c38a52e97f79",
+  "selectedModel": "gpt-5.6-terra",
+  "providerState": {
+    "threadId": "019fac0b-0bba-7123-a8e0-c38a52e97f79",
+    "sessionFilePath": "C:\\Users\\taiyu\\.codex\\sessions\\2026\\07\\28\\rollout-2026-07-28T21-03-52-019fac0b-0bba-7123-a8e0-c38a52e97f79.jsonl",
+    "transcriptRootPath": "C:\\Users\\taiyu\\.codex\\sessions",
+    "workspaceDependencyToolVersion": 1
+  },
+  "usage": {
+    "inputTokens": 109696,
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 103168,
+    "contextWindow": 258400,
+    "contextWindowIsAuthoritative": true,
+    "contextTokens": 109696,
+    "percentage": 42,
+    "model": "gpt-5.6-terra"
+  }
+}

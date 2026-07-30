@@ -1,0 +1,24 @@
+{
+  "id": "conv-1785295238805-3yzexj5h3",
+  "providerId": "opencode",
+  "title": "你好",
+  "titleGenerationStatus": "failed",
+  "createdAt": 1785295238810,
+  "updatedAt": 1785295575178,
+  "lastResponseAt": 1785295254464,
+  "sessionId": "ses_0541c77bfffefAeIRRm2P1byv4",
+  "selectedModel": "opencode:deepseek/deepseek-v4-pro",
+  "providerState": {
+    "databasePath": "C:\\Users\\taiyu\\AppData\\Roaming\\opencode\\opencode.db"
+  },
+  "usage": {
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 0,
+    "contextTokens": 27784,
+    "contextWindow": 1000000,
+    "contextWindowIsAuthoritative": true,
+    "inputTokens": 27784,
+    "model": "opencode:deepseek/deepseek-v4-pro",
+    "percentage": 3
+  }
+}

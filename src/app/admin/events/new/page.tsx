@@ -2,6 +2,7 @@ import { EventEditorForm } from "@/components/admin/event-editor-form";
 import { EventEditorHeading } from "@/components/admin/event-editor-heading";
 import type { Event } from "@/lib/types";
 import { DEFAULT_WAIVER_TEXT } from "@/lib/registrations/waiver";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 const draftEvent: Event = {
   slug: "",
@@ -33,6 +34,7 @@ const draftEvent: Event = {
   waiverTextEn: DEFAULT_WAIVER_TEXT,
   waiverTextSha: null,
   merchantBoothProgram: null,
+  reviewConfig: createDefaultReviewConfig(),
 };
 
 export default function NewEventPage() {

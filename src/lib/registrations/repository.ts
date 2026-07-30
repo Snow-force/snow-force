@@ -9,7 +9,16 @@ import {
   type RegistrationFinanceInput,
 } from "./finance";
 
-export type NewRegistration = Omit<Registration, "id" | "createdAt" | "updatedAt" | "status">;
+export type NewRegistration = Omit<
+  Registration,
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "status"
+  | "attendanceStatus"
+  | "attendanceSource"
+  | "attendanceMarkedAt"
+>;
 
 export type RegistrationSource = {
   list(eventSlug?: string): Promise<Registration[]>;
@@ -32,6 +41,9 @@ type RegistrationRow = {
   contact_name: string;
   contact_phone: string | null;
   status: Registration["status"];
+  attendance_status: Registration["attendanceStatus"] | null;
+  attendance_source: Registration["attendanceSource"];
+  attendance_marked_at: string | null;
   deposit_amount: number | null;
   deposit_status: RegistrationFinance["depositStatus"] | null;
   deposit_paid_at: string | null;
@@ -82,6 +94,9 @@ function rowToRegistration(row: RegistrationRow): Registration {
     contactName: row.contact_name,
     contactPhone: row.contact_phone ?? "",
     status: row.status,
+    attendanceStatus: row.attendance_status ?? "unmarked",
+    attendanceSource: row.attendance_source ?? null,
+    attendanceMarkedAt: row.attendance_marked_at,
     finance: normalizeRegistrationFinance({
       depositAmount: row.deposit_amount,
       depositStatus: row.deposit_status ?? defaultRegistrationFinance.depositStatus,
@@ -171,6 +186,9 @@ export function createRegistrationStore(filePath: string): RegistrationSource {
         ...data,
         id: `reg_${Date.now()}_${crypto.randomUUID()}`,
         status: "confirmed",
+        attendanceStatus: "unmarked",
+        attendanceSource: null,
+        attendanceMarkedAt: null,
         finance: normalizeRegistrationFinance(data.finance),
         createdAt: now,
         updatedAt: now,
