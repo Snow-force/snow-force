@@ -7,11 +7,34 @@ const mockSignInWithPassword = vi.hoisted(() => vi.fn());
 const mockSignInWithOtp = vi.hoisted(() => vi.fn());
 const mockSignInWithOAuth = vi.hoisted(() => vi.fn());
 const mockResetPasswordForEmail = vi.hoisted(() => vi.fn());
+const mockUpdateUser = vi.hoisted(() => vi.fn());
+const mockSignOut = vi.hoisted(() => vi.fn());
 const mockParseMemberEmail = vi.hoisted(() => vi.fn());
 const mockParseMemberEntry = vi.hoisted(() => vi.fn());
 const mockParseMemberMagicLink = vi.hoisted(() => vi.fn());
+const mockParseMemberPasswordUpdate = vi.hoisted(() => vi.fn());
 const mockParseMemberProfileUpdate = vi.hoisted(() => vi.fn());
 const mockGetMemberProfile = vi.hoisted(() => vi.fn());
+const mockUpdateMemberProfile = vi.hoisted(() => vi.fn());
+const mockAddMemberPass = vi.hoisted(() => vi.fn());
+const mockGetSavedEvents = vi.hoisted(() => vi.fn());
+const mockMarkNotificationRead = vi.hoisted(() => vi.fn());
+const mockRemoveMemberPass = vi.hoisted(() => vi.fn());
+const mockSaveEvent = vi.hoisted(() => vi.fn());
+const mockUnsaveEvent = vi.hoisted(() => vi.fn());
+const mockUpsertMemberEquipment = vi.hoisted(() => vi.fn());
+const mockDeletePendingRegistration = vi.hoisted(() => vi.fn());
+const mockGetPendingRegistrationsByMember = vi.hoisted(() => vi.fn());
+const mockCreateRegistration = vi.hoisted(() => vi.fn());
+const mockGetRegistrationCountForEvent = vi.hoisted(() => vi.fn());
+const mockGetRegistrations = vi.hoisted(() => vi.fn());
+const mockCreateWaiverAcceptance = vi.hoisted(() => vi.fn());
+const mockGetEvent = vi.hoisted(() => vi.fn());
+const mockHasRemainingCapacity = vi.hoisted(() => vi.fn());
+const mockIsEventOpen = vi.hoisted(() => vi.fn());
+const mockRevalidatePath = vi.hoisted(() => vi.fn());
+const mockBuildStaffNotificationEmail = vi.hoisted(() => vi.fn());
+const mockSendEmail = vi.hoisted(() => vi.fn());
 const mockCookieGetAll = vi.hoisted(() => vi.fn(() => []));
 const mockCreateClient = vi.hoisted(() =>
   vi.fn(() => ({
@@ -23,6 +46,8 @@ const mockCreateClient = vi.hoisted(() =>
       signInWithOtp: mockSignInWithOtp,
       signInWithOAuth: mockSignInWithOAuth,
       resetPasswordForEmail: mockResetPasswordForEmail,
+      updateUser: mockUpdateUser,
+      signOut: mockSignOut,
     },
   })),
 );
@@ -34,7 +59,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next/cache", () => ({
-  revalidatePath: vi.fn(),
+  revalidatePath: mockRevalidatePath,
 }));
 
 vi.mock("next/headers", () => ({
@@ -46,39 +71,39 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/events/availability", () => ({
-  hasRemainingCapacity: vi.fn(),
-  isEventOpen: vi.fn(),
+  hasRemainingCapacity: mockHasRemainingCapacity,
+  isEventOpen: mockIsEventOpen,
 }));
 
 vi.mock("@/lib/events/repository", () => ({
-  getEvent: vi.fn(),
+  getEvent: mockGetEvent,
 }));
 
 vi.mock("@/lib/email/adapter", () => ({
-  buildStaffNotificationEmail: vi.fn(),
-  sendEmail: vi.fn(),
+  buildStaffNotificationEmail: mockBuildStaffNotificationEmail,
+  sendEmail: mockSendEmail,
 }));
 
 vi.mock("@/lib/registrations/pending-repository", () => ({
-  deletePendingRegistration: vi.fn(),
-  getPendingRegistrationsByMember: vi.fn(),
+  deletePendingRegistration: mockDeletePendingRegistration,
+  getPendingRegistrationsByMember: mockGetPendingRegistrationsByMember,
 }));
 
 vi.mock("@/lib/registrations/repository", () => ({
-  createRegistration: vi.fn(),
-  getRegistrationCountForEvent: vi.fn(),
-  getRegistrations: vi.fn(),
+  createRegistration: mockCreateRegistration,
+  getRegistrationCountForEvent: mockGetRegistrationCountForEvent,
+  getRegistrations: mockGetRegistrations,
 }));
 
 vi.mock("@/lib/registrations/waiver-repository", () => ({
-  createWaiverAcceptance: vi.fn(),
+  createWaiverAcceptance: mockCreateWaiverAcceptance,
 }));
 
 vi.mock("./member-entry", () => ({
   parseMemberEmail: mockParseMemberEmail,
   parseMemberEntry: mockParseMemberEntry,
   parseMemberMagicLink: mockParseMemberMagicLink,
-  parseMemberPasswordUpdate: vi.fn(),
+  parseMemberPasswordUpdate: mockParseMemberPasswordUpdate,
   parseMemberProfileUpdate: mockParseMemberProfileUpdate,
 }));
 
@@ -89,28 +114,34 @@ vi.mock("./auth-results", () => ({
 
 vi.mock("./repository", () => ({
   getMemberProfile: mockGetMemberProfile,
-  updateMemberProfile: vi.fn(),
+  updateMemberProfile: mockUpdateMemberProfile,
 }));
 
 vi.mock("./supporting", () => ({
-  addMemberPass: vi.fn(),
-  getSavedEvents: vi.fn(),
-  markNotificationRead: vi.fn(),
-  removeMemberPass: vi.fn(),
-  saveEvent: vi.fn(),
-  unsaveEvent: vi.fn(),
-  upsertMemberEquipment: vi.fn(),
+  addMemberPass: mockAddMemberPass,
+  getSavedEvents: mockGetSavedEvents,
+  markNotificationRead: mockMarkNotificationRead,
+  removeMemberPass: mockRemoveMemberPass,
+  saveEvent: mockSaveEvent,
+  unsaveEvent: mockUnsaveEvent,
+  upsertMemberEquipment: mockUpsertMemberEquipment,
 }));
 
 import {
   confirmMemberEmail,
+  confirmMemberPendingRegistrationAction,
+  changeMemberPassword,
+  addPassAction,
   getCurrentMemberAccount,
   loginMemberProfile,
   loginMemberWithGoogle,
   registerMemberProfile,
   requestMemberMagicLink,
   requestMemberPasswordReset,
+  resetMemberPassword,
+  saveEquipmentAction,
   saveMemberProfile,
+  toggleSaveEventAction,
 } from "./actions";
 
 beforeEach(() => {
@@ -120,6 +151,7 @@ beforeEach(() => {
   mockGetMemberProfile.mockResolvedValue(undefined);
   mockParseMemberEmail.mockReturnValue({ success: true, email: "rider@example.com" });
   mockParseMemberMagicLink.mockReturnValue({ success: true, email: "rider@example.com" });
+  mockParseMemberPasswordUpdate.mockReturnValue({ success: false, error: "password" });
   mockParseMemberEntry.mockReturnValue({
     success: true,
     email: "rider@example.com",
@@ -268,9 +300,149 @@ describe("getCurrentMemberAccount", () => {
 });
 
 describe("member profile updates", () => {
+  function signedInProfile() {
+    const profile = { id: "profile-1", userId: "auth-user-1" };
+    mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
+    mockGetUser.mockResolvedValue({ data: { user: { id: profile.userId, email_confirmed_at: "2026-07-29T00:00:00.000Z" } } });
+    mockGetMemberProfile.mockResolvedValue(profile);
+    return profile;
+  }
+
   it("rejects profile writes before parsing or querying user-controlled fields when no member session exists", async () => {
     await expect(saveMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member?error=1");
     expect(mockParseMemberProfileUpdate).not.toHaveBeenCalled();
+  });
+
+  it("persists a validated profile only for the authenticated member", async () => {
+    const profile = signedInProfile();
+    const data = { displayName: "Rider Two", riderLevel: "intermediate" };
+    mockParseMemberProfileUpdate.mockReturnValue({ success: true, data });
+
+    await expect(saveMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member/settings?profileSaved=1");
+
+    expect(mockUpdateMemberProfile).toHaveBeenCalledWith(profile.userId, data);
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/member");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/member/settings");
+  });
+
+  it("does not write a profile when validation fails", async () => {
+    signedInProfile();
+    mockParseMemberProfileUpdate.mockReturnValue({ success: false, error: "displayName" });
+
+    await expect(saveMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member/settings?profileError=displayName");
+    expect(mockUpdateMemberProfile).not.toHaveBeenCalled();
+  });
+});
+
+describe("member security and supporting actions", () => {
+  function signedInProfile() {
+    const profile = { id: "profile-1", userId: "auth-user-1" };
+    mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
+    mockGetUser.mockResolvedValue({ data: { user: { id: profile.userId, email_confirmed_at: "2026-07-29T00:00:00.000Z" } } });
+    mockGetMemberProfile.mockResolvedValue(profile);
+    return profile;
+  }
+
+  it("updates a reset password and reports an expired recovery session", async () => {
+    mockParseMemberPasswordUpdate.mockReturnValue({ success: true, password: "new-secret-123" });
+    mockUpdateUser.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: new Error("expired") });
+
+    await expect(resetMemberPassword(new FormData())).rejects.toThrow("REDIRECT:/member?passwordReset=1");
+    await expect(resetMemberPassword(new FormData())).rejects.toThrow("REDIRECT:/member/reset-password?error=session");
+    expect(mockUpdateUser).toHaveBeenCalledWith({ password: "new-secret-123" });
+  });
+
+  it("requires an authenticated member before changing their password", async () => {
+    await expect(changeMemberPassword(new FormData())).rejects.toThrow("REDIRECT:/member?error=login");
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it("saves and removes a member-only event bookmark", async () => {
+    const profile = signedInProfile();
+    const formData = new FormData();
+    formData.set("eventSlug", "mammoth-weekend");
+    mockGetSavedEvents.mockResolvedValueOnce([]).mockResolvedValueOnce([{ eventSlug: "mammoth-weekend" }]);
+
+    await expect(toggleSaveEventAction(formData)).rejects.toThrow("REDIRECT:/events/mammoth-weekend");
+    await expect(toggleSaveEventAction(formData)).rejects.toThrow("REDIRECT:/events/mammoth-weekend");
+
+    expect(mockSaveEvent).toHaveBeenCalledWith(profile.id, "mammoth-weekend");
+    expect(mockUnsaveEvent).toHaveBeenCalledWith(profile.id, "mammoth-weekend");
+  });
+
+  it("stores equipment against the current member and rejects invalid pass types", async () => {
+    const profile = signedInProfile();
+    const equipment = new FormData();
+    equipment.set("ownsSkis", "on");
+    equipment.set("needsRentalHelp", "on");
+    equipment.set("equipmentNote", "  Please tune bindings. ");
+
+    await expect(saveEquipmentAction(equipment)).rejects.toThrow("REDIRECT:/member/settings?profileSaved=1");
+    expect(mockUpsertMemberEquipment).toHaveBeenCalledWith(profile.id, {
+      ownsSkis: true, ownsSnowboard: false, ownsBoots: false, needsRentalHelp: true, note: "Please tune bindings.",
+    });
+
+    const invalidPass = new FormData();
+    invalidPass.set("passType", "staff-only");
+    await expect(addPassAction(invalidPass)).rejects.toThrow("REDIRECT:/member/settings?profileError=passType");
+    expect(mockAddMemberPass).not.toHaveBeenCalled();
+  });
+});
+
+describe("confirmMemberPendingRegistrationAction", () => {
+  function signedInProfile() {
+    const profile = { id: "profile-1", userId: "auth-user-1" };
+    mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
+    mockGetUser.mockResolvedValue({ data: { user: { id: profile.userId, email_confirmed_at: "2026-07-29T00:00:00.000Z" } } });
+    mockGetMemberProfile.mockResolvedValue(profile);
+    return profile;
+  }
+
+  it("creates a registration, captures the waiver, and removes only the member pending record", async () => {
+    const profile = signedInProfile();
+    const pending = {
+      id: "pending-1", eventSlug: "mammoth-weekend", answers: { level: "intermediate" }, consentGiven: true,
+      contactEmail: " RIDER@EXAMPLE.COM ", contactName: "Rider", contactPhone: "555-0100",
+      waiverTextEn: "Waiver", waiverTextSha: "sha-1", typedName: "Rider", handwrittenSignatureDataUrl: null,
+    };
+    const event = { slug: "mammoth-weekend", title: { en: "Mammoth Weekend", zh: "" } };
+    mockGetPendingRegistrationsByMember.mockResolvedValue([pending]);
+    mockGetEvent.mockResolvedValue(event);
+    mockIsEventOpen.mockReturnValue(true);
+    mockGetRegistrationCountForEvent.mockResolvedValue(1);
+    mockHasRemainingCapacity.mockReturnValue(true);
+    mockGetRegistrations.mockResolvedValue([]);
+    mockCreateRegistration.mockResolvedValue({ registration: { id: "registration-1" } });
+    mockBuildStaffNotificationEmail.mockReturnValue({});
+    mockSendEmail.mockResolvedValue(undefined);
+    const formData = new FormData();
+    formData.set("pendingId", pending.id);
+
+    await expect(confirmMemberPendingRegistrationAction(formData)).rejects.toThrow("REDIRECT:/member?registration=confirmed");
+
+    expect(mockGetPendingRegistrationsByMember).toHaveBeenCalledWith(profile.id);
+    expect(mockCreateRegistration).toHaveBeenCalledWith(expect.objectContaining({ memberId: profile.id, contactEmail: "rider@example.com" }));
+    expect(mockCreateWaiverAcceptance).toHaveBeenCalledWith(expect.objectContaining({ registrationId: "registration-1", typedName: "Rider" }));
+    expect(mockDeletePendingRegistration).toHaveBeenCalledWith(pending.id);
+  });
+
+  it("does not create another registration when this member is already registered", async () => {
+    const profile = signedInProfile();
+    const pending = { id: "pending-1", eventSlug: "mammoth-weekend", contactEmail: "rider@example.com" };
+    const event = { slug: "mammoth-weekend", title: { en: "Mammoth Weekend", zh: "" } };
+    mockGetPendingRegistrationsByMember.mockResolvedValue([pending]);
+    mockGetEvent.mockResolvedValue(event);
+    mockIsEventOpen.mockReturnValue(true);
+    mockGetRegistrationCountForEvent.mockResolvedValue(1);
+    mockHasRemainingCapacity.mockReturnValue(true);
+    mockGetRegistrations.mockResolvedValue([{ id: "registration-1", memberId: profile.id }]);
+    const formData = new FormData();
+    formData.set("pendingId", pending.id);
+
+    await expect(confirmMemberPendingRegistrationAction(formData)).rejects.toThrow("REDIRECT:/member?registration=duplicate");
+
+    expect(mockCreateRegistration).not.toHaveBeenCalled();
+    expect(mockDeletePendingRegistration).toHaveBeenCalledWith(pending.id);
   });
 });
 
