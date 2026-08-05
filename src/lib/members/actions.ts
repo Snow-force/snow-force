@@ -25,7 +25,6 @@ import {
   memberConsentNextPath,
   memberConsentPath,
   memberLocale,
-  recordCurrentEventMediaConsent,
   recordCurrentMemberConsents,
   resolveMemberAuthDestination,
 } from "./member-consents";
@@ -175,7 +174,7 @@ export async function registerMemberProfile(formData: FormData) {
     acceptedAt,
     client: createAdminClient(),
     locale: memberLocale(cookies().get("lang")?.value),
-    mediaAccepted: entry.photoSocialMediaConsent,
+    mediaAccepted: true,
     source: "email_registration",
     userId: data.user.id,
   });
@@ -308,12 +307,11 @@ export async function acceptMemberConsent(formData: FormData) {
   if (!user) redirect("/member?error=login");
 
   const acceptedAt = new Date().toISOString();
-  const mediaAccepted = formData.get("eventMediaSocialConsent") === "on";
   const saved = await recordCurrentMemberConsents({
     acceptedAt,
     client: supabase,
     locale: memberLocale(cookies().get("lang")?.value),
-    mediaAccepted,
+    mediaAccepted: true,
     source: "consent_page",
     userId: user.id,
   });
@@ -338,21 +336,8 @@ export async function saveMemberPrivacyPreferences(formData: FormData) {
   const account = await getCurrentMemberAccount();
   if (!account?.profile) redirect("/member?error=1");
 
-  const mediaAccepted = formData.get("eventMediaSocialConsent") === "on";
-  const supabase = createClient();
-  const mediaSaved = await recordCurrentEventMediaConsent({
-    acceptedAt: new Date().toISOString(),
-    client: supabase,
-    locale: memberLocale(cookies().get("lang")?.value),
-    mediaAccepted,
-    source: "consent_page",
-    userId: account.user.id,
-  });
-  if (!mediaSaved) redirect("/member/settings?profileError=privacy");
-
   await updateMemberProfile(account.profile.userId, {
     marketingEmailOptIn: formData.get("marketingEmailOptIn") === "on",
-    photoSocialMediaConsent: mediaAccepted,
   });
   revalidatePath("/member");
   revalidatePath("/member/settings");

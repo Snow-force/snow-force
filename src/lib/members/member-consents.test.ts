@@ -57,7 +57,7 @@ describe("member consent policy", () => {
     const privacyForGuard = queryResult({ accepted: true, accepted_at: "2026-08-04T01:00:00.000Z" });
     const privacyForEnsure = queryResult({ accepted: true, accepted_at: "2026-08-04T01:00:00.000Z" });
     const missingProfile = queryResult(null);
-    const optionalMedia = queryResult({ accepted: false, accepted_at: null });
+    const requiredMedia = queryResult({ accepted: true, accepted_at: "2026-08-04T01:00:00.000Z" });
     const insert = vi.fn().mockResolvedValue({ error: null });
     const insertProfile = { insert };
     const client = {
@@ -66,7 +66,7 @@ describe("member consent policy", () => {
         .mockReturnValueOnce(privacyForGuard)
         .mockReturnValueOnce(privacyForEnsure)
         .mockReturnValueOnce(missingProfile)
-        .mockReturnValueOnce(optionalMedia)
+        .mockReturnValueOnce(requiredMedia)
         .mockReturnValueOnce(insertProfile),
     };
 
@@ -74,7 +74,7 @@ describe("member consent policy", () => {
     expect(insert).toHaveBeenCalledWith({
       display_name: "Rider One",
       email: "rider@example.com",
-      photo_social_media_consent: false,
+      photo_social_media_consent: true,
       user_id: "auth-user-1",
     });
   });
@@ -87,7 +87,7 @@ describe("member consent policy", () => {
     expect(client.from).toHaveBeenCalledTimes(1);
   });
 
-  it("stores required privacy and optional media as separate versioned rows", async () => {
+  it("stores privacy and its required event-media permission as separate versioned rows", async () => {
     const upsert = vi.fn().mockResolvedValue({ error: null });
     const client = { from: vi.fn(() => ({ upsert })) };
 
@@ -95,7 +95,7 @@ describe("member consent policy", () => {
       acceptedAt: "2026-08-04T01:00:00.000Z",
       client: client as never,
       locale: "zh",
-      mediaAccepted: false,
+      mediaAccepted: true,
       source: "consent_page",
       userId: "auth-user-1",
     })).resolves.toBe(true);
@@ -107,8 +107,8 @@ describe("member consent policy", () => {
         policy_version: CURRENT_PRIVACY_POLICY_VERSION,
       }),
       expect.objectContaining({
-        accepted: false,
-        accepted_at: null,
+        accepted: true,
+        accepted_at: "2026-08-04T01:00:00.000Z",
         consent_type: "event_media_social",
         policy_version: CURRENT_EVENT_MEDIA_POLICY_VERSION,
       }),

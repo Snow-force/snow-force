@@ -9,19 +9,18 @@ vi.mock("@/lib/members/actions", () => ({
 }));
 
 describe("MemberConsentStep", () => {
-  it("keeps required privacy separate from optional media permission", () => {
+  it("uses one required privacy checkbox that includes the event-media permission", () => {
     render(
       <LanguageProvider initialLang="zh">
         <MemberConsentStep next="/member" />
       </LanguageProvider>,
     );
 
-    const privacy = screen.getByLabelText(/我已阅读并同意《隐私守则》/);
-    const media = screen.getByLabelText(/活动照片和视频授权/);
+    const privacy = screen.getByLabelText(/我已阅读并同意《隐私守则》，包括授权/);
     const continueButton = screen.getByRole("button", { name: "同意并继续" });
 
     expect(privacy).toBeRequired();
-    expect(media).not.toBeRequired();
+    expect(screen.queryByRole("checkbox", { name: /活动照片和视频授权/ })).not.toBeInTheDocument();
     expect(continueButton).toBeDisabled();
     expect(screen.queryByText(/Google 登录/)).not.toBeInTheDocument();
 

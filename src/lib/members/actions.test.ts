@@ -42,7 +42,6 @@ const mockHeadersGet = vi.hoisted(() => vi.fn());
 const mockCreateAdminClient = vi.hoisted(() => vi.fn(() => ({ admin: true })));
 const mockEnsureMemberProfileAfterConsent = vi.hoisted(() => vi.fn());
 const mockHasCurrentPrivacyConsent = vi.hoisted(() => vi.fn());
-const mockRecordCurrentEventMediaConsent = vi.hoisted(() => vi.fn());
 const mockRecordCurrentMemberConsents = vi.hoisted(() => vi.fn());
 const mockResolveMemberAuthDestination = vi.hoisted(() => vi.fn());
 const mockMemberAuthCallbackUrl = vi.hoisted(() => vi.fn());
@@ -88,7 +87,6 @@ vi.mock("./member-consents", () => ({
   memberConsentNextPath: vi.fn((next: string) => next || "/member"),
   memberConsentPath: vi.fn((next: string) => `/member/consent?next=${encodeURIComponent(next)}`),
   memberLocale: vi.fn((value: string | undefined) => value === "zh" ? "zh" : "en"),
-  recordCurrentEventMediaConsent: mockRecordCurrentEventMediaConsent,
   recordCurrentMemberConsents: mockRecordCurrentMemberConsents,
   resolveMemberAuthDestination: mockResolveMemberAuthDestination,
 }));
@@ -178,7 +176,6 @@ beforeEach(() => {
   mockCookieGet.mockReturnValue(undefined);
   mockEnsureMemberProfileAfterConsent.mockResolvedValue(true);
   mockHasCurrentPrivacyConsent.mockResolvedValue(true);
-  mockRecordCurrentEventMediaConsent.mockResolvedValue(true);
   mockRecordCurrentMemberConsents.mockResolvedValue(true);
   mockResolveMemberAuthDestination.mockImplementation(async (_user, next: string) => next);
   mockGetUser.mockResolvedValue({ data: { user: null } });
@@ -412,12 +409,7 @@ describe("member profile updates", () => {
 
     expect(mockUpdateMemberProfile).toHaveBeenCalledWith(profile.userId, {
       marketingEmailOptIn: false,
-      photoSocialMediaConsent: false,
     });
-    expect(mockRecordCurrentEventMediaConsent).toHaveBeenCalledWith(expect.objectContaining({
-      mediaAccepted: false,
-      userId: "auth-user-1",
-    }));
   });
 
   it("S1-rejects-privacy-preference-writes-without-a-member-session", async () => {
@@ -428,7 +420,7 @@ describe("member profile updates", () => {
 });
 
 describe("member consent activation", () => {
-  it("records required privacy and optional media before creating the profile", async () => {
+  it("records privacy and required event-media permission before creating the profile", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "auth-user-1" } } });
     const formData = new FormData();
     formData.set("next", "/events/mammoth-weekend");
@@ -439,7 +431,7 @@ describe("member consent activation", () => {
     );
 
     expect(mockRecordCurrentMemberConsents).toHaveBeenCalledWith(expect.objectContaining({
-      mediaAccepted: false,
+      mediaAccepted: true,
       source: "consent_page",
       userId: "auth-user-1",
     }));

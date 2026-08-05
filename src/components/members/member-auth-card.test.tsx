@@ -19,15 +19,15 @@ beforeEach(() => {
 });
 
 describe("MemberAuthCard registration", () => {
-  it("shows required privacy and separate optional media choices", () => {
+  it("uses one required checkbox for privacy and event-media permission", () => {
     render(<LanguageProvider><MemberAuthCard searchParams={{ mode: "register" }} /></LanguageProvider>);
 
     expect(screen.getByLabelText("Display name")).toBeRequired();
     expect(screen.getByLabelText("Email")).toHaveAttribute("type", "email");
     expect(screen.getByLabelText("Password")).toHaveAttribute("autocomplete", "new-password");
     expect(screen.getByLabelText("Confirm password")).toHaveAttribute("autocomplete", "new-password");
-    expect(screen.getByLabelText(/I have read and agree to the Privacy Notice/)).toBeRequired();
-    expect(screen.getByLabelText(/Optional: Allow SnowForce/)).not.toBeRequired();
+    expect(screen.getByLabelText(/I have read and agree to the Privacy Notice, including permission/)).toBeRequired();
+    expect(screen.queryByRole("checkbox", { name: /Optional: Allow SnowForce/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create SnowForce account" })).toBeDisabled();
   });
 
@@ -43,7 +43,7 @@ describe("MemberAuthCard registration", () => {
 
     const submitButton = screen.getByRole("button", { name: "Create SnowForce account" });
     expect(submitButton).toBeDisabled();
-    fireEvent.click(screen.getByLabelText(/I have read and agree to the Privacy Notice/));
+    fireEvent.click(screen.getByLabelText(/I have read and agree to the Privacy Notice, including permission/));
     expect(submitButton).toBeEnabled();
     const form = submitButton.closest("form");
     if (!(form instanceof HTMLFormElement)) throw new Error("Expected a registration form.");

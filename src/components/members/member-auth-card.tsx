@@ -192,12 +192,8 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
                     <Link href="/privacy-policy" target="_blank" className="font-semibold text-[#7dd3fc] underline underline-offset-2">
                       {t({ en: "Privacy Notice", zh: "《隐私守则》" })}
                     </Link>
-                    {t({ en: ".", zh: "。" })}
+                    {t({ en: ", including permission for SnowForce to use event photos and videos on social media.", zh: "，包括授权 SnowForce 将活动照片和视频用于社交媒体。" })}
                   </span>
-                </label>
-                <label className="flex items-start gap-3 text-white/50">
-                  <input name="photoSocialMediaConsent" type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/25 bg-white/5 text-[#005bea]" />
-                  <span>{t({ en: "Optional: Allow SnowForce to use event photos and videos on social media.", zh: "可选：我同意 SnowForce 将活动照片和视频用于社交媒体。" })}</span>
                 </label>
               </div>
               <RegisterSubmitButton enabled={registrationIsValid} pending={registerPending} />

@@ -61,7 +61,7 @@ export function parseMemberEntry(mode: MemberEntryMode, formData: FormData) {
     displayName,
     password,
     remember,
-    photoSocialMediaConsent: readBoolean(formData, "photoSocialMediaConsent"),
+    photoSocialMediaConsent: mode === "register",
     privacyPolicyAccepted: readBoolean(formData, "privacyPolicyAccepted"),
     marketingEmailOptIn: readBoolean(formData, "marketingEmailOptIn"),
   };

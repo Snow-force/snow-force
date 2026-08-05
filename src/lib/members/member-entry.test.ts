@@ -80,7 +80,7 @@ describe("parseMemberEntry", () => {
     expect(result).not.toHaveProperty("confirmPassword");
   });
 
-  it("requires only the privacy notice and keeps media and marketing optional", () => {
+  it("requires one privacy acceptance and records the included event-media permission", () => {
     expect(parseMemberEntry("register", form({
       displayName: "Rider One",
       email: "rider@example.com",
@@ -89,7 +89,7 @@ describe("parseMemberEntry", () => {
       privacyPolicyAccepted: "on",
     }))).toMatchObject({
       success: true,
-      photoSocialMediaConsent: false,
+      photoSocialMediaConsent: true,
       privacyPolicyAccepted: true,
       marketingEmailOptIn: false,
     });
@@ -107,7 +107,6 @@ describe("parseMemberEntry", () => {
       email: "rider@example.com",
       password: "Secret123",
       confirmPassword: "Secret123",
-      photoSocialMediaConsent: "on",
       privacyPolicyAccepted: "on",
     }))).toMatchObject({ photoSocialMediaConsent: true, privacyPolicyAccepted: true, marketingEmailOptIn: false });
   });

@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { acceptMemberConsent, cancelMemberConsent } from "@/lib/members/actions";
-import {
-  CURRENT_EVENT_MEDIA_POLICY_VERSION,
-  CURRENT_PRIVACY_POLICY_VERSION,
-} from "@/lib/members/member-consent-policy";
+import { CURRENT_PRIVACY_POLICY_VERSION } from "@/lib/members/member-consent-policy";
 import { useLanguage } from "@/lib/language";
 
 export function MemberConsentStep({ error, next }: { error?: string; next: string }) {
@@ -74,21 +71,8 @@ export function MemberConsentStep({ error, next }: { error?: string; next: strin
                   className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#abb4c0] text-[#005bea]"
                 />
                 <span>
-                  <span className="block font-semibold">{t({ en: "I have read and agree to the Privacy Notice.", zh: "我已阅读并同意《隐私守则》。" })}</span>
-                  <span className="mt-1 block text-[13px] text-[#737d8b]">{t({ en: "Required to activate and use a SnowForce membership.", zh: "这是启用和使用 SnowForce 会员身份的必要授权。" })}</span>
-                </span>
-              </label>
-
-              <label className="flex items-start gap-3 rounded-[18px] border border-[#d9dee5] px-4 py-4 text-[14px] leading-6 text-[#2f3743] sm:text-[15px]">
-                <input name="eventMediaSocialConsent" type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#abb4c0] text-[#005bea]" />
-                <span>
-                  <span className="block font-semibold">{t({ en: "Event photo and video permission", zh: "活动照片和视频授权" })}</span>
-                  <span className="mt-1 block text-[13px] text-[#737d8b]">
-                    {t({
-                      en: `Optional. Allow SnowForce to use event photos and videos on social media. Version ${CURRENT_EVENT_MEDIA_POLICY_VERSION}.`,
-                      zh: `可选。允许 SnowForce 将活动照片和视频用于社交媒体。版本 ${CURRENT_EVENT_MEDIA_POLICY_VERSION}。`,
-                    })}
-                  </span>
+                  <span className="block font-semibold">{t({ en: "I have read and agree to the Privacy Notice, including permission for SnowForce to use event photos and videos on social media.", zh: "我已阅读并同意《隐私守则》，包括授权 SnowForce 将活动照片和视频用于社交媒体。" })}</span>
+                  <span className="mt-1 block text-[13px] text-[#737d8b]">{t({ en: "This is required to activate and use a SnowForce membership.", zh: "这是启用和使用 SnowForce 会员身份的必要授权。" })}</span>
                 </span>
               </label>
 
