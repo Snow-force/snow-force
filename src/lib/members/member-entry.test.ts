@@ -6,6 +6,7 @@ import {
   parseMemberPasswordUpdate,
   parseMemberProfileUpdate,
 } from "./member-entry";
+import { isValidMemberEmail, validatePassword } from "./member-validation";
 
 function form(entries: Record<string, string>) {
   const formData = new FormData();
@@ -28,6 +29,9 @@ describe("parseMemberEntry", () => {
       displayName: "",
       password: "secret123",
       remember: false,
+      photoSocialMediaConsent: false,
+      marketingEmailOptIn: false,
+      privacyPolicyAccepted: false,
     });
   });
 
@@ -55,8 +59,11 @@ describe("parseMemberEntry", () => {
       form({
         displayName: " Rider One ",
         email: " Rider@Example.COM ",
-        password: "secret",
-        confirmPassword: "secret",
+        password: "Secret123",
+        confirmPassword: "Secret123",
+        photoSocialMediaConsent: "on",
+        marketingEmailOptIn: "on",
+        privacyPolicyAccepted: "on",
       }),
     );
 
@@ -64,13 +71,48 @@ describe("parseMemberEntry", () => {
       success: true,
       email: "rider@example.com",
       displayName: "Rider One",
-      password: "secret",
+      password: "Secret123",
       remember: false,
+      photoSocialMediaConsent: true,
+      marketingEmailOptIn: true,
+      privacyPolicyAccepted: true,
     });
     expect(result).not.toHaveProperty("confirmPassword");
   });
 
-  it("rejects registration passwords shorter than six characters", () => {
+  it("requires only the privacy notice and keeps media and marketing optional", () => {
+    expect(parseMemberEntry("register", form({
+      displayName: "Rider One",
+      email: "rider@example.com",
+      password: "Secret123",
+      confirmPassword: "Secret123",
+      privacyPolicyAccepted: "on",
+    }))).toMatchObject({
+      success: true,
+      photoSocialMediaConsent: false,
+      privacyPolicyAccepted: true,
+      marketingEmailOptIn: false,
+    });
+
+    expect(parseMemberEntry("register", form({
+      displayName: "Rider One",
+      email: "rider@example.com",
+      password: "Secret123",
+      confirmPassword: "Secret123",
+      photoSocialMediaConsent: "on",
+    }))).toEqual({ success: false, error: "privacy_policy" });
+
+    expect(parseMemberEntry("register", form({
+      displayName: "Rider One",
+      email: "rider@example.com",
+      password: "Secret123",
+      confirmPassword: "Secret123",
+      photoSocialMediaConsent: "on",
+      privacyPolicyAccepted: "on",
+    }))).toMatchObject({ photoSocialMediaConsent: true, privacyPolicyAccepted: true, marketingEmailOptIn: false });
+  });
+
+  it("rejects registration passwords that do not meet every strength requirement", () => {
     const result = parseMemberEntry(
       "register",
       form({
@@ -90,8 +132,8 @@ describe("parseMemberEntry", () => {
       form({
         displayName: "Rider One",
         email: "rider@example.com",
-        password: "secret123",
-        confirmPassword: "secret456",
+        password: "Secret123",
+        confirmPassword: "Secret456",
       }),
     );
 
@@ -137,9 +179,9 @@ describe("parseMemberPasswordUpdate", () => {
   it("accepts matching valid passwords", () => {
     expect(
       parseMemberPasswordUpdate(
-        form({ password: "secret123", confirmPassword: "secret123" }),
+        form({ password: "Secret123", confirmPassword: "Secret123" }),
       ),
-    ).toEqual({ success: true, password: "secret123" });
+    ).toEqual({ success: true, password: "Secret123" });
   });
 
   it("rejects short passwords", () => {
@@ -151,9 +193,30 @@ describe("parseMemberPasswordUpdate", () => {
   it("rejects mismatched passwords", () => {
     expect(
       parseMemberPasswordUpdate(
-        form({ password: "secret123", confirmPassword: "secret456" }),
+        form({ password: "Secret123", confirmPassword: "Secret456" }),
       ),
     ).toEqual({ success: false, error: "confirm" });
+  });
+});
+
+describe("member validation", () => {
+  it("requires all four password rules", () => {
+    expect(validatePassword("Secret123")).toEqual({
+      minLength: true,
+      hasUppercase: true,
+      hasLowercase: true,
+      hasNumber: true,
+      valid: true,
+    });
+    expect(validatePassword("secret123")).toMatchObject({ hasUppercase: false, valid: false });
+    expect(validatePassword("Secretab")).toMatchObject({ hasNumber: false, valid: false });
+  });
+
+  it("accepts normalized email but rejects whitespace and invalid suffixes", () => {
+    expect(isValidMemberEmail(" Rider@Example.COM ")).toBe(true);
+    expect(isValidMemberEmail("rider @example.com")).toBe(false);
+    expect(isValidMemberEmail("rider@example.c")).toBe(false);
+    expect(isValidMemberEmail("@example.com")).toBe(false);
   });
 });
 

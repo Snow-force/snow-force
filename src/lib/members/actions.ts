@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
@@ -16,9 +16,19 @@ import {
   getRegistrations,
 } from "@/lib/registrations/repository";
 import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
 import { memberAuthCallbackUrl, sanitizeMemberNextPath } from "./auth-results";
+import {
+  ensureMemberProfileAfterConsent,
+  hasCurrentPrivacyConsent,
+  memberConsentNextPath,
+  memberConsentPath,
+  memberLocale,
+  recordCurrentEventMediaConsent,
+  recordCurrentMemberConsents,
+  resolveMemberAuthDestination,
+} from "./member-consents";
 import {
   parseMemberEmail,
   parseMemberEntry,
@@ -37,11 +47,20 @@ import {
 } from "./supporting";
 
 function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
+  const origin = headers().get("origin");
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      const localOrigin = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+      if (url.protocol === "https:" || (url.protocol === "http:" && localOrigin)) {
+        return url.origin;
+      }
+    } catch {
+      // Use the configured site URL when the request origin is malformed.
+    }
+  }
 
-function memberRedirect(path: string) {
-  return `${siteUrl()}${path}`;
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
 function memberCallback(path: string) {
@@ -76,34 +95,14 @@ export async function getCurrentMemberAccount() {
     return null;
   }
 
-  let profile = (await getMemberProfile(user.id)) ?? null;
-
-  // Auto-create profile when auth user exists but trigger didn't fire
-  if (!profile && user.email) {
-    const displayName =
-      (user.user_metadata?.display_name as string)?.trim() ||
-      user.email.split("@")[0] ||
-      "";
-
-    const { data: newProfile } = await supabase
-      .from("member_profiles")
-      .insert({
-        user_id: user.id,
-        display_name: displayName,
-        email: user.email,
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (newProfile) {
-      profile = (await getMemberProfile(user.id)) ?? null;
-    }
-  }
+  const profile = (await getMemberProfile(user.id)) ?? null;
+  const privacyAccepted = await hasCurrentPrivacyConsent(user.id, supabase);
 
   return {
     user,
     profile,
     emailConfirmed: Boolean(user.email_confirmed_at),
+    privacyAccepted,
   };
 }
 
@@ -118,18 +117,25 @@ export async function registerMemberProfile(formData: FormData) {
     const code =
       entry.error === "password"
         ? "register_password"
+        : entry.error === "email"
+          ? "register_email"
         : entry.error === "confirm"
           ? "register_confirm"
-          : "register";
+          : entry.error === "privacy_policy"
+            ? "register_privacy_policy"
+            : "register";
     redirect(`/member?mode=register&error=${code}`);
   }
 
+  const acceptedAt = new Date().toISOString();
   const supabase = createClient();
   const { data, error } = await supabase.auth.signUp({
     email: entry.email,
     password: entry.password,
     options: {
-      data: { display_name: entry.displayName },
+      data: {
+        display_name: entry.displayName,
+      },
       emailRedirectTo: memberCallback(nextPathFromForm(formData)),
     },
   });
@@ -161,6 +167,22 @@ export async function registerMemberProfile(formData: FormData) {
     redirect("/member?mode=login&error=register_taken");
   }
 
+  if (!data.user) {
+    redirect("/member?mode=register&error=register_failed");
+  }
+
+  const consentSaved = await recordCurrentMemberConsents({
+    acceptedAt,
+    client: createAdminClient(),
+    locale: memberLocale(cookies().get("lang")?.value),
+    mediaAccepted: entry.photoSocialMediaConsent,
+    source: "email_registration",
+    userId: data.user.id,
+  });
+  if (!consentSaved) {
+    redirect("/member?mode=register&error=register_failed");
+  }
+
   revalidatePath("/member");
   redirect("/member?registered=1");
 }
@@ -172,16 +194,16 @@ export async function loginMemberProfile(formData: FormData) {
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: entry.email,
     password: entry.password,
   });
-  if (error) {
+  if (error || !data.user) {
     redirect("/member?error=login");
   }
 
   revalidatePath("/", "layout");
-  redirect(nextPathFromForm(formData));
+  redirect(await resolveMemberAuthDestination(data.user, nextPathFromForm(formData), supabase));
 }
 
 export async function saveMemberProfile(formData: FormData) {
@@ -260,17 +282,81 @@ export async function confirmMemberEmail(formData: FormData) {
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type: "email",
   });
 
-  if (error) {
+  if (error || !data.user) {
     redirect("/member?error=callback");
   }
 
   revalidatePath("/member");
-  redirect(nextPathFromForm(formData));
+  redirect(await resolveMemberAuthDestination(data.user, nextPathFromForm(formData), supabase));
+}
+
+export async function acceptMemberConsent(formData: FormData) {
+  const next = memberConsentNextPath(String(formData.get("next") ?? ""));
+  if (formData.get("privacyPolicyAccepted") !== "on") {
+    redirect(`${memberConsentPath(next)}&error=required`);
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/member?error=login");
+
+  const acceptedAt = new Date().toISOString();
+  const mediaAccepted = formData.get("eventMediaSocialConsent") === "on";
+  const saved = await recordCurrentMemberConsents({
+    acceptedAt,
+    client: supabase,
+    locale: memberLocale(cookies().get("lang")?.value),
+    mediaAccepted,
+    source: "consent_page",
+    userId: user.id,
+  });
+  if (!saved) redirect(`${memberConsentPath(next)}&error=save`);
+
+  if (!(await ensureMemberProfileAfterConsent(user, supabase))) {
+    redirect("/member?error=profile");
+  }
+
+  revalidatePath("/member");
+  redirect(next);
+}
+
+export async function cancelMemberConsent() {
+  const supabase = createClient();
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/member?consentCancelled=1");
+}
+
+export async function saveMemberPrivacyPreferences(formData: FormData) {
+  const account = await getCurrentMemberAccount();
+  if (!account?.profile) redirect("/member?error=1");
+
+  const mediaAccepted = formData.get("eventMediaSocialConsent") === "on";
+  const supabase = createClient();
+  const mediaSaved = await recordCurrentEventMediaConsent({
+    acceptedAt: new Date().toISOString(),
+    client: supabase,
+    locale: memberLocale(cookies().get("lang")?.value),
+    mediaAccepted,
+    source: "consent_page",
+    userId: account.user.id,
+  });
+  if (!mediaSaved) redirect("/member/settings?profileError=privacy");
+
+  await updateMemberProfile(account.profile.userId, {
+    marketingEmailOptIn: formData.get("marketingEmailOptIn") === "on",
+    photoSocialMediaConsent: mediaAccepted,
+  });
+  revalidatePath("/member");
+  revalidatePath("/member/settings");
+  redirect("/member/settings?privacySaved=1#privacy");
 }
 
 export async function resetMemberPassword(formData: FormData) {

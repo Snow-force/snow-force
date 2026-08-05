@@ -28,8 +28,8 @@ export function ResetPasswordForm({ hasSession, searchParams }: ResetPasswordFor
             </h1>
             <p className="mt-2 text-sm leading-6 text-gray-500">
               {t({
-                en: "Choose a password of at least 6 characters. Sign in with it once you're done.",
-                zh: "新密码至少 6 个字符。完成后请使用新密码登录。",
+                en: "Use at least 8 characters, including uppercase, lowercase, and a number.",
+                zh: "新密码至少 8 个字符，并包含大写字母、小写字母和数字。",
               })}
             </p>
           </div>
@@ -40,13 +40,13 @@ export function ResetPasswordForm({ hasSession, searchParams }: ResetPasswordFor
                 <label className="label" htmlFor="reset-password">
                   {t({ en: "New password", zh: "新密码" })}
                 </label>
-                <input id="reset-password" name="password" type="password" className="input-field" minLength={6} required />
+                <input id="reset-password" name="password" type="password" className="input-field" minLength={8} required />
               </div>
               <div>
                 <label className="label" htmlFor="reset-confirm-password">
                   {t({ en: "Confirm new password", zh: "确认新密码" })}
                 </label>
-                <input id="reset-confirm-password" name="confirmPassword" type="password" className="input-field" minLength={6} required />
+                <input id="reset-confirm-password" name="confirmPassword" type="password" className="input-field" minLength={8} required />
               </div>
               <button className="btn-primary w-full">
                 {t({ en: "Update password", zh: "更新密码" })}

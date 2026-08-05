@@ -268,6 +268,8 @@ export interface MemberProfile {
   equipment: MemberEquipment;
   savedEventSlugs: string[];
   notificationPreferences: MemberNotificationPreferences;
+  photoSocialMediaConsent?: boolean;
+  marketingEmailOptIn?: boolean;
   emergencyContact: string;
   emergencyPhone: string;
   createdAt: string;

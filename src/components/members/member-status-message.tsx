@@ -64,6 +64,9 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   if (searchParams.profileSaved) {
     return { tone: "success", text: { en: "Member profile saved.", zh: "会员资料已保存。" } };
   }
+  if (searchParams.privacySaved) {
+    return { tone: "success", text: { en: "Privacy preferences saved.", zh: "隐私偏好已保存。" } };
+  }
   if (searchParams.payment === "success") {
     return { tone: "success", text: { en: "Payment received - your trip is confirmed. Find it under My Trips.", zh: "付款已收到，行程已确认。请在“我的行程”中查看。" } };
   }
@@ -86,17 +89,23 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
     return {
       tone: "error",
       text: {
-        en: "Please fill in a display name, a valid email, and a password (at least 6 characters), then try again.",
-        zh: "请填写姓名、有效邮箱和密码后注册（密码至少 6 位）。",
+        en: "Please fill in your display name, then try again.",
+        zh: "请填写姓名后再试。",
       },
+    };
+  }
+  if (searchParams.error === "register_email") {
+    return {
+      tone: "error",
+      text: { en: "Please enter a valid email address.", zh: "请输入有效的邮箱地址。" },
     };
   }
   if (searchParams.error === "register_password") {
     return {
       tone: "error",
       text: {
-        en: "Password must be at least 6 characters.",
-        zh: "密码至少需要 6 个字符。",
+        en: "Password must be at least 8 characters and include uppercase, lowercase, and a number.",
+        zh: "密码至少需要 8 个字符，并包含大写字母、小写字母和数字。",
       },
     };
   }
@@ -106,6 +115,15 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
       text: {
         en: "The two passwords do not match.",
         zh: "两次输入的密码不一致。",
+      },
+    };
+  }
+  if (searchParams.error === "register_privacy_policy") {
+    return {
+      tone: "error",
+      text: {
+        en: "Read and agree to the Privacy Notice to create a SnowForce account.",
+        zh: "阅读并同意隐私守则后，才能创建 SnowForce 会员账号。",
       },
     };
   }
@@ -123,7 +141,7 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
       tone: "error",
       text: {
         en: "An account already exists for this email. Sign in, or use Forgot password to reset your password.",
-        zh: "该邮箱已注册。请直接登录或使用其他邮箱。",
+        zh: "该邮箱已注册，请直接登录或重置密码。",
       },
     };
   }
@@ -150,6 +168,15 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   }
   if (searchParams.error === "oauth") {
     return { tone: "error", text: { en: "Google sign-in could not start. Try again or use email sign-in.", zh: "Google 登录暂时无法启动，请稍后再试或使用邮箱登录。" } };
+  }
+  if (searchParams.error === "profile") {
+    return {
+      tone: "error",
+      text: {
+        en: "Your identity is verified, but your member profile could not be activated. Please try again.",
+        zh: "你的身份已经验证，但正式会员资料暂时无法启用，请重试。",
+      },
+    };
   }
   if (searchParams.error === "callback") {
     return {
@@ -182,7 +209,7 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
     return { tone: "error", text: { en: "Enter a valid email before resending the verification link.", zh: "请输入有效邮箱后重新发送验证邮件。" } };
   }
   if (searchParams.securityError === "password") {
-    return { tone: "error", text: { en: "The new password must be at least 6 characters.", zh: "新密码至少需要 6 个字符。" } };
+    return { tone: "error", text: { en: "The new password must be at least 8 characters and include uppercase, lowercase, and a number.", zh: "新密码至少需要 8 个字符，并包含大写字母、小写字母和数字。" } };
   }
   if (searchParams.securityError === "confirm") {
     return { tone: "error", text: { en: "The two new passwords do not match.", zh: "两次输入的新密码不一致。" } };
@@ -211,7 +238,7 @@ function forgotMessage(searchParams: Record<string, string | undefined>): Messag
 
 function resetMessage(searchParams: Record<string, string | undefined>): Message | null {
   if (searchParams.error === "password") {
-    return { tone: "error", text: { en: "The new password must be at least 6 characters.", zh: "新密码至少需要 6 个字符。" } };
+    return { tone: "error", text: { en: "The new password must be at least 8 characters and include uppercase, lowercase, and a number.", zh: "新密码至少需要 8 个字符，并包含大写字母、小写字母和数字。" } };
   }
   if (searchParams.error === "confirm") {
     return { tone: "error", text: { en: "The two new passwords do not match.", zh: "两次输入的新密码不一致。" } };

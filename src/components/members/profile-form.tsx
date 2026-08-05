@@ -3,6 +3,7 @@ import {
   addPassAction,
   saveEquipmentAction,
   saveMemberProfile,
+  saveMemberPrivacyPreferences,
 } from "@/lib/members/actions";
 
 type ProfileFormProps = {
@@ -109,6 +110,20 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         <input name="equipmentNote" className="auth-input min-h-10 flex-1 text-[14px]" placeholder="Notes, sizes, brands..." />
         <button className="rounded-full bg-[#005bea] px-5 text-[13px] font-semibold text-white transition active:scale-95">Save</button>
       </div>
+    </form>
+
+    <form id="privacy" action={saveMemberPrivacyPreferences} className="mt-4 rounded-[24px] border border-[#dce3ed] bg-[#f6f7fb] p-5">
+      <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#005bea]">Privacy & communications</p>
+      <p className="mt-2 text-[14px] leading-6 text-[#667085]">The required Privacy Notice and the optional event-media permission are recorded separately.</p>
+      <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-[#dce3ed] bg-white px-4 py-3 text-[14px] text-[#344054]">
+        <input name="eventMediaSocialConsent" type="checkbox" defaultChecked={profile.photoSocialMediaConsent ?? false} className="mt-0.5 h-4 w-4 rounded border-[#cfd8e3] text-[#005bea] focus:ring-[#005bea]" />
+        <span><span className="block font-semibold">Allow event photos and videos on SnowForce social media</span><span className="mt-1 block text-[#667085]">Optional. This choice does not affect membership access or event registration.</span></span>
+      </label>
+      <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-[#dce3ed] bg-white px-4 py-3 text-[14px] text-[#344054]">
+        <input name="marketingEmailOptIn" type="checkbox" defaultChecked={profile.marketingEmailOptIn ?? true} className="mt-0.5 h-4 w-4 rounded border-[#cfd8e3] text-[#005bea] focus:ring-[#005bea]" />
+        <span><span className="block font-semibold">Receive SnowForce marketing emails</span><span className="mt-1 block text-[#667085]">Event news, offers, and promotions. You can change this preference at any time.</span></span>
+      </label>
+      <button className="mt-4 rounded-full bg-[#005bea] px-5 py-2.5 text-[13px] font-semibold text-white transition active:scale-95">Save privacy preferences</button>
     </form>
     </div>
   );

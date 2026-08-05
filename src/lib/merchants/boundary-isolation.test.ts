@@ -33,12 +33,15 @@ describe("merchant/member auth boundary isolation", () => {
     expect(code).not.toMatch(/from\s+['"]\.\.\/members\/actions['"]/);
   });
 
-  it("S2-member-actions-still-create-a-rider-profile-on-signup", () => {
-    // The rider flow's auto-create behaviour is the documented contract; this
-    // regression test ensures the merchant boundary never disables it.
-    const code = stripComments(readFile("src/lib/members/actions.ts"));
-    expect(code).toMatch(/from\(\s*['"]member_profiles['"]/);
-    expect(code).toMatch(/user_id:\s*user\.id/);
+  it("S2-member-profile-creation-remains-behind-current-privacy-consent", () => {
+    const actions = stripComments(readFile("src/lib/members/actions.ts"));
+    const consents = stripComments(readFile("src/lib/members/member-consents.ts"));
+
+    expect(actions).not.toMatch(/from\(\s*['"]member_profiles['"]\s*\)\s*\.insert/);
+    expect(actions).toMatch(/ensureMemberProfileAfterConsent/);
+    expect(consents).toMatch(/hasCurrentPrivacyConsent/);
+    expect(consents).toMatch(/from\(\s*['"]member_profiles['"]\s*\)/);
+    expect(consents).toMatch(/user_id:\s*user\.id/);
   });
 
   it("S2-member-auth-sanitizer-remains-unchanged-and-still-allows-only-known-paths", () => {

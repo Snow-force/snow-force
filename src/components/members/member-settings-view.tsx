@@ -42,6 +42,7 @@ export function MemberSettingsView({
         <a href="#profile" className="block rounded-[16px] px-4 py-3 text-[14px] font-semibold hover:bg-[#f6f8fc]">Profile</a>
         <a href="#passes" className="block rounded-[16px] px-4 py-3 text-[14px] font-semibold hover:bg-[#f6f8fc]">Gear & passes</a>
         <a href="#equipment" className="block rounded-[16px] px-4 py-3 text-[14px] font-semibold hover:bg-[#f6f8fc]">Equipment</a>
+        <a href="#privacy" className="block rounded-[16px] px-4 py-3 text-[14px] font-semibold hover:bg-[#f6f8fc]">Privacy & communications</a>
       </nav>
     </>
   );

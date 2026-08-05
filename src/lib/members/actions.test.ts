@@ -36,6 +36,16 @@ const mockRevalidatePath = vi.hoisted(() => vi.fn());
 const mockBuildStaffNotificationEmail = vi.hoisted(() => vi.fn());
 const mockSendEmail = vi.hoisted(() => vi.fn());
 const mockCookieGetAll = vi.hoisted(() => vi.fn(() => []));
+const mockCookieSet = vi.hoisted(() => vi.fn());
+const mockCookieGet = vi.hoisted(() => vi.fn());
+const mockHeadersGet = vi.hoisted(() => vi.fn());
+const mockCreateAdminClient = vi.hoisted(() => vi.fn(() => ({ admin: true })));
+const mockEnsureMemberProfileAfterConsent = vi.hoisted(() => vi.fn());
+const mockHasCurrentPrivacyConsent = vi.hoisted(() => vi.fn());
+const mockRecordCurrentEventMediaConsent = vi.hoisted(() => vi.fn());
+const mockRecordCurrentMemberConsents = vi.hoisted(() => vi.fn());
+const mockResolveMemberAuthDestination = vi.hoisted(() => vi.fn());
+const mockMemberAuthCallbackUrl = vi.hoisted(() => vi.fn());
 const mockCreateClient = vi.hoisted(() =>
   vi.fn(() => ({
     auth: {
@@ -63,11 +73,24 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => ({ getAll: mockCookieGetAll })),
+  cookies: vi.fn(() => ({ get: mockCookieGet, getAll: mockCookieGetAll, set: mockCookieSet })),
+  headers: vi.fn(() => ({ get: mockHeadersGet })),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
+  createAdminClient: mockCreateAdminClient,
   createClient: mockCreateClient,
+}));
+
+vi.mock("./member-consents", () => ({
+  ensureMemberProfileAfterConsent: mockEnsureMemberProfileAfterConsent,
+  hasCurrentPrivacyConsent: mockHasCurrentPrivacyConsent,
+  memberConsentNextPath: vi.fn((next: string) => next || "/member"),
+  memberConsentPath: vi.fn((next: string) => `/member/consent?next=${encodeURIComponent(next)}`),
+  memberLocale: vi.fn((value: string | undefined) => value === "zh" ? "zh" : "en"),
+  recordCurrentEventMediaConsent: mockRecordCurrentEventMediaConsent,
+  recordCurrentMemberConsents: mockRecordCurrentMemberConsents,
+  resolveMemberAuthDestination: mockResolveMemberAuthDestination,
 }));
 
 vi.mock("@/lib/events/availability", () => ({
@@ -108,7 +131,7 @@ vi.mock("./member-entry", () => ({
 }));
 
 vi.mock("./auth-results", () => ({
-  memberAuthCallbackUrl: vi.fn(() => "https://snowforce.test/auth/callback?next=%2Fmember"),
+  memberAuthCallbackUrl: mockMemberAuthCallbackUrl,
   sanitizeMemberNextPath: vi.fn((value: string) => value || "/member"),
 }));
 
@@ -128,6 +151,8 @@ vi.mock("./supporting", () => ({
 }));
 
 import {
+  acceptMemberConsent,
+  cancelMemberConsent,
   confirmMemberEmail,
   confirmMemberPendingRegistrationAction,
   changeMemberPassword,
@@ -141,12 +166,21 @@ import {
   resetMemberPassword,
   saveEquipmentAction,
   saveMemberProfile,
+  saveMemberPrivacyPreferences,
   toggleSaveEventAction,
 } from "./actions";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockHeadersGet.mockReturnValue(null);
+  mockMemberAuthCallbackUrl.mockReturnValue("https://snowforce.test/auth/callback?next=%2Fmember");
   mockCookieGetAll.mockReturnValue([]);
+  mockCookieGet.mockReturnValue(undefined);
+  mockEnsureMemberProfileAfterConsent.mockResolvedValue(true);
+  mockHasCurrentPrivacyConsent.mockResolvedValue(true);
+  mockRecordCurrentEventMediaConsent.mockResolvedValue(true);
+  mockRecordCurrentMemberConsents.mockResolvedValue(true);
+  mockResolveMemberAuthDestination.mockImplementation(async (_user, next: string) => next);
   mockGetUser.mockResolvedValue({ data: { user: null } });
   mockGetMemberProfile.mockResolvedValue(undefined);
   mockParseMemberEmail.mockReturnValue({ success: true, email: "rider@example.com" });
@@ -158,13 +192,18 @@ beforeEach(() => {
     displayName: "Rider One",
     password: "secret123",
     remember: false,
+    photoSocialMediaConsent: true,
+    marketingEmailOptIn: true,
+    privacyPolicyAccepted: true,
   });
 });
 
 describe("registerMemberProfile", () => {
   it.each([
+    ["email", "register_email"],
     ["password", "register_password"],
     ["confirm", "register_confirm"],
+    ["privacy_policy", "register_privacy_policy"],
     ["register_fields", "register"],
   ])("redirects parser error %s without calling Supabase", async (parserError, redirectError) => {
     mockParseMemberEntry.mockReturnValueOnce({ success: false, error: parserError });
@@ -176,7 +215,7 @@ describe("registerMemberProfile", () => {
   });
 
   it("S2-signup-sends-confirmation-email-through-auth-callback", async () => {
-    mockSignUp.mockResolvedValueOnce({ data: { user: { identities: [{}] } }, error: null });
+    mockSignUp.mockResolvedValueOnce({ data: { user: { id: "auth-user-1", identities: [{}] } }, error: null });
 
     await expect(registerMemberProfile(new FormData())).rejects.toThrow(
       "REDIRECT:/member?registered=1",
@@ -189,6 +228,13 @@ describe("registerMemberProfile", () => {
         emailRedirectTo: "https://snowforce.test/auth/callback?next=%2Fmember",
       },
     });
+    expect(mockRecordCurrentMemberConsents).toHaveBeenCalledWith(expect.objectContaining({
+      client: { admin: true },
+      locale: "en",
+      mediaAccepted: true,
+      source: "email_registration",
+      userId: "auth-user-1",
+    }));
   });
 
   it("S2-signup-error-keeps-the-registration-form-open", async () => {
@@ -224,7 +270,7 @@ describe("member sign-in and recovery actions", () => {
   it("normalizes credentials and preserves the permitted next path after password sign-in", async () => {
     const formData = new FormData();
     formData.set("next", "/events/mammoth-weekend");
-    mockSignInWithPassword.mockResolvedValue({ error: null });
+    mockSignInWithPassword.mockResolvedValue({ data: { user: { id: "auth-user-1" } }, error: null });
 
     await expect(loginMemberProfile(formData)).rejects.toThrow("REDIRECT:/events/mammoth-weekend");
     expect(mockSignInWithPassword).toHaveBeenCalledWith({ email: "rider@example.com", password: "secret123" });
@@ -246,6 +292,41 @@ describe("member sign-in and recovery actions", () => {
     mockSignInWithOAuth.mockResolvedValue({ data: { url: null }, error: null });
 
     await expect(loginMemberWithGoogle(new FormData())).rejects.toThrow("REDIRECT:/member?error=oauth");
+    expect(mockCookieSet).not.toHaveBeenCalled();
+  });
+
+  it("redirects immediately to the unified Google identity entry", async () => {
+    const formData = new FormData();
+    formData.set("next", "/events/mammoth-weekend");
+    mockSignInWithOAuth.mockResolvedValue({
+      data: { url: "https://accounts.google.com/o/oauth2/auth" },
+      error: null,
+    });
+
+    await expect(loginMemberWithGoogle(formData)).rejects.toThrow(
+      "REDIRECT:https://accounts.google.com/o/oauth2/auth",
+    );
+    expect(mockSignInWithOAuth).toHaveBeenCalledWith({
+      provider: "google",
+      options: {
+        redirectTo: "https://snowforce.test/auth/callback?next=%2Fmember",
+      },
+    });
+    expect(mockCookieSet).not.toHaveBeenCalled();
+  });
+
+  it("uses the current local origin for the Google callback instead of a stale configured port", async () => {
+    mockHeadersGet.mockReturnValue("http://localhost:3000");
+    mockSignInWithOAuth.mockResolvedValue({
+      data: { url: "https://accounts.google.com/o/oauth2/auth" },
+      error: null,
+    });
+
+    await expect(loginMemberWithGoogle(new FormData())).rejects.toThrow(
+      "REDIRECT:https://accounts.google.com/o/oauth2/auth",
+    );
+
+    expect(mockMemberAuthCallbackUrl).toHaveBeenCalledWith("http://localhost:3000", "/member");
   });
 
   it("requests password reset only for a valid normalized email", async () => {
@@ -264,7 +345,7 @@ describe("getCurrentMemberAccount", () => {
     expect(mockCreateClient).not.toHaveBeenCalled();
   });
 
-  it("creates and reloads a missing profile for an authenticated user", async () => {
+  it("does not auto-create a missing profile for an authenticated identity", async () => {
     mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
     mockGetUser.mockResolvedValue({
       data: {
@@ -276,26 +357,15 @@ describe("getCurrentMemberAccount", () => {
         },
       },
     });
-    const createdProfile = { id: "profile-1", userId: "auth-user-1" };
-    mockGetMemberProfile.mockResolvedValueOnce(undefined).mockResolvedValueOnce(createdProfile);
-    const maybeSingle = vi.fn().mockResolvedValue({ data: { id: "profile-1" } });
-    const select = vi.fn(() => ({ maybeSingle }));
-    const insert = vi.fn(() => ({ select }));
-    const from = vi.fn(() => ({ insert }));
-    mockCreateClient.mockReturnValueOnce({ auth: { getUser: mockGetUser }, from });
+    mockGetMemberProfile.mockResolvedValue(undefined);
 
     await expect(getCurrentMemberAccount()).resolves.toEqual({
       user: expect.objectContaining({ id: "auth-user-1" }),
-      profile: createdProfile,
+      profile: null,
       emailConfirmed: true,
+      privacyAccepted: true,
     });
-    expect(insert).toHaveBeenCalledWith({
-      user_id: "auth-user-1",
-      display_name: "Rider One",
-      email: "rider@example.com",
-    });
-    expect(mockGetMemberProfile).toHaveBeenNthCalledWith(1, "auth-user-1");
-    expect(mockGetMemberProfile).toHaveBeenNthCalledWith(2, "auth-user-1");
+    expect(mockGetMemberProfile).toHaveBeenCalledOnce();
   });
 });
 
@@ -331,6 +401,70 @@ describe("member profile updates", () => {
 
     await expect(saveMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member/settings?profileError=displayName");
     expect(mockUpdateMemberProfile).not.toHaveBeenCalled();
+  });
+
+  it("S1-allows-a-member-to-disable-only-their-marketing-emails", async () => {
+    const profile = signedInProfile();
+
+    await expect(saveMemberPrivacyPreferences(new FormData())).rejects.toThrow(
+      "REDIRECT:/member/settings?privacySaved=1#privacy",
+    );
+
+    expect(mockUpdateMemberProfile).toHaveBeenCalledWith(profile.userId, {
+      marketingEmailOptIn: false,
+      photoSocialMediaConsent: false,
+    });
+    expect(mockRecordCurrentEventMediaConsent).toHaveBeenCalledWith(expect.objectContaining({
+      mediaAccepted: false,
+      userId: "auth-user-1",
+    }));
+  });
+
+  it("S1-rejects-privacy-preference-writes-without-a-member-session", async () => {
+    mockGetMemberProfile.mockResolvedValue(undefined);
+    await expect(saveMemberPrivacyPreferences(new FormData())).rejects.toThrow("REDIRECT:/member?error=1");
+    expect(mockUpdateMemberProfile).not.toHaveBeenCalled();
+  });
+});
+
+describe("member consent activation", () => {
+  it("records required privacy and optional media before creating the profile", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "auth-user-1" } } });
+    const formData = new FormData();
+    formData.set("next", "/events/mammoth-weekend");
+    formData.set("privacyPolicyAccepted", "on");
+
+    await expect(acceptMemberConsent(formData)).rejects.toThrow(
+      "REDIRECT:/events/mammoth-weekend",
+    );
+
+    expect(mockRecordCurrentMemberConsents).toHaveBeenCalledWith(expect.objectContaining({
+      mediaAccepted: false,
+      source: "consent_page",
+      userId: "auth-user-1",
+    }));
+    expect(mockEnsureMemberProfileAfterConsent).toHaveBeenCalledWith(
+      { id: "auth-user-1" },
+      expect.any(Object),
+    );
+  });
+
+  it("does not write or create a profile when required privacy is not accepted", async () => {
+    const formData = new FormData();
+    formData.set("next", "/member");
+
+    await expect(acceptMemberConsent(formData)).rejects.toThrow(
+      "REDIRECT:/member/consent?next=%2Fmember&error=required",
+    );
+    expect(mockRecordCurrentMemberConsents).not.toHaveBeenCalled();
+    expect(mockEnsureMemberProfileAfterConsent).not.toHaveBeenCalled();
+  });
+
+  it("signs out when consent is canceled", async () => {
+    await expect(cancelMemberConsent()).rejects.toThrow(
+      "REDIRECT:/member?consentCancelled=1",
+    );
+    expect(mockSignOut).toHaveBeenCalledOnce();
   });
 });
 
@@ -448,7 +582,7 @@ describe("confirmMemberPendingRegistrationAction", () => {
 
 describe("confirmMemberEmail", () => {
   it("S1-confirms-a-token-only-after-the-confirmation-page-posts-it", async () => {
-    mockVerifyOtp.mockResolvedValueOnce({ error: null });
+    mockVerifyOtp.mockResolvedValueOnce({ data: { user: { id: "auth-user-1" } }, error: null });
     const formData = new FormData();
     formData.set("tokenHash", "safe-token-hash");
     formData.set("next", "/events/mammoth-weekend");

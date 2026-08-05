@@ -26,6 +26,7 @@ export function Footer() {
             <FooterLink href="/recaps">{t({ en: "Recaps", zh: "往期回顾" })}</FooterLink>
             <FooterLink href="/faq">{t({ en: "FAQ", zh: "常见问题" })}</FooterLink>
             <FooterLink href="/refund-policy">{t({ en: "Refund Policy", zh: "退款政策" })}</FooterLink>
+            <FooterLink href="/privacy-policy">{t({ en: "Privacy Notice", zh: "隐私守则" })}</FooterLink>
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Community", zh: "社群" })}>

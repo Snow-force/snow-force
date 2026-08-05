@@ -24,6 +24,8 @@ export type StructuredMemberProfileRow = {
   equipment: unknown;
   saved_event_slugs: string[] | null;
   notification_preferences: unknown;
+  photo_social_media_consent: boolean | null;
+  marketing_email_opt_in: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -67,6 +69,8 @@ type MemberProfileUpdate = Partial<
     | "equipment"
     | "savedEventSlugs"
     | "notificationPreferences"
+    | "photoSocialMediaConsent"
+    | "marketingEmailOptIn"
     | "emergencyContact"
     | "emergencyPhone"
   >
@@ -133,6 +137,8 @@ export function normalizeMemberProfileRow(row: StructuredMemberProfileRow): Memb
     equipment: normalizeEquipment(row.equipment),
     savedEventSlugs: normalizeStringArray(row.saved_event_slugs),
     notificationPreferences: normalizeNotificationPreferences(row.notification_preferences),
+    photoSocialMediaConsent: row.photo_social_media_consent ?? false,
+    marketingEmailOptIn: row.marketing_email_opt_in ?? true,
     emergencyContact: row.emergency_contact ?? "",
     emergencyPhone: row.emergency_phone ?? "",
     createdAt: row.created_at,
@@ -159,6 +165,8 @@ export function profileUpdateToRow(data: MemberProfileUpdate) {
       equipment: data.equipment,
       saved_event_slugs: data.savedEventSlugs,
       notification_preferences: data.notificationPreferences,
+      photo_social_media_consent: data.photoSocialMediaConsent,
+      marketing_email_opt_in: data.marketingEmailOptIn,
       emergency_contact: data.emergencyContact,
       emergency_phone: data.emergencyPhone,
     }).filter(([, value]) => value !== undefined),

@@ -1,6 +1,6 @@
-export type MemberEntryMode = "register" | "login";
+import { isValidMemberEmail, normalizeMemberEmail, validatePassword } from "./member-validation";
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export type MemberEntryMode = "register" | "login";
 const riderTypes = ["", "skier", "snowboarder", "both", "learning"] as const;
 const riderLevels = ["", "first_timer", "beginner", "intermediate", "advanced", "expert"] as const;
 const preferredLanguages = ["en", "zh"] as const;
@@ -29,13 +29,13 @@ function isOneOf<T extends readonly string[]>(value: string, values: T): value i
 }
 
 export function parseMemberEntry(mode: MemberEntryMode, formData: FormData) {
-  const email = readString(formData, "email").trim().toLowerCase();
+  const email = normalizeMemberEmail(readString(formData, "email"));
   const displayName = readString(formData, "displayName").trim();
   const password = readString(formData, "password");
   const confirmPassword = readString(formData, "confirmPassword");
   const remember = readBoolean(formData, "remember");
 
-  if (!emailPattern.test(email)) {
+  if (!isValidMemberEmail(email)) {
     return { success: false as const, error: "email" as const };
   }
 
@@ -43,7 +43,7 @@ export function parseMemberEntry(mode: MemberEntryMode, formData: FormData) {
     return { success: false as const, error: "register_fields" as const };
   }
 
-  if (!password || (mode === "register" && password.length < 6)) {
+  if (!password || (mode === "register" && !validatePassword(password).valid)) {
     return { success: false as const, error: "password" as const };
   }
 
@@ -51,7 +51,20 @@ export function parseMemberEntry(mode: MemberEntryMode, formData: FormData) {
     return { success: false as const, error: "confirm" as const };
   }
 
-  return { success: true as const, email, displayName, password, remember };
+  if (mode === "register" && !readBoolean(formData, "privacyPolicyAccepted")) {
+    return { success: false as const, error: "privacy_policy" as const };
+  }
+
+  return {
+    success: true as const,
+    email,
+    displayName,
+    password,
+    remember,
+    photoSocialMediaConsent: readBoolean(formData, "photoSocialMediaConsent"),
+    privacyPolicyAccepted: readBoolean(formData, "privacyPolicyAccepted"),
+    marketingEmailOptIn: readBoolean(formData, "marketingEmailOptIn"),
+  };
 }
 
 export function parseMemberMagicLink(formData: FormData) {
@@ -59,9 +72,9 @@ export function parseMemberMagicLink(formData: FormData) {
 }
 
 export function parseMemberEmail(formData: FormData) {
-  const email = readString(formData, "email").trim().toLowerCase();
+  const email = normalizeMemberEmail(readString(formData, "email"));
 
-  if (!emailPattern.test(email)) {
+  if (!isValidMemberEmail(email)) {
     return { success: false as const, error: "email" as const };
   }
 
@@ -72,7 +85,7 @@ export function parseMemberPasswordUpdate(formData: FormData) {
   const password = readString(formData, "password");
   const confirmPassword = readString(formData, "confirmPassword");
 
-  if (password.length < 6) {
+  if (!validatePassword(password).valid) {
     return { success: false as const, error: "password" as const };
   }
 

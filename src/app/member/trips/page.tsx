@@ -1,10 +1,12 @@
 import { MemberAuthPanel } from "@/components/members/member-auth-panel";
+import { redirect } from "next/navigation";
 import { MemberTripsView } from "@/components/members/member-trips-view";
 import { getEvents } from "@/lib/events/repository";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { buildMemberDashboard } from "@/lib/members/dashboard";
 import { getRecaps } from "@/lib/recaps/repository";
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
+import { memberConsentPath } from "@/lib/members/member-consents";
 
 export default async function MemberTripsPage({
   searchParams,
@@ -12,6 +14,8 @@ export default async function MemberTripsPage({
   searchParams: Record<string, string | undefined>;
 }) {
   const account = await getCurrentMemberAccount();
+
+  if (account && (!account.privacyAccepted || !account.profile)) redirect(memberConsentPath("/member/trips"));
 
   if (!account?.profile) {
     return <MemberAuthPanel searchParams={searchParams} />;

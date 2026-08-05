@@ -12,11 +12,11 @@ export function SecurityForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="change-password">New password</label>
-          <input id="change-password" name="password" type="password" className="input-field" minLength={6} required />
+          <input id="change-password" name="password" type="password" className="input-field" minLength={8} required />
         </div>
         <div>
           <label className="label" htmlFor="change-confirm-password">Confirm password</label>
-          <input id="change-confirm-password" name="confirmPassword" type="password" className="input-field" minLength={6} required />
+          <input id="change-confirm-password" name="confirmPassword" type="password" className="input-field" minLength={8} required />
         </div>
       </div>
       <button className="btn-secondary w-full sm:w-auto">Change password</button>

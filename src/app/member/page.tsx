@@ -1,11 +1,13 @@
 import { MemberAuthPanel } from "@/components/members/member-auth-panel";
 import { MemberDashboard } from "@/components/members/member-dashboard";
+import { redirect } from "next/navigation";
 import { getEvents } from "@/lib/events/repository";
 import { buildMemberDashboard } from "@/lib/members/dashboard";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getRecaps } from "@/lib/recaps/repository";
 import { getPendingRegistrationsByMember } from "@/lib/registrations/pending-repository";
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
+import { memberConsentPath } from "@/lib/members/member-consents";
 
 export default async function MemberPage({
   searchParams,
@@ -13,6 +15,8 @@ export default async function MemberPage({
   searchParams: Record<string, string | undefined>;
 }) {
   const account = await getCurrentMemberAccount();
+
+  if (account && (!account.privacyAccepted || !account.profile)) redirect(memberConsentPath("/member"));
 
   if (!account?.profile) {
     return <MemberAuthPanel searchParams={searchParams} />;

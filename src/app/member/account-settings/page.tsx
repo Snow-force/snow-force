@@ -1,6 +1,8 @@
 import { MemberAccountSettingsView } from "@/components/members/member-account-settings-view";
 import { MemberAuthPanel } from "@/components/members/member-auth-panel";
+import { redirect } from "next/navigation";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
+import { memberConsentPath } from "@/lib/members/member-consents";
 
 export default async function MemberAccountSettingsPage({
   searchParams,
@@ -8,6 +10,8 @@ export default async function MemberAccountSettingsPage({
   searchParams: Record<string, string | undefined>;
 }) {
   const account = await getCurrentMemberAccount();
+
+  if (account && (!account.privacyAccepted || !account.profile)) redirect(memberConsentPath("/member/account-settings"));
 
   if (!account?.profile) {
     return <MemberAuthPanel searchParams={searchParams} />;

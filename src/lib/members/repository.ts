@@ -32,6 +32,8 @@ const memberProfileSelect = [
   "equipment",
   "saved_event_slugs",
   "notification_preferences",
+  "photo_social_media_consent",
+  "marketing_email_opt_in",
   "created_at",
   "updated_at",
 ].join(",");

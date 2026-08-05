@@ -32,6 +32,8 @@ const baseRow: StructuredMemberProfileRow = {
   equipment: null,
   saved_event_slugs: null,
   notification_preferences: null,
+  photo_social_media_consent: null,
+  marketing_email_opt_in: null,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-02T00:00:00.000Z",
 };
@@ -59,6 +61,8 @@ describe("structured member profile fields", () => {
       equipment: defaultMemberEquipment,
       savedEventSlugs: [],
       notificationPreferences: defaultMemberNotificationPreferences,
+      photoSocialMediaConsent: false,
+      marketingEmailOptIn: true,
       emergencyContact: "",
       emergencyPhone: "",
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -76,6 +80,7 @@ describe("structured member profile fields", () => {
         preferredLanguage: "en",
         passes: ["ikon"],
         equipment: { ...defaultMemberEquipment, ownsSkis: true },
+        marketingEmailOptIn: false,
       }),
     ).toEqual({
       display_name: "Rider Two",
@@ -85,6 +90,7 @@ describe("structured member profile fields", () => {
       preferred_language: "en",
       passes: ["ikon"],
       equipment: { ...defaultMemberEquipment, ownsSkis: true },
+      marketing_email_opt_in: false,
     });
   });
 
