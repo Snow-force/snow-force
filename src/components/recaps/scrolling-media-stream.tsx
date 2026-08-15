@@ -1,45 +1,69 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  RotateCw,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { localizedText } from "@/lib/i18n/fallback";
 import { useLanguage } from "@/lib/language";
 import type { RecapMediaItem } from "@/lib/types";
+import { SafeRecapImage } from "./safe-recap-image";
 
 type ScrollingMediaStreamProps = {
   media: RecapMediaItem[];
 };
 
-const AUTOPLAY_INTERVAL_MS = 3000;
+const IMAGE_FALLBACK = "/team/group.jpg";
 const ZOOM_STEPS = [1, 1.25, 1.5, 2, 2.5, 3] as const;
 const ZOOM_INDEX_DEFAULT = 0;
 const ROTATION_STEP_DEG = 90;
 
 const LIGHTBOX_CONTROL =
-  "flex items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 active:scale-95 " +
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80";
+  "flex items-center justify-center rounded-full border border-white/20 bg-black/70 text-white transition hover:border-white/40 hover:bg-black " +
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/[0.85] disabled:cursor-not-allowed disabled:opacity-35";
 
 const GALLERY_CONTROL =
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-snow-500";
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2997ff] focus-visible:ring-offset-4 focus-visible:ring-offset-[#111214]";
 
 export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
   const { lang, t } = useLanguage();
-  const [lightboxIndex, setLightboxIndex] = useState<number>(-1);
-  const [zoomIndex, setZoomIndex] = useState<number>(ZOOM_INDEX_DEFAULT);
-  const [rotation, setRotation] = useState<number>(0);
-  const [autoplay, setAutoplay] = useState<boolean>(false);
+  const orderedMedia = useMemo(() => [...media].sort((a, b) => a.order - b.order), [media]);
+  const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const [zoomIndex, setZoomIndex] = useState(ZOOM_INDEX_DEFAULT);
+  const [rotation, setRotation] = useState(0);
+  const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const open = lightboxIndex >= 0;
 
-  const openLightbox = useCallback((index: number) => {
+  const captionOf = useCallback(
+    (item: RecapMediaItem) =>
+      localizedText({ en: item.caption?.en ?? "", zh: item.caption?.zh ?? "" }, lang),
+    [lang],
+  );
+
+  const photoLabel = useCallback(
+    (item: RecapMediaItem, index: number) =>
+      captionOf(item) || t({ en: `Photo ${index + 1}`, zh: `第 ${index + 1} 张照片` }),
+    [captionOf, t],
+  );
+
+  const openLightbox = useCallback((index: number, trigger: HTMLButtonElement) => {
+    lastTriggerRef.current = trigger;
     setZoomIndex(ZOOM_INDEX_DEFAULT);
     setRotation(0);
-    setAutoplay(false);
     setLightboxIndex(index);
   }, []);
 
   const close = useCallback(() => {
     setLightboxIndex(-1);
-    setAutoplay(false);
+    window.requestAnimationFrame(() => lastTriggerRef.current?.focus());
   }, []);
 
   const advanceSlide = useCallback(
@@ -47,152 +71,193 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
       setZoomIndex(ZOOM_INDEX_DEFAULT);
       setRotation(0);
       setLightboxIndex((current) =>
-        current < 0 ? current : (current + delta + media.length) % media.length,
+        current < 0 ? current : (current + delta + orderedMedia.length) % orderedMedia.length,
       );
     },
-    [media.length],
+    [orderedMedia.length],
   );
 
-  const zoomIn = useCallback(() => setZoomIndex((i) => Math.min(i + 1, ZOOM_STEPS.length - 1)), []);
-  const zoomOut = useCallback(() => setZoomIndex((i) => Math.max(i - 1, 0)), []);
+  const zoomIn = useCallback(() => setZoomIndex((index) => Math.min(index + 1, ZOOM_STEPS.length - 1)), []);
+  const zoomOut = useCallback(() => setZoomIndex((index) => Math.max(index - 1, 0)), []);
   const resetZoomAndRotation = useCallback(() => {
     setZoomIndex(ZOOM_INDEX_DEFAULT);
     setRotation(0);
   }, []);
-  const rotate = useCallback(() => setRotation((r) => (r + ROTATION_STEP_DEG) % 360), []);
-  const toggleAutoplay = useCallback(() => setAutoplay((a) => !a), []);
+  const rotate = useCallback(() => setRotation((value) => (value + ROTATION_STEP_DEG) % 360), []);
 
   useEffect(() => {
     if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+
       switch (event.key) {
         case "Escape":
+          event.preventDefault();
           close();
           break;
         case "ArrowRight":
+          event.preventDefault();
           advanceSlide(1);
           break;
         case "ArrowLeft":
+          event.preventDefault();
           advanceSlide(-1);
           break;
         case "+":
         case "=":
+          event.preventDefault();
           zoomIn();
           break;
         case "-":
         case "_":
+          event.preventDefault();
           zoomOut();
           break;
         case "0":
+          event.preventDefault();
           resetZoomAndRotation();
           break;
         case "r":
         case "R":
+          event.preventDefault();
           rotate();
           break;
-        case "p":
-        case "P":
-          toggleAutoplay();
+        case "Tab": {
+          const controls = Array.from(
+            document.querySelectorAll<HTMLButtonElement>("[data-lightbox-control='true']:not(:disabled)"),
+          );
+          if (controls.length === 0) break;
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
           break;
+        }
         default:
           break;
       }
     };
+
     window.addEventListener("keydown", onKey);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
     };
-  }, [open, close, advanceSlide, zoomIn, zoomOut, resetZoomAndRotation, rotate, toggleAutoplay]);
+  }, [open, close, advanceSlide, zoomIn, zoomOut, resetZoomAndRotation, rotate]);
 
-  useEffect(() => {
-    if (!open || !autoplay) return;
-    const id = window.setInterval(() => advanceSlide(1), AUTOPLAY_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [open, autoplay, advanceSlide]);
-
-  if (media.length === 0) return null;
+  if (orderedMedia.length === 0) return null;
 
   const zoom = ZOOM_STEPS[zoomIndex];
-  const captionOf = (item: RecapMediaItem) =>
-    localizedText({ en: item.caption?.en ?? "", zh: item.caption?.zh ?? "" }, lang);
+  const activeItem = open ? orderedMedia[lightboxIndex] : undefined;
 
   return (
     <>
-      <div className="sm:hidden -mx-4 px-4">
-        <div
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 scroll-smooth"
-          role="list"
-          aria-label={t({ en: "Photo carousel", zh: "照片轮播" })}
+      <div className="sm:hidden -mx-4 px-4 pt-8">
+        <ul
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4"
+          aria-label={t({ en: "Event photo strip", zh: "活动照片浏览" })}
         >
-          {media.map((item, index) => {
-            const caption = captionOf(item);
+          {orderedMedia.map((item, index) => {
+            const label = photoLabel(item, index);
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => openLightbox(index)}
-                className={`relative h-64 w-72 shrink-0 snap-center overflow-hidden rounded-xl bg-gray-100 transition hover:opacity-95 ${GALLERY_CONTROL}`}
-                role="listitem"
-                aria-label={caption || t({ en: `Photo ${index + 1}`, zh: `第 ${index + 1} 张照片` })}
-              >
-                <img
-                  src={item.url}
-                  alt={caption || ""}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                />
-              </button>
+              <li key={item.id} className="w-[82vw] max-w-[340px] shrink-0 snap-center">
+                <button
+                  type="button"
+                  onClick={(event) => openLightbox(index, event.currentTarget)}
+                  className={`block w-full text-left ${GALLERY_CONTROL}`}
+                  aria-label={t({ en: `Open ${label}`, zh: `打开${label}` })}
+                >
+                  <span className="relative block aspect-[4/3] overflow-hidden rounded-[8px] bg-[#1d2025]">
+                    <SafeRecapImage
+                      src={item.url}
+                      alt={label}
+                      fallbackSrc={IMAGE_FALLBACK}
+                      fallbackAlt={t({ en: "SnowForce community photo", zh: "SnowForce 社群照片" })}
+                      fallbackLabel={t({ en: "Archive fallback", zh: "影像替代图" })}
+                      unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })}
+                      sizes="340px"
+                    />
+                  </span>
+                  <span className="mt-3 flex items-start justify-between gap-3 text-[12px] leading-5 text-white/60">
+                    <span>{label}</span>
+                    <span className="shrink-0 tabular-nums">{pad(index + 1)} / {pad(orderedMedia.length)}</span>
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
 
-      <div className="hidden gap-3 sm:columns-2 md:columns-3 xl:columns-4 sm:block">
-        {media.map((item, index) => {
-          const caption = captionOf(item);
+      <ol className="hidden pt-4 sm:block">
+        {orderedMedia.map((item, index) => {
+          const label = photoLabel(item, index);
           return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => openLightbox(index)}
-              className={`mb-3 block w-full break-inside-avoid overflow-hidden rounded-xl bg-gray-100 transition hover:opacity-95 ${GALLERY_CONTROL}`}
-              aria-label={caption || t({ en: `Photo ${index + 1}`, zh: `第 ${index + 1} 张照片` })}
-            >
-              <img
-                src={item.url}
-                alt={caption || ""}
-                loading="lazy"
-                decoding="async"
-                className="w-full object-cover"
-              />
-              {caption ? (
-                <span className="block px-3 py-2 text-left text-xs text-gray-600">{caption}</span>
-              ) : null}
-            </button>
+            <li key={item.id} className="border-b border-white/[0.14] py-10 last:border-b-0 lg:py-14">
+              <button
+                type="button"
+                onClick={(event) => openLightbox(index, event.currentTarget)}
+                className={`group grid w-full gap-6 text-left sm:grid-cols-[4rem_minmax(0,1fr)] lg:grid-cols-[5rem_minmax(0,1fr)_minmax(14rem,0.32fr)] lg:items-end ${GALLERY_CONTROL}`}
+                aria-label={t({ en: `Open ${label}`, zh: `打开${label}` })}
+              >
+                <span className="self-start text-[20px] font-light tabular-nums text-[#2997ff]">
+                  {pad(index + 1)}
+                </span>
+                <span className="relative block aspect-[16/10] overflow-hidden rounded-[8px] bg-[#1d2025]">
+                  <SafeRecapImage
+                    src={item.url}
+                    alt={label}
+                    fallbackSrc={IMAGE_FALLBACK}
+                    fallbackAlt={t({ en: "SnowForce community photo", zh: "SnowForce 社群照片" })}
+                    fallbackLabel={t({ en: "Archive fallback", zh: "影像替代图" })}
+                    unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })}
+                    sizes="(min-width: 1024px) 62vw, 80vw"
+                    imageClassName="object-cover transition duration-500 group-hover:scale-[1.012]"
+                  />
+                </span>
+                <span className="sm:col-start-2 lg:col-start-auto lg:pb-1">
+                  <span className="block text-[12px] font-semibold uppercase tracking-[0.13em] text-white/40">
+                    {t({ en: "Frame", zh: "画面" })} {pad(index + 1)} / {pad(orderedMedia.length)}
+                  </span>
+                  <span className="mt-3 block max-w-sm text-[16px] leading-7 text-white/70">{label}</span>
+                  <span className="mt-4 inline-flex items-center gap-2 text-[13px] font-semibold text-[#2997ff]">
+                    {t({ en: "Open full screen", zh: "全屏查看" })}
+                    <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                </span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
-      {open ? (
+      {activeItem ? (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/[0.94] px-3 py-16 sm:px-16"
           role="dialog"
           aria-modal="true"
           aria-label={t({ en: "Photo preview", zh: "照片预览" })}
           onClick={close}
         >
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={close}
             aria-label={t({ en: "Close", zh: "关闭" })}
-            className={`absolute right-4 top-4 h-10 w-10 text-lg ${LIGHTBOX_CONTROL}`}
+            data-lightbox-control="true"
+            className={`absolute right-4 top-4 h-11 w-11 ${LIGHTBOX_CONTROL}`}
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
 
           <button
@@ -201,28 +266,37 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
               event.stopPropagation();
               advanceSlide(-1);
             }}
-            aria-label={t({ en: "Previous", zh: "上一张" })}
-            className={`absolute left-3 h-12 w-12 text-2xl sm:left-6 ${LIGHTBOX_CONTROL}`}
+            aria-label={t({ en: "Previous photo", zh: "上一张照片" })}
+            data-lightbox-control="true"
+            className={`absolute left-2 h-12 w-12 sm:left-5 ${LIGHTBOX_CONTROL}`}
           >
-            ‹
+            <ChevronLeft className="h-6 w-6" aria-hidden="true" />
           </button>
 
           <figure
-            className="flex max-h-[78vh] max-w-[90vw] flex-col items-center px-12 sm:px-16"
+            className="flex h-[76vh] w-[calc(100vw-6rem)] max-w-[1320px] flex-col items-center justify-center sm:w-[calc(100vw-12rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <img
-              key={media[lightboxIndex].id}
-              src={media[lightboxIndex].url}
-              alt={captionOf(media[lightboxIndex]) || ""}
-              className="max-h-[70vh] max-w-full rounded-lg object-contain transition-transform duration-300 ease-out"
+            <div
+              className="relative h-[calc(76vh-3.5rem)] w-full transition-transform duration-300 ease-out motion-reduce:transition-none"
               style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transformOrigin: "center center" }}
-            />
-            {media[lightboxIndex].caption?.en || media[lightboxIndex].caption?.zh ? (
-              <figcaption className="mt-3 max-w-full text-center text-sm text-white/80">
-                {captionOf(media[lightboxIndex])}
-              </figcaption>
-            ) : null}
+            >
+              <SafeRecapImage
+                key={activeItem.id}
+                src={activeItem.url}
+                alt={photoLabel(activeItem, lightboxIndex)}
+                fallbackSrc={IMAGE_FALLBACK}
+                fallbackAlt={t({ en: "SnowForce community photo", zh: "SnowForce 社群照片" })}
+                fallbackLabel={t({ en: "Archive fallback", zh: "影像替代图" })}
+                unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })}
+                sizes="90vw"
+                priority
+                imageClassName="object-contain"
+              />
+            </div>
+            <figcaption className="mt-3 max-w-3xl text-center text-[13px] leading-5 text-white/70">
+              {photoLabel(activeItem, lightboxIndex)}
+            </figcaption>
           </figure>
 
           <button
@@ -231,14 +305,15 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
               event.stopPropagation();
               advanceSlide(1);
             }}
-            aria-label={t({ en: "Next", zh: "下一张" })}
-            className={`absolute right-3 h-12 w-12 text-2xl sm:right-6 ${LIGHTBOX_CONTROL}`}
+            aria-label={t({ en: "Next photo", zh: "下一张照片" })}
+            data-lightbox-control="true"
+            className={`absolute right-2 h-12 w-12 sm:right-5 ${LIGHTBOX_CONTROL}`}
           >
-            ›
+            <ChevronRight className="h-6 w-6" aria-hidden="true" />
           </button>
 
           <div
-            className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/50 px-2 py-1.5 backdrop-blur-sm"
+            className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black px-2 py-1.5"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -246,11 +321,12 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
               onClick={zoomOut}
               disabled={zoomIndex === 0}
               aria-label={t({ en: "Zoom out", zh: "缩小" })}
-              className={`h-9 w-9 text-lg ${LIGHTBOX_CONTROL} disabled:opacity-40 disabled:hover:bg-white/10`}
+              data-lightbox-control="true"
+              className={`h-9 w-9 ${LIGHTBOX_CONTROL}`}
             >
-              −
+              <ZoomOut className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className="w-12 text-center text-xs tabular-nums text-white/80" aria-live="polite">
+            <span className="w-12 text-center text-[11px] tabular-nums text-white/70" aria-live="polite">
               {Math.round(zoom * 100)}%
             </span>
             <button
@@ -258,50 +334,46 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
               onClick={zoomIn}
               disabled={zoomIndex === ZOOM_STEPS.length - 1}
               aria-label={t({ en: "Zoom in", zh: "放大" })}
-              className={`h-9 w-9 text-lg ${LIGHTBOX_CONTROL} disabled:opacity-40 disabled:hover:bg-white/10`}
+              data-lightbox-control="true"
+              className={`h-9 w-9 ${LIGHTBOX_CONTROL}`}
             >
-              +
+              <ZoomIn className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={resetZoomAndRotation}
               aria-label={t({ en: "Reset zoom and rotation", zh: "重置缩放与旋转" })}
-              className={`h-9 px-2 text-xs ${LIGHTBOX_CONTROL}`}
+              data-lightbox-control="true"
+              className={`h-9 w-9 ${LIGHTBOX_CONTROL}`}
             >
-              1:1
+              <Maximize2 className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={rotate}
-              aria-label={t({ en: "Rotate 90°", zh: "旋转 90°" })}
-              className={`h-9 w-9 text-base ${LIGHTBOX_CONTROL}`}
+              aria-label={t({ en: "Rotate 90 degrees", zh: "旋转 90 度" })}
+              data-lightbox-control="true"
+              className={`h-9 w-9 ${LIGHTBOX_CONTROL}`}
             >
-              ↺
-            </button>
-            <span className="mx-1 h-5 w-px bg-white/20" aria-hidden="true" />
-            <button
-              type="button"
-              onClick={toggleAutoplay}
-              aria-pressed={autoplay}
-              aria-label={autoplay ? t({ en: "Pause slideshow", zh: "暂停幻灯片" }) : t({ en: "Play slideshow", zh: "播放幻灯片" })}
-              className={`h-9 w-9 text-base ${LIGHTBOX_CONTROL}`}
-            >
-              {autoplay ? "⏸" : "▶"}
+              <RotateCw className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
 
-          <div className="pointer-events-none absolute bottom-4 right-4 rounded-full bg-black/40 px-2.5 py-1 text-xs tabular-nums text-white/70">
-            {lightboxIndex + 1} / {media.length}
-          </div>
+          <p className="pointer-events-none absolute bottom-5 right-4 text-[11px] tabular-nums text-white/50 sm:right-6" aria-live="polite">
+            {lightboxIndex + 1} / {orderedMedia.length}
+          </p>
 
-          <div className="pointer-events-none absolute left-4 top-4 hidden max-w-[60vw] truncate text-xs text-white/50 sm:block">
+          <p className="pointer-events-none absolute left-5 top-5 hidden text-[11px] text-white/40 sm:block">
             {t({
-              en: "← → navigate · +/- zoom · r rotate · p play · esc close",
-              zh: "← → 切换 · +/- 缩放 · r 旋转 · p 播放 · esc 关闭",
+              en: "Arrow keys navigate · +/- zoom · R rotate · Esc close",
+              zh: "方向键切换 · +/- 缩放 · R 旋转 · Esc 关闭",
             })}
-          </div>
+          </p>
         </div>
       ) : null}
     </>
   );
+}
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
 }

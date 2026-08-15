@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { Pause, Play } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
+import { MountainMemoryReel } from "@/components/recaps/mountain-memory-reel";
 import { useLanguage, type Lang } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
 
@@ -21,16 +23,8 @@ type OpenEventsSectionProps = {
   t: Translate;
 };
 
-type RecapTile = {
-  key: string;
-  src: string;
-  title: string;
-  meta: string;
-};
-
 export function HomePageView({ events, recaps, eventLoadError = false }: HomePageViewProps) {
   const { lang, t } = useLanguage();
-  const locale = lang === "zh" ? "zh-CN" : "en-US";
   const recentRecaps = recaps.slice(0, 4);
 
   return (
@@ -39,7 +33,7 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
       <PhilosophySection t={t} />
       <ActivityModesSection t={t} />
       <CommunityExperienceSection t={t} />
-      <PhotoWallSection recaps={recentRecaps} t={t} locale={locale} />
+      <MountainMemoryReel recaps={recentRecaps} />
       <OpenEventsSection
         events={events}
         eventLoadError={eventLoadError}
@@ -52,11 +46,16 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
 
 function HeroSection({ t }: { t: Translate }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [showPlayButton, setShowPlayButton] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  async function handlePlayClick() {
+  async function handlePlaybackClick() {
     const video = videoRef.current;
     if (!video) {
+      return;
+    }
+
+    if (!video.paused) {
+      video.pause();
       return;
     }
 
@@ -65,9 +64,8 @@ function HeroSection({ t }: { t: Translate }) {
 
     try {
       await video.play();
-      setShowPlayButton(false);
     } catch {
-      setShowPlayButton(true);
+      setIsPlaying(false);
     }
   }
 
@@ -77,33 +75,32 @@ function HeroSection({ t }: { t: Translate }) {
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
         src="/videos/snowmountain.mp4"
-        autoPlay
         muted
         loop
         playsInline
-        onPlay={() => setShowPlayButton(false)}
-        onPause={() => setShowPlayButton(true)}
+        preload="metadata"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
         aria-label={t({ en: "SnowForce mountain video", zh: "SnowForce 雪山视频" })}
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.46)_58%,rgba(7,9,12,0.96))]" />
       <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(7,9,12,0),#07090c)]" />
 
-      <div className="relative z-10 mx-auto max-w-[980px]">
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-[980px]">
         <button
           type="button"
-          aria-label={t({ en: "Play background video", zh: "播放背景视频" })}
-          onClick={handlePlayClick}
-          className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/60 bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-95 ${
-            showPlayButton ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+          aria-label={isPlaying ? t({ en: "Pause mountain video", zh: "暂停雪山视频" }) : t({ en: "Play mountain video", zh: "播放雪山视频" })}
+          aria-pressed={isPlaying}
+          onClick={handlePlaybackClick}
+          className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/60 bg-black/[0.45] text-white transition hover:bg-black/[0.65] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-95"
         >
-          <span aria-hidden="true" className="ml-1 block h-0 w-0 border-y-[8px] border-l-[12px] border-y-transparent border-l-current" />
+          {isPlaying ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="ml-0.5 h-5 w-5" aria-hidden="true" />}
         </button>
 
         <h1 className="mt-8 text-[50px] font-semibold leading-[0.98] text-white sm:text-[84px] lg:text-[112px]">
           {t({ en: "Ride the mountain together.", zh: "一起去雪山" })}
         </h1>
-        <p className="mx-auto mt-6 max-w-[19rem] break-words text-[17px] leading-[1.55] text-white/82 sm:max-w-2xl sm:text-[21px]">
+        <p className="mx-auto mt-6 max-w-[19rem] break-words text-[17px] leading-[1.55] text-white/80 sm:max-w-2xl sm:text-[21px]">
           {t({
             en: "Meet riders through the community, join collective mountain activities, and make the next snow day easier to join.",
             zh: "在社群里找到同行的雪友，报名参加集体活动，把下一次上山变成一件容易发生的事。",
@@ -134,7 +131,7 @@ function PhilosophySection({ t }: { t: Translate }) {
           <h2 className="text-[38px] font-semibold leading-[1.08] text-white sm:text-[56px]">
             {t({ en: "Make joining a snow day feel simple.", zh: "让上山这件事，没那么难开始。" })}
           </h2>
-          <p className="mt-6 max-w-3xl text-[18px] leading-[1.65] text-white/68">
+          <p className="mt-6 max-w-3xl text-[18px] leading-[1.65] text-white/70">
             {t({
               en: "SnowForce organizes collective mountain activities so riders do not have to figure out every detail alone: who to ride with, which session fits, and how to join the group with confidence.",
               zh: "SnowForce 组织社区集体活动，让大家不用一个人解决所有不确定：跟谁一起滑、适合参加哪一场、怎么安心加入队伍。",
@@ -186,12 +183,12 @@ function ActivityModesSection({ t }: { t: Translate }) {
           </h2>
         </div>
 
-        <div className="mt-12 grid gap-px overflow-hidden rounded-[8px] bg-white/12 lg:grid-cols-3">
+        <div className="mt-12 grid gap-px overflow-hidden rounded-[8px] bg-white/[0.12] lg:grid-cols-3">
           {modes.map((mode) => (
             <article key={mode.number} className="bg-[#0d1117] p-6 sm:p-8">
               <span className="text-[14px] font-semibold leading-none text-[#7dd3fc]">{mode.number}</span>
               <h3 className="mt-12 text-[28px] font-semibold leading-[1.12] text-white">{mode.title}</h3>
-              <p className="mt-4 text-[17px] leading-[1.6] text-white/64">{mode.body}</p>
+              <p className="mt-4 text-[17px] leading-[1.6] text-white/60">{mode.body}</p>
             </article>
           ))}
         </div>
@@ -259,75 +256,6 @@ function CommunityExperienceSection({ t }: { t: Translate }) {
   );
 }
 
-function PhotoWallSection({
-  recaps,
-  t,
-  locale,
-}: {
-  recaps: EventRecap[];
-  t: Translate;
-  locale: string;
-}) {
-  const tiles = getRecapTiles(recaps, t, locale);
-
-  return (
-    <section className="bg-[#07090c] px-4 py-20 sm:px-6 sm:py-28">
-      <div className="mx-auto max-w-[1120px]">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#7dd3fc]">
-              {t({ en: "Past activity wall", zh: "历史活动照片墙" })}
-            </p>
-            <h2 className="mt-4 text-[38px] font-semibold leading-[1.08] text-white sm:text-[56px]">
-              {t({ en: "Proof that the mountain days happened.", zh: "那些已经发生过的雪山日。" })}
-            </h2>
-          </div>
-          <Link href="/recaps" className="text-[17px] leading-[1.47] text-[#7dd3fc]">
-            {t({ en: "All recaps", zh: "全部回顾" })}
-          </Link>
-        </div>
-
-        <div className="mt-12 grid auto-rows-[220px] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {tiles.length === 0 ? (
-            <StatusTile>{t({ en: "No recap photos yet. Stay tuned.", zh: "暂时还没有活动照片，敬请期待。" })}</StatusTile>
-          ) : (
-            tiles.map((tile, index) => <PhotoTile key={tile.key} tile={tile} index={index} />)
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PhotoTile({ tile, index }: { tile: RecapTile; index: number }) {
-  const isLarge = index === 0 || index === 5;
-
-  return (
-    <article
-      className={`relative overflow-hidden rounded-[8px] bg-[#1f2937] bg-cover bg-center p-5 ${
-        isLarge ? "sm:col-span-2 sm:row-span-2" : ""
-      }`}
-      style={
-        tile.src
-          ? {
-              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.72)), url(${tile.src})`,
-            }
-          : undefined
-      }
-    >
-      {!tile.src ? (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_22%,rgba(125,211,252,0.24),transparent_34%),linear-gradient(145deg,#1f2937,#0f172a)]" />
-      ) : (
-        <div className="absolute inset-0 bg-black/10" />
-      )}
-      <div className="relative z-10 flex h-full flex-col justify-end">
-        <h3 className="line-clamp-2 text-[22px] font-semibold leading-[1.14] text-white">{tile.title}</h3>
-        <p className="mt-2 text-[13px] leading-[1.35] text-white/70">{tile.meta}</p>
-      </div>
-    </article>
-  );
-}
-
 function OpenEventsSection({ events, eventLoadError, lang, t }: OpenEventsSectionProps) {
   return (
     <section id="open-events" className="bg-[#f5f5f7] px-4 py-20 text-[#1d1d1f] sm:px-6 sm:py-24">
@@ -365,25 +293,6 @@ function OpenEventsSection({ events, eventLoadError, lang, t }: OpenEventsSectio
       </div>
     </section>
   );
-}
-
-function getRecapTiles(recaps: EventRecap[], t: Translate, locale: string): RecapTile[] {
-  return recaps
-    .flatMap((recap) => [
-      {
-        key: `${recap.slug}-cover`,
-        src: recap.coverImage,
-        title: t(recap.title),
-        meta: t(recap.location),
-      },
-      ...recap.media.map((item, index) => ({
-        key: `${recap.slug}-${index}`,
-        src: item.url,
-        title: t({ en: item.caption?.en ?? "", zh: item.caption?.zh ?? "" }),
-        meta: new Date(recap.date).toLocaleDateString(locale),
-      })),
-    ])
-    .slice(0, 8);
 }
 
 function StatusTile({ children, light = false }: { children: React.ReactNode; light?: boolean }) {

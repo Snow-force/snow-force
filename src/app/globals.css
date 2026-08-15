@@ -22,6 +22,9 @@
     --sf-space-lg: 24px;
     --sf-radius-card: 18px;
     --sf-radius-pill: 9999px;
+    --sf-editorial-paper: #f4f4f1;
+    --sf-editorial-ink: #111214;
+    --sf-theatre: #07090c;
   }
   html {
     scroll-behavior: smooth;
@@ -29,6 +32,86 @@
   body {
     @apply bg-white text-[#1d1d1f] antialiased;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+    overflow-x: clip;
+  }
+}
+
+.memory-reel-desktop {
+  display: none;
+}
+
+.memory-reel-natural {
+  display: block;
+}
+
+.memory-reel-main-image {
+  transform: scale(var(--memory-scale, 1));
+  transform-origin: center center;
+  transition: transform 120ms linear;
+  will-change: transform;
+}
+
+.memory-reel-next {
+  opacity: var(--memory-next-opacity, 0.35);
+  transition: opacity 160ms linear;
+  will-change: opacity;
+}
+
+.memory-frame-enter {
+  animation: memory-frame-enter 360ms ease-out both;
+}
+
+.recap-horizontal-strip {
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+
+@keyframes memory-frame-enter {
+  from {
+    opacity: 0.72;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .memory-reel-desktop {
+    display: block;
+  }
+
+  .memory-reel-natural {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .memory-reel-desktop {
+    display: none !important;
+  }
+
+  .memory-reel-natural {
+    display: block !important;
+  }
+
+  .memory-frame-enter,
+  .memory-reel-main-image,
+  .memory-reel-next {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
   }
 }
 

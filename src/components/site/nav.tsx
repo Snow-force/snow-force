@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 
 const navItems = [
@@ -41,6 +42,7 @@ export function Nav() {
             <div className="hidden items-center gap-1 sm:flex">
               <button
                 onClick={() => setLang("zh")}
+                aria-pressed={lang === "zh"}
                 className={`rounded-full px-3 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 ${
                   lang === "zh" ? "bg-white text-black" : "text-white/70 hover:text-white"
                 }`}
@@ -49,6 +51,7 @@ export function Nav() {
               </button>
               <button
                 onClick={() => setLang("en")}
+                aria-pressed={lang === "en"}
                 className={`rounded-full px-3 py-2 text-[14px] leading-none tracking-[-0.224px] transition active:scale-95 ${
                   lang === "en" ? "bg-white text-black" : "text-white/70 hover:text-white"
                 }`}
@@ -69,13 +72,7 @@ export function Nav() {
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
             >
-              <svg className="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {menuOpen ? (
-                  <path strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeWidth={2} d="M4 7h16M4 17h16" />
-                )}
-              </svg>
+              {menuOpen ? <X aria-hidden="true" className="h-[22px] w-[22px]" /> : <Menu aria-hidden="true" className="h-[22px] w-[22px]" />}
             </button>
           </div>
         </div>
@@ -109,6 +106,7 @@ export function Nav() {
               </span>
               <button
                 onClick={() => setLang("zh")}
+                aria-pressed={lang === "zh"}
                 className={`rounded-full px-3 py-1.5 text-[14px] leading-none transition active:scale-95 ${
                   lang === "zh" ? "bg-white text-black" : "border border-white/20 text-white/70 hover:text-white"
                 }`}
@@ -117,6 +115,7 @@ export function Nav() {
               </button>
               <button
                 onClick={() => setLang("en")}
+                aria-pressed={lang === "en"}
                 className={`rounded-full px-3 py-1.5 text-[14px] leading-none transition active:scale-95 ${
                   lang === "en" ? "bg-white text-black" : "border border-white/20 text-white/70 hover:text-white"
                 }`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 
 export type Lang = "en" | "zh";
 
@@ -31,6 +31,10 @@ export function LanguageProvider({
   initialLang?: Lang;
 }) {
   const [lang, setLangState] = useState<Lang>(() => initialLang ?? getInitialLang());
+
+  useEffect(() => {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  }, [lang]);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

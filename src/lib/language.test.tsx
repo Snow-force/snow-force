@@ -11,6 +11,7 @@ function LanguageProbe() {
 
 afterEach(() => {
   document.cookie = "lang=;path=/;max-age=0";
+  document.documentElement.lang = "en";
 });
 
 describe("LanguageProvider", () => {
@@ -27,6 +28,7 @@ describe("LanguageProvider", () => {
 
     // Then: the first client render preserves the server language, not document.cookie.
     expect(screen.getByText("zh:当前活动")).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("zh-CN");
   });
 
   it("uses the client cookie when existing callers omit the seed", () => {
@@ -42,5 +44,6 @@ describe("LanguageProvider", () => {
 
     // Then: it preserves the legacy client-only cookie initialization.
     expect(screen.getByText("zh:当前活动")).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("zh-CN");
   });
 });
