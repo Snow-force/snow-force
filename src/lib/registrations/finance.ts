@@ -5,7 +5,11 @@ export type RegistrationFinanceInput = Partial<{
   depositStatus: RegistrationFinance["depositStatus"];
   depositPaidAt: string;
   paymentMethod: string;
+  paymentCurrency: RegistrationFinance["paymentCurrency"];
   paymentNote: string;
+  stripeCheckoutSessionId: string;
+  stripePaymentIntentId: string;
+  refundedAmount: number;
   lodgingAssignment: string;
   finalAmount: number | null;
   settlementStatus: RegistrationSettlementStatus;
@@ -19,7 +23,11 @@ export const defaultRegistrationFinance: RegistrationFinance = {
   depositStatus: "pending",
   depositPaidAt: "",
   paymentMethod: "",
+  paymentCurrency: "",
   paymentNote: "",
+  stripeCheckoutSessionId: "",
+  stripePaymentIntentId: "",
+  refundedAmount: 0,
   lodgingAssignment: "",
   finalAmount: null,
   settlementAmount: null,
@@ -27,9 +35,13 @@ export const defaultRegistrationFinance: RegistrationFinance = {
   settlementNote: "",
 };
 
-export function calculateSettlementAmount(depositAmount: number | null, finalAmount: number | null) {
+export function calculateSettlementAmount(
+  depositAmount: number | null,
+  finalAmount: number | null,
+  refundedAmount = 0,
+) {
   if (depositAmount === null || finalAmount === null) return null;
-  return finalAmount - depositAmount;
+  return finalAmount - (depositAmount - refundedAmount);
 }
 
 export function settlementStatusForAmount(
@@ -47,7 +59,11 @@ export function normalizeRegistrationFinance(
   finance: Registration["finance"] | undefined,
 ): RegistrationFinance {
   const merged = { ...defaultRegistrationFinance, ...finance };
-  const settlementAmount = calculateSettlementAmount(merged.depositAmount, merged.finalAmount);
+  const settlementAmount = calculateSettlementAmount(
+    merged.depositAmount,
+    merged.finalAmount,
+    merged.refundedAmount,
+  );
   return {
     ...merged,
     settlementAmount,
@@ -63,7 +79,11 @@ export function applyRegistrationFinanceInput(
     ...normalizeRegistrationFinance(current),
     ...input,
   };
-  const settlementAmount = calculateSettlementAmount(next.depositAmount, next.finalAmount);
+  const settlementAmount = calculateSettlementAmount(
+    next.depositAmount,
+    next.finalAmount,
+    next.refundedAmount,
+  );
   return {
     ...next,
     settlementAmount,

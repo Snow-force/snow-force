@@ -108,6 +108,13 @@ export async function createCheckoutSessionResult(
       couponCode,
       discountAmount: String(discountAmount),
     },
+    payment_intent_data: {
+      metadata: {
+        pendingRegistrationId,
+        eventSlug: event.slug,
+        memberId: pending.memberId ?? "",
+      },
+    },
     expires_at: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
   });
 

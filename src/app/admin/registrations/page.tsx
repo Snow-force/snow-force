@@ -2,7 +2,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { RegistrationFinanceControl } from "@/components/admin/registration-finance-control";
 import { RegistrationCancellationControl } from "@/components/admin/registration-cancellation-control";
+import { RegistrationRefundControl } from "@/components/admin/registration-refund-control";
 import { requireAdmin } from "@/lib/auth/admin";
+import {
+  linkLegacyPaymentAction,
+  refundRegistrationAction,
+  verifyLegacyPaymentAction,
+} from "@/lib/payments/refund-actions";
+import { getRegistrationRefunds } from "@/lib/payments/refund-repository";
 import { getAllEvents, getEventAdmin } from "@/lib/events/repository";
 import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
 import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "@/lib/registrations/admin-view";
@@ -122,9 +129,19 @@ export default async function AdminRegistrationsPage({
 }: {
   searchParams?: { event?: string | string[]; financeSaved?: string | string[]; notice?: string | string[] };
 }) {
-  await requireAdmin();
-  const [registrations, activeEvents] = await Promise.all([getRegistrations(), getAllEvents()]);
+  const staff = await requireAdmin();
+  const [registrations, activeEvents, refunds] = await Promise.all([
+    getRegistrations(),
+    getAllEvents(),
+    getRegistrationRefunds(),
+  ]);
   const eventsBySlug = new Map<string, Event>(activeEvents.map((event) => [event.slug, event]));
+  const refundsByRegistration = new Map<string, typeof refunds>();
+  for (const refund of refunds) {
+    const rows = refundsByRegistration.get(refund.registrationId) ?? [];
+    rows.push(refund);
+    refundsByRegistration.set(refund.registrationId, rows);
+  }
   const missingEventSlugs = Array.from(new Set(registrations.map((registration) => registration.eventSlug)))
     .filter((slug) => !eventsBySlug.has(slug));
   const missingEvents = await Promise.all(missingEventSlugs.map((slug) => getEventAdmin(slug)));
@@ -248,6 +265,17 @@ export default async function AdminRegistrationsPage({
                     isSaved={financeSavedId === registration.id}
                     registrationId={registration.id}
                     returnEvent={view.selectedEventSlug}
+                    refundControl={
+                      <RegistrationRefundControl
+                        canRefund={staff.role === "admin"}
+                        finance={finance}
+                        linkAction={linkLegacyPaymentAction}
+                        refunds={refundsByRegistration.get(registration.id) ?? []}
+                        refundAction={refundRegistrationAction}
+                        registrationId={registration.id}
+                        verifyAction={verifyLegacyPaymentAction}
+                      />
+                    }
                   />
                 </tr>
               );

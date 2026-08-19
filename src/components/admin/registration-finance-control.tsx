@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import type { RegistrationDepositStatus, RegistrationFinance, RegistrationSettlementStatus } from "@/lib/types";
 
@@ -41,6 +41,7 @@ interface RegistrationFinanceControlProps {
   isSaved: boolean;
   registrationId: string;
   returnEvent: string;
+  refundControl?: ReactNode;
 }
 
 function SubmitButton({ dirty }: { dirty: boolean }) {
@@ -70,6 +71,7 @@ export function RegistrationFinanceControl({
   isSaved,
   registrationId,
   returnEvent,
+  refundControl,
 }: RegistrationFinanceControlProps) {
   const initialDepositAmount = finance.depositAmount === null ? "" : String(finance.depositAmount);
   const [depositAmount, setDepositAmount] = useState(initialDepositAmount);
@@ -78,7 +80,7 @@ export function RegistrationFinanceControl({
   const [showToast, setShowToast] = useState(isSaved);
   const formId = useMemo(() => `finance-${registrationId}`, [registrationId]);
   const paidViaStripe = finance.paymentMethod === "stripe";
-  const isPaidOnline = paidViaStripe && depositStatus === "paid";
+  const isStripeManaged = paidViaStripe;
 
   useEffect(() => {
     setDepositAmount(initialDepositAmount);
@@ -104,7 +106,7 @@ export function RegistrationFinanceControl({
         <label
           className={[
             "flex w-24 items-center rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100",
-            isPaidOnline ? "opacity-60 cursor-not-allowed" : "",
+            isStripeManaged ? "opacity-60 cursor-not-allowed" : "",
           ].join(" ")}
         >
           <span className="text-gray-400">$</span>
@@ -115,7 +117,7 @@ export function RegistrationFinanceControl({
             onChange={(event) => setDepositAmount(event.target.value)}
             inputMode="decimal"
             aria-label="Deposit amount"
-            readOnly={isPaidOnline}
+            readOnly={isStripeManaged}
             className="ml-1 w-full bg-transparent text-gray-900 outline-none"
           />
         </label>
@@ -127,17 +129,17 @@ export function RegistrationFinanceControl({
           value={depositStatus}
           onChange={(event) => setDepositStatus(event.target.value as RegistrationDepositStatus)}
           aria-label="Deposit status"
-          disabled={isPaidOnline}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold outline-none transition focus:ring-2 focus:ring-blue-100 ${depositStatusClasses[depositStatus]} ${isPaidOnline ? "opacity-60 cursor-not-allowed" : ""}`}
+          disabled={isStripeManaged}
+          className={`rounded-full border px-3 py-1 text-xs font-semibold outline-none transition focus:ring-2 focus:ring-blue-100 ${depositStatusClasses[depositStatus]} ${isStripeManaged ? "opacity-60 cursor-not-allowed" : ""}`}
         >
           <option value="pending">{depositStatusLabels.pending}</option>
           <option value="paid">{depositStatusLabels.paid}</option>
           <option value="refunded">{depositStatusLabels.refunded}</option>
           <option value="waived">{depositStatusLabels.waived}</option>
         </select>
-        {isPaidOnline ? (
+        {isStripeManaged ? (
           <p className="text-xs text-gray-500 mt-1">
-            Paid online via Stripe — to refund, use Stripe Dashboard then set status to Refunded.
+            Stripe-managed payment — use Refund &amp; cancel below instead of editing this status.
           </p>
         ) : null}
       </td>
@@ -168,6 +170,7 @@ export function RegistrationFinanceControl({
             Finance updated
           </div>
         ) : null}
+        {refundControl}
       </td>
     </Fragment>
   );

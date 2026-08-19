@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RegistrationCancellationControl } from "./registration-cancellation-control";
@@ -16,19 +16,24 @@ describe("RegistrationCancellationControl", () => {
     const user = userEvent.setup();
     render(
       <RegistrationCancellationControl
-        action={vi.fn()}
+        action={"#" as never}
         registrationId="reg-123"
         returnEvent="event-123"
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+    });
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/does not issue a refund/i)).toBeInTheDocument();
     const submit = screen.getByRole("button", { name: "Cancel registration" });
     expect(submit).toBeDisabled();
 
-    await user.type(screen.getByLabelText("Confirmation"), "CANCEL");
+    await act(async () => {
+      await user.type(screen.getByLabelText("Confirmation"), "CANCEL");
+    });
 
     expect(submit).toBeEnabled();
   });

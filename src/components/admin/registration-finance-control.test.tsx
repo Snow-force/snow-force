@@ -19,7 +19,7 @@ function renderControl(finance: RegistrationFinance) {
       <tbody>
         <tr>
           <RegistrationFinanceControl
-            action={vi.fn()}
+            action={"#" as never}
             createdAt="2026-06-30T00:00:00.000Z"
             finance={finance}
             isSaved={false}
@@ -43,10 +43,10 @@ describe("RegistrationFinanceControl", () => {
 
     const select = screen.getByLabelText("Deposit status") as HTMLSelectElement;
     expect(select).toBeDisabled();
-    expect(screen.getByText(/paid online via stripe/i)).toBeInTheDocument();
+    expect(screen.getByText(/stripe-managed payment/i)).toBeInTheDocument();
   });
 
-  it("keeps depositStatus enabled for refunded Stripe payments", () => {
+  it("keeps refunded Stripe payment fields managed by the refund workflow", () => {
     const finance: RegistrationFinance = {
       ...defaultRegistrationFinance,
       paymentMethod: "stripe",
@@ -55,8 +55,8 @@ describe("RegistrationFinanceControl", () => {
     renderControl(finance);
 
     const select = screen.getByLabelText("Deposit status") as HTMLSelectElement;
-    expect(select).not.toBeDisabled();
-    expect(screen.queryByText(/paid online via stripe/i)).toBeNull();
+    expect(select).toBeDisabled();
+    expect(screen.getByText(/stripe-managed payment/i)).toBeInTheDocument();
   });
 
   it("keeps depositStatus enabled for non-Stripe pending payments", () => {
@@ -69,7 +69,7 @@ describe("RegistrationFinanceControl", () => {
 
     const select = screen.getByLabelText("Deposit status") as HTMLSelectElement;
     expect(select).not.toBeDisabled();
-    expect(screen.queryByText(/paid online via stripe/i)).toBeNull();
+    expect(screen.queryByText(/stripe-managed payment/i)).toBeNull();
   });
 
   it("makes depositAmount readOnly when Stripe paid", () => {

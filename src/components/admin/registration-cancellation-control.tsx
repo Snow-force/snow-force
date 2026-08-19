@@ -52,7 +52,8 @@ export function RegistrationCancellationControl({
               Cancel registration?
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              This marks the registration as cancelled and frees its event capacity. Type <strong>CANCEL</strong> to continue.
+              This marks the registration as cancelled and frees its event capacity. It does not issue a refund.
+              Type <strong>CANCEL</strong> to continue.
             </p>
             <form action={action} className="mt-4">
               <input type="hidden" name="id" value={registrationId} />

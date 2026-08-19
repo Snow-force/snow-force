@@ -10,6 +10,18 @@ vi.mock("@/lib/payments/stripe-server", () => ({
   verifyStripeWebhookSignature: mockVerifyStripeWebhookSignature,
 }));
 
+const mockReconcileStripeRefund = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/payments/refunds", () => ({
+  reconcileStripeRefund: mockReconcileStripeRefund,
+}));
+vi.mock("@/lib/payments/refund-repository", () => ({
+  createRegistrationRefund: vi.fn(),
+  getRegistrationRefund: vi.fn(),
+  getRegistrationRefundByStripeId: vi.fn(),
+  getRegistrationRefunds: vi.fn(),
+  updateRegistrationRefund: vi.fn(),
+}));
+
 const mockGetPendingRegistrationById = vi.hoisted(() => vi.fn());
 const mockDeletePendingRegistration = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/registrations/pending-repository", () => ({
@@ -20,10 +32,16 @@ vi.mock("@/lib/registrations/pending-repository", () => ({
 const mockCreateRegistration = vi.hoisted(() => vi.fn());
 const mockGetRegistrations = vi.hoisted(() => vi.fn());
 const mockGetRegistrationCountForEvent = vi.hoisted(() => vi.fn());
+const mockGetRegistration = vi.hoisted(() => vi.fn());
+const mockUpdateRegistrationFinance = vi.hoisted(() => vi.fn());
+const mockUpdateRegistrationStatus = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/registrations/repository", () => ({
   createRegistration: mockCreateRegistration,
+  getRegistration: mockGetRegistration,
   getRegistrations: mockGetRegistrations,
   getRegistrationCountForEvent: mockGetRegistrationCountForEvent,
+  updateRegistrationFinance: mockUpdateRegistrationFinance,
+  updateRegistrationStatus: mockUpdateRegistrationStatus,
 }));
 
 const mockCreateWaiverAcceptance = vi.hoisted(() => vi.fn());
@@ -176,6 +194,7 @@ beforeEach(() => {
   mockGetRegistrationCountForEvent.mockResolvedValue(0);
   mockHasRemainingCapacity.mockReturnValue(true);
   mockCreateRegistration.mockResolvedValue({ success: true, registration: buildRegistration() });
+  mockReconcileStripeRefund.mockResolvedValue(undefined);
 });
 
 describe("Stripe webhook route", () => {
@@ -218,7 +237,10 @@ describe("Stripe webhook route", () => {
 
   it("(c) creates a paid deposit registration, deletes pending, and returns 200", async () => {
     const body = buildEventJson("evt_3", "checkout.session.completed", {
+      id: "cs_test_1",
       amount_total: 10000,
+      currency: "usd",
+      payment_intent: "pi_test_1",
       metadata: { pendingRegistrationId: "pending-1" },
     });
     mockVerifyStripeWebhookSignature.mockReturnValue({
@@ -226,7 +248,10 @@ describe("Stripe webhook route", () => {
       type: "checkout.session.completed",
       data: {
         object: {
+          id: "cs_test_1",
           amount_total: 10000,
+          currency: "usd",
+          payment_intent: "pi_test_1",
           metadata: { pendingRegistrationId: "pending-1" },
         },
       },
@@ -253,6 +278,9 @@ describe("Stripe webhook route", () => {
     expect(callArg.memberId).toBe("member-1");
     expect(callArg.finance.depositStatus).toBe("paid");
     expect(callArg.finance.paymentMethod).toBe("stripe");
+    expect(callArg.finance.paymentCurrency).toBe("usd");
+    expect(callArg.finance.stripeCheckoutSessionId).toBe("cs_test_1");
+    expect(callArg.finance.stripePaymentIntentId).toBe("pi_test_1");
     expect(callArg.finance.depositAmount).toBe(100);
     expect(callArg.finance.finalAmount).toBeNull();
     expect(callArg.finance.settlementStatus).toBe("not_started");
@@ -393,7 +421,10 @@ describe("Stripe webhook route", () => {
 
   it("(h) returns 200 (not 500) when createRegistration throws a registrations_one_member_per_event duplicate", async () => {
     const body = buildEventJson("evt_8", "checkout.session.completed", {
+      id: "cs_test_race",
       amount_total: 10000,
+      currency: "usd",
+      payment_intent: "pi_test_race",
       metadata: { pendingRegistrationId: "pending-1" },
     });
     mockVerifyStripeWebhookSignature.mockReturnValue({
@@ -401,7 +432,10 @@ describe("Stripe webhook route", () => {
       type: "checkout.session.completed",
       data: {
         object: {
+          id: "cs_test_race",
           amount_total: 10000,
+          currency: "usd",
+          payment_intent: "pi_test_race",
           metadata: { pendingRegistrationId: "pending-1" },
         },
       },
@@ -421,6 +455,11 @@ describe("Stripe webhook route", () => {
 
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("OK");
+    expect(mockUpdateRegistrationFinance).toHaveBeenCalledWith("reg-1", {
+      paymentCurrency: "usd",
+      stripeCheckoutSessionId: "cs_test_race",
+      stripePaymentIntentId: "pi_test_race",
+    });
     expect(mockDeletePendingRegistration).toHaveBeenCalledWith("pending-1");
   });
 
@@ -508,5 +547,28 @@ describe("Stripe webhook route", () => {
     expect(await response.text()).toBe("Server error");
     expect(mockGetPendingRegistrationById).not.toHaveBeenCalled();
     expect(mockCreateRegistration).not.toHaveBeenCalled();
+  });
+
+  it("(l) reconciles refund events so a refund also cancels the registration", async () => {
+    const refund = {
+      id: "re_test_1",
+      amount: 4000,
+      currency: "usd",
+      metadata: { registrationId: "reg-1" },
+      payment_intent: "pi_test_1",
+      status: "succeeded",
+    };
+    const body = buildEventJson("evt_refund", "refund.created", refund);
+    mockVerifyStripeWebhookSignature.mockReturnValue({
+      id: "evt_refund",
+      type: "refund.created",
+      data: { object: refund },
+    } as unknown as Stripe.Event);
+
+    const response = await POST(buildRequest(body));
+
+    expect(response.status).toBe(200);
+    expect(mockReconcileStripeRefund).toHaveBeenCalledWith(expect.any(Object), refund);
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/registrations");
   });
 });

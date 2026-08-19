@@ -48,7 +48,11 @@ type RegistrationRow = {
   deposit_status: RegistrationFinance["depositStatus"] | null;
   deposit_paid_at: string | null;
   payment_method: string | null;
+  payment_currency: RegistrationFinance["paymentCurrency"] | null;
   payment_note: string | null;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  refunded_amount: number | null;
   lodging_assignment: string | null;
   final_amount: number | null;
   settlement_amount: number | null;
@@ -102,7 +106,11 @@ function rowToRegistration(row: RegistrationRow): Registration {
       depositStatus: row.deposit_status ?? defaultRegistrationFinance.depositStatus,
       depositPaidAt: row.deposit_paid_at ?? "",
       paymentMethod: row.payment_method ?? "",
+      paymentCurrency: row.payment_currency ?? "",
       paymentNote: row.payment_note ?? "",
+      stripeCheckoutSessionId: row.stripe_checkout_session_id ?? "",
+      stripePaymentIntentId: row.stripe_payment_intent_id ?? "",
+      refundedAmount: row.refunded_amount ?? 0,
       lodgingAssignment: row.lodging_assignment ?? "",
       finalAmount: row.final_amount,
       settlementAmount: row.settlement_amount,
@@ -129,7 +137,11 @@ function registrationToInsert(data: NewRegistration) {
     deposit_status: data.finance?.depositStatus ?? defaultRegistrationFinance.depositStatus,
     deposit_paid_at: data.finance?.depositPaidAt || null,
     payment_method: data.finance?.paymentMethod ?? "",
+    payment_currency: data.finance?.paymentCurrency || null,
     payment_note: data.finance?.paymentNote ?? "",
+    stripe_checkout_session_id: data.finance?.stripeCheckoutSessionId || null,
+    stripe_payment_intent_id: data.finance?.stripePaymentIntentId || null,
+    refunded_amount: data.finance?.refundedAmount ?? 0,
     lodging_assignment: data.finance?.lodgingAssignment ?? "",
     final_amount: data.finance?.finalAmount ?? null,
     settlement_amount: data.finance?.settlementAmount ?? null,
@@ -146,7 +158,11 @@ function financeToUpdate(finance: RegistrationFinance) {
     deposit_status: finance.depositStatus,
     deposit_paid_at: finance.depositPaidAt || null,
     payment_method: finance.paymentMethod,
+    payment_currency: finance.paymentCurrency || null,
     payment_note: finance.paymentNote,
+    stripe_checkout_session_id: finance.stripeCheckoutSessionId || null,
+    stripe_payment_intent_id: finance.stripePaymentIntentId || null,
+    refunded_amount: finance.refundedAmount,
     lodging_assignment: finance.lodgingAssignment,
     final_amount: finance.finalAmount,
     settlement_amount: finance.settlementAmount,

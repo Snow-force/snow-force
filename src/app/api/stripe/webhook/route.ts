@@ -4,6 +4,14 @@ import type Stripe from "stripe";
 
 import { verifyStripeWebhookSignature } from "@/lib/payments/stripe-server";
 import {
+  createRegistrationRefund,
+  getRegistrationRefund,
+  getRegistrationRefundByStripeId,
+  getRegistrationRefunds,
+  updateRegistrationRefund,
+} from "@/lib/payments/refund-repository";
+import { reconcileStripeRefund } from "@/lib/payments/refunds";
+import {
   getPendingRegistrationById,
   deletePendingRegistration,
 } from "@/lib/registrations/pending-repository";
@@ -11,6 +19,9 @@ import {
   createRegistration,
   getRegistrations,
   getRegistrationCountForEvent,
+  getRegistration,
+  updateRegistrationFinance,
+  updateRegistrationStatus,
 } from "@/lib/registrations/repository";
 import { getEvent } from "@/lib/events/repository";
 import { hasRemainingCapacity } from "@/lib/events/availability";
@@ -42,7 +53,10 @@ function isDuplicateRegistrationError(message: string) {
 }
 
 type CheckoutSessionObject = {
+  id?: string;
   amount_total: number | null;
+  currency?: string | null;
+  payment_intent?: string | { id: string } | null;
   metadata?: Record<string, string | undefined> | null;
 };
 
@@ -70,6 +84,30 @@ export async function POST(request: Request): Promise<Response> {
     return new Response("Server error", { status: 500 });
   }
 
+  if (event.type === "refund.created" || event.type === "refund.updated" || event.type === "refund.failed") {
+    try {
+      await reconcileStripeRefund(
+        {
+          getRegistration,
+          getRegistrations,
+          updateRegistrationFinance,
+          updateRegistrationStatus,
+          getRegistrationRefunds,
+          getRegistrationRefund,
+          getRegistrationRefundByStripeId,
+          createRegistrationRefund,
+          updateRegistrationRefund,
+        },
+        event.data.object as Stripe.Refund,
+      );
+      revalidatePath("/admin/registrations");
+      revalidatePath("/member");
+      return new Response("OK", { status: 200 });
+    } catch {
+      return new Response("Server error", { status: 500 });
+    }
+  }
+
   if (event.type !== "checkout.session.completed") {
     return new Response("OK", { status: 200 });
   }
@@ -93,6 +131,9 @@ export async function POST(request: Request): Promise<Response> {
   // Re-read paymentModel + currency from the DB (do NOT trust metadata — the event may have been edited).
   const paymentModel = dbEvent.paymentModel;
   const currency = dbEvent.depositCurrency;
+  if (session.currency && session.currency !== currency) return new Response("OK", { status: 200 });
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? "";
 
   // Re-check capacity.
   const registrationCount = await getRegistrationCountForEvent(dbEvent.slug);
@@ -114,6 +155,13 @@ export async function POST(request: Request): Promise<Response> {
         typedName: pending.typedName,
         handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
         acceptedAt: new Date().toISOString(),
+      });
+    }
+    if (session.id || paymentIntentId) {
+      await updateRegistrationFinance(existingRegistration.id, {
+        paymentCurrency: currency,
+        stripeCheckoutSessionId: session.id ?? "",
+        stripePaymentIntentId: paymentIntentId,
       });
     }
     await deletePendingRegistration(pending.id);
@@ -146,11 +194,15 @@ export async function POST(request: Request): Promise<Response> {
     depositAmount: paidAmount,
     depositPaidAt: paidAt,
     paymentMethod: "stripe",
+    paymentCurrency: currency,
     finalAmount: paymentModel === "full_prepay" ? paidAmount : null,
     settlementAmount: paymentModel === "full_prepay" ? 0 : null,
     settlementStatus: paymentModel === "full_prepay" ? "settled" : "not_started",
     couponCode,
     discountAmount,
+    stripeCheckoutSessionId: session.id ?? "",
+    stripePaymentIntentId: paymentIntentId,
+    refundedAmount: 0,
   };
 
   try {
@@ -183,6 +235,11 @@ export async function POST(request: Request): Promise<Response> {
         (item) => item.memberId === pending.memberId && item.status !== "cancelled",
       );
       if (!registration) return new Response("Server error", { status: 500 });
+      await updateRegistrationFinance(registration.id, {
+        paymentCurrency: currency,
+        stripeCheckoutSessionId: session.id ?? "",
+        stripePaymentIntentId: paymentIntentId,
+      });
       if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
         await createWaiverAcceptance({
           registrationId: registration.id,

@@ -74,6 +74,7 @@ export interface EventMerchantBoothProgram {
 
 export type RegistrationAnswerValue = string | boolean | string[];
 export type RegistrationAnswers = Record<string, RegistrationAnswerValue>;
+export type PaymentCurrency = "usd" | "cny" | "eur" | "gbp" | "jpy";
 
 export type RegistrationDepositStatus = "pending" | "paid" | "refunded" | "waived";
 export type RegistrationSettlementStatus =
@@ -87,7 +88,11 @@ export interface RegistrationFinance {
   depositStatus: RegistrationDepositStatus;
   depositPaidAt: string;
   paymentMethod: string;
+  paymentCurrency: PaymentCurrency | "";
   paymentNote: string;
+  stripeCheckoutSessionId: string;
+  stripePaymentIntentId: string;
+  refundedAmount: number;
   lodgingAssignment: string;
   finalAmount: number | null;
   settlementAmount: number | null;
@@ -95,6 +100,32 @@ export interface RegistrationFinance {
   settlementNote: string;
   couponCode?: string;
   discountAmount?: number;
+}
+
+export type RegistrationRefundStatus =
+  | "creating"
+  | "pending"
+  | "requires_action"
+  | "succeeded"
+  | "failed"
+  | "canceled";
+
+export type RegistrationRefundReason = "requested_by_customer" | "duplicate";
+
+export interface RegistrationRefund {
+  id: string;
+  registrationId: string;
+  stripeRefundId: string;
+  stripePaymentIntentId: string;
+  amount: number;
+  currency: PaymentCurrency;
+  status: RegistrationRefundStatus;
+  reason: RegistrationRefundReason;
+  internalNote: string;
+  initiatedBy: string | null;
+  failureReason: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface EventReviewQuestion {
@@ -145,7 +176,7 @@ export interface Event {
   feeAmount: string;
   paymentModel: "free" | "deposit" | "full_prepay";
   depositAmount: number | null;
-  depositCurrency: "usd" | "cny" | "eur" | "gbp" | "jpy";
+  depositCurrency: PaymentCurrency;
   fullPaymentAmount: number | null;
   paymentInstructions: Bilingual;
   seoTitle: Bilingual;
