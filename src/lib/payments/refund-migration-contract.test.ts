@@ -6,7 +6,7 @@ const migrationPath = path.join(
   process.cwd(),
   "supabase",
   "migrations",
-  "20260818081948_add_registration_refunds.sql",
+  "20260819030926_add_registration_refunds.sql",
 );
 
 describe("registration refund migration contract", () => {
