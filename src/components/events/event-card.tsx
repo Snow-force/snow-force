@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
 import type { Lang } from "@/lib/language";
@@ -108,7 +109,13 @@ function ActivityVisual({
     <div className="relative h-44 overflow-hidden bg-[#eef5fb]">
       {coverImage ? (
         <>
-          <img src={coverImage} alt={title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+          <Image
+            src={coverImage}
+            alt={title}
+            fill
+            sizes="(max-width: 767px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 544px"
+            className="object-cover transition duration-500 group-hover:scale-[1.03]"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
         </>
       ) : (

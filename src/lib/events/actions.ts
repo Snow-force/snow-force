@@ -116,7 +116,7 @@ export async function uploadEventCoverAction(
   const path = safeEventCoverPath(formText(formData, "slug"), file.name);
   const bucket = createAdminClient().storage.from(EVENT_COVER_BUCKET);
   const { error } = await bucket.upload(path, file, {
-    cacheControl: "3600",
+    cacheControl: "31536000",
     contentType: file.type,
     upsert: false,
   });

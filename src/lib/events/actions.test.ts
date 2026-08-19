@@ -150,7 +150,7 @@ describe("event admin action helpers", () => {
     expect(upload).toHaveBeenCalledWith(
       expect.stringMatching(/^events\/pow-day-2026\/\d+-my-cover\.webp$/),
       expect.any(File),
-      { cacheControl: "3600", contentType: "image/webp", upsert: false },
+      { cacheControl: "31536000", contentType: "image/webp", upsert: false },
     );
     const uploadedPath = upload.mock.calls[0]?.[0];
     expect(getPublicUrl).toHaveBeenCalledWith(uploadedPath);

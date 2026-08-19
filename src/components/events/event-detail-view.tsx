@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useLanguage, type Lang } from "@/lib/language";
 import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
@@ -92,8 +93,15 @@ export function EventDetailView({
           </nav>
 
           {event.coverImage ? (
-            <div className="mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-2xl shadow-black/25">
-              <img src={event.coverImage} alt={eventTitle} className="aspect-[16/7] w-full object-cover" />
+            <div className="relative mb-8 aspect-[16/7] overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-2xl shadow-black/25">
+              <Image
+                src={event.coverImage}
+                alt={eventTitle}
+                fill
+                priority
+                sizes="(max-width: 1100px) calc(100vw - 2rem), 1100px"
+                className="object-cover"
+              />
             </div>
           ) : null}
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { useLanguage } from "@/lib/language";
+import { optimizeImageFile } from "@/lib/images/client-image-optimizer";
 import {
   abortRecapMediaUploadAction,
   finalizeRecapMediaUploadAction,
@@ -55,7 +56,7 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
           .storage.from(RECAP_MEDIA_BUCKET)
           .uploadToSignedUrl(entry.path, entry.token, file, {
             contentType: file.type,
-            cacheControl: "3600",
+            cacheControl: "31536000",
           });
         return error ? { ok: false, error } : { ok: true };
       },
@@ -84,9 +85,14 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
     }
 
     try {
+      setPhase("signing");
+      const optimizedFiles: File[] = [];
+      for (const file of selectedFiles) {
+        optimizedFiles.push(await optimizeImageFile(file, { maxDimension: 2400, quality: 0.82 }));
+      }
       await uploadRecapMediaBatch(client, {
         slug: recap.slug,
-        files: selectedFiles,
+        files: optimizedFiles,
         draftPayload,
         onProgress: ({ phase: nextPhase, done, total }) => {
           setPhase(nextPhase);

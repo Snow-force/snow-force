@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 
 import { uploadEventCoverAction } from "@/lib/events/actions";
+import { optimizeImageFile } from "@/lib/images/client-image-optimizer";
 import type { Event, EventStatus, RegistrationState } from "@/lib/types";
 import { useLanguage } from "@/lib/language";
 import { adminCopy } from "./admin-copy";
@@ -63,21 +64,32 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
       return;
     }
 
-    const formData = new FormData();
-    formData.set("slug", event.slug);
-    if (!isNew) formData.set("originalSlug", event.slug);
-    formData.set("coverImage", file);
-
     startCoverUpload(async () => {
-      const result = await uploadEventCoverAction({ success: false }, formData);
-      if (!result.success || !result.url) {
-        setCoverUploadMessage(result.message ?? (activeLang === "zh" ? "上传失败。" : "Upload failed."));
-        return;
-      }
+      try {
+        const optimizedFile = await optimizeImageFile(file, { maxDimension: 1920, quality: 0.82 });
+        const formData = new FormData();
+        formData.set("slug", event.slug);
+        if (!isNew) formData.set("originalSlug", event.slug);
+        formData.set("coverImage", optimizedFile);
 
-      updateEventValue("coverImage", result.url);
-      setCoverUploadMessage(t(adminCopy.editor.coverUploaded));
-      if (coverInputRef.current) coverInputRef.current.value = "";
+        const result = await uploadEventCoverAction({ success: false }, formData);
+        if (!result.success || !result.url) {
+          setCoverUploadMessage(result.message ?? (activeLang === "zh" ? "上传失败。" : "Upload failed."));
+          return;
+        }
+
+        updateEventValue("coverImage", result.url);
+        setCoverUploadMessage(t(adminCopy.editor.coverUploaded));
+        if (coverInputRef.current) coverInputRef.current.value = "";
+      } catch (error) {
+        setCoverUploadMessage(
+          error instanceof Error
+            ? error.message
+            : activeLang === "zh"
+              ? "图片优化失败。"
+              : "Image optimization failed.",
+        );
+      }
     });
   }
 
