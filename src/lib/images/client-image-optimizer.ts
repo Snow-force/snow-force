@@ -1,5 +1,13 @@
+import {
+  PUBLIC_IMAGE_ALLOWED_TYPES,
+  PUBLIC_IMAGE_SOURCE_MAX_BYTES,
+  PUBLIC_IMAGE_UPLOAD_MAX_BYTES,
+} from "./public-image-policy";
+
 const DEFAULT_MAX_DIMENSION = 2400;
 const DEFAULT_QUALITY = 0.82;
+const DEFAULT_MAX_ATTEMPTS = 8;
+const MIN_QUALITY = 0.5;
 
 type DecodedImage = {
   source: CanvasImageSource;
@@ -16,7 +24,25 @@ export type ImageOptimizationRuntime = {
 export type OptimizeImageOptions = {
   maxDimension?: number;
   quality?: number;
+  maxBytes?: number;
 };
+
+export type ImageOptimizationErrorCode =
+  | "invalid_file"
+  | "unsupported_type"
+  | "source_too_large"
+  | "animated_gif_too_large"
+  | "cannot_meet_size";
+
+export class ImageOptimizationError extends Error {
+  constructor(
+    public readonly code: ImageOptimizationErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ImageOptimizationError";
+  }
+}
 
 export function calculateContainedDimensions(width: number, height: number, maxDimension: number) {
   if (width <= maxDimension && height <= maxDimension) return { width, height };
@@ -94,22 +120,73 @@ export async function optimizeImageFile(
   options: OptimizeImageOptions = {},
   runtime: ImageOptimizationRuntime = browserRuntime,
 ): Promise<File> {
-  // Re-encoding GIFs would discard animation. Next.js can still serve them unchanged.
-  if (file.type === "image/gif") return file;
-
   const maxDimension = options.maxDimension ?? DEFAULT_MAX_DIMENSION;
   const quality = options.quality ?? DEFAULT_QUALITY;
+  const maxBytes = options.maxBytes ?? PUBLIC_IMAGE_UPLOAD_MAX_BYTES;
+
+  if (!Number.isFinite(file.size) || file.size <= 0) {
+    throw new ImageOptimizationError("invalid_file", "Choose a non-empty image file.");
+  }
+  if (!PUBLIC_IMAGE_ALLOWED_TYPES.has(file.type)) {
+    throw new ImageOptimizationError(
+      "unsupported_type",
+      "Use a JPG, PNG, WebP, or GIF image.",
+    );
+  }
+  if (file.size > PUBLIC_IMAGE_SOURCE_MAX_BYTES) {
+    throw new ImageOptimizationError(
+      "source_too_large",
+      "The source image must be 50 MB or smaller.",
+    );
+  }
+
+  // Re-encoding GIFs would discard animation, so only already-compliant GIFs pass through.
+  if (file.type === "image/gif") {
+    if (file.size <= maxBytes) return file;
+    throw new ImageOptimizationError(
+      "animated_gif_too_large",
+      "Animated GIFs cannot be compressed automatically and must be 2 MB or smaller.",
+    );
+  }
+
   const decoded = await runtime.decode(file);
 
   try {
-    const dimensions = calculateContainedDimensions(decoded.width, decoded.height, maxDimension);
-    const encoded = await runtime.encode(decoded, dimensions.width, dimensions.height, quality);
-    if (encoded.size >= file.size) return file;
+    let dimensions = calculateContainedDimensions(decoded.width, decoded.height, maxDimension);
+    let nextQuality = quality;
 
-    return new File([encoded], webpFileName(file.name), {
-      type: "image/webp",
-      lastModified: file.lastModified,
-    });
+    for (let attempt = 0; attempt < DEFAULT_MAX_ATTEMPTS; attempt += 1) {
+      const encoded = await runtime.encode(
+        decoded,
+        dimensions.width,
+        dimensions.height,
+        nextQuality,
+      );
+
+      if (encoded.size <= maxBytes) {
+        if (encoded.size >= file.size) return file;
+        return new File([encoded], webpFileName(file.name), {
+          type: "image/webp",
+          lastModified: file.lastModified,
+        });
+      }
+
+      if (file.size <= maxBytes && encoded.size >= file.size) return file;
+      if (attempt === DEFAULT_MAX_ATTEMPTS - 1) break;
+
+      const targetScale = Math.sqrt(maxBytes / encoded.size) * 0.95;
+      const scale = Math.min(0.9, Math.max(0.5, targetScale));
+      dimensions = {
+        width: Math.max(1, Math.round(dimensions.width * scale)),
+        height: Math.max(1, Math.round(dimensions.height * scale)),
+      };
+      nextQuality = Number(Math.max(MIN_QUALITY, nextQuality - 0.06).toFixed(2));
+    }
+
+    throw new ImageOptimizationError(
+      "cannot_meet_size",
+      "The image could not be compressed below 2 MB. Choose a smaller source image.",
+    );
   } finally {
     decoded.close?.();
   }

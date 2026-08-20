@@ -3,7 +3,11 @@
 import { useRef, useState, useTransition } from "react";
 
 import { uploadEventCoverAction } from "@/lib/events/actions";
-import { optimizeImageFile } from "@/lib/images/client-image-optimizer";
+import {
+  ImageOptimizationError,
+  optimizeImageFile,
+} from "@/lib/images/client-image-optimizer";
+import { PUBLIC_IMAGE_UPLOAD_MAX_BYTES } from "@/lib/images/public-image-policy";
 import type { Event, EventStatus, RegistrationState } from "@/lib/types";
 import { useLanguage } from "@/lib/language";
 import { adminCopy } from "./admin-copy";
@@ -66,7 +70,11 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
 
     startCoverUpload(async () => {
       try {
-        const optimizedFile = await optimizeImageFile(file, { maxDimension: 1920, quality: 0.82 });
+        const optimizedFile = await optimizeImageFile(file, {
+          maxDimension: 1920,
+          quality: 0.82,
+          maxBytes: PUBLIC_IMAGE_UPLOAD_MAX_BYTES,
+        });
         const formData = new FormData();
         formData.set("slug", event.slug);
         if (!isNew) formData.set("originalSlug", event.slug);
@@ -83,7 +91,9 @@ export function EventBasicStep({ event, activeLang, onChange, isNew = true }: Ev
         if (coverInputRef.current) coverInputRef.current.value = "";
       } catch (error) {
         setCoverUploadMessage(
-          error instanceof Error
+          error instanceof ImageOptimizationError
+            ? t(adminCopy.editor.coverOptimizationFailed)
+            : error instanceof Error
             ? error.message
             : activeLang === "zh"
               ? "图片优化失败。"

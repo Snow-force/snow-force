@@ -117,15 +117,15 @@ describe("event admin action helpers", () => {
     expect(actionMocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it("rejects cover uploads over 6MB", async () => {
+  it("rejects cover uploads over 2MB", async () => {
     const formData = new FormData();
-    formData.set("coverImage", new File([new Uint8Array(6 * 1024 * 1024 + 1)], "cover.jpg", { type: "image/jpeg" }));
+    formData.set("coverImage", new File([new Uint8Array(2 * 1024 * 1024 + 1)], "cover.jpg", { type: "image/jpeg" }));
 
     const result = await uploadEventCoverAction({ success: false }, formData);
 
     expect(result).toMatchObject({
       success: false,
-      message: "Cover image must be 6MB or smaller.",
+      message: "Cover image must be 2MB or smaller.",
     });
     expect(actionMocks.createAdminClient).not.toHaveBeenCalled();
   });

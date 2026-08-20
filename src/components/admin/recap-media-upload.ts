@@ -4,10 +4,10 @@ import {
   type UploadCandidate,
 } from "@/lib/recaps/upload-signing";
 
-export type UploadPhase = "idle" | "signing" | "uploading" | "finalizing" | "error";
+export type UploadPhase = "idle" | "optimizing" | "signing" | "uploading" | "finalizing" | "error";
 
 export function isUploadBusy(phase: UploadPhase): boolean {
-  return phase === "signing" || phase === "uploading" || phase === "finalizing";
+  return phase === "optimizing" || phase === "signing" || phase === "uploading" || phase === "finalizing";
 }
 
 export type UploadProgress = {

@@ -22,8 +22,8 @@ describe("RECAP_MEDIA_BUCKET", () => {
 });
 
 describe("RECAP_MEDIA_MAX_BYTES", () => {
-  it("is 10 MB", () => {
-    expect(RECAP_MEDIA_MAX_BYTES).toBe(10 * 1024 * 1024);
+  it("is 2 MB", () => {
+    expect(RECAP_MEDIA_MAX_BYTES).toBe(2 * 1024 * 1024);
   });
 });
 

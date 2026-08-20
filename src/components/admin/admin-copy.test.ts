@@ -25,7 +25,7 @@ describe("adminCopy", () => {
     expect(adminCopy.editor.questionLabelZh.zh).toBe("中文问题");
     expect(adminCopy.editor.questionOptionsZh.zh).toBe("中文选项，每行一条");
     expect(adminCopy.editor.uploadCoverImage.en).toBe("Upload cover image");
-    expect(adminCopy.editor.coverUploadHelp.zh).toBe("支持 6MB 以内 JPG、PNG、WebP 或 GIF。");
+    expect(adminCopy.editor.coverUploadHelp.zh).toContain("自动压缩到 2MB");
     expect(adminCopy.editor.coverUploaded.zh).toBe("封面已上传。");
     expect(adminCopy.shell.signOut.zh).toBe("退出");
   });

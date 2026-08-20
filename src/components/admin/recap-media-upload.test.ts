@@ -67,7 +67,7 @@ describe("validateUploadFile", () => {
   });
 
   it("rejects oversized files", () => {
-    const file = makeFile("big.jpg", "image/jpeg", 11 * 1024 * 1024);
+    const file = makeFile("big.jpg", "image/jpeg", 2 * 1024 * 1024 + 1);
     expect(() => validateUploadFile(file)).toThrow(UploadOrchestrationError);
   });
 });
@@ -126,7 +126,7 @@ describe("uploadRecapMediaBatch", () => {
   it("throws invalid without signing when any file is rejected", async () => {
     const files = [
       makeFile("a.jpg", "image/jpeg"),
-      makeFile("big.jpg", "image/jpeg", 11 * 1024 * 1024),
+      makeFile("big.jpg", "image/jpeg", 2 * 1024 * 1024 + 1),
     ];
     const client = createClient({
       sign: async () => {

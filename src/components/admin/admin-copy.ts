@@ -95,8 +95,12 @@ export const adminCopy = {
     uploadingCoverImage: { en: "Uploading...", zh: "上传中..." },
     coverUploaded: { en: "Cover uploaded.", zh: "封面已上传。" },
     coverUploadHelp: {
-      en: "Use JPG, PNG, WebP, or GIF under 6MB.",
-      zh: "支持 6MB 以内 JPG、PNG、WebP 或 GIF。",
+      en: "JPG, PNG, and WebP are compressed automatically to 2 MB. GIFs must already be 2 MB or smaller.",
+      zh: "JPG、PNG、WebP 会自动压缩到 2MB；GIF 须已小于或等于 2MB。",
+    },
+    coverOptimizationFailed: {
+      en: "The image could not be prepared for upload. Use a source image under 50 MB; animated GIFs must be 2 MB or smaller.",
+      zh: "图片无法处理。请使用 50MB 以内的源图片；动画 GIF 须小于或等于 2MB。",
     },
     eventStart: { en: "Event start", zh: "活动开始" },
     eventEnd: { en: "Event end", zh: "活动结束" },
@@ -184,8 +188,8 @@ export const adminCopy = {
     date: { en: "Date", zh: "日期" },
     media: { en: "Photos and Media", zh: "照片与媒体" },
     mediaHelp: {
-      en: "Each line in all three fields must match up — URL, EN caption, ZH caption.",
-      zh: "三个字段的每一行对应一条媒体记录 — 链接、英文说明、中文说明。",
+      en: "JPG, PNG, and WebP uploads are compressed automatically to 2 MB; GIFs must already fit. Keep URL, EN caption, and ZH caption lines aligned below.",
+      zh: "JPG、PNG、WebP 上传时会自动压缩到 2MB，GIF 须已符合上限；下方链接、英文说明和中文说明需逐行对应。",
     },
     mediaUrls: { en: "Image URLs (one per line)", zh: "图片链接（每行一条）" },
     mediaCaptionsEn: { en: "Captions EN (one per line)", zh: "英文说明（每行一条）" },
@@ -198,6 +202,7 @@ export const adminCopy = {
     },
     selectPhotos: { en: "Select photos", zh: "选择照片" },
     uploadSelectedPhotos: { en: "Upload selected photos", zh: "上传所选照片" },
+    optimizingMedia: { en: "Compressing images…", zh: "正在压缩图片…" },
     signingMedia: { en: "Requesting upload links…", zh: "正在请求上传链接…" },
     uploadingMedia: { en: "Uploading {done}/{total}…", zh: "正在上传 {done}/{total}…" },
     finalizingMedia: { en: "Finalizing upload…", zh: "正在完成上传…" },

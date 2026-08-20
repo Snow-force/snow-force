@@ -27,7 +27,9 @@ export function RecapEditorNotice({ kind, text }: RecapEditorNoticeProps) {
 
 export const RECAP_MEDIA_ERRORS = {
   missing: { en: "No file selected. Choose at least one photo before uploading.", zh: "未选择文件。请先至少选择一张照片再上传。" },
-  invalid: { en: "Some files were rejected. Use JPG, PNG, WebP, or GIF under 10 MB each.", zh: "部分文件被拒绝。仅支持 JPG、PNG、WebP、GIF，且单张不超过 10MB。" },
+  invalid: { en: "Some files were rejected. Use non-empty JPG, PNG, WebP, or GIF images.", zh: "部分文件被拒绝。请选择非空的 JPG、PNG、WebP 或 GIF 图片。" },
+  too_large: { en: "The image could not be reduced below 2 MB. Use a source image under 50 MB; animated GIFs must already be 2 MB or smaller.", zh: "图片无法压缩到 2MB 以下。请使用 50MB 以内的源图片；动画 GIF 须已小于或等于 2MB。" },
+  optimize: { en: "The selected image could not be decoded or compressed. Try exporting it as JPG, PNG, or WebP.", zh: "所选图片无法解码或压缩，请尝试导出为 JPG、PNG 或 WebP。" },
   upload: { en: "Upload failed. Storage rejected the file — check server logs and Supabase config.", zh: "上传失败，存储服务拒绝了文件，请查看服务端日志与 Supabase 配置。" },
   db: { en: "Files uploaded but the recap record could not be saved — check server logs and database connectivity.", zh: "文件已上传但回顾记录保存失败，请查看服务端日志与数据库连接。" },
   sign_failed: { en: "Could not request a signed upload URL. Refresh the page and try again.", zh: "无法请求签名上传地址，请刷新页面后重试。" },

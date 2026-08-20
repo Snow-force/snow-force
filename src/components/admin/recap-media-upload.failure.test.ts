@@ -60,6 +60,7 @@ describe("isUploadBusy", () => {
   it("permits immediate retry after an error while locking active phases", () => {
     expect(isUploadBusy("idle")).toBe(false);
     expect(isUploadBusy("error")).toBe(false);
+    expect(isUploadBusy("optimizing")).toBe(true);
     expect(isUploadBusy("signing")).toBe(true);
     expect(isUploadBusy("uploading")).toBe(true);
     expect(isUploadBusy("finalizing")).toBe(true);

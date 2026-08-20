@@ -3,13 +3,20 @@
 import { useMemo, useState } from "react";
 
 import { useLanguage } from "@/lib/language";
-import { optimizeImageFile } from "@/lib/images/client-image-optimizer";
+import {
+  ImageOptimizationError,
+  optimizeImageFile,
+} from "@/lib/images/client-image-optimizer";
+import {
+  PUBLIC_IMAGE_CACHE_CONTROL,
+  PUBLIC_IMAGE_UPLOAD_MAX_BYTES,
+} from "@/lib/images/public-image-policy";
 import {
   abortRecapMediaUploadAction,
   finalizeRecapMediaUploadAction,
   signRecapMediaUploadAction,
 } from "@/lib/recaps/actions";
-import { RECAP_MEDIA_BUCKET, validateUploadCandidate } from "@/lib/recaps/upload-signing";
+import { RECAP_MEDIA_BUCKET } from "@/lib/recaps/upload-signing";
 import { createClient } from "@/lib/supabase/client";
 import type { EventRecap } from "@/lib/types";
 
@@ -56,7 +63,7 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
           .storage.from(RECAP_MEDIA_BUCKET)
           .uploadToSignedUrl(entry.path, entry.token, file, {
             contentType: file.type,
-            cacheControl: "31536000",
+            cacheControl: PUBLIC_IMAGE_CACHE_CONTROL,
           });
         return error ? { ok: false, error } : { ok: true };
       },
@@ -75,20 +82,17 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
     setPhase("idle");
     setProgress({ done: 0, total: 0 });
     setErrorCode(null);
-    const validations = selectedFiles.map((file) =>
-      validateUploadCandidate(file.name, file.type, file.size),
-    );
-    if (validations.some((validation) => !validation.ok)) {
-      setPhase("error");
-      setErrorCode("invalid");
-      return;
-    }
-
     try {
-      setPhase("signing");
+      setPhase("optimizing");
       const optimizedFiles: File[] = [];
       for (const file of selectedFiles) {
-        optimizedFiles.push(await optimizeImageFile(file, { maxDimension: 2400, quality: 0.82 }));
+        optimizedFiles.push(
+          await optimizeImageFile(file, {
+            maxDimension: 2400,
+            quality: 0.82,
+            maxBytes: PUBLIC_IMAGE_UPLOAD_MAX_BYTES,
+          }),
+        );
       }
       await uploadRecapMediaBatch(client, {
         slug: recap.slug,
@@ -102,7 +106,15 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
     } catch (error) {
       if (isNextRedirectError(error)) throw error;
       setPhase("error");
-      setErrorCode(error instanceof UploadOrchestrationError ? error.code : "upload");
+      setErrorCode(
+        error instanceof ImageOptimizationError
+          ? error.code === "invalid_file" || error.code === "unsupported_type"
+            ? "invalid"
+            : "too_large"
+          : error instanceof UploadOrchestrationError
+            ? error.code
+            : "optimize",
+      );
     }
   };
 
@@ -110,6 +122,7 @@ export function RecapMediaManager({ recap, draftPayload }: RecapMediaManagerProp
     Object.entries(RECAP_MEDIA_ERRORS).find(([key]) => key === errorCode)?.[1] ??
     RECAP_MEDIA_ERRORS.upload;
   const statusText = (() => {
+    if (phase === "optimizing") return t(adminCopy.recapEditor.optimizingMedia);
     if (phase === "signing") return t(adminCopy.recapEditor.signingMedia);
     if (phase === "uploading") {
       return t(

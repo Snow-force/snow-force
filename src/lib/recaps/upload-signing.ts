@@ -1,6 +1,11 @@
+import {
+  PUBLIC_IMAGE_ALLOWED_TYPES,
+  PUBLIC_IMAGE_UPLOAD_MAX_BYTES,
+} from "../images/public-image-policy";
+
 export const RECAP_MEDIA_BUCKET = "recap-media" as const;
-export const RECAP_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
-export const RECAP_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+export const RECAP_MEDIA_MAX_BYTES = PUBLIC_IMAGE_UPLOAD_MAX_BYTES;
+export const RECAP_MEDIA_TYPES = PUBLIC_IMAGE_ALLOWED_TYPES;
 
 export type FinalizeEntry = {
   path: string;

@@ -11,6 +11,11 @@ import { computeWaiverSha } from "../registrations/waiver";
 import { createEvent, getEventAdmin, updateEvent } from "./repository";
 import { parseEventEditorInput, validatePublishableEvent } from "./validation";
 import { translateEventToChinese } from "../admin/translate-content";
+import {
+  PUBLIC_IMAGE_ALLOWED_TYPES,
+  PUBLIC_IMAGE_CACHE_CONTROL,
+  PUBLIC_IMAGE_UPLOAD_MAX_BYTES,
+} from "../images/public-image-policy";
 
 export type EventEditorState = {
   success: boolean;
@@ -30,8 +35,8 @@ type PublishDependencies = {
 };
 
 const EVENT_COVER_BUCKET = "event-covers";
-const EVENT_COVER_MAX_BYTES = 6 * 1024 * 1024;
-const EVENT_COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const EVENT_COVER_MAX_BYTES = PUBLIC_IMAGE_UPLOAD_MAX_BYTES;
+const EVENT_COVER_TYPES = PUBLIC_IMAGE_ALLOWED_TYPES;
 
 function safePathSegment(value: string, fallback: string) {
   const normalized = value.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").replace(/^-+|-+$/g, "");
@@ -110,13 +115,13 @@ export async function uploadEventCoverAction(
   }
 
   if (file.size > EVENT_COVER_MAX_BYTES) {
-    return { success: false, message: "Cover image must be 6MB or smaller." };
+    return { success: false, message: "Cover image must be 2MB or smaller." };
   }
 
   const path = safeEventCoverPath(formText(formData, "slug"), file.name);
   const bucket = createAdminClient().storage.from(EVENT_COVER_BUCKET);
   const { error } = await bucket.upload(path, file, {
-    cacheControl: "31536000",
+    cacheControl: PUBLIC_IMAGE_CACHE_CONTROL,
     contentType: file.type,
     upsert: false,
   });
