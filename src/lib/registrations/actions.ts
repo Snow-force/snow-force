@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCoupon, getCouponRedemptionCount } from "@/lib/coupons/repository";
+import { quoteCoupon } from "@/lib/coupons/validation";
 import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
 import { getEvent } from "@/lib/events/repository";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
@@ -13,7 +15,7 @@ import { getRegistrationCountForEvent, getRegistrations } from "@/lib/registrati
 import { validateRegistrationAnswers } from "@/lib/registrations/validation";
 import { getActiveWaiverForEvent } from "@/lib/registrations/waiver-repository";
 import { computeWaiverSha } from "@/lib/registrations/waiver";
-import type { RegistrationAnswers } from "@/lib/types";
+import type { PaymentCurrency, RegistrationAnswers } from "@/lib/types";
 
 type RegisterInput = {
   answers: RegistrationAnswers;
@@ -27,7 +29,20 @@ type RegisterInput = {
 };
 
 export type RegisterForEventResult =
-  | { success: true; pending: true; email: string; confirmation: "member"; pendingRegistrationId: string }
+  | {
+      success: true;
+      pending: true;
+      email: string;
+      confirmation: "member";
+      pendingRegistrationId: string;
+      paymentQuote?: {
+        code: string;
+        originalAmount: number;
+        discountAmount: number;
+        finalAmount: number;
+        currency: PaymentCurrency;
+      };
+    }
   | { success: false; error: string };
 
 function getStringAnswer(answers: RegistrationAnswers, key: string) {
@@ -141,6 +156,41 @@ export async function registerForEvent(
     return { success: false, error: "You are already registered for this event." };
   }
 
+  const normalizedCouponCode = input.couponCode?.trim().toUpperCase() || "";
+  let paymentQuote: Extract<RegisterForEventResult, { success: true }>["paymentQuote"];
+
+  if (normalizedCouponCode) {
+    if (event.paymentModel === "free") {
+      return { success: false, error: "This event does not require a coupon" };
+    }
+
+    const originalAmount = event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
+    if (originalAmount === null || originalAmount <= 0) {
+      return { success: false, error: "Invalid payment amount" };
+    }
+
+    const coupon = await getCoupon(normalizedCouponCode);
+    if (!coupon) {
+      return { success: false, error: "Coupon code is invalid" };
+    }
+
+    const quote = quoteCoupon(
+      coupon,
+      originalAmount,
+      await getCouponRedemptionCount(coupon.code),
+      event.slug,
+    );
+    if ("error" in quote) {
+      return { success: false, error: quote.error };
+    }
+
+    paymentQuote = {
+      ...quote,
+      originalAmount,
+      currency: event.depositCurrency,
+    };
+  }
+
   const pending = await createOrRefreshPendingRegistration({
     eventSlug,
     memberId: memberDecision.memberId,
@@ -155,7 +205,7 @@ export async function registerForEvent(
     waiverTextSha: resolvedWaiverTextSha ?? null,
     typedName: input.typedName?.trim() ?? null,
     handwrittenSignatureDataUrl: resolvedHandwrittenSignatureDataUrl ?? null,
-    couponCode: input.couponCode?.trim().toUpperCase() || null,
+    couponCode: normalizedCouponCode || null,
   });
 
   revalidatePath("/member");
@@ -165,6 +215,7 @@ export async function registerForEvent(
     email: normalizedContactEmail,
     confirmation: "member",
     pendingRegistrationId: pending.id,
+    ...(paymentQuote ? { paymentQuote } : {}),
   };
   } catch (e) {
     console.error("registerForEvent failed:", e);

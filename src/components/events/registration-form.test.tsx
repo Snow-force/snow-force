@@ -197,6 +197,95 @@ describe("RegistrationForm payment model branching", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows the server-verified coupon discount instead of the original payment amount", async () => {
+    const user = userEvent.setup();
+    vi.mocked(registerForEvent).mockResolvedValueOnce({
+      success: true,
+      pending: true,
+      email: "test@test.com",
+      confirmation: "member",
+      pendingRegistrationId: "p1",
+      paymentQuote: {
+        code: "SNOW20",
+        originalAmount: 120,
+        discountAmount: 24,
+        finalAmount: 96,
+        currency: "usd",
+      },
+    });
+
+    renderWithLanguage(
+      <RegistrationForm
+        event={createEvent({
+          paymentModel: "deposit",
+          depositAmount: 120,
+          depositCurrency: "usd",
+        })}
+        memberProfile={createMemberProfile()}
+        emailConfirmed
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/coupon code/i), "snow20");
+    await user.click(screen.getByLabelText(/agree/i));
+    await user.click(screen.getByRole("button", { name: /submit registration/i }));
+
+    expect(await screen.findByRole("button", { name: /Pay deposit.*96.*USD/i })).toBeInTheDocument();
+    expect(screen.getByText("120 USD")).toHaveClass("line-through");
+    expect(screen.getByText("-24 USD")).toBeInTheDocument();
+    expect(screen.getByText("96 USD")).toBeInTheDocument();
+    expect(registerForEvent).toHaveBeenCalledWith(
+      "test-event",
+      expect.objectContaining({ couponCode: "SNOW20" }),
+    );
+  });
+
+  it("shows Free for a full discount and completes without a Stripe URL", async () => {
+    const user = userEvent.setup();
+    vi.mocked(registerForEvent).mockResolvedValueOnce({
+      success: true,
+      pending: true,
+      email: "test@test.com",
+      confirmation: "member",
+      pendingRegistrationId: "p1",
+      paymentQuote: {
+        code: "FREE100",
+        originalAmount: 120,
+        discountAmount: 120,
+        finalAmount: 0,
+        currency: "usd",
+      },
+    });
+    vi.mocked(createCheckoutSessionAction).mockResolvedValueOnce({
+      success: true,
+      url: "",
+      completed: true,
+    });
+
+    renderWithLanguage(
+      <RegistrationForm
+        event={createEvent({
+          paymentModel: "deposit",
+          depositAmount: 120,
+          depositCurrency: "usd",
+        })}
+        memberProfile={createMemberProfile()}
+        emailConfirmed
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/coupon code/i), "free100");
+    await user.click(screen.getByLabelText(/agree/i));
+    await user.click(screen.getByRole("button", { name: /submit registration/i }));
+
+    expect(await screen.findByText("Free")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Complete registration for free/i }));
+
+    expect(await screen.findByText(/Registration complete/i)).toBeInTheDocument();
+    expect(screen.getByText(/No payment was required/i)).toBeInTheDocument();
+    expect(screen.queryByText(/No checkout URL returned/i)).not.toBeInTheDocument();
+  });
+
   it("clicking pay button calls createCheckoutSessionAction and redirects to Stripe", async () => {
     const user = userEvent.setup();
     vi.mocked(registerForEvent).mockResolvedValueOnce({

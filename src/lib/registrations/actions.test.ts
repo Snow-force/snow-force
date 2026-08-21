@@ -10,6 +10,13 @@ const mockCreateOrRefreshPendingRegistration = vi.hoisted(() => vi.fn());
 const mockGetCurrentMemberAccount = vi.hoisted(() => vi.fn());
 const mockSendEmail = vi.hoisted(() => vi.fn());
 const mockGetActiveWaiverForEvent = vi.hoisted(() => vi.fn());
+const mockGetCoupon = vi.hoisted(() => vi.fn());
+const mockGetCouponRedemptionCount = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/coupons/repository", () => ({
+  getCoupon: mockGetCoupon,
+  getCouponRedemptionCount: mockGetCouponRedemptionCount,
+}));
 
 vi.mock("@/lib/events/availability", () => ({
   hasRemainingCapacity: vi.fn(() => true),
@@ -201,6 +208,7 @@ beforeEach(() => {
   mockGetCurrentMemberAccount.mockResolvedValue(null);
   mockSendEmail.mockResolvedValue(undefined);
   mockGetActiveWaiverForEvent.mockResolvedValue(null);
+  mockGetCouponRedemptionCount.mockResolvedValue(0);
 });
 
 describe("registerForEvent member persistence", () => {
@@ -321,6 +329,72 @@ describe("registerForEvent member persistence", () => {
     });
     expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledTimes(1);
     expect(mockCreateRegistration).not.toHaveBeenCalled();
+  });
+
+  it("returns a server-verified discounted payment quote with the pending registration", async () => {
+    mockGetCurrentMemberAccount.mockResolvedValue({
+      user: { id: "user-1", email: "rider@example.com" },
+      profile,
+      emailConfirmed: true,
+    });
+    mockGetEvent.mockResolvedValue({
+      ...openEvent,
+      paymentModel: "deposit",
+      depositAmount: 120,
+      depositCurrency: "usd",
+    });
+    mockGetCoupon.mockResolvedValue({
+      code: "SNOW20",
+      eventSlug: "mammoth-weekend",
+      discountType: "percent",
+      discountValue: 20,
+      active: true,
+      startsAt: null,
+      expiresAt: null,
+      maxRedemptions: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const result = await registerForEvent("mammoth-weekend", {
+      ...validInput(),
+      couponCode: " snow20 ",
+    });
+
+    expect(result).toMatchObject({
+      success: true,
+      paymentQuote: {
+        code: "SNOW20",
+        originalAmount: 120,
+        discountAmount: 24,
+        finalAmount: 96,
+        currency: "usd",
+      },
+    });
+    expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledWith(
+      expect.objectContaining({ couponCode: "SNOW20" }),
+    );
+  });
+
+  it("rejects an invalid coupon before writing a pending registration", async () => {
+    mockGetCurrentMemberAccount.mockResolvedValue({
+      user: { id: "user-1", email: "rider@example.com" },
+      profile,
+      emailConfirmed: true,
+    });
+    mockGetEvent.mockResolvedValue({
+      ...openEvent,
+      paymentModel: "full_prepay",
+      fullPaymentAmount: 399,
+    });
+    mockGetCoupon.mockResolvedValue(undefined);
+
+    const result = await registerForEvent("mammoth-weekend", {
+      ...validInput(),
+      couponCode: "NOPE",
+    });
+
+    expect(result).toEqual({ success: false, error: "Coupon code is invalid" });
+    expect(mockCreateOrRefreshPendingRegistration).not.toHaveBeenCalled();
   });
 
   it("allows typed signatures and persists an optional handwritten signature for waiver events", async () => {

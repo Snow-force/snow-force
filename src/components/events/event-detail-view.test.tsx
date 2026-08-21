@@ -7,6 +7,10 @@ import { EventDetailView } from "./event-detail-view";
 vi.mock("@/lib/payments/actions", () => ({
   createCheckoutSessionAction: vi.fn(),
 }));
+
+vi.mock("@/lib/registrations/actions", () => ({
+  registerForEvent: vi.fn(),
+}));
 import type { Event } from "@/lib/types";
 
 vi.mock("@/lib/events/share-actions", () => ({

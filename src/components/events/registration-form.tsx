@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/language";
+import type { RegisterForEventResult } from "@/lib/registrations/actions";
 import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from "@/lib/types";
 import { registerForEvent } from "@/lib/registrations/actions";
 import { createCheckoutSessionAction } from "@/lib/payments/actions";
@@ -18,6 +19,7 @@ type AnswerValue = string | boolean | string[];
 type FormDataState = Record<string, AnswerValue>;
 type FormErrors = Record<string, string>;
 type OptionPair = { value: string; label: string };
+type PaymentQuote = Extract<RegisterForEventResult, { success: true }>["paymentQuote"];
 
 type EventSelectProps = {
   id: string;
@@ -279,6 +281,8 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [pendingEmail, setPendingEmail] = useState("");
   const [pendingConfirmation, setPendingConfirmation] = useState<"email" | "member">("email");
   const [pendingRegistrationId, setPendingRegistrationId] = useState("");
+  const [paymentQuote, setPaymentQuote] = useState<PaymentQuote>(undefined);
+  const [registrationCompleted, setRegistrationCompleted] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [couponCode, setCouponCode] = useState("");
@@ -323,6 +327,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           setPendingEmail(result.email);
           setPendingConfirmation(result.confirmation);
           setPendingRegistrationId(result.pendingRegistrationId);
+          setPaymentQuote(result.paymentQuote);
         } else {
           setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
         }
@@ -463,23 +468,72 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     );
   }
 
+  if (registrationCompleted) {
+    return (
+      <div className="card border-green-200 bg-green-50 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+          <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M5 13l4 4 5-5L21 6"/></svg>
+        </div>
+        <h3 className="mt-4 text-lg font-semibold text-green-800">
+          {t({ en: "Registration complete", zh: "报名已完成" })}
+        </h3>
+        <p className="mt-2 text-sm text-green-700">
+          {t({
+            en: "Your coupon covered the full amount. No payment was required.",
+            zh: "优惠码已抵扣全部金额，无需支付。",
+          })}
+        </p>
+        <a href="/member" className="mt-4 inline-flex rounded-full bg-green-700 px-5 py-2 text-sm font-semibold text-white">
+          {t({ en: "View in member home", zh: "前往会员主页查看" })}
+        </a>
+      </div>
+    );
+  }
+
   if (pendingRegistrationId && event.paymentModel !== "free") {
-    const amount = event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
-    const currency = event.depositCurrency.toUpperCase();
+    const originalAmount = event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
+    const amount = paymentQuote?.finalAmount ?? originalAmount;
+    const currency = (paymentQuote?.currency ?? event.depositCurrency).toUpperCase();
+    const isFree = amount === 0;
     const label =
-      event.paymentModel === "deposit"
+      isFree
+        ? t({ en: "Complete registration for free", zh: "免费完成报名" })
+        : event.paymentModel === "deposit"
         ? t({ en: `Pay deposit ${amount ?? ""} ${currency}`, zh: `支付押金 ${amount ?? ""} ${currency}` })
         : t({ en: `Pay full ${amount ?? ""} ${currency}`, zh: `支付全款 ${amount ?? ""} ${currency}` });
 
     return (
       <div className="card border-blue-200 bg-blue-50 text-center">
-        <h3 className="text-lg font-semibold text-blue-950">{t({ en: "Payment required", zh: "需要支付" })}</h3>
+        <h3 className="text-lg font-semibold text-blue-950">
+          {isFree ? t({ en: "Coupon applied", zh: "优惠码已应用" }) : t({ en: "Payment required", zh: "需要支付" })}
+        </h3>
         <p className="mt-2 text-sm text-blue-900">
-          {t({
-            en: "Your registration is pending payment. Click below to pay via Stripe.",
-            zh: "你的报名待支付，点击下方按钮通过 Stripe 完成。",
-          })}
+          {isFree
+            ? t({
+                en: "Your coupon covers the full amount. Complete the registration below—no Stripe payment is needed.",
+                zh: "优惠码已抵扣全部金额。点击下方即可完成报名，无需通过 Stripe 支付。",
+              })
+            : t({
+                en: "Your registration is pending payment. Click below to pay via Stripe.",
+                zh: "你的报名待支付，点击下方按钮通过 Stripe 完成。",
+              })}
         </p>
+        {paymentQuote ? (
+          <dl aria-label={t({ en: "Coupon price summary", zh: "优惠价格明细" })} className="mx-auto mt-4 max-w-xs space-y-2 rounded-xl border border-blue-200 bg-white/70 p-4 text-sm text-blue-950">
+            <div className="flex items-center justify-between gap-4">
+              <dt>{t({ en: "Original price", zh: "原价" })}</dt>
+              <dd className="text-gray-500 line-through">{paymentQuote.originalAmount} {currency}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt>{t({ en: `Coupon ${paymentQuote.code}`, zh: `优惠码 ${paymentQuote.code}` })}</dt>
+              <dd>-{paymentQuote.discountAmount} {currency}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4 border-t border-blue-200 pt-2 font-semibold">
+              <dt>{t({ en: "Amount due", zh: "应付金额" })}</dt>
+              <dd>{isFree ? t({ en: "Free", zh: "免费" }) : `${paymentQuote.finalAmount} ${currency}`}</dd>
+            </div>
+          </dl>
+        ) : null}
         {checkoutError && <p className="mt-2 text-sm text-red-700">{checkoutError}</p>}
         <button
           type="button"
@@ -490,11 +544,19 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
             const formData = new FormData();
             formData.append("pendingRegistrationId", pendingRegistrationId);
             const result = await createCheckoutSessionAction(formData);
-            if (result.success && result.url) {
-              window.location.href = result.url;
+            if (result.success) {
+              if (result.completed) {
+                setRegistrationCompleted(true);
+                setCheckoutLoading(false);
+              } else if (result.url) {
+                window.location.href = result.url;
+              } else {
+                setCheckoutLoading(false);
+                setCheckoutError("No checkout URL returned");
+              }
             } else {
               setCheckoutLoading(false);
-              setCheckoutError(result.success ? "No checkout URL returned" : result.error);
+              setCheckoutError(result.error);
             }
           }}
           className="mt-4 inline-flex rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
