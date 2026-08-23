@@ -401,4 +401,27 @@ describe("createCheckoutSessionResult", () => {
     expect(actionMocks.createRegistration).not.toHaveBeenCalled();
     expect(actionMocks.deletePendingRegistration).not.toHaveBeenCalled();
   });
+
+  it("reports the database redemption-limit guard when a coupon fills concurrently", async () => {
+    const pending = createPendingRegistration({ couponCode: "FREE100" });
+    const event = createEvent({ fullPaymentAmount: 120, paymentModel: "full_prepay" });
+    const coupon = { code: "FREE100", eventSlug: event.slug, discountType: "percent" as const, discountValue: 100, active: true, startsAt: null, expiresAt: null, maxRedemptions: 5, createdAt: "2026-07-29T00:00:00.000Z" };
+    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID } });
+    actionMocks.getPendingRegistrationById.mockResolvedValue(pending);
+    actionMocks.getEvent.mockResolvedValue(event);
+    actionMocks.getCoupon.mockResolvedValue(coupon);
+    actionMocks.getCouponRedemptionCount.mockResolvedValue(4);
+    actionMocks.getRegistrations.mockResolvedValue([]);
+    actionMocks.getRegistrationCountForEvent.mockResolvedValue(0);
+    actionMocks.createRegistration.mockRejectedValue(new Error("registrations_coupon_redemption_limit"));
+
+    const formData = new FormData();
+    formData.set("pendingRegistrationId", pending.id);
+
+    await expect(createCheckoutSessionAction(formData)).resolves.toEqual({
+      success: false,
+      error: "This coupon has reached its redemption limit",
+    });
+    expect(actionMocks.deletePendingRegistration).not.toHaveBeenCalled();
+  });
 });

@@ -178,7 +178,9 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message.includes("registrations_coupon_code_used_once")) return { success: false, error: "This coupon has already been redeemed" };
+    if (message.includes("registrations_coupon_redemption_limit") || message.includes("registrations_coupon_code_used_once")) {
+      return { success: false, error: "This coupon has reached its redemption limit" };
+    }
     return { success: false, error: "Could not complete coupon registration" };
   }
 

@@ -47,6 +47,7 @@ describe("coupon admin actions", () => {
       code: " snow-20 ",
       discountType: "percent",
       discountValue: "20",
+      maxRedemptions: "25",
       eventSlug: "powder-day",
       startsAt: "2026-08-01T09:00:00.000Z",
       expiresAt: "2026-08-10T09:00:00.000Z",
@@ -59,7 +60,7 @@ describe("coupon admin actions", () => {
       discountType: "percent",
       discountValue: 20,
       active: true,
-      maxRedemptions: 1,
+      maxRedemptions: 25,
       startsAt: "2026-08-01T09:00:00.000Z",
       expiresAt: "2026-08-10T09:00:00.000Z",
     }));
@@ -73,6 +74,7 @@ describe("coupon admin actions", () => {
       code: "SNOW20",
       discountType: "percent",
       discountValue: "20",
+      maxRedemptions: "5",
       eventSlug: "missing-event",
     }))).rejects.toThrow("Select a valid event.");
 
@@ -81,10 +83,27 @@ describe("coupon admin actions", () => {
       code: "SNOW20",
       discountType: "fixed",
       discountValue: "20",
+      maxRedemptions: "5",
       eventSlug: "powder-day",
       startsAt: "2026-08-10T09:00Z",
       expiresAt: "2026-08-01T09:00Z",
     }))).rejects.toThrow("Expiry must be after start time.");
+
+    expect(mocks.saveCoupon).not.toHaveBeenCalled();
+  });
+
+  it("rejects usage limits that are not positive whole numbers", async () => {
+    mocks.getEventAdmin.mockResolvedValue({ slug: "powder-day" });
+
+    for (const maxRedemptions of ["0", "1.5", "100001"]) {
+      await expect(createCouponAction(couponForm({
+        code: "SNOW20",
+        discountType: "percent",
+        discountValue: "20",
+        maxRedemptions,
+        eventSlug: "powder-day",
+      }))).rejects.toThrow("Usage limit must be a whole number from 1 to 100,000.");
+    }
 
     expect(mocks.saveCoupon).not.toHaveBeenCalled();
   });
