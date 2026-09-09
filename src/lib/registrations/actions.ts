@@ -209,10 +209,16 @@ export async function registerForEvent(
   });
 
   revalidatePath("/member");
+  // Resubmitting cannot change the quote or identity of an in-flight checkout.
+  if (pending.checkoutAttempt) {
+    const attempt = pending.checkoutAttempt;
+    paymentQuote = { code: attempt.couponCode, originalAmount: attempt.amount + attempt.discountAmount,
+      discountAmount: attempt.discountAmount, finalAmount: attempt.amount, currency: attempt.currency };
+  }
   return {
     success: true,
     pending: true,
-    email: normalizedContactEmail,
+    email: pending.contactEmail,
     confirmation: "member",
     pendingRegistrationId: pending.id,
     ...(paymentQuote ? { paymentQuote } : {}),

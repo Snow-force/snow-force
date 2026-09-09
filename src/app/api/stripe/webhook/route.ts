@@ -11,23 +11,8 @@ import {
   updateRegistrationRefund,
 } from "@/lib/payments/refund-repository";
 import { reconcileStripeRefund } from "@/lib/payments/refunds";
-import {
-  getPendingRegistrationById,
-  deletePendingRegistration,
-} from "@/lib/registrations/pending-repository";
-import {
-  createRegistration,
-  getRegistrations,
-  getRegistrationCountForEvent,
-  getRegistration,
-  updateRegistrationFinance,
-  updateRegistrationStatus,
-} from "@/lib/registrations/repository";
-import { getEvent } from "@/lib/events/repository";
-import { hasRemainingCapacity } from "@/lib/events/availability";
-import { defaultRegistrationFinance } from "@/lib/registrations/finance";
-import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
-import type { RegistrationFinance } from "@/lib/types";
+import { getRegistration, getRegistrations, updateRegistrationFinance, updateRegistrationStatus } from "@/lib/registrations/repository";
+import { fulfillCheckoutSession, type PaidCheckoutSession } from "@/lib/payments/fulfillment";
 
 export const runtime = "nodejs";
 
@@ -44,21 +29,6 @@ function createWebhookAdminClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
-
-function isDuplicateRegistrationError(message: string) {
-  return (
-    message.includes("registrations_one_member_per_event") ||
-    message.includes("duplicate key")
-  );
-}
-
-type CheckoutSessionObject = {
-  id?: string;
-  amount_total: number | null;
-  currency?: string | null;
-  payment_intent?: string | { id: string } | null;
-  metadata?: Record<string, string | undefined> | null;
-};
 
 export async function POST(request: Request): Promise<Response> {
   const rawBody = await request.text();
@@ -108,158 +78,24 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  if (event.type !== "checkout.session.completed") {
+  if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {
     return new Response("OK", { status: 200 });
   }
-
-  const session = event.data.object as unknown as CheckoutSessionObject;
-  const pendingRegistrationId = session.metadata?.pendingRegistrationId;
-  if (!pendingRegistrationId) {
-    return new Response("OK", { status: 200 });
-  }
-
-  const pending = await getPendingRegistrationById(pendingRegistrationId);
-  if (!pending) {
-    return new Response("OK", { status: 200 });
-  }
-
-  const dbEvent = await getEvent(pending.eventSlug);
-  if (!dbEvent) {
-    return new Response("OK", { status: 200 });
-  }
-
-  // Re-read paymentModel + currency from the DB (do NOT trust metadata — the event may have been edited).
-  const paymentModel = dbEvent.paymentModel;
-  const currency = dbEvent.depositCurrency;
-  if (session.currency && session.currency !== currency) return new Response("OK", { status: 200 });
-  const paymentIntentId =
-    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? "";
-
-  // Re-check capacity.
-  const registrationCount = await getRegistrationCountForEvent(dbEvent.slug);
-  if (!hasRemainingCapacity({ ...dbEvent, registrationCount })) {
-    return new Response("OK", { status: 200 });
-  }
-
-  // Re-check duplicate (non-cancelled registrations for this member).
-  const existing = await getRegistrations(dbEvent.slug);
-  const existingRegistration = existing.find(
-    (r) => r.memberId === pending.memberId && r.status !== "cancelled",
-  );
-  if (existingRegistration) {
-    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
-      await createWaiverAcceptance({
-        registrationId: existingRegistration.id,
-        legalTextSnapshot: pending.waiverTextEn,
-        waiverTextSha: pending.waiverTextSha,
-        typedName: pending.typedName,
-        handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
-        acceptedAt: new Date().toISOString(),
-      });
-    }
-    if (session.id || paymentIntentId) {
-      await updateRegistrationFinance(existingRegistration.id, {
-        paymentCurrency: currency,
-        stripeCheckoutSessionId: session.id ?? "",
-        stripePaymentIntentId: paymentIntentId,
-      });
-    }
-    await deletePendingRegistration(pending.id);
-    return new Response(webhookAlreadyRecorded ? "OK already processed" : "OK", { status: 200 });
-  }
-
-  // Compute paid amount from session.amount_total (smallest currency unit) → decimal.
-  if (session.amount_total === null || session.amount_total <= 0) {
-    return new Response("OK", { status: 200 });
-  }
-  const paidAmount = currency === "jpy" ? session.amount_total : session.amount_total / 100;
-
-  const baseAmount = paymentModel === "deposit" ? dbEvent.depositAmount : dbEvent.fullPaymentAmount;
-  if (baseAmount === null || baseAmount <= 0) return new Response("OK", { status: 200 });
-  let couponCode = "";
-  let discountAmount = 0;
-  if (pending.couponCode) {
-    if (paidAmount > baseAmount) return new Response("OK", { status: 200 });
-    couponCode = pending.couponCode;
-    discountAmount = Math.round((baseAmount - paidAmount) * 100) / 100;
-  } else {
-    const expectedAmount = currency === "jpy" ? Math.round(baseAmount) : Math.round(baseAmount * 100) / 100;
-    if (paidAmount !== expectedAmount) return new Response("OK", { status: 200 });
-  }
-
-  const paidAt = new Date().toISOString();
-  const finance: RegistrationFinance = {
-    ...defaultRegistrationFinance,
-    depositStatus: "paid",
-    depositAmount: paidAmount,
-    depositPaidAt: paidAt,
-    paymentMethod: "stripe",
-    paymentCurrency: currency,
-    finalAmount: paymentModel === "full_prepay" ? paidAmount : null,
-    settlementAmount: paymentModel === "full_prepay" ? 0 : null,
-    settlementStatus: paymentModel === "full_prepay" ? "settled" : "not_started",
-    couponCode,
-    discountAmount,
-    stripeCheckoutSessionId: session.id ?? "",
-    stripePaymentIntentId: paymentIntentId,
-    refundedAmount: 0,
-  };
-
+  const session = event.data.object as PaidCheckoutSession;
+  if (!session.metadata?.pendingRegistrationId) return new Response("OK", { status: 200 });
   try {
-    const result = await createRegistration({
-      eventSlug: dbEvent.slug,
-      memberId: pending.memberId,
-      answers: pending.answers,
-      consentGiven: pending.consentGiven,
-      contactEmail: pending.contactEmail,
-      contactName: pending.contactName,
-      contactPhone: pending.contactPhone,
-      finance,
+    await fulfillCheckoutSession(session);
+    revalidatePath("/member");
+    revalidatePath("/member/trips");
+    revalidatePath("/admin/registrations");
+    if (session.metadata.eventSlug) revalidatePath(`/events/${session.metadata.eventSlug}`);
+    return new Response("OK", { status: 200 });
+  } catch (error) {
+    console.error("Stripe checkout fulfillment failed", {
+      eventId: event.id, sessionId: session.id,
+      reason: error instanceof Error ? error.message : "unknown",
     });
-    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
-      await createWaiverAcceptance({
-        registrationId: result.registration.id,
-        legalTextSnapshot: pending.waiverTextEn,
-        waiverTextSha: pending.waiverTextSha,
-        typedName: pending.typedName,
-        handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
-        acceptedAt: new Date().toISOString(),
-      });
-    }
-  } catch (err) {
-    // Race-safe: if a parallel webhook delivery already created the registration (unique index
-    // registrations_one_member_per_event), treat as success.
-    const msg = err instanceof Error ? err.message : String(err);
-    if (isDuplicateRegistrationError(msg)) {
-      const registration = (await getRegistrations(dbEvent.slug)).find(
-        (item) => item.memberId === pending.memberId && item.status !== "cancelled",
-      );
-      if (!registration) return new Response("Server error", { status: 500 });
-      await updateRegistrationFinance(registration.id, {
-        paymentCurrency: currency,
-        stripeCheckoutSessionId: session.id ?? "",
-        stripePaymentIntentId: paymentIntentId,
-      });
-      if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
-        await createWaiverAcceptance({
-          registrationId: registration.id,
-          legalTextSnapshot: pending.waiverTextEn,
-          waiverTextSha: pending.waiverTextSha,
-          typedName: pending.typedName,
-          handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,
-          acceptedAt: new Date().toISOString(),
-        });
-      }
-      await deletePendingRegistration(pending.id);
-      return new Response("OK", { status: 200 });
-    }
-    return new Response("Server error", { status: 500 });
+    // Retain the order and let Stripe retry; receipt of an event is not fulfillment.
+    return new Response("Checkout requires reconciliation", { status: 500 });
   }
-
-  await deletePendingRegistration(pending.id);
-
-  revalidatePath("/member");
-  revalidatePath(`/events/${dbEvent.slug}`);
-
-  return new Response("OK", { status: 200 });
 }

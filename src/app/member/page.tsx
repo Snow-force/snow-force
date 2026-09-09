@@ -8,6 +8,7 @@ import { getRecaps } from "@/lib/recaps/repository";
 import { getPendingRegistrationsByMember } from "@/lib/registrations/pending-repository";
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
 import { memberConsentPath } from "@/lib/members/member-consents";
+import { resolvePaymentReturnStatus } from "@/lib/payments/return-status";
 
 export default async function MemberPage({
   searchParams,
@@ -22,6 +23,9 @@ export default async function MemberPage({
     return <MemberAuthPanel searchParams={searchParams} />;
   }
 
+  const verifiedPaymentStatus = searchParams.payment === "success"
+    ? await resolvePaymentReturnStatus(searchParams.session_id, account.profile.id)
+    : undefined;
   const [registrations, pendingRegistrations, events, recaps] = await Promise.all([
     getRegistrationsByMember(account.profile.id),
     getPendingRegistrationsByMember(account.profile.id),
@@ -43,6 +47,7 @@ export default async function MemberPage({
       profile={account.profile}
       searchParams={searchParams}
       user={account.user}
+      verifiedPaymentStatus={verifiedPaymentStatus}
     />
   );
 }

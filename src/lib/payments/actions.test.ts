@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const actionMocks = vi.hoisted(() => ({
   createRegistration: vi.fn(),
   createWaiverAcceptance: vi.fn(),
+  comparePendingCheckout: vi.fn(),
+  completePendingCheckout: vi.fn(),
   deletePendingRegistration: vi.fn(),
   getCoupon: vi.fn(),
   getCouponRedemptionCount: vi.fn(),
@@ -21,10 +23,12 @@ vi.mock("@/lib/members/actions", () => ({
 }));
 vi.mock("@/lib/payments/stripe-server", () => ({ getStripeServer: actionMocks.getStripeServer }));
 vi.mock("@/lib/registrations/pending-repository", () => ({
+  comparePendingCheckout: actionMocks.comparePendingCheckout,
+  completePendingCheckout: actionMocks.completePendingCheckout,
   deletePendingRegistration: actionMocks.deletePendingRegistration,
   getPendingRegistrationById: actionMocks.getPendingRegistrationById,
 }));
-vi.mock("@/lib/events/repository", () => ({ getEvent: actionMocks.getEvent }));
+vi.mock("@/lib/events/repository", () => ({ getEvent: actionMocks.getEvent, getEventAdmin: actionMocks.getEvent }));
 vi.mock("@/lib/coupons/repository", () => ({
   getCoupon: actionMocks.getCoupon,
   getCouponRedemptionCount: actionMocks.getCouponRedemptionCount,
@@ -101,6 +105,7 @@ function fakeStripeFactory(sessionsCreate: ReturnType<typeof vi.fn>) {
 describe("createCheckoutSessionResult", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    actionMocks.comparePendingCheckout.mockResolvedValue({ id: "p1" });
   });
 
   it("returns error when pending registration is not found", async () => {
@@ -186,7 +191,7 @@ describe("createCheckoutSessionResult", () => {
   });
 
   it("creates a checkout session for a deposit event in USD", async () => {
-    const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/test" });
+    const sessionsCreate = vi.fn().mockResolvedValue({ id: "cs_test_1", status: "open", payment_status: "unpaid", url: "https://checkout.stripe.com/test" });
     const pending = createPendingRegistration();
     const event = createEvent({ paymentModel: "deposit", depositAmount: 120, depositCurrency: "usd" });
     const fakeGetPending = vi.fn().mockResolvedValue(pending);
@@ -201,7 +206,7 @@ describe("createCheckoutSessionResult", () => {
     expect(result).toEqual({ success: true, url: "https://checkout.stripe.com/test" });
     expect(sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        payment_method_types: ["card"],
+        integration_identifier: "snowforce_checkout_qjvmsrta",
         line_items: [
           expect.objectContaining({
             price_data: expect.objectContaining({
@@ -211,11 +216,12 @@ describe("createCheckoutSessionResult", () => {
           }),
         ],
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^registration-checkout-/) }),
     );
   });
 
   it("applies a valid pending coupon before creating checkout", async () => {
-    const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/coupon" });
+    const sessionsCreate = vi.fn().mockResolvedValue({ id: "cs_test_coupon", status: "open", payment_status: "unpaid", url: "https://checkout.stripe.com/coupon" });
     const pending = createPendingRegistration({ couponCode: "SNOW20" });
     const event = createEvent({ depositAmount: 120 });
     const coupon = { code: "SNOW20", eventSlug: "test-event", discountType: "percent" as const, discountValue: 20, active: true, startsAt: null, expiresAt: null, maxRedemptions: 1, createdAt: "2026-07-28T00:00:00.000Z" };
@@ -229,7 +235,7 @@ describe("createCheckoutSessionResult", () => {
     expect(sessionsCreate).toHaveBeenCalledWith(expect.objectContaining({
       line_items: [expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 9600 }) })],
       metadata: expect.objectContaining({ couponCode: "SNOW20", discountAmount: "24" }),
-    }));
+    }), expect.objectContaining({ idempotencyKey: expect.stringMatching(/^registration-checkout-/) }));
   });
 
   it("does not create a Stripe session for a 100% event coupon", async () => {
@@ -246,7 +252,7 @@ describe("createCheckoutSessionResult", () => {
   });
 
   it("creates a checkout session for a full_prepay event in CNY", async () => {
-    const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/cny-test" });
+    const sessionsCreate = vi.fn().mockResolvedValue({ id: "cs_test_cny", status: "open", payment_status: "unpaid", url: "https://checkout.stripe.com/cny-test" });
     const pending = createPendingRegistration();
     const event = createEvent({
       paymentModel: "full_prepay",
@@ -275,11 +281,12 @@ describe("createCheckoutSessionResult", () => {
           }),
         ],
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^registration-checkout-/) }),
     );
   });
 
   it("creates a checkout session for a full_prepay event in JPY (zero-decimal currency)", async () => {
-    const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.com/jpy-test" });
+    const sessionsCreate = vi.fn().mockResolvedValue({ id: "cs_test_jpy", status: "open", payment_status: "unpaid", url: "https://checkout.stripe.com/jpy-test" });
     const pending = createPendingRegistration();
     const event = createEvent({
       paymentModel: "full_prepay",
@@ -308,6 +315,7 @@ describe("createCheckoutSessionResult", () => {
           }),
         ],
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^registration-checkout-/) }),
     );
   });
 
@@ -349,7 +357,7 @@ describe("createCheckoutSessionResult", () => {
     const pending = createPendingRegistration({ couponCode: "FREE100" });
     const event = createEvent({ paymentModel: "full_prepay", depositAmount: null, fullPaymentAmount: 120 });
     const coupon = { code: "FREE100", eventSlug: event.slug, discountType: "percent" as const, discountValue: 100, active: true, startsAt: null, expiresAt: null, maxRedemptions: 1, createdAt: "2026-07-29T00:00:00.000Z" };
-    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID } });
+    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID }, emailConfirmed: true });
     actionMocks.getPendingRegistrationById.mockResolvedValue(pending);
     actionMocks.getEvent.mockResolvedValue(event);
     actionMocks.getCoupon.mockResolvedValue(coupon);
@@ -362,7 +370,7 @@ describe("createCheckoutSessionResult", () => {
     formData.set("pendingRegistrationId", pending.id);
     await expect(createCheckoutSessionAction(formData)).resolves.toEqual({
       success: true,
-      url: "http://localhost:3000/member?payment=success",
+      url: "http://localhost:3000/member?registration=confirmed",
       completed: true,
     });
 
@@ -387,7 +395,7 @@ describe("createCheckoutSessionResult", () => {
     const pending = createPendingRegistration({ couponCode: "FREE100" });
     const event = createEvent({ fullPaymentAmount: 120, paymentModel: "full_prepay" });
     const coupon = { code: "FREE100", eventSlug: event.slug, discountType: "percent" as const, discountValue: 100, active: true, startsAt: null, expiresAt: null, maxRedemptions: 1, createdAt: "2026-07-29T00:00:00.000Z" };
-    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID } });
+    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID }, emailConfirmed: true });
     actionMocks.getPendingRegistrationById.mockResolvedValue(pending);
     actionMocks.getEvent.mockResolvedValue(event);
     actionMocks.getCoupon.mockResolvedValue(coupon);
@@ -406,7 +414,7 @@ describe("createCheckoutSessionResult", () => {
     const pending = createPendingRegistration({ couponCode: "FREE100" });
     const event = createEvent({ fullPaymentAmount: 120, paymentModel: "full_prepay" });
     const coupon = { code: "FREE100", eventSlug: event.slug, discountType: "percent" as const, discountValue: 100, active: true, startsAt: null, expiresAt: null, maxRedemptions: 5, createdAt: "2026-07-29T00:00:00.000Z" };
-    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID } });
+    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID }, emailConfirmed: true });
     actionMocks.getPendingRegistrationById.mockResolvedValue(pending);
     actionMocks.getEvent.mockResolvedValue(event);
     actionMocks.getCoupon.mockResolvedValue(coupon);

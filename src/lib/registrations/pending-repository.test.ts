@@ -142,6 +142,36 @@ describe("pending registration repository", () => {
     expect((await repository.getPendingRegistrationsByMember("member-1")).map((row) => row.contactEmail)).toEqual(["new@example.com"]);
   });
 
+  it("retains the original details after a Checkout attempt has been claimed", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "snowforce-pending-"));
+    tempDirs.push(dir);
+    const repository = createPendingRegistrationRepository(
+      createPendingRegistrationStore(path.join(dir, "pending.json")),
+    );
+    const original = await repository.createOrRefreshPendingRegistration({
+      eventSlug: "big-bear-day", memberId: "member-1",
+      answers: { name: "Tai", email: "old@example.com" }, consentGiven: true,
+      contactName: "Tai", contactEmail: "old@example.com", contactPhone: "",
+      tokenHash: "hash-1", expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+    const attempt = {
+      id: "attempt-1", createdAt: "2026-01-01T00:00:00.000Z", amount: 99,
+      currency: "usd" as const, paymentModel: "deposit" as const, couponCode: "", discountAmount: 0,
+      params: { mode: "payment" as const, success_url: "https://snow-force.com/member", cancel_url: "https://snow-force.com/events/big-bear-day", line_items: [] },
+    };
+    await repository.comparePendingCheckout(original.id, original.tokenHash, null, attempt);
+
+    const refreshed = await repository.createOrRefreshPendingRegistration({
+      eventSlug: "big-bear-day", memberId: "member-1",
+      answers: { name: "Tai", email: "new@example.com" }, consentGiven: true,
+      contactName: "Tai", contactEmail: "new@example.com", contactPhone: "",
+      tokenHash: "hash-2", expiresAt: "2099-01-02T00:00:00.000Z",
+    });
+
+    expect(refreshed).toMatchObject({ id: original.id, tokenHash: "hash-1", contactEmail: "old@example.com" });
+    expect(refreshed.checkoutAttempt?.id).toBe("attempt-1");
+  });
+
   it("retrieves a pending registration by ID and returns undefined for unknown IDs", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "snowforce-pending-"));
     tempDirs.push(dir);

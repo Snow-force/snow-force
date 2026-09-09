@@ -474,6 +474,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
   const pending = (await getPendingRegistrationsByMember(profile.id))
     .find((item) => item.id === pendingId);
   if (!pending) redirect("/member?registration=invalid");
+  if (!account.emailConfirmed) redirect("/member?registration=member-only");
 
   const event = await getEvent(pending.eventSlug);
   if (!event || !isEventOpen(event)) {
@@ -486,6 +487,10 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
   }
 
   const normalizedEmail = normalizeEmail(pending.contactEmail);
+  // Paid and coupon checkouts own their completion, even if a caller invokes this action directly.
+  if (event.paymentModel !== "free" || pending.checkoutAttempt || pending.fulfilledRegistrationId) {
+    redirect("/member?registration=payment-required");
+  }
   const existingRegistrations = await getRegistrations(event.slug);
   if (
     existingRegistrations.some(

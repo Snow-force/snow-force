@@ -6,11 +6,14 @@ import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
 import { confirmMemberPendingRegistrationAction, logoutMember } from "@/lib/members/actions";
 import { MemberStatusMessage } from "./member-status-message";
 import { PendingPaymentButton } from "./pending-payment-button";
+import type { VerifiedPaymentStatus } from "@/lib/payments/checkout-attempt";
+import { useLanguage } from "@/lib/language";
 
 type MemberDashboardProps = {
   dashboard: MemberDashboardData;
   profile: MemberProfile;
   searchParams: Record<string, string | undefined>;
+  verifiedPaymentStatus?: VerifiedPaymentStatus;
   user: User;
 };
 
@@ -335,6 +338,7 @@ function RecentRegistrations({ trips }: { trips: MemberDashboardTrip[] }) {
 }
 
 function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData }) {
+  const { t } = useLanguage();
   if (dashboard.pendingConfirmations.length === 0) return null;
 
   return (
@@ -354,7 +358,7 @@ function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData })
               <p className="mt-1 text-[14px] font-medium text-[#667085]">{pending.contactName || pending.contactEmail}</p>
               <p className="mt-1 text-[13px] text-[#8a94a6]">{pending.contactEmail}</p>
             </div>
-            {event.paymentModel === "free" ? (
+            {event.paymentModel === "free" && !pending.checkoutAttempt ? (
               <form action={confirmMemberPendingRegistrationAction}>
                 <input type="hidden" name="pendingId" value={pending.id} />
                 <button className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0066ff] px-6 text-[15px] font-semibold text-white transition active:scale-95">
@@ -362,7 +366,7 @@ function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData })
                 </button>
               </form>
             ) : (
-              <PendingPaymentButton label={pendingPaymentLabel(event)} pendingRegistrationId={pending.id} />
+              <PendingPaymentButton label={pending.checkoutAttempt ? t({ en: "Check / continue payment", zh: "查看 / 继续付款" }) : pendingPaymentLabel(event)} pendingRegistrationId={pending.id} />
             )}
           </div>
         ))}
@@ -448,6 +452,7 @@ export function MemberDashboard({
   dashboard,
   profile,
   searchParams,
+  verifiedPaymentStatus,
   user,
 }: MemberDashboardProps) {
   const firstName = profile.displayName || user.email?.split("@")[0] || "Rider";
@@ -470,7 +475,7 @@ export function MemberDashboard({
           </div>
 
           <div className="-mt-16 md:mt-6">
-            <MemberStatusMessage searchParams={searchParams} />
+            <MemberStatusMessage searchParams={searchParams} verifiedPaymentStatus={verifiedPaymentStatus} />
           </div>
 
           <div className="mt-5 md:mt-6">

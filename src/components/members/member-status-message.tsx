@@ -1,10 +1,12 @@
 "use client";
+import type { VerifiedPaymentStatus } from "@/lib/payments/checkout-attempt";
 
 import { useLanguage } from "@/lib/language";
 
 type MemberStatusMessageProps = {
   searchParams: Record<string, string | undefined>;
   scope?: "member" | "forgot" | "reset";
+  verifiedPaymentStatus?: VerifiedPaymentStatus;
 };
 
 type MessageTone = "success" | "error";
@@ -81,6 +83,9 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   }
   if (searchParams.registration === "unavailable") {
     return { tone: "error", text: { en: "This event is no longer available for registration.", zh: "该活动目前已无法报名。" } };
+  }
+  if (searchParams.registration === "payment-required") {
+    return { tone: "error", text: { en: "Use the payment status button below to finish this registration.", zh: "请通过下方付款状态按钮完成报名。" } };
   }
   if (searchParams.registration === "invalid") {
     return { tone: "error", text: { en: "That pending registration could not be confirmed. Please submit again if needed.", zh: "该待确认报名无法完成确认。如有需要，请重新提交报名。" } };
@@ -252,9 +257,18 @@ function resetMessage(searchParams: Record<string, string | undefined>): Message
 export function MemberStatusMessage({
   searchParams,
   scope = "member",
+  verifiedPaymentStatus,
 }: MemberStatusMessageProps) {
   const { t } = useLanguage();
-  const message =
+  const paymentMessages: Record<VerifiedPaymentStatus, Message> = {
+    confirmed: { tone: "success", text: { en: "Payment received. Your trip is confirmed below.", zh: "付款已核实，行程已确认，可在下方查看。" } },
+    processing: { tone: "success", text: { en: "Your payment is processing. Please refresh to check its status. Do not pay again.", zh: "付款正在处理中，请刷新查看状态，不要再次付款。" } },
+    review: { tone: "error", text: { en: "We could not confirm your trip yet. Please refresh or contact SnowForce. Do not pay again.", zh: "暂时无法确认行程，请刷新或联系 SnowForce，不要再次付款。" } },
+    invalid: { tone: "error", text: { en: "This payment link could not be verified. Check My Trips or contact SnowForce before paying again.", zh: "无法核实此付款链接。再次付款前，请查看我的行程或联系 SnowForce。" } },
+  };
+  const message = searchParams.payment === "success"
+    ? paymentMessages[verifiedPaymentStatus ?? "invalid"]
+    :
     scope === "forgot"
       ? forgotMessage(searchParams)
       : scope === "reset"
@@ -266,6 +280,11 @@ export function MemberStatusMessage({
   return (
     <div className={`rounded-2xl border px-4 py-3 text-sm ${TONE_CLASS[message.tone]}`} role={message.tone === "error" ? "alert" : "status"}>
       {t(message.text)}
+      {searchParams.payment === "success" && verifiedPaymentStatus !== "confirmed" ? (
+        <a className="ml-2 underline" href={`/member?payment=success&session_id=${encodeURIComponent(searchParams.session_id ?? "")}`}>
+          {t({ en: "Refresh status", zh: "刷新状态" })}
+        </a>
+      ) : null}
     </div>
   );
 }

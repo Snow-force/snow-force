@@ -531,7 +531,7 @@ describe("confirmMemberPendingRegistrationAction", () => {
       contactEmail: " RIDER@EXAMPLE.COM ", contactName: "Rider", contactPhone: "555-0100",
       waiverTextEn: "Waiver", waiverTextSha: "sha-1", typedName: "Rider", handwrittenSignatureDataUrl: null,
     };
-    const event = { slug: "mammoth-weekend", title: { en: "Mammoth Weekend", zh: "" } };
+    const event = { slug: "mammoth-weekend", paymentModel: "free", title: { en: "Mammoth Weekend", zh: "" } };
     mockGetPendingRegistrationsByMember.mockResolvedValue([pending]);
     mockGetEvent.mockResolvedValue(event);
     mockIsEventOpen.mockReturnValue(true);
@@ -555,7 +555,7 @@ describe("confirmMemberPendingRegistrationAction", () => {
   it("does not create another registration when this member is already registered", async () => {
     const profile = signedInProfile();
     const pending = { id: "pending-1", eventSlug: "mammoth-weekend", contactEmail: "rider@example.com" };
-    const event = { slug: "mammoth-weekend", title: { en: "Mammoth Weekend", zh: "" } };
+    const event = { slug: "mammoth-weekend", paymentModel: "free", title: { en: "Mammoth Weekend", zh: "" } };
     mockGetPendingRegistrationsByMember.mockResolvedValue([pending]);
     mockGetEvent.mockResolvedValue(event);
     mockIsEventOpen.mockReturnValue(true);

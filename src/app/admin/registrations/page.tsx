@@ -11,6 +11,7 @@ import {
 } from "@/lib/payments/refund-actions";
 import { getRegistrationRefunds } from "@/lib/payments/refund-repository";
 import { getAllEvents, getEventAdmin } from "@/lib/events/repository";
+import { manualFinanceUpdate } from "@/lib/registrations/manual-finance";
 import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
 import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "@/lib/registrations/admin-view";
 import {
@@ -20,30 +21,17 @@ import {
   updateRegistrationFinance,
   updateRegistrationStatus,
 } from "@/lib/registrations/repository";
-import type { Event, RegistrationDepositStatus, RegistrationSettlementStatus } from "@/lib/types";
-
-function parseAmount(value: FormDataEntryValue | null) {
-  const text = String(value ?? "").trim();
-  if (!text) return null;
-  const amount = Number(text);
-  return Number.isFinite(amount) ? amount : null;
-}
+import type { Event } from "@/lib/types";
 
 async function updateFinance(formData: FormData) {
   "use server";
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const returnEvent = String(formData.get("returnEvent") ?? "").trim();
-  const depositStatus = String(formData.get("depositStatus") ?? "pending") as RegistrationDepositStatus;
-  const settlementStatus = String(formData.get("settlementStatus") ?? "not_started") as RegistrationSettlementStatus;
   if (!id) return;
-  await updateRegistrationFinance(id, {
-    depositAmount: parseAmount(formData.get("depositAmount")),
-    depositStatus: ["pending", "paid", "refunded", "waived"].includes(depositStatus) ? depositStatus : "pending",
-    settlementStatus: ["not_started", "pending_balance", "pending_refund", "settled"].includes(settlementStatus)
-      ? settlementStatus
-      : "not_started",
-  });
+  const registration = await getRegistration(id);
+  if (!registration) return;
+  await updateRegistrationFinance(id, manualFinanceUpdate(normalizeRegistrationFinance(registration.finance), formData));
   revalidatePath("/admin/registrations");
   const query = new URLSearchParams({ financeSaved: id });
   if (returnEvent) query.set("event", returnEvent);

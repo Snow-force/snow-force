@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { CheckoutAttempt } from "@/lib/payments/checkout-attempt";
 
 import type { RegistrationAnswers } from "@/lib/types";
 import { createJsonArrayStore, workspaceDataPath } from "../server/json-store";
@@ -20,9 +21,11 @@ export type PendingRegistration = {
   typedName?: string | null;
   handwrittenSignatureDataUrl?: string | null;
   couponCode?: string | null;
+  checkoutAttempt?: CheckoutAttempt | null;
+  fulfilledRegistrationId?: string | null;
 };
 
-export type NewPendingRegistration = Omit<PendingRegistration, "id" | "createdAt">;
+export type NewPendingRegistration = Omit<PendingRegistration, "id" | "createdAt" | "checkoutAttempt" | "fulfilledRegistrationId">;
 
 export type PendingRegistrationSource = {
   createOrRefresh(data: NewPendingRegistration): Promise<PendingRegistration>;
@@ -32,6 +35,8 @@ export type PendingRegistrationSource = {
   hasForEmail(eventSlug: string, email: string, now?: Date): Promise<boolean>;
   hasForMember(eventSlug: string, memberId: string, now?: Date): Promise<boolean>;
   delete(id: string): Promise<void>;
+  compareCheckout(id: string, tokenHash: string, expectedAttemptId: string | null, attempt: CheckoutAttempt | null): Promise<PendingRegistration | undefined>;
+  complete(id: string, registrationId: string): Promise<void>;
 };
 
 type PendingRegistrationRow = {
@@ -51,6 +56,8 @@ type PendingRegistrationRow = {
   typed_name: string | null;
   handwritten_signature_data_url: string | null;
   coupon_code: string | null;
+  checkout_attempt: CheckoutAttempt | null;
+  fulfilled_registration_id: string | null;
 };
 
 function normalizeEmail(value: string) {
@@ -105,6 +112,8 @@ function rowToPendingRegistration(row: PendingRegistrationRow): PendingRegistrat
     typedName: row.typed_name ?? null,
     handwrittenSignatureDataUrl: row.handwritten_signature_data_url ?? null,
     couponCode: row.coupon_code ?? null,
+    checkoutAttempt: row.checkout_attempt ?? null,
+    fulfilledRegistrationId: row.fulfilled_registration_id ?? null,
   };
 }
 
@@ -129,26 +138,37 @@ function pendingRegistrationToRow(data: NewPendingRegistration) {
 
 export function createPendingRegistrationStore(filePath: string): PendingRegistrationSource {
   const store = createJsonArrayStore<PendingRegistration>(filePath);
+  // Local JSON fallback only. Production concurrency is enforced by Postgres.
+  let queue: Promise<unknown> = Promise.resolve();
+  function serial<T>(work: () => Promise<T>): Promise<T> {
+    const next = queue.then(work);
+    queue = next.catch(() => undefined);
+    return next;
+  }
 
   return {
     async createOrRefresh(data) {
+      return serial(async () => {
       const normalizedEmail = normalizeEmail(data.contactEmail);
-      const rows = (await store.read()).filter(
+      const rows = await store.read();
+      const existing = rows.find(
         (row) =>
-          row.eventSlug !== data.eventSlug ||
+          row.eventSlug === data.eventSlug &&
           (data.memberId
-            ? row.memberId !== data.memberId
-            : normalizeEmail(row.contactEmail) !== normalizedEmail),
+            ? row.memberId === data.memberId
+            : normalizeEmail(row.contactEmail) === normalizedEmail),
       );
+      if (existing?.checkoutAttempt || existing?.fulfilledRegistrationId) return existing;
       const now = new Date().toISOString();
       const pending: PendingRegistration = {
         ...data,
         contactEmail: normalizedEmail,
-        id: `pending_${Date.now()}_${crypto.randomUUID()}`,
-        createdAt: now,
+        id: existing?.id ?? crypto.randomUUID(),
+        createdAt: existing?.createdAt ?? now,
       };
-      await store.write([...rows, pending]);
+      await store.write([...rows.filter((row) => row.id !== pending.id), pending]);
       return pending;
+      });
     },
     async getById(id) {
       return (await store.read()).find((row) => row.id === id);
@@ -160,7 +180,8 @@ export function createPendingRegistrationStore(filePath: string): PendingRegistr
       return (await store.read()).filter(
         (row) =>
           row.memberId === memberId &&
-          Date.parse(row.expiresAt) > now.getTime(),
+          !row.fulfilledRegistrationId &&
+          (Boolean(row.checkoutAttempt) || Date.parse(row.expiresAt) > now.getTime()),
       );
     },
     async hasForEmail(eventSlug, email, now = new Date()) {
@@ -181,7 +202,32 @@ export function createPendingRegistrationStore(filePath: string): PendingRegistr
       );
     },
     async delete(id) {
-      await store.write((await store.read()).filter((row) => row.id !== id));
+      await serial(async () => {
+        const rows = await store.read();
+        const row = rows.find((item) => item.id === id);
+        if (row?.checkoutAttempt || row?.fulfilledRegistrationId) throw new Error("Checkout records must be retained");
+        await store.write(rows.filter((item) => item.id !== id));
+      });
+    },
+    async compareCheckout(id, tokenHash, expectedAttemptId, attempt) {
+      return serial(async () => {
+        const rows = await store.read();
+        const row = rows.find((item) => item.id === id && item.tokenHash === tokenHash &&
+          (item.checkoutAttempt?.id ?? null) === expectedAttemptId && !item.fulfilledRegistrationId);
+        if (!row) return undefined;
+        row.checkoutAttempt = attempt;
+        await store.write(rows);
+        return row;
+      });
+    },
+    async complete(id, registrationId) {
+      await serial(async () => {
+        const rows = await store.read();
+        const row = rows.find((item) => item.id === id);
+        if (!row || (row.fulfilledRegistrationId && row.fulfilledRegistrationId !== registrationId)) throw new Error("Checkout completion conflict");
+        row.fulfilledRegistrationId = registrationId;
+        await store.write(rows);
+      });
     },
   };
 }
@@ -191,23 +237,35 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
     async createOrRefresh(data) {
       const client = createAdminPendingRegistrationClient();
       const normalizedEmail = normalizeEmail(data.contactEmail);
-      let deleteQuery = client
-        .from("pending_registrations")
-        .delete()
-        .eq("event_slug", data.eventSlug);
-      deleteQuery = data.memberId
-        ? deleteQuery.eq("member_id", data.memberId)
-        : deleteQuery.eq("contact_email", normalizedEmail);
-      const { error: deleteError } = await deleteQuery;
-      throwSupabaseError(deleteError);
-
-      const { data: row, error } = await client
+      const findExisting = async () => {
+        let query = client.from("pending_registrations").select("*").eq("event_slug", data.eventSlug);
+        query = data.memberId ? query.eq("member_id", data.memberId) : query.eq("contact_email", normalizedEmail);
+        const result = await query.order("created_at", { ascending: false }).limit(1).maybeSingle();
+        throwSupabaseError(result.error);
+        return result.data as PendingRegistrationRow | null;
+      };
+      let existing = await findExisting();
+      if (!existing) {
+        const inserted = await client
         .from("pending_registrations")
         .insert(pendingRegistrationToRow({ ...data, contactEmail: normalizedEmail }))
         .select("*")
-        .single();
+        .maybeSingle();
+        if (!inserted.error && inserted.data) return rowToPendingRegistration(inserted.data as PendingRegistrationRow);
+        if (inserted.error?.code !== "23505") throwSupabaseError(inserted.error);
+        // A concurrent insert won the member/event unique constraint.
+        existing = await findExisting();
+      }
+      if (!existing) throw new Error("Pending registration could not be saved");
+      if (existing.checkout_attempt || existing.fulfilled_registration_id) return rowToPendingRegistration(existing);
+      const { data: row, error } = await client.from("pending_registrations")
+        .update(pendingRegistrationToRow({ ...data, contactEmail: normalizedEmail }))
+        .eq("id", existing.id).is("checkout_attempt", null).is("fulfilled_registration_id", null)
+        .select("*").maybeSingle();
       throwSupabaseError(error);
-      return rowToPendingRegistration(row as PendingRegistrationRow);
+      const current = row ?? await findExisting();
+      if (!current) throw new Error("Pending registration changed; please retry");
+      return rowToPendingRegistration(current as PendingRegistrationRow);
     },
     async getById(id) {
       const { data, error } = await createAdminPendingRegistrationClient()
@@ -232,11 +290,13 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
         .from("pending_registrations")
         .select("*")
         .eq("member_id", memberId)
-        .gt("expires_at", now.toISOString())
+        .is("fulfilled_registration_id", null)
         .order("created_at", { ascending: true });
       if (isMissingPendingRegistrationsTableError(error)) return [];
       throwSupabaseError(error);
-      return ((data ?? []) as PendingRegistrationRow[]).map(rowToPendingRegistration);
+      return ((data ?? []) as PendingRegistrationRow[])
+        .map(rowToPendingRegistration)
+        .filter((row) => Boolean(row.checkoutAttempt) || Date.parse(row.expiresAt) > now.getTime());
     },
     async hasForEmail(eventSlug, email, now = new Date()) {
       const { data, error } = await createAdminPendingRegistrationClient()
@@ -267,6 +327,30 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
         .eq("id", id);
       throwSupabaseError(error);
     },
+    async compareCheckout(id, tokenHash, expectedAttemptId, attempt) {
+      let query = createAdminPendingRegistrationClient().from("pending_registrations")
+        .update({ checkout_attempt: attempt }).eq("id", id).eq("token_hash", tokenHash)
+        .is("fulfilled_registration_id", null);
+      query = expectedAttemptId === null
+        ? query.is("checkout_attempt", null)
+        : query.contains("checkout_attempt", { id: expectedAttemptId });
+      const { data, error } = await query.select("*").maybeSingle();
+      throwSupabaseError(error);
+      return data ? rowToPendingRegistration(data as PendingRegistrationRow) : undefined;
+    },
+    async complete(id, registrationId) {
+      const client = createAdminPendingRegistrationClient();
+      const { data, error } = await client.from("pending_registrations")
+        .update({ fulfilled_registration_id: registrationId }).eq("id", id)
+        .is("fulfilled_registration_id", null)
+        .select("id").maybeSingle();
+      throwSupabaseError(error);
+      if (data) return;
+      const current = await client.from("pending_registrations")
+        .select("fulfilled_registration_id").eq("id", id).maybeSingle();
+      throwSupabaseError(current.error);
+      if (current.data?.fulfilled_registration_id !== registrationId) throw new Error("Checkout completion conflict");
+    },
   };
 }
 
@@ -279,6 +363,8 @@ export function createPendingRegistrationRepository(source: PendingRegistrationS
     hasPendingRegistrationForEmail: source.hasForEmail,
     hasPendingRegistrationForMember: source.hasForMember,
     deletePendingRegistration: source.delete,
+    comparePendingCheckout: source.compareCheckout,
+    completePendingCheckout: source.complete,
   };
 }
 
@@ -294,3 +380,5 @@ export const getPendingRegistrationsByMember = repository.getPendingRegistration
 export const hasPendingRegistrationForEmail = repository.hasPendingRegistrationForEmail;
 export const hasPendingRegistrationForMember = repository.hasPendingRegistrationForMember;
 export const deletePendingRegistration = repository.deletePendingRegistration;
+export const comparePendingCheckout = repository.comparePendingCheckout;
+export const completePendingCheckout = repository.completePendingCheckout;
