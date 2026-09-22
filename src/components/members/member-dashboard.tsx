@@ -7,7 +7,6 @@ import { confirmMemberPendingRegistrationAction, logoutMember } from "@/lib/memb
 import { MemberStatusMessage } from "./member-status-message";
 import { PendingPaymentButton } from "./pending-payment-button";
 import type { VerifiedPaymentStatus } from "@/lib/payments/checkout-attempt";
-import { useLanguage } from "@/lib/language";
 
 type MemberDashboardProps = {
   dashboard: MemberDashboardData;
@@ -338,7 +337,6 @@ function RecentRegistrations({ trips }: { trips: MemberDashboardTrip[] }) {
 }
 
 function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData }) {
-  const { t } = useLanguage();
   if (dashboard.pendingConfirmations.length === 0) return null;
 
   return (
@@ -366,7 +364,7 @@ function PendingConfirmations({ dashboard }: { dashboard: MemberDashboardData })
                 </button>
               </form>
             ) : (
-              <PendingPaymentButton label={pending.checkoutAttempt ? t({ en: "Check / continue payment", zh: "查看 / 继续付款" }) : pendingPaymentLabel(event)} pendingRegistrationId={pending.id} />
+              <PendingPaymentButton label={pendingPaymentLabel(event)} checkoutInProgress={Boolean(pending.checkoutAttempt)} pendingRegistrationId={pending.id} />
             )}
           </div>
         ))}
