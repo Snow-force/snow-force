@@ -144,7 +144,7 @@ Linux 安装日志存在上游间接依赖 `lodash.isequal`、`cron-parser` 的�
 
 提前生成 Railway 公网域名的请求被自动审批拒绝：代码源、生产密钥和部署验收尚未完成，此时生成域名会提前扩大服务暴露面。没有通过浏览器或其他方式绕过；待代码与生产配置齐备，再进行公网地址与上线步骤。目前没有已创建的后台公网域名，ADMIN_CORS / AUTH_CORS 也尚未写入占位域名。
 
-部署代码使用现有私有 GitHub 仓库 `Harrymeit/snow-force` 的独立分支 `codex/commerce-public-admin`，从已核对的 `main` 提交 `98e1ae9` 开始。Railway 后续连接该分支中经过审查与测试的部署提交；不要直接假设 `main` 已包含部署文件。该发布分支只收录商城部署代码、相关测试及部署说明，不收录本地环境文件、凭据、运行记录、商品原始素材或其他未提交工作。GitHub 仓库归属保持现状；Railway 目标是已核对的 SnowForce 工作区。连接私有仓库时核对实际授权范围。
+部署代码已推送到现有私有 GitHub 仓库 `Snow-force/snow-force` 的独立分支 `codex/commerce-public-admin`，从已核对的 `main` 提交 `98e1ae9` 开始，部署代码提交为 `4e6a166`。GitHub 在推送时确认原 `Harrymeit/snow-force` 地址已迁移到该组织仓库；后续使用规范地址 `https://github.com/Snow-force/snow-force.git`。Railway 连接该分支中经过审查与测试的部署提交；不要直接假设 `main` 已包含部署文件。该发布分支只收录商城部署代码、相关测试及部署说明，不收录本地环境文件、凭据、运行记录、商品原始素材或其他未提交工作。Railway 目标是已核对的 SnowForce 工作区。连接私有仓库时核对实际授权范围。
 
 本轮 SnowForce 服务的 Connect Repo 窗口显示 No repositories found，并提供 Configure GitHub App；当前没有可选代码仓库，未连接 GitHub 源，也未授予新的仓库权限。后续如选择 GitHub 自动部署，授权应限定到所需仓库，并在实际授权界面核对权限；不扩大到所有私有仓库。也可使用经授权的 CLI 上传经过审查的后台构建上下文。
 
