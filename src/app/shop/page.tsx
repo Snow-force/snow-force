@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ShopPageView } from "@/components/shop/shop-page-view";
 import { storeFiltersFromSearchParams } from "@/lib/shop/storefront";
 import { getStorefrontCatalog } from "@/lib/shop/storefront-repository";
+import { getShopSupportEmail } from "@/lib/shop/support-repository";
 
 export const metadata: Metadata = {
   title: "Gear Shop · 装备商城 | SnowForce",
@@ -12,6 +13,9 @@ export default async function ShopPage(
 ) {
   const searchParams = await props.searchParams ?? {};
   const filters = storeFiltersFromSearchParams(searchParams);
-  const catalog = await getStorefrontCatalog().catch(() => null);
-  return <ShopPageView key={JSON.stringify(filters)} products={catalog?.products ?? []} unavailable={catalog === null} initialFilters={filters} />;
+  const [catalog, supportEmail] = await Promise.all([
+    getStorefrontCatalog().catch(() => null),
+    getShopSupportEmail(),
+  ]);
+  return <ShopPageView key={JSON.stringify(filters)} products={catalog?.products ?? []} unavailable={catalog === null} initialFilters={filters} supportEmail={supportEmail} />;
 }

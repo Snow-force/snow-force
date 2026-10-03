@@ -58,9 +58,12 @@ describe("member order experience", () => {
     const order = { ...previewOrders[0], orderNumber: "SF #1 & thanks" };
     const view = wrap(<MemberOrderDetail profile={previewProfile} order={order} />, lang);
     const label = lang === "zh" ? "联系客服" : "Contact support";
+    expect(screen.getByText("Shop@snow-force.com")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", `mailto:Shop@snow-force.com?subject=${encodeURIComponent(`SnowForce order ${order.orderNumber}`)}`);
     view.unmount();
     wrap(<MemberOrderDetail profile={previewProfile} order={order} supportEmail="updated@example.test" />, lang);
+    expect(screen.getByText("updated@example.test")).toBeInTheDocument();
+    expect(screen.queryByText("Shop@snow-force.com")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", `mailto:updated@example.test?subject=${encodeURIComponent(`SnowForce order ${order.orderNumber}`)}`);
   });
   it("shows partial fulfillment, returned quantities and financial adjustments in the order detail", () => {

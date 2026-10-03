@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronRight, MessageCircle, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLanguage } from "@/lib/language";
+import { shopSupportEmail } from "@/lib/shop/contact";
 import { storeCategories as categories, defaultStoreFilters, filterStoreProducts, type StoreFilters, type StoreProduct } from "@/lib/shop/storefront";
 import { ProductCard } from "./product-card";
 
-export function ShopPageView({ products, unavailable = false, initialFilters = defaultStoreFilters }: { products: StoreProduct[]; unavailable?: boolean; initialFilters?: StoreFilters }) {
+export function ShopPageView({ products, unavailable = false, initialFilters = defaultStoreFilters, supportEmail = shopSupportEmail }: { products: StoreProduct[]; unavailable?: boolean; initialFilters?: StoreFilters; supportEmail?: string }) {
   const { lang } = useLanguage();
   const [filters, setFilters] = useState<StoreFilters>(initialFilters);
   const visible = filterStoreProducts(products, filters);
@@ -25,7 +26,14 @@ export function ShopPageView({ products, unavailable = false, initialFilters = d
         <Link href="/">{text("Home", "首页")}</Link><ChevronRight size={12} /><span>{text("Gear shop", "装备商城")}</span>
       </nav>
       <div className="my-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-        <div><p className="shop-eyebrow text-[#666]">SNOWFORCE GEAR COLLECTION</p><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-[32px]">{text("Your mountain kit, all in one place.", "雪山装备，一站选齐。")}</h1></div>
+        <div>
+          <p className="shop-eyebrow text-[#666]">SNOWFORCE GEAR COLLECTION</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-[32px]">{text("Your mountain kit, all in one place.", "雪山装备，一站选齐。")}</h1>
+          <p className="mt-2 text-sm text-[#666]">
+            {text("Customer service", "商城客服")} · {" "}
+            <a href={`mailto:${supportEmail}`} className="inline-flex min-h-11 items-center break-all text-[#0066cc] underline underline-offset-4">{supportEmail}</a>
+          </p>
+        </div>
         <form className="shop-search w-full sm:max-w-md" role="search" onSubmit={(event) => { event.preventDefault(); document.getElementById("catalog")?.scrollIntoView({ behavior: "instant", block: "start" }); }}>
           <Search size={19} aria-hidden="true" /><label className="sr-only" htmlFor="gear-search">{text("Search gear", "搜索装备")}</label>
           <input id="gear-search" type="search" placeholder={text("Search styles or brands", "搜索款式或品牌")} value={filters.query} onChange={(event) => setFilters((previous) => ({ ...previous, query: event.target.value }))} />

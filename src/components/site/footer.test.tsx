@@ -16,4 +16,16 @@ describe("Footer", () => {
     expect(screen.getByRole("link", { name: "Shop Shipping & Returns" })).toHaveAttribute("href", "/shop/policies");
     expect(screen.queryByText(/Refund and itinerary change statement/)).not.toBeInTheDocument();
   });
+
+  it.each(["en", "zh"] as const)("shows the full shop email and keeps community contact in %s", (lang) => {
+    const view = render(<LanguageProvider initialLang={lang}><Footer /></LanguageProvider>);
+    expect(screen.getByText(lang === "zh" ? "商城客服" : "Shop customer service")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Shop@snow-force.com" })).toHaveAttribute("href", "mailto:Shop@snow-force.com");
+    expect(screen.getByText("snowforceclub@gmail.com")).toBeInTheDocument();
+    view.unmount();
+
+    render(<LanguageProvider initialLang={lang}><Footer supportEmail="updated@example.test" /></LanguageProvider>);
+    expect(screen.getByRole("link", { name: "updated@example.test" })).toHaveAttribute("href", "mailto:updated@example.test");
+    expect(screen.queryByText("Shop@snow-force.com")).not.toBeInTheDocument();
+  });
 });

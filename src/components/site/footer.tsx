@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/lib/language";
+import { shopSupportEmail } from "@/lib/shop/contact";
 
-export function Footer() {
+export function Footer({ supportEmail = shopSupportEmail }: { supportEmail?: string }) {
   const { lang, t } = useLanguage();
 
   return (
@@ -39,8 +40,12 @@ export function Footer() {
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Contact", zh: "联系方式" })}>
-<li>snowforceclub@gmail.com</li>
-          <li>{t({ en: "WeChat: SnowForceClub", zh: "微信：SnowForceClub" })}</li>
+            <li>snowforceclub@gmail.com</li>
+            <li>{t({ en: "WeChat: SnowForceClub", zh: "微信：SnowForceClub" })}</li>
+            <li>
+              <span className="block font-medium text-[#333333]">{t({ en: "Shop customer service", zh: "商城客服" })}</span>
+              <a href={`mailto:${supportEmail}`} className="inline-flex min-h-11 items-center break-all text-[#0066cc] underline underline-offset-4">{supportEmail}</a>
+            </li>
           </FooterColumn>
 
           <FooterColumn title={t({ en: "Language", zh: "语言" })}>

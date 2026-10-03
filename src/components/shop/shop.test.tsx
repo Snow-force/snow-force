@@ -24,6 +24,18 @@ function shop(lang: "en" | "zh" = "en", unavailable = false) {
   return render(<LanguageProvider initialLang={lang}><ShopProvider><ShopPageView products={unavailable ? [] : fixtureProducts} unavailable={unavailable} /></ShopProvider></LanguageProvider>);
 }
 describe("live shop browsing", () => {
+  it.each(["en", "zh"] as const)("shows a visible shop email near the title in %s, including service failures", (lang) => {
+    const view = render(<LanguageProvider initialLang={lang}><ShopPageView products={[]} /></LanguageProvider>);
+    const contact = screen.getByRole("link", { name: "Shop@snow-force.com" });
+    expect(contact).toHaveAttribute("href", "mailto:Shop@snow-force.com");
+    expect(contact.parentElement).toHaveTextContent(lang === "zh" ? "商城客服" : "Customer service");
+    view.unmount();
+
+    render(<LanguageProvider initialLang={lang}><ShopPageView products={[]} unavailable supportEmail="updated@example.test" /></LanguageProvider>);
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "updated@example.test" })).toHaveAttribute("href", "mailto:updated@example.test");
+    expect(screen.queryByText("Shop@snow-force.com")).not.toBeInTheDocument();
+  });
   it("combines filters, searches and recovers from an empty result", async () => {
     shop();
     expect(screen.getByText("3 styles")).toBeInTheDocument();

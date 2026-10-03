@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { LanguageProvider, type Lang } from "@/lib/language";
 import { Nav } from "@/components/site/nav";
 import { Footer } from "@/components/site/footer";
+import { ShopSupportFooter } from "@/components/site/shop-support-footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +23,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <LanguageProvider initialLang={initialLang}>
           <Nav />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <Suspense fallback={<Footer />}>
+            <ShopSupportFooter />
+          </Suspense>
         </LanguageProvider>
       </body>
     </html>
