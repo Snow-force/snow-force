@@ -22,7 +22,7 @@ type MemberConsentType =
   | typeof PRIVACY_CONSENT_TYPE
   | typeof EVENT_MEDIA_CONSENT_TYPE;
 
-type ConsentClient = ReturnType<typeof createClient> | ReturnType<typeof createAdminClient>;
+type ConsentClient = Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>;
 
 export function memberConsentNextPath(nextPath: string | null | undefined) {
   const next = sanitizeMemberNextPath(nextPath);
@@ -60,26 +60,26 @@ async function getConsent(
 
 export async function hasCurrentPrivacyConsent(
   userId: string,
-  client: ConsentClient = createClient(),
+  client?: ConsentClient,
 ) {
   const consent = await getConsent(
     userId,
     PRIVACY_CONSENT_TYPE,
     CURRENT_PRIVACY_POLICY_VERSION,
-    client,
+    client ?? await createClient(),
   );
   return consent?.accepted === true && Boolean(consent.accepted_at);
 }
 
 export async function hasCurrentEventMediaConsent(
   userId: string,
-  client: ConsentClient = createClient(),
+  client?: ConsentClient,
 ) {
   const consent = await getConsent(
     userId,
     EVENT_MEDIA_CONSENT_TYPE,
     CURRENT_EVENT_MEDIA_POLICY_VERSION,
-    client,
+    client ?? await createClient(),
   );
   return consent?.accepted === true && Boolean(consent.accepted_at);
 }
@@ -165,8 +165,9 @@ function profileDisplayName(user: User) {
 
 export async function ensureMemberProfileAfterConsent(
   user: User,
-  client: ConsentClient = createClient(),
+  providedClient?: ConsentClient,
 ) {
+  const client = providedClient ?? await createClient();
   if (!(await hasCurrentPrivacyConsent(user.id, client))) return false;
 
   const { data: existing, error: readError } = await client
@@ -193,8 +194,9 @@ export async function ensureMemberProfileAfterConsent(
 export async function resolveMemberAuthDestination(
   user: User,
   nextPath: string,
-  client: ConsentClient = createClient(),
+  providedClient?: ConsentClient,
 ) {
+  const client = providedClient ?? await createClient();
   const next = memberConsentNextPath(nextPath);
   if (!(await hasCurrentPrivacyConsent(user.id, client))) {
     return memberConsentPath(next);

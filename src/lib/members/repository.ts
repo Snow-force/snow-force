@@ -43,7 +43,7 @@ function toMemberProfile(row: MemberProfileRow): MemberProfile {
 }
 
 export async function getMemberProfile(userId: string): Promise<MemberProfile | undefined> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("member_profiles")
     .select(memberProfileSelect)
@@ -58,7 +58,7 @@ export async function updateMemberProfile(
   userId: string,
   data: Partial<Omit<MemberProfile, "id" | "userId" | "createdAt">>,
 ): Promise<MemberProfile | undefined> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: row, error } = await supabase
     .from("member_profiles")
     .update(profileUpdateToRow(data))

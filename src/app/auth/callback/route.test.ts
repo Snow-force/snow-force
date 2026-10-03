@@ -21,7 +21,7 @@ import { GET } from "./route";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.createClient.mockReturnValue({
+  mocks.createClient.mockResolvedValue({
     auth: {
       exchangeCodeForSession: mocks.exchangeCodeForSession,
       getUser: mocks.getUser,

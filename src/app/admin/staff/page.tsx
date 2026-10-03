@@ -17,11 +17,12 @@ const errorCopy: Record<string, string> = {
 const controlClass =
   "block h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-snow-500 focus:ring-2 focus:ring-snow-100";
 
-export default async function AdminStaffPage({
-  searchParams,
-}: {
-  searchParams: { error?: string; saved?: string };
-}) {
+export default async function AdminStaffPage(
+  props: {
+    searchParams: Promise<{ error?: string; saved?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const staffAccounts = await getStaffManagementAccounts();
   const message = searchParams.error
     ? errorCopy[searchParams.error] ?? "Staff access could not be updated."

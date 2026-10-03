@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("../supabase/server", () => ({
-  createClient: vi.fn(() => ({
+  createClient: vi.fn(async () => ({
     auth: {
       getUser: mockGetUser,
       signInWithPassword: mockSignInWithPassword,

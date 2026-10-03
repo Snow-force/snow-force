@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventDetailModule, EventRegistrationQuestion } from "@/lib/types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import {
   rowsToEvent,
   type EventAggregateWriteRows,
@@ -36,12 +37,19 @@ function eventCoreRow(slug: string, status: EventCoreRow["status"]): EventCoreRo
     allow_waitlist: false,
     allow_cancellation: false,
     fee_amount: "",
+    payment_model: "free",
+    deposit_amount: null,
+    deposit_currency: "usd",
+    full_payment_amount: null,
     payment_instructions_en: "",
     payment_instructions_zh: "",
     seo_title_en: "",
     seo_title_zh: "",
     seo_description_en: "",
     seo_description_zh: "",
+    waiver_text_en: null,
+    waiver_text_sha: null,
+    review_config: createDefaultReviewConfig(),
   };
 }
 

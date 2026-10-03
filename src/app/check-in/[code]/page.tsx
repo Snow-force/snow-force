@@ -31,13 +31,14 @@ const resultCopy: Record<string, { title: string; body: string; tone: string }> 
   },
 };
 
-export default function CheckinPage({
-  params,
-  searchParams,
-}: {
-  params: { code: string };
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function CheckinPage(
+  props: {
+    params: Promise<{ code: string }>;
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const result = searchParams.result
     ? resultCopy[searchParams.result] ?? {
         title: "Check-in unavailable / 无法签到",

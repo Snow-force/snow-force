@@ -45,8 +45,8 @@ import {
   upsertMemberEquipment,
 } from "./supporting";
 
-function siteUrl() {
-  const origin = headers().get("origin");
+async function siteUrl() {
+  const origin = (await headers()).get("origin");
   if (origin) {
     try {
       const url = new URL(origin);
@@ -62,12 +62,12 @@ function siteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
-function memberCallback(path: string) {
-  return memberAuthCallbackUrl(siteUrl(), path);
+async function memberCallback(path: string) {
+  return memberAuthCallbackUrl(await siteUrl(), path);
 }
 
-function hasMemberAuthCookie() {
-  return cookies()
+async function hasMemberAuthCookie() {
+  return (await cookies())
     .getAll()
     .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
 }
@@ -81,11 +81,11 @@ function nextPathFromForm(formData: FormData) {
 }
 
 export async function getCurrentMemberAccount() {
-  if (!hasMemberAuthCookie()) {
+  if (!(await hasMemberAuthCookie())) {
     return null;
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -127,7 +127,7 @@ export async function registerMemberProfile(formData: FormData) {
   }
 
   const acceptedAt = new Date().toISOString();
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: entry.email,
     password: entry.password,
@@ -135,7 +135,7 @@ export async function registerMemberProfile(formData: FormData) {
       data: {
         display_name: entry.displayName,
       },
-      emailRedirectTo: memberCallback(nextPathFromForm(formData)),
+      emailRedirectTo: await memberCallback(nextPathFromForm(formData)),
     },
   });
 
@@ -173,7 +173,7 @@ export async function registerMemberProfile(formData: FormData) {
   const consentSaved = await recordCurrentMemberConsents({
     acceptedAt,
     client: createAdminClient(),
-    locale: memberLocale(cookies().get("lang")?.value),
+    locale: memberLocale((await cookies()).get("lang")?.value),
     mediaAccepted: true,
     source: "email_registration",
     userId: data.user.id,
@@ -192,7 +192,7 @@ export async function loginMemberProfile(formData: FormData) {
     redirect("/member?error=login");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email: entry.email,
     password: entry.password,
@@ -226,11 +226,11 @@ export async function requestMemberMagicLink(formData: FormData) {
     redirect("/member?error=magic");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: entry.email,
     options: {
-      emailRedirectTo: memberCallback(nextPathFromForm(formData)),
+      emailRedirectTo: await memberCallback(nextPathFromForm(formData)),
     },
   });
   if (error) {
@@ -241,11 +241,11 @@ export async function requestMemberMagicLink(formData: FormData) {
 }
 
 export async function loginMemberWithGoogle(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: memberCallback(nextPathFromForm(formData)),
+      redirectTo: await memberCallback(nextPathFromForm(formData)),
     },
   });
   if (error || !data.url) {
@@ -261,9 +261,9 @@ export async function requestMemberPasswordReset(formData: FormData) {
     redirect("/member/forgot-password?error=email");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(entry.email, {
-    redirectTo: memberCallback("/member/reset-password"),
+    redirectTo: await memberCallback("/member/reset-password"),
   });
 
   redirect("/member/forgot-password?sent=1");
@@ -280,7 +280,7 @@ export async function confirmMemberEmail(formData: FormData) {
     redirect("/member?error=callback");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type: "email",
@@ -300,7 +300,7 @@ export async function acceptMemberConsent(formData: FormData) {
     redirect(`${memberConsentPath(next)}&error=required`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -310,7 +310,7 @@ export async function acceptMemberConsent(formData: FormData) {
   const saved = await recordCurrentMemberConsents({
     acceptedAt,
     client: supabase,
-    locale: memberLocale(cookies().get("lang")?.value),
+    locale: memberLocale((await cookies()).get("lang")?.value),
     mediaAccepted: true,
     source: "consent_page",
     userId: user.id,
@@ -326,7 +326,7 @@ export async function acceptMemberConsent(formData: FormData) {
 }
 
 export async function cancelMemberConsent() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/member?consentCancelled=1");
@@ -350,7 +350,7 @@ export async function resetMemberPassword(formData: FormData) {
     redirect(`/member/reset-password?error=${entry.error}`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: entry.password });
   if (error) {
     redirect("/member/reset-password?error=session");
@@ -371,7 +371,7 @@ export async function changeMemberPassword(formData: FormData) {
     redirect(`/member/account-settings?securityError=${entry.error}`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: entry.password });
   if (error) {
     redirect("/member/account-settings?securityError=session");
@@ -548,7 +548,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
 }
 
 export async function logoutMember() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/member");

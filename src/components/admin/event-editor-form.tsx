@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useState } from "react";
 
 import { saveEventAction, type EventEditorState } from "@/lib/events/actions";
 import { useLanguage } from "@/lib/language";
@@ -100,7 +99,7 @@ function FieldErrorSummary({ fieldErrors }: { fieldErrors?: Record<string, strin
 }
 
 export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean }) {
-  const [formState, formAction] = useFormState(saveEventAction, initialState);
+  const [formState, formAction] = useActionState(saveEventAction, initialState);
   const [draftEvent, setDraftEvent] = useState<Event>(event);
   const activeLang: ActiveLang = "en";
   const [activeStep, setActiveStep] = useState<StepId>("basic");

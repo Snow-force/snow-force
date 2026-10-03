@@ -1,3 +1,4 @@
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, expect, it } from "vitest";
 
 import type { Event, EventRecap } from "@/lib/types";
@@ -59,6 +60,14 @@ function eventDraft(): Event {
         items: { zh: ["zh gloves", "zh helmet"], en: [] },
       },
     ],
+    paymentModel: "free",
+    depositAmount: null,
+    depositCurrency: "usd",
+    fullPaymentAmount: null,
+    waiverTextEn: null,
+    waiverTextSha: null,
+    merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
   };
 }
 

@@ -22,13 +22,14 @@ const resultCopy: Record<string, { title: string; body: string }> = {
   },
 };
 
-export default function ReviewAccessPage({
-  params,
-  searchParams,
-}: {
-  params: { code: string };
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function ReviewAccessPage(
+  props: {
+    params: Promise<{ code: string }>;
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const result = searchParams.result
     ? resultCopy[searchParams.result] ?? {
         title: "Review unavailable / 无法填写反馈",

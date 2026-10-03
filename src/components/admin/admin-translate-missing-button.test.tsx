@@ -61,7 +61,7 @@ describe("AdminTranslateMissingButton", () => {
         );
       },
     );
-    const onApply = vi.fn<[AdminTranslationResult[]], void>();
+    const onApply = vi.fn<(translations: AdminTranslationResult[]) => void>();
 
     renderWithLanguage(
       <AdminTranslateMissingButton sourceLang="zh" targetLang="en" items={missingItems(55)} onApply={onApply} />,
@@ -99,7 +99,7 @@ describe("AdminTranslateMissingButton", () => {
         );
       },
     );
-    const onApply = vi.fn<[AdminTranslationResult[]], void>();
+    const onApply = vi.fn<(translations: AdminTranslationResult[]) => void>();
 
     renderWithLanguage(
       <AdminTranslateMissingButton sourceLang="zh" targetLang="en" items={missingItems(55)} onApply={onApply} />,

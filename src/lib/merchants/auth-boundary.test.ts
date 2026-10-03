@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import type { User } from "@supabase/supabase-js";
 import {
   MerchantAuthBoundaryError,
   assertMerchantAuthBoundary,
@@ -27,17 +28,13 @@ function stripComments(source: string): string {
     .replace(/^\s*\/\/.*$/gm, "");
 }
 
-function fakeUser(overrides: {
-  id?: string;
-  email?: string | null;
-  email_confirmed_at?: string | null;
-} = {}) {
+function fakeUser(overrides: Partial<Pick<User, "id" | "email" | "email_confirmed_at">> = {}): User {
   return {
     id: overrides.id ?? "merchant-user-1",
     email: overrides.email ?? "booth@example.com",
     email_confirmed_at:
       "email_confirmed_at" in overrides
-        ? overrides.email_confirmed_at ?? null
+        ? overrides.email_confirmed_at
         : "2026-07-22T10:00:00.000Z",
     app_metadata: {},
     user_metadata: {},
@@ -75,11 +72,12 @@ describe("merchant auth boundary", () => {
 
   it("S2-merchant-account-flags-unverified-email-as-false", () => {
     const account = createMerchantAuthAccount({
-      user: fakeUser({ email_confirmed_at: null }),
+      user: fakeUser({ email_confirmed_at: undefined }),
       profile: fakeProfile(),
     });
 
     expect(account.emailConfirmed).toBe(false);
+    expect(account.user.emailConfirmedAt).toBeNull();
   });
 
   it("S2-merchant-account-allows-null-profile-but-still-brands-the-account", () => {
@@ -127,9 +125,7 @@ describe("merchant auth boundary", () => {
       user_metadata: { is_merchant: "true" },
       app_metadata: { is_admin: true },
     };
-    const fields = toMerchantAuthUserFields(
-      full as unknown as Parameters<typeof toMerchantAuthUserFields>[0],
-    );
+    const fields = toMerchantAuthUserFields(full);
 
     expect(fields).toEqual({
       id: "merchant-user-1",

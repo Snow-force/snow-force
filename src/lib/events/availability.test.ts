@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Event } from "@/lib/types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { getEventAvailabilitySnapshot, isEventOpen } from "./availability";
 
 const openEvent: Event = {
@@ -33,6 +34,7 @@ const openEvent: Event = {
   waiverTextEn: null,
   waiverTextSha: null,
   merchantBoothProgram: null,
+  reviewConfig: createDefaultReviewConfig(),
 };
 
 describe("event availability", () => {

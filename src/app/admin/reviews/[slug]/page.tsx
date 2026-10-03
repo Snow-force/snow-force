@@ -34,13 +34,14 @@ async function campaignView(campaign: EventQrCampaign | undefined) {
   return { campaign, url, qr: await buildQrCodeDataUrl(url) };
 }
 
-export default async function AdminEventReviewsPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function AdminEventReviewsPage(
+  props: {
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const event = await getEventAdmin(params.slug);
   if (!event) notFound();
 

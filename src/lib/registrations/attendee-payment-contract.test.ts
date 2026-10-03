@@ -15,6 +15,9 @@ describe("attendee registration payment contract", () => {
       contactName: "Rider One",
       contactPhone: "555-0100",
       status: "confirmed",
+      attendanceStatus: "unmarked",
+      attendanceSource: null,
+      attendanceMarkedAt: null,
       finance: {
         depositAmount: 500,
         depositStatus: "paid",

@@ -479,10 +479,8 @@ describe("deterministic plan output", () => {
     const bad = parseFinalizeEntries(null);
     expect(bad).toHaveProperty("ok", false);
     if (!bad.ok) {
-      const codes: ValidationCode[] = ["code"];
-      codes.forEach((key) => {
-        expect(bad).toHaveProperty(key);
-      });
+      const expectedCode: ValidationCode = "not_array";
+      expect(bad).toHaveProperty("code", expectedCode);
     }
   });
 });

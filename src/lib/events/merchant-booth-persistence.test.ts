@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 import type { EventAggregateWriteRows } from "./mappers";
 import { saveEventAggregate } from "./repository";
@@ -11,6 +12,7 @@ describe("merchant booth program persistence", () => {
   it("saves the event aggregate through one RPC while retaining application-referenced booth identities", async () => {
     // Given: an existing application that references this stable plan UUID.
     const application = { requestedPlanId: planId };
+    const reviewConfig = createDefaultReviewConfig();
     const rows: EventAggregateWriteRows = {
       core: {
         slug: "venue-event",
@@ -44,7 +46,9 @@ describe("merchant booth program persistence", () => {
         seo_description_en: "",
         waiver_text_en: null,
         waiver_text_sha: null,
+        review_config: reviewConfig,
       },
+      reviewConfig,
       questions: [
         {
           event_slug: "venue-event",
@@ -106,6 +110,7 @@ describe("merchant booth program persistence", () => {
       p_core: rows.core,
       p_questions: rows.questions,
       p_modules: rows.modules,
+      p_review_config: reviewConfig,
       p_merchant_booth_program: expect.objectContaining({
         plans: expect.arrayContaining([expect.objectContaining({ id: application.requestedPlanId })]),
         booths: expect.arrayContaining([

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Event } from "@/lib/types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { selectPublicDisplayEvents } from "./public-display";
 
 function event(overrides: Partial<Event> = {}): Event {
@@ -34,6 +35,7 @@ function event(overrides: Partial<Event> = {}): Event {
     waiverTextEn: null,
     waiverTextSha: null,
     merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     ...overrides,
   };
 }

@@ -54,8 +54,8 @@ function merchantCallback(path: string): string {
   return merchantAuthCallbackUrl(siteUrl(), path);
 }
 
-function hasMerchantAuthCookie(): boolean {
-  return cookies()
+async function hasMerchantAuthCookie(): Promise<boolean> {
+  return (await cookies())
     .getAll()
     .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
 }
@@ -65,11 +65,11 @@ function nextPathFromForm(formData: FormData): string {
 }
 
 export async function getCurrentMerchantAccount(): Promise<MerchantAuthAccount | null> {
-  if (!hasMerchantAuthCookie()) {
+  if (!(await hasMerchantAuthCookie())) {
     return null;
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -114,7 +114,7 @@ export async function registerMerchantAccount(formData: FormData) {
     redirect(`/merchant?error=${entry.error}`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   // We intentionally do NOT pass `data: { role: 'merchant' }` here.
   // `user_metadata` is user-editable on the client and would let a
   // merchant self-promote; the merchant role here is implied by ownership
@@ -168,7 +168,7 @@ export async function loginMerchantAccount(formData: FormData) {
     redirect(`/merchant?error=${entry.error}`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({
     email: entry.email,
     password: entry.password,
@@ -182,7 +182,7 @@ export async function loginMerchantAccount(formData: FormData) {
 }
 
 export async function loginMerchantWithGoogle(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -202,7 +202,7 @@ export async function requestMerchantMagicLink(formData: FormData) {
     redirect("/merchant?error=magic");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: entry.email,
     options: {
@@ -222,7 +222,7 @@ export async function requestMerchantPasswordReset(formData: FormData) {
     redirect("/merchant/forgot-password?error=email");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(entry.email, {
     redirectTo: merchantCallback("/merchant/reset-password"),
   });
@@ -236,7 +236,7 @@ export async function resendMerchantVerification(formData: FormData) {
     redirect("/merchant?error=verification-email");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.resend({
     type: "signup",
     email: entry.email,
@@ -257,7 +257,7 @@ export async function resetMerchantPassword(formData: FormData) {
     redirect(`/merchant/reset-password?error=${entry.error}`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: entry.password });
   if (error) {
     redirect("/merchant/reset-password?error=session");
@@ -307,7 +307,7 @@ export async function saveMerchantProfile(formData: FormData) {
 }
 
 export async function logoutMerchant() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/merchant");

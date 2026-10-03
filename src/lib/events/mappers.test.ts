@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import {
   eventAggregateToWriteRows,
   rowsToEvent,
@@ -37,6 +38,9 @@ const core: EventCoreRow = {
   seo_title_en: "",
   seo_description_zh: "",
   seo_description_en: "",
+  waiver_text_en: null,
+  waiver_text_sha: null,
+  review_config: createDefaultReviewConfig(),
 };
 
 const question: EventRegistrationQuestionRow = {

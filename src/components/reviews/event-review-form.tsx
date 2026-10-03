@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 import {
   submitEventReviewAction,
@@ -15,7 +16,7 @@ export function EventReviewForm(props: {
   accessCode: string;
   config: EventReviewConfig;
 }) {
-  const [state, action] = useFormState(submitEventReviewAction, initialState);
+  const [state, action] = useActionState(submitEventReviewAction, initialState);
   const { lang, t } = useLanguage();
 
   return (

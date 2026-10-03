@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 import {
   eventAggregateToWriteRows,
@@ -43,6 +44,7 @@ function makeCore(overrides: Partial<EventCoreRow> = {}): EventCoreRow {
     seo_description_en: "",
     waiver_text_en: null,
     waiver_text_sha: null,
+    review_config: createDefaultReviewConfig(),
     ...overrides,
   };
 }

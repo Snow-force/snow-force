@@ -6,7 +6,7 @@ vi.mock("@/lib/auth/admin", () => ({
   requireAdmin: vi.fn(async () => ({ id: "staff", email: "staff@example.com", role: "admin" })),
 }));
 
-const getRegistrationsMock = vi.fn<[], Promise<Registration[]>>();
+const getRegistrationsMock = vi.fn<() => Promise<Registration[]>>();
 
 vi.mock("@/lib/registrations/repository", () => ({
   getRegistrations: getRegistrationsMock,
@@ -23,6 +23,9 @@ function registration(id: string, eventSlug: string): Registration {
     contactName: id,
     contactPhone: "",
     status: "confirmed",
+    attendanceStatus: "unmarked",
+    attendanceSource: null,
+    attendanceMarkedAt: null,
     createdAt: "2026-06-03T00:00:00.000Z",
     updatedAt: "2026-06-03T00:00:00.000Z",
   };

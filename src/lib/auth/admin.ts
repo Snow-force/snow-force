@@ -29,7 +29,7 @@ export async function isAdminAuthenticated() {
 }
 
 export async function getCurrentStaffAccount(): Promise<StaffAccount | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -66,7 +66,7 @@ export async function loginStaff(formData: FormData) {
   const password = readRequiredString(formData, "password");
   if (!email || !password) redirect("/staff-login?error=credentials");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) {
     redirect("/staff-login?error=credentials");
@@ -84,7 +84,7 @@ export async function loginStaff(formData: FormData) {
 export const loginAdmin = loginStaff;
 
 export async function logoutAdmin() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/staff-login");
 }

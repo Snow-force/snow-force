@@ -6,6 +6,7 @@ import type { Event, Registration } from "@/lib/types";
 import type { PendingRegistration } from "@/lib/registrations/pending-repository";
 import type { FulfillmentDeps, PaidCheckoutSession } from "./fulfillment";
 import { fulfillCheckoutSession } from "./fulfillment";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 const pending: PendingRegistration = {
   id: "pending-1", eventSlug: "mammoth", memberId: "member-1", answers: {}, consentGiven: true,
@@ -27,6 +28,7 @@ const event: Event = {
   allowWaitlist: false, allowCancellation: true, feeAmount: "99", paymentModel: "deposit",
   depositAmount: 99, depositCurrency: "usd", fullPaymentAmount: null, paymentInstructions: { en: "", zh: "" },
   seoTitle: { en: "", zh: "" }, seoDescription: { en: "", zh: "" }, registrationQuestions: [], detailModules: [], merchantBoothProgram: null,
+  waiverTextEn: null, waiverTextSha: null, reviewConfig: createDefaultReviewConfig(),
 };
 
 function paidSession(): PaidCheckoutSession {
@@ -34,10 +36,10 @@ function paidSession(): PaidCheckoutSession {
     id: "cs_live_1", status: "complete", payment_status: "paid", amount_total: 9900, currency: "usd",
     payment_intent: "pi_live_1",
     metadata: { pendingRegistrationId: pending.id, checkoutAttemptId: "attempt-1", eventSlug: "mammoth", memberId: "member-1" },
-  } as PaidCheckoutSession;
+  };
 }
 
-function registration(): Registration {
+function registration(): Registration & { finance: NonNullable<Registration["finance"]> } {
   return {
     id: "registration-1", eventSlug: "mammoth", memberId: "member-1", answers: {}, consentGiven: true,
     contactEmail: "lanfeng@example.com", contactName: "Lanfeng Sun", contactPhone: "", status: "confirmed",

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useLanguage } from "@/lib/language";
 
 export default function AboutPage() {
@@ -71,10 +73,12 @@ export default function AboutPage() {
               })}
             </p>
           </div>
-          <div className="rounded-3xl overflow-hidden shadow-xl aspect-[4/5] sm:aspect-[5/6] bg-gray-900">
-            <img
+          <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/5] sm:aspect-[5/6] bg-gray-900">
+            <Image
               src="/team/group.jpg"
               alt={t({ en: "SnowForce Team", zh: "SnowForce 团队" })}
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
               className="h-full w-full object-cover"
             />
           </div>
@@ -118,8 +122,8 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
           {teamMembers.map((m) => (
             <div key={m.name} className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden bg-white">
-              <div className="aspect-[4/5] bg-gray-900 overflow-hidden">
-                <img src={m.image} alt={m.name} className="h-full w-full object-cover" />
+              <div className="relative aspect-[4/5] bg-gray-900 overflow-hidden">
+                <Image src={m.image} alt={m.name} fill sizes="(min-width: 640px) 50vw, 100vw" className="h-full w-full object-cover" />
               </div>
               <div className="p-6 sm:p-8">
                 <p className="text-snow-600 font-semibold text-sm tracking-wide">
@@ -172,7 +176,7 @@ export default function AboutPage() {
             </div>
           </div>
           <div className="mt-8 rounded-3xl bg-gray-900 text-white p-8 sm:p-12 flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
-            <img src="/logo.jpg" alt="SnowForce" className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl object-cover shrink-0" />
+            <Image src="/logo.jpg" alt="SnowForce" width={112} height={112} className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl object-cover shrink-0" />
             <div className="text-center sm:text-left">
               <h3 className="text-2xl sm:text-3xl font-semibold">{t({ en: "Brand Vision", zh: "品牌愿景" })}</h3>
               <p className="mt-3 text-lg text-gray-300">{t({ en: "To make SnowForce the spiritual home of every skier.", zh: "让 SnowForce 成为每一位滑雪爱好者的精神家园。" })}</p>

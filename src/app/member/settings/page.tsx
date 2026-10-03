@@ -8,11 +8,12 @@ import { getRecaps } from "@/lib/recaps/repository";
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
 import { memberConsentPath } from "@/lib/members/member-consents";
 
-export default async function MemberSettingsPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function MemberSettingsPage(
+  props: {
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const account = await getCurrentMemberAccount();
 
   if (account && (!account.privacyAccepted || !account.profile)) redirect(memberConsentPath("/member/settings"));

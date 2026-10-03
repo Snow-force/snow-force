@@ -1,3 +1,4 @@
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -15,16 +16,18 @@ vi.mock("@/lib/payments/actions", () => ({
   createCheckoutSessionAction: vi.fn(),
 }));
 
+const mockLocation = { href: "" };
+
 beforeAll(() => {
   Object.defineProperty(window, "location", {
     writable: true,
-    value: { href: "" },
+    value: mockLocation,
   });
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  window.location.href = "";
+  mockLocation.href = "";
 });
 
 function renderWithLanguage(ui: React.ReactNode) {
@@ -100,18 +103,22 @@ function createEvent(overrides: Partial<Event> = {}): Event {
     seoDescription: { en: "", zh: "" },
     registrationQuestions: [],
     detailModules: [],
+    waiverTextEn: null,
+    waiverTextSha: null,
+    merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     ...overrides,
   };
 }
 
 describe("RegistrationForm payment model branching", () => {
-  it("free event keeps the pending confirmation flow", async () => {
+  it("free event keeps the signed-in member confirmation flow", async () => {
     const user = userEvent.setup();
     vi.mocked(registerForEvent).mockResolvedValueOnce({
       success: true,
       pending: true,
       email: "test@test.com",
-      confirmation: "email",
+      confirmation: "member",
       pendingRegistrationId: "p1",
     });
 
@@ -126,8 +133,8 @@ describe("RegistrationForm payment model branching", () => {
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
-    expect(await screen.findByText(/Check your email/i)).toBeInTheDocument();
-    expect(screen.getByText(/test@test\.com/)).toBeInTheDocument();
+    expect(await screen.findByText(/Confirm in your member home/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go to member home" })).toHaveAttribute("href", "/member");
     expect(screen.queryByRole("button", { name: /pay/i })).not.toBeInTheDocument();
   });
 

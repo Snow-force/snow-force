@@ -1,0 +1,508 @@
+[
+  {
+    "handle": "vector-insnow-dusk",
+    "brand": "VECTOR",
+    "category": "outerwear",
+    "name": {
+      "en": "Insnow Dusk softshell jacket",
+      "zh": "Insnow Dusk 软壳开襟滑雪服"
+    },
+    "description": {
+      "en": "All Mountain softshell with four-way stretch and a graphene fleece lining. Catalog waterproof rating: ≥10,000 mm.",
+      "zh": "全能系列，四面弹软壳贴合石墨烯摇粒绒。图册标注防水 ≥10,000 mm，配备雪卡袋与防风袖口。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/vector-insnow-dusk.webp",
+    "candidate_colors": [
+      {
+        "en": "Dawn pink",
+        "zh": "晨曦粉"
+      },
+      {
+        "en": "Blue-purple",
+        "zh": "蓝调紫"
+      },
+      {
+        "en": "Dusk purple",
+        "zh": "夜幕紫"
+      },
+      {
+        "en": "Sunset red",
+        "zh": "幻日红"
+      }
+    ],
+    "candidate_sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "source": {
+      "file": "2026FW VECTOR成人产品手册.pdf",
+      "page": 13
+    }
+  },
+  {
+    "handle": "vector-voyager",
+    "brand": "VECTOR",
+    "category": "outerwear",
+    "name": {
+      "en": "Voyager insulated jacket",
+      "zh": "Voyager 加棉撞色开襟滑雪服"
+    },
+    "description": {
+      "en": "All Mountain insulated jacket with SORONA fill, snow skirt and contrasting zippers. Catalog waterproof rating: ≥20,000 mm.",
+      "zh": "全能系列，SORONA 生物基填充、腰部防雪裙、撞色拉链与双重防风袖口。图册标注防水 ≥20,000 mm。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/vector-voyager.webp",
+    "candidate_colors": [
+      {
+        "en": "Black",
+        "zh": "经典黑"
+      },
+      {
+        "en": "White",
+        "zh": "松雾白"
+      },
+      {
+        "en": "Lilac",
+        "zh": "兰花紫"
+      },
+      {
+        "en": "Ice blue",
+        "zh": "冰川蓝"
+      },
+      {
+        "en": "Pink",
+        "zh": "树莓粉"
+      },
+      {
+        "en": "Green",
+        "zh": "越野绿"
+      },
+      {
+        "en": "Purple",
+        "zh": "青藤紫"
+      }
+    ],
+    "candidate_sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "source": {
+      "file": "2026FW VECTOR成人产品手册.pdf",
+      "page": 15
+    }
+  },
+  {
+    "handle": "isee-barbie-set",
+    "brand": "ISEE MIGGA",
+    "category": "outerwear",
+    "name": {
+      "en": "Rhinestone Barbie snow set",
+      "zh": "满钻芭比滑雪套装"
+    },
+    "description": {
+      "en": "A pink snow apparel set from the Autumn 2026 collection. Ask us to confirm the available size and set contents.",
+      "zh": "2026 秋季选款图册中的粉色滑雪套装。具体尺码与套装配置请咨询确认。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/isee-barbie-set.webp",
+    "candidate_colors": [
+      {
+        "en": "Pink",
+        "zh": "粉色"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "2026 雪服选货清单图册 - 8.10更新.pdf",
+      "page": 2
+    }
+  },
+  {
+    "handle": "burton-acamar-jacket",
+    "brand": "BURTON",
+    "category": "outerwear",
+    "name": {
+      "en": "Women's [ak] Acamar GORE-TEX PRO 3L jacket",
+      "zh": "女式 [ak] Acamar GORE-TEX PRO 三层夹克"
+    },
+    "description": {
+      "en": "Technical three-layer GORE-TEX Pro shell with a regular articulated fit and zip vents, as described in the 26/27 catalog.",
+      "zh": "图册所载专业级三层 GORE-TEX Pro 面料、常规立体剪裁与拉链式透气口。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/burton-acamar-jacket.webp",
+    "candidate_colors": [
+      {
+        "en": "True Black",
+        "zh": "True Black 黑色"
+      },
+      {
+        "en": "Nightshade / Purple Voltage",
+        "zh": "Nightshade / Purple Voltage 紫色"
+      }
+    ],
+    "candidate_sizes": [
+      "XXS",
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "source": {
+      "file": "26-27 BURTON softgoods-1222.pdf",
+      "page": 8
+    }
+  },
+  {
+    "handle": "isee-magnetic-goggles",
+    "brand": "ISEE MIGGA",
+    "category": "goggles",
+    "name": {
+      "en": "Magnetic goggles 2.0",
+      "zh": "磁吸雪镜 2.0"
+    },
+    "description": {
+      "en": "Magnetic goggles in four catalog colorways. Confirm lens specifications and helmet fit before ordering.",
+      "zh": "图册提供四款配色。镜片规格、头盔适配与供货情况请在选购前确认。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/isee-magnetic-goggles.webp",
+    "candidate_colors": [
+      {
+        "en": "Sakura pink",
+        "zh": "落樱粉"
+      },
+      {
+        "en": "Purple",
+        "zh": "幻夜紫"
+      },
+      {
+        "en": "Black",
+        "zh": "暗影黑"
+      },
+      {
+        "en": "Gray",
+        "zh": "暮岩灰"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "ISEE MIGGA 配件选款图册-26.2.4.pdf",
+      "page": 18
+    }
+  },
+  {
+    "handle": "rev-f3-carbon",
+    "brand": "REV",
+    "category": "accessories",
+    "name": {
+      "en": "F3 forged carbon Mips helmet",
+      "zh": "F3 逆鳞哑光锻造碳 Mips 头盔"
+    },
+    "description": {
+      "en": "The F3 matte forged-carbon Mips model. Use your measured head circumference to choose the catalog size, then confirm fit.",
+      "zh": "F3 逆鳞哑光锻造碳 Mips 款。请按实测头围选择图册尺码，并咨询确认佩戴适配。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/rev-f3-carbon.webp",
+    "candidate_colors": [
+      {
+        "en": "Matte carbon",
+        "zh": "逆鳞哑光"
+      }
+    ],
+    "candidate_sizes": [
+      "M · 55–58 cm",
+      "L · 58–61 cm",
+      "XL · 61–63 cm"
+    ],
+    "source": {
+      "file": "REV 2026 产品手册(1).pdf",
+      "page": 14
+    }
+  },
+  {
+    "handle": "vector-rogue-kids",
+    "brand": "VECTOR",
+    "category": "kids",
+    "name": {
+      "en": "Rogue kids' insulated jacket",
+      "zh": "Rogue 儿童加棉滑雪服"
+    },
+    "description": {
+      "en": "Kids' All Mountain jacket with SORONA fill, snow skirt and sleeve pass pocket. Catalog waterproof rating: ≥20,000 mm.",
+      "zh": "儿童全能系列，SORONA 生物基填充、内置雪镜袋、腰部防雪裙与雪卡袋。图册标注防水 ≥20,000 mm。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/vector-rogue-kids.webp",
+    "candidate_colors": [
+      {
+        "en": "Racing red-blue",
+        "zh": "竞速红蓝"
+      },
+      {
+        "en": "Pink / ice blue",
+        "zh": "粉雪冰蓝"
+      },
+      {
+        "en": "Space blue",
+        "zh": "太空蓝"
+      },
+      {
+        "en": "Ice blue",
+        "zh": "碎冰蓝"
+      }
+    ],
+    "candidate_sizes": [
+      "110",
+      "120",
+      "130",
+      "140",
+      "150",
+      "160"
+    ],
+    "source": {
+      "file": "2026FW VECTOR儿童产品手册.pdf",
+      "page": 12
+    }
+  },
+  {
+    "handle": "vector-kids-colorblock",
+    "brand": "VECTOR",
+    "category": "kids",
+    "name": {
+      "en": "Neon kids' relaxed pullover jacket",
+      "zh": "Neon 儿童宽松套头滑雪服"
+    },
+    "description": {
+      "en": "A colorblock pullover from VECTOR's kids' All Mountain range, with an underarm side zipper and an adjustable hem.",
+      "zh": "VECTOR 儿童全能系列，配备腋下侧开拉链、储物大口袋与可调节下摆。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/vector-kids-colorblock.webp",
+    "candidate_colors": [
+      {
+        "en": "Lava orange",
+        "zh": "熔岩橙"
+      },
+      {
+        "en": "Forest",
+        "zh": "山林秘径"
+      },
+      {
+        "en": "Lake green",
+        "zh": "镜湖绿"
+      },
+      {
+        "en": "Aurora pink",
+        "zh": "极光桃粉"
+      }
+    ],
+    "candidate_sizes": [
+      "110",
+      "120",
+      "130",
+      "140",
+      "150",
+      "160"
+    ],
+    "source": {
+      "file": "2026FW VECTOR儿童产品手册.pdf",
+      "page": 14
+    }
+  },
+  {
+    "handle": "psn-aspen",
+    "brand": "PSN",
+    "category": "outerwear",
+    "name": {
+      "en": "Aspen cropped down ski jacket",
+      "zh": "Aspen 短款羽绒滑雪服"
+    },
+    "description": {
+      "en": "A cropped jacket with a 3L composite fabric, down insulation, removable hood and snow skirt. Price is for the jacket only.",
+      "zh": "3L 复合面料、95 拒水白鸭绒、可拆卸帽子与防风裙。参考价仅为外套，图片中的连体服不包含在内。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/psn-aspen.webp",
+    "candidate_colors": [
+      {
+        "en": "Sakura",
+        "zh": "樱花粉"
+      },
+      {
+        "en": "Bleu Glacier",
+        "zh": "冰川蓝"
+      },
+      {
+        "en": "Violet Glacé",
+        "zh": "冰晶紫"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "PSN_2026-27_Alpine_Collection(1).pdf",
+      "page": 3
+    }
+  },
+  {
+    "handle": "burton-acamar-bib",
+    "brand": "BURTON",
+    "category": "outerwear",
+    "name": {
+      "en": "Women's [ak] Acamar GORE-TEX PRO 3L bib",
+      "zh": "女式 [ak] Acamar GORE-TEX PRO 三层背带裤"
+    },
+    "description": {
+      "en": "Technical three-layer GORE-TEX Pro shell with a stretch-woven upper and regular fit, as described in the catalog.",
+      "zh": "专业级三层 GORE-TEX Pro 防水透气面料，搭配弹力梭织上装设计与常规剪裁。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/burton-acamar-bib.webp",
+    "candidate_colors": [
+      {
+        "en": "True Black",
+        "zh": "True Black 黑色"
+      },
+      {
+        "en": "Nightshade Purple",
+        "zh": "Nightshade Purple 紫色"
+      }
+    ],
+    "candidate_sizes": [
+      "XXS",
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "source": {
+      "file": "26-27 BURTON softgoods-1222.pdf",
+      "page": 8
+    }
+  },
+  {
+    "handle": "isee-monogram-set",
+    "brand": "ISEE MIGGA",
+    "category": "outerwear",
+    "name": {
+      "en": "Pink monogram snow set",
+      "zh": "粉色老花滑雪套装"
+    },
+    "description": {
+      "en": "Pink monogram snow apparel from the Autumn 2026 catalog. Confirm sizes and set contents before ordering.",
+      "zh": "2026 秋季选款图册中的粉色老花套装。尺码与套装配置请咨询确认。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/isee-monogram-set.webp",
+    "candidate_colors": [
+      {
+        "en": "Pink",
+        "zh": "粉色"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "2026 雪服选货清单图册 - 8.10更新.pdf",
+      "page": 3
+    }
+  },
+  {
+    "handle": "isee-logo-gloves",
+    "brand": "ISEE MIGGA",
+    "category": "accessories",
+    "name": {
+      "en": "Raised-logo snow gloves",
+      "zh": "立体 logo 滑雪手套"
+    },
+    "description": {
+      "en": "Raised-logo gloves in five catalog colorways. Ask us to confirm size and insulation details.",
+      "zh": "五款图册配色的立体 logo 手套。尺码与保暖规格请咨询确认。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/isee-logo-gloves.webp",
+    "candidate_colors": [
+      {
+        "en": "Black / white",
+        "zh": "黑白"
+      },
+      {
+        "en": "Blue",
+        "zh": "蓝色"
+      },
+      {
+        "en": "Purple",
+        "zh": "紫色"
+      },
+      {
+        "en": "Pink / black",
+        "zh": "粉黑"
+      },
+      {
+        "en": "Khaki",
+        "zh": "卡其"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "ISEE MIGGA 配件选款图册-26.2.4.pdf",
+      "page": 35
+    }
+  },
+  {
+    "handle": "isee-down-liner",
+    "brand": "ISEE MIGGA",
+    "category": "outerwear",
+    "name": {
+      "en": "Down layering jacket",
+      "zh": "羽绒内胆"
+    },
+    "description": {
+      "en": "A layering piece from the accessories catalog, offered in black and white. Confirm size and fill specifications with us.",
+      "zh": "配件图册中的羽绒内胆，提供黑色和白色。具体尺码与填充规格请咨询确认。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/isee-down-liner.webp",
+    "candidate_colors": [
+      {
+        "en": "Black",
+        "zh": "黑色"
+      },
+      {
+        "en": "White",
+        "zh": "白色"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "ISEE MIGGA 配件选款图册-26.2.4.pdf",
+      "page": 1
+    }
+  },
+  {
+    "handle": "isee-bunny-hoodie",
+    "brand": "ISEE MIGGA",
+    "category": "outerwear",
+    "name": {
+      "en": "Bunny-ear hoodie",
+      "zh": "兔耳朵卫衣"
+    },
+    "description": {
+      "en": "A mint-green hoodie with a bunny-ear hood, featured in the accessories catalog. Confirm the size range before ordering.",
+      "zh": "配件图册中的薄荷绿兔耳朵卫衣。具体尺码范围请咨询确认。"
+    },
+    "image": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/drafts/isee-bunny-hoodie.webp",
+    "candidate_colors": [
+      {
+        "en": "Mint green",
+        "zh": "薄荷绿"
+      }
+    ],
+    "candidate_sizes": [],
+    "source": {
+      "file": "ISEE MIGGA 配件选款图册-26.2.4.pdf",
+      "page": 3
+    }
+  }
+]

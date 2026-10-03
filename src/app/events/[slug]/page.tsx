@@ -5,11 +5,12 @@ import { getCurrentMemberAccount } from "@/lib/members/actions";
 
 import { buildEventMetadata } from "./metadata-builder";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   try {
     const event = await getEvent(params.slug);
@@ -19,11 +20,11 @@ export async function generateMetadata({
   }
 }
 
-export default async function EventDetailPage({ params }: { params: { slug: string } }) {
+export default async function EventDetailPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const account = await getCurrentMemberAccount();
-  try {
-    return <EventDetailView event={await getEvent(params.slug)} memberProfile={account?.profile ?? null} emailConfirmed={account?.emailConfirmed ?? false} />;
-  } catch {
-    return <EventDetailView event={undefined} loadError memberProfile={account?.profile ?? null} emailConfirmed={account?.emailConfirmed ?? false} />;
-  }
+  const result = await getEvent(params.slug)
+    .then((event) => ({ event, loadError: false }))
+    .catch(() => ({ event: undefined, loadError: true }));
+  return <EventDetailView {...result} memberProfile={account?.profile ?? null} emailConfirmed={account?.emailConfirmed ?? false} />;
 }

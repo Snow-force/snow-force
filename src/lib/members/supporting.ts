@@ -19,25 +19,23 @@ function toNotification(row: NotificationRow): MemberNotification {
   return { id: row.id, profileId: row.profile_id, type: row.type as MemberNotification["type"], title: row.title, body: row.body, href: row.href, readAt: row.read_at, createdAt: row.created_at };
 }
 
-const supabase = () => createClient();
-
 export async function getMemberPasses(profileId: string): Promise<MemberPass[]> {
-  const { data } = await supabase().from("member_passes").select("*").eq("profile_id", profileId).order("created_at");
+  const { data } = await (await createClient()).from("member_passes").select("*").eq("profile_id", profileId).order("created_at");
   return ((data ?? []) as PassRow[]).map(toPass);
 }
 
 export async function addMemberPass(profileId: string, passType: MemberPass["passType"], label = "") {
-  const { data } = await supabase().from("member_passes").insert({ profile_id: profileId, pass_type: passType, label }).select("*").single();
+  const { data } = await (await createClient()).from("member_passes").insert({ profile_id: profileId, pass_type: passType, label }).select("*").single();
   if (!data) return null;
   return toPass(data as PassRow);
 }
 
 export async function removeMemberPass(passId: string) {
-  await supabase().from("member_passes").delete().eq("id", passId);
+  await (await createClient()).from("member_passes").delete().eq("id", passId);
 }
 
 export async function getMemberEquipment(profileId: string): Promise<MemberEquipmentRow | null> {
-  const { data } = await supabase().from("member_equipment").select("*").eq("profile_id", profileId).maybeSingle<EquipmentRow>();
+  const { data } = await (await createClient()).from("member_equipment").select("*").eq("profile_id", profileId).maybeSingle<EquipmentRow>();
   return data ? toEquipment(data) : null;
 }
 
@@ -52,37 +50,37 @@ export async function upsertMemberEquipment(profileId: string, equipment: Partia
     note: equipment.note ?? "",
   };
   if (exists) {
-    const { data } = await supabase().from("member_equipment").update(row).eq("profile_id", profileId).select("*").maybeSingle<EquipmentRow>();
+    const { data } = await (await createClient()).from("member_equipment").update(row).eq("profile_id", profileId).select("*").maybeSingle<EquipmentRow>();
     return data ? toEquipment(data) : null;
   }
-  const { data } = await supabase().from("member_equipment").insert(row).select("*").single<EquipmentRow>();
+  const { data } = await (await createClient()).from("member_equipment").insert(row).select("*").single<EquipmentRow>();
   return data ? toEquipment(data) : null;
 }
 
 export async function getSavedEvents(profileId: string): Promise<SavedEvent[]> {
-  const { data } = await supabase().from("saved_events").select("*").eq("profile_id", profileId).order("saved_at", { ascending: true });
+  const { data } = await (await createClient()).from("saved_events").select("*").eq("profile_id", profileId).order("saved_at", { ascending: true });
   return ((data ?? []) as SavedEventRow[]).map(toSaved);
 }
 
 export async function saveEvent(profileId: string, eventSlug: string) {
-  const { data } = await supabase().from("saved_events").insert({ profile_id: profileId, event_slug: eventSlug }).select("*").single();
+  const { data } = await (await createClient()).from("saved_events").insert({ profile_id: profileId, event_slug: eventSlug }).select("*").single();
   return data ? toSaved(data as SavedEventRow) : null;
 }
 
 export async function unsaveEvent(profileId: string, eventSlug: string) {
-  await supabase().from("saved_events").delete().eq("profile_id", profileId).eq("event_slug", eventSlug);
+  await (await createClient()).from("saved_events").delete().eq("profile_id", profileId).eq("event_slug", eventSlug);
 }
 
 export async function getNotifications(profileId: string): Promise<MemberNotification[]> {
-  const { data } = await supabase().from("notifications").select("*").eq("profile_id", profileId).order("created_at", { ascending: false }).limit(20);
+  const { data } = await (await createClient()).from("notifications").select("*").eq("profile_id", profileId).order("created_at", { ascending: false }).limit(20);
   return ((data ?? []) as NotificationRow[]).map(toNotification);
 }
 
 export async function markNotificationRead(notificationId: string) {
-  await supabase().from("notifications").update({ read_at: new Date().toISOString() }).eq("id", notificationId);
+  await (await createClient()).from("notifications").update({ read_at: new Date().toISOString() }).eq("id", notificationId);
 }
 
 export async function createNotification(profileId: string, type: MemberNotification["type"], title: string, body = "", href = "") {
-  const { data } = await supabase().from("notifications").insert({ profile_id: profileId, type, title, body, href }).select("*").single();
+  const { data } = await (await createClient()).from("notifications").insert({ profile_id: profileId, type, title, body, href }).select("*").single();
   return data ? toNotification(data as NotificationRow) : null;
 }

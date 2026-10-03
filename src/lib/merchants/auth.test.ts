@@ -23,8 +23,9 @@ const mockResetPasswordForEmail = vi.hoisted(() => vi.fn());
 const mockUpdateUser = vi.hoisted(() => vi.fn());
 const mockSignOut = vi.hoisted(() => vi.fn());
 const mockGetUser = vi.hoisted(() => vi.fn());
+const mockCookieGetAll = vi.hoisted(() => vi.fn());
 const mockCreateClient = vi.hoisted(() =>
-  vi.fn(() => ({
+  vi.fn(async () => ({
     auth: {
       resend: mockResend,
       signUp: mockSignUp,
@@ -82,8 +83,8 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => ({
-    getAll: vi.fn(() => [{ name: "sb-snowforce-auth-token", value: "cookie" }]),
+  cookies: vi.fn(async () => ({
+    getAll: mockCookieGetAll,
   })),
 }));
 
@@ -161,6 +162,7 @@ function form(entries: Record<string, string>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockCookieGetAll.mockReturnValue([{ name: "sb-snowforce-auth-token", value: "cookie" }]);
   mockMemberProfileTouchedClear();
   // Default: a verified user with a known id.
   mockGetUser.mockResolvedValue({
@@ -193,10 +195,7 @@ describe("merchant auth account lookup", () => {
   });
 
   it("S2-anonymous-user-cannot-reach-application-actions", async () => {
-    const { cookies } = await import("next/headers");
-    vi.mocked(cookies).mockReturnValueOnce({
-      getAll: vi.fn(() => []),
-    } as unknown as ReturnType<typeof cookies>);
+    mockCookieGetAll.mockReturnValueOnce([]);
 
     const account = await getCurrentMerchantAccount();
     expect(account).toBeNull();

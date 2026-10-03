@@ -5,13 +5,14 @@ import { EventReviewForm } from "@/components/reviews/event-review-form";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getMemberReviewSession } from "@/lib/reviews/repository";
 
-export default async function ReviewFormPage({
-  params,
-  searchParams,
-}: {
-  params: { code: string };
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function ReviewFormPage(
+  props: {
+    params: Promise<{ code: string }>;
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const account = await getCurrentMemberAccount();
   if (!account?.profile) {
     redirect(`/member?next=${encodeURIComponent(`/reviews/${params.code}`)}`);

@@ -1,3 +1,4 @@
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, expect, it } from "vitest";
 import type { Event } from "@/lib/types";
 
@@ -31,6 +32,10 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     seoDescription: { en: "", zh: "" },
     registrationQuestions: [],
     detailModules: [],
+    waiverTextEn: null,
+    waiverTextSha: null,
+    merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     ...overrides,
   };
 }
@@ -51,8 +56,8 @@ describe("buildEventMetadata", () => {
     expect(meta.alternates?.canonical).toBe("https://snowforce.app/events/tahoe-2026");
     expect(meta.openGraph?.url).toBe("https://snowforce.app/events/tahoe-2026");
     expect(meta.openGraph?.images).toEqual([{ url: "https://img.example/t.jpg" }]);
-    expect(meta.openGraph?.type).toBe("website");
-    expect(meta.twitter?.card).toBe("summary_large_image");
+    expect(meta.openGraph && "type" in meta.openGraph ? meta.openGraph.type : undefined).toBe("website");
+    expect(meta.twitter && "card" in meta.twitter ? meta.twitter.card : undefined).toBe("summary_large_image");
     expect(meta.twitter?.title).toBe("Tahoe Trip 2026");
     expect(meta.twitter?.description).toBe("Join us");
     expect(meta.twitter?.images).toEqual(["https://img.example/t.jpg"]);

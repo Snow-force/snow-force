@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   cookieStore: { getAll: vi.fn(), set: vi.fn() },
+  cookies: vi.fn(),
   createServerClient: vi.fn(),
   createSupabaseClient: vi.fn(),
 }));
 
-vi.mock("next/headers", () => ({ cookies: vi.fn(() => mocks.cookieStore) }));
+vi.mock("next/headers", () => ({ cookies: mocks.cookies }));
 vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createSupabaseClient }));
 
@@ -14,6 +15,7 @@ import { createAdminClient, createClient, hasPublicSupabaseConfig } from "./serv
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.cookies.mockResolvedValue(mocks.cookieStore);
   mocks.cookieStore.getAll.mockReturnValue([{ name: "sb-auth", value: "session" }]);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "publishable-key");
@@ -23,8 +25,31 @@ beforeEach(() => {
 });
 
 describe("server Supabase clients", () => {
-  it("uses only the publishable key and forwards request cookies to the SSR client", () => {
-    createClient();
+  it("waits for request cookies before creating the authenticated client", async () => {
+    let releaseCookies: (store: typeof mocks.cookieStore) => void = () => {
+      throw new Error("Cookie request was not initialized.");
+    };
+    const pendingCookies = new Promise<typeof mocks.cookieStore>((resolve) => {
+      releaseCookies = resolve;
+    });
+    mocks.cookies.mockReturnValueOnce(pendingCookies);
+
+    const pendingClient = createClient();
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+    releaseCookies(mocks.cookieStore);
+    await pendingClient;
+    expect(mocks.createServerClient).toHaveBeenCalledOnce();
+  });
+
+  it("propagates a failed cookie request without creating a client", async () => {
+    mocks.cookies.mockRejectedValueOnce(new Error("Request cookies unavailable."));
+
+    await expect(createClient()).rejects.toThrow("Request cookies unavailable.");
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+  });
+
+  it("uses only the publishable key and forwards request cookies to the SSR client", async () => {
+    await createClient();
 
     expect(mocks.createServerClient).toHaveBeenCalledWith(
       "https://project.supabase.co",
@@ -35,8 +60,8 @@ describe("server Supabase clients", () => {
     expect(options.cookies.getAll()).toEqual([{ name: "sb-auth", value: "session" }]);
   });
 
-  it("writes refreshed cookies when the runtime permits it", () => {
-    createClient();
+  it("writes refreshed cookies when the runtime permits it", async () => {
+    await createClient();
     const options = mocks.createServerClient.mock.calls[0][2];
 
     options.cookies.setAll([{ name: "sb-auth", value: "refreshed", options: { httpOnly: true } }]);
@@ -54,12 +79,12 @@ describe("server Supabase clients", () => {
     );
   });
 
-  it("recognizes the legacy anon key only as a public-key fallback", () => {
+  it("recognizes the legacy anon key only as a public-key fallback", async () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "legacy-anon-key");
 
     expect(hasPublicSupabaseConfig()).toBe(true);
-    createClient();
+    await createClient();
     expect(mocks.createServerClient).toHaveBeenCalledWith(
       "https://project.supabase.co",
       "legacy-anon-key",

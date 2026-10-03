@@ -112,11 +112,12 @@ async function cancelRegistration(formData: FormData) {
   redirect(registrationReturnPath(registration.eventSlug, "Registration cancelled."));
 }
 
-export default async function AdminRegistrationsPage({
-  searchParams,
-}: {
-  searchParams?: { event?: string | string[]; financeSaved?: string | string[]; notice?: string | string[] };
-}) {
+export default async function AdminRegistrationsPage(
+  props: {
+    searchParams?: Promise<{ event?: string | string[]; financeSaved?: string | string[]; notice?: string | string[] }>;
+  }
+) {
+  const searchParams = await props.searchParams ?? {};
   const staff = await requireAdmin();
   const [registrations, activeEvents, refunds] = await Promise.all([
     getRegistrations(),

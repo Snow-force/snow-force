@@ -3,9 +3,10 @@ import { getFAQ } from "@/lib/faqs/repository";
 import { requireAdmin } from "@/lib/auth/admin";
 import { FaqEditorForm } from "@/components/admin/faq-editor-form";
 
-export default async function AdminFAQEditorPage({ params }: { params: { id: string } }) {
+export default async function AdminFAQEditorPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireAdmin();
-  
+
   const isNew = params.id === "new";
   const faq = isNew ? null : getFAQ(params.id);
 

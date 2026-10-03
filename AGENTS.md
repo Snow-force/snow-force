@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## OVERVIEW
-SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 14 App Router, TypeScript, Tailwind, Vitest, and Supabase. Public pages sell events and recaps; member auth/dashboard uses Supabase SSR; admin pages operate event content, registrations, recaps, FAQs, and inquiries behind a local staff password session.
+SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 16 App Router, React 19, TypeScript, Tailwind, Vitest 5, and Supabase. The root runtime is Node.js 24. Public pages sell events and recaps; member auth/dashboard uses Supabase SSR; admin pages operate event content, registrations, recaps, FAQs, and inquiries behind staff sessions. Read the installed version's guides in `node_modules/next/dist/docs/` before framework changes.
 
 ## STRUCTURE
 ```
@@ -19,7 +19,7 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 │   │   └── member-gate.ts   # Verified-email gate + profile autofill for event forms
 │   ├── payments/            # Server-only Stripe client, checkout session action, webhook handler
 ├── supabase/migrations/     # Schema, RLS, member expansion, supporting tables
-├── middleware.ts             # Supabase SSR session refresh (root-level)
+├── proxy.ts                  # Supabase SSR session refresh (root-level)
 ├── PRODUCT.md               # Product register, users, principles
 └── DESIGN.md                # SnowForce design system and bans
 ```
@@ -103,8 +103,8 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 ```bash
 npm run dev       # Next dev server
 npm test          # Vitest, currently colocated *.test.ts
-npm run build     # Next build, also type/lint gate
-npm run lint      # Next lint script, if Next lint support is available
+npm run build     # ESLint, then Next build with type checking
+npm run lint      # ESLint CLI for the website source and config
 supabase db push  # Apply migrations to linked project when schema changes
 ```
 
@@ -119,5 +119,16 @@ supabase db push  # Apply migrations to linked project when schema changes
 - `.env.local` contains real local credentials. Do not print or copy values into logs/docs.
 - Local Next dev/build can corrupt `.next` if multiple Next processes write concurrently. Stop project Node/Next processes before clean rebuilds.
 - `.omo/`, `.playwright-mcp/`, `.superpowers/`, `.next/`, `node_modules/`, and `.data/` are tool/runtime state, not source knowledge.
-- Root `middleware.ts` delegates to `src/lib/supabase/middleware.ts`; `src/middleware.ts` is the deployable entry point.
+- Root `proxy.ts` and `src/proxy.ts` delegate to `src/lib/supabase/middleware.ts`; Next.js 16 uses the proxy convention and Node runtime.
+- Server `cookies()`, `headers()`, route `params` / `searchParams`, and `src/lib/supabase/server.ts` `createClient()` are asynchronous; await them in every caller and test mock.
 - After deploying any current workspace content to Vercel, commit and push the deployed source changes to GitHub in the same workflow unless explicitly told not to.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

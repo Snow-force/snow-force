@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import type { RegistrationDepositStatus, RegistrationFinance, RegistrationSettlementStatus } from "@/lib/types";
 
@@ -64,36 +64,49 @@ function SubmitButton({ dirty }: { dirty: boolean }) {
   );
 }
 
-export function RegistrationFinanceControl({
+export function RegistrationFinanceControl({ isSaved, ...props }: RegistrationFinanceControlProps) {
+  const [previousIsSaved, setPreviousIsSaved] = useState(isSaved);
+  const [showToast, setShowToast] = useState(isSaved);
+
+  if (previousIsSaved !== isSaved) {
+    setPreviousIsSaved(isSaved);
+    setShowToast(isSaved);
+  }
+
+  useEffect(() => {
+    if (!isSaved) return;
+    const timeout = window.setTimeout(() => setShowToast(false), 2400);
+    return () => window.clearTimeout(timeout);
+  }, [isSaved]);
+
+  const { finance, registrationId } = props;
+  const formKey = JSON.stringify([
+    registrationId,
+    finance.depositAmount,
+    finance.depositStatus,
+    finance.settlementStatus,
+    finance.paymentMethod === "stripe",
+  ]);
+
+  return <RegistrationFinanceFields key={formKey} {...props} showToast={showToast} />;
+}
+
+function RegistrationFinanceFields({
   action,
   createdAt,
   finance,
-  isSaved,
   registrationId,
   returnEvent,
   refundControl,
-}: RegistrationFinanceControlProps) {
+  showToast,
+}: Omit<RegistrationFinanceControlProps, "isSaved"> & { showToast: boolean }) {
   const initialDepositAmount = finance.depositAmount === null ? "" : String(finance.depositAmount);
   const [depositAmount, setDepositAmount] = useState(initialDepositAmount);
   const [depositStatus, setDepositStatus] = useState<RegistrationDepositStatus>(finance.depositStatus);
   const [settlementStatus, setSettlementStatus] = useState<RegistrationSettlementStatus>(finance.settlementStatus);
-  const [showToast, setShowToast] = useState(isSaved);
-  const formId = useMemo(() => `finance-${registrationId}`, [registrationId]);
+  const formId = `finance-${registrationId}`;
   const paidViaStripe = finance.paymentMethod === "stripe";
   const isStripeManaged = paidViaStripe;
-
-  useEffect(() => {
-    setDepositAmount(initialDepositAmount);
-    setDepositStatus(finance.depositStatus);
-    setSettlementStatus(finance.settlementStatus);
-  }, [finance.depositStatus, finance.settlementStatus, initialDepositAmount]);
-
-  useEffect(() => {
-    if (!isSaved) return;
-    setShowToast(true);
-    const timeout = window.setTimeout(() => setShowToast(false), 2400);
-    return () => window.clearTimeout(timeout);
-  }, [isSaved]);
 
   const dirty =
     depositAmount !== initialDepositAmount ||

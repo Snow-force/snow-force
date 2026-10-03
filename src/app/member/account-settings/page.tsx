@@ -4,11 +4,12 @@ import { redirect } from "next/navigation";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { memberConsentPath } from "@/lib/members/member-consents";
 
-export default async function MemberAccountSettingsPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function MemberAccountSettingsPage(
+  props: {
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const account = await getCurrentMemberAccount();
 
   if (account && (!account.privacyAccepted || !account.profile)) redirect(memberConsentPath("/member/account-settings"));

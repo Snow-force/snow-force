@@ -8,13 +8,14 @@ import { getRecapAdmin } from "@/lib/recaps/repository";
 
 const SAVED_NOTICE = { en: "Recap saved.", zh: "回顾已保存。" } as const;
 
-export default async function RecapEditPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams: { saved?: string; mediaError?: string; translationWarning?: string };
-}) {
+export default async function RecapEditPage(
+  props: {
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<{ saved?: string; mediaError?: string; translationWarning?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const recap = await getRecapAdmin(params.slug);
 
   if (!recap) {

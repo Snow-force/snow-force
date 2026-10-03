@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/lib/language";
 import { getQrCodeDataUrl } from "@/lib/events/share-actions";
@@ -150,8 +152,9 @@ export function EventShareBar({
               {t({ en: "Scan to share", zh: "扫码分享" })}
             </h3>
             {qrDataUrl ? (
-              <img
+              <Image
                 src={qrDataUrl}
+                unoptimized
                 alt={t({ en: "QR code", zh: "二维码" })}
                 className="mx-auto mb-4 rounded-xl"
                 width={240}

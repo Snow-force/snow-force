@@ -63,6 +63,77 @@ function stripeRefund(overrides: Partial<Stripe.Refund> = {}): Stripe.Refund {
   } as Stripe.Refund;
 }
 
+function checkoutSession(overrides: Partial<Stripe.Checkout.Session> = {}): Stripe.Checkout.Session {
+  return {
+    id: "cs_test_1",
+    object: "checkout.session",
+    adaptive_pricing: null,
+    after_expiration: null,
+    allow_promotion_codes: null,
+    amount_subtotal: 10000,
+    amount_total: 10000,
+    automatic_tax: { enabled: false, liability: null, provider: null, status: null },
+    billing_address_collection: null,
+    cancel_url: null,
+    client_reference_id: null,
+    client_secret: null,
+    collected_information: null,
+    consent: null,
+    consent_collection: null,
+    created: 1_700_000_000,
+    currency: "usd",
+    currency_conversion: null,
+    custom_fields: [],
+    custom_text: { after_submit: null, shipping_address: null, submit: null, terms_of_service_acceptance: null },
+    customer: null,
+    customer_account: null,
+    customer_creation: null,
+    customer_details: { address: null, business_name: null, email: "rider@example.com", individual_name: null, name: "Rider", phone: null, tax_exempt: null, tax_ids: null },
+    customer_email: "rider@example.com",
+    discounts: null,
+    expires_at: 1_700_086_400,
+    integration_identifier: null,
+    invoice: null,
+    invoice_creation: null,
+    livemode: false,
+    locale: null,
+    managed_payments: null,
+    metadata: { eventSlug: "mammoth-weekend", memberId: "member-1" },
+    mode: "payment",
+    origin_context: null,
+    payment_intent: "pi_test_1",
+    payment_link: null,
+    payment_method_collection: null,
+    payment_method_configuration_details: null,
+    payment_method_options: null,
+    payment_method_types: ["card"],
+    payment_status: "paid",
+    permissions: null,
+    recovered_from: null,
+    saved_payment_method_options: null,
+    setup_intent: null,
+    shipping_address_collection: null,
+    shipping_cost: null,
+    shipping_options: [],
+    status: "complete",
+    submit_type: null,
+    subscription: null,
+    success_url: null,
+    total_details: null,
+    ui_mode: "hosted_page",
+    url: null,
+    wallet_options: null,
+    ...overrides,
+  };
+}
+
+function checkoutSessionsResponse(data: Stripe.Checkout.Session[]): Stripe.Response<Stripe.ApiList<Stripe.Checkout.Session>> {
+  return {
+    object: "list", has_more: false, url: "/v1/checkout/sessions", data,
+    lastResponse: { headers: {}, requestId: "req_test_fixture", statusCode: 200 },
+  };
+}
+
 function createHarness(refundResult = stripeRefund()) {
   const registrations = [registration()];
   const refunds: RegistrationRefund[] = [];
@@ -82,14 +153,7 @@ function createHarness(refundResult = stripeRefund()) {
     paymentIntents: { retrieve: vi.fn().mockResolvedValue(paymentIntent) },
     checkout: {
       sessions: {
-        list: vi.fn().mockResolvedValue({
-          data: [{
-            id: "cs_test_1",
-            payment_status: "paid",
-            metadata: { eventSlug: "mammoth-weekend", memberId: "member-1" },
-            customer_details: { email: "rider@example.com" },
-          }],
-        }),
+        list: vi.fn<Stripe["checkout"]["sessions"]["list"]>().mockResolvedValue(checkoutSessionsResponse([checkoutSession()])),
       },
     },
     refunds: {
@@ -159,17 +223,12 @@ describe("refund payment service", () => {
 
   it("rejects a historical PaymentIntent for another member", async () => {
     const { deps, stripe } = createHarness();
-    vi.mocked(stripe.checkout.sessions.list).mockResolvedValue({
-      data: [{
+    vi.mocked(stripe.checkout.sessions.list).mockResolvedValue(checkoutSessionsResponse([
+      checkoutSession({
         id: "cs_other",
-        payment_status: "paid",
         metadata: { eventSlug: "mammoth-weekend", memberId: "member-other" },
-        customer_details: { email: "rider@example.com" },
-      }],
-      object: "list",
-      has_more: false,
-      url: "/v1/checkout/sessions",
-    } as Stripe.ApiList<Stripe.Checkout.Session>);
+      }),
+    ]));
 
     await expect(verifyPaymentIntentForRegistration(deps, registration(), "pi_test_1")).resolves.toEqual({
       success: false,

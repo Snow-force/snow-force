@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import {
   eventAggregateToWriteRows,
   rowsToEvent,
@@ -36,6 +37,9 @@ function makeCore(overrides: Partial<EventCoreRow> = {}): EventCoreRow {
     seo_title_en: "",
     seo_description_zh: "",
     seo_description_en: "",
+    waiver_text_en: null,
+    waiver_text_sha: null,
+    review_config: createDefaultReviewConfig(),
     ...overrides,
   };
 }
@@ -48,7 +52,7 @@ describe("event payment mapper fields", () => {
       deposit_currency: "usd",
       full_payment_amount: null,
     });
-    const event = rowsToEvent(core, [], []);
+    const event = rowsToEvent(core, [], [], null);
     expect(event.paymentModel).toBe("deposit");
     expect(event.depositAmount).toBe(120);
     expect(event.depositCurrency).toBe("usd");
@@ -62,7 +66,7 @@ describe("event payment mapper fields", () => {
       deposit_currency: "usd",
       full_payment_amount: null,
     });
-    const event = rowsToEvent(core, [], []);
+    const event = rowsToEvent(core, [], [], null);
     expect(event.paymentModel).toBe("free");
     expect(event.depositAmount).toBeNull();
     expect(event.depositCurrency).toBe("usd");
@@ -71,12 +75,13 @@ describe("event payment mapper fields", () => {
 
   it("falls back to free/usd when payment fields are undefined (missing column)", () => {
     const core = makeCore();
+    // Deliberately emulate a legacy database response without the required columns.
     const partialRow = {
       ...core,
       payment_model: undefined,
       deposit_currency: undefined,
-    } as EventCoreRow;
-    const event = rowsToEvent(partialRow, [], []);
+    } as unknown as EventCoreRow;
+    const event = rowsToEvent(partialRow, [], [], null);
     expect(event.paymentModel).toBe("free");
     expect(event.depositCurrency).toBe("usd");
   });
@@ -88,7 +93,7 @@ describe("event payment mapper fields", () => {
       deposit_currency: "cny",
       deposit_amount: null,
     });
-    const event = rowsToEvent(core, [], []);
+    const event = rowsToEvent(core, [], [], null);
     const rows = eventAggregateToWriteRows(event);
     expect(rows.core.payment_model).toBe("full_prepay");
     expect(rows.core.full_payment_amount).toBe(399);

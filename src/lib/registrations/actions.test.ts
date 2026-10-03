@@ -62,7 +62,7 @@ vi.mock("@/lib/members/actions", () => ({
 }));
 
 vi.mock("next/headers", () => ({
-  headers: vi.fn(() => ({
+  headers: vi.fn(async () => ({
     get: (key: string) => (key === "origin" ? "https://snowforce.test" : null),
   })),
 }));
@@ -80,6 +80,7 @@ vi.mock("@/lib/registrations/waiver", () => ({
 }));
 
 import { registerForEvent } from "./actions";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 const openEvent: Event = {
   slug: "mammoth-weekend",
@@ -139,6 +140,7 @@ const openEvent: Event = {
   waiverTextEn: null,
   waiverTextSha: null,
   merchantBoothProgram: null,
+  reviewConfig: createDefaultReviewConfig(),
 };
 
 const profile: MemberProfile = {
@@ -178,6 +180,9 @@ const registration: Registration = {
   contactName: "Rider One",
   contactPhone: "555-0100",
   status: "confirmed",
+  attendanceStatus: "unmarked",
+  attendanceSource: null,
+  attendanceMarkedAt: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };

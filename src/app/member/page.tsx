@@ -9,12 +9,14 @@ import { getPendingRegistrationsByMember } from "@/lib/registrations/pending-rep
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
 import { memberConsentPath } from "@/lib/members/member-consents";
 import { resolvePaymentReturnStatus } from "@/lib/payments/return-status";
+import { memberOrderRepository } from "@/lib/shop/member-order-repository";
 
-export default async function MemberPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function MemberPage(
+  props: {
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const account = await getCurrentMemberAccount();
 
   if (account && (!account.privacyAccepted || !account.profile)) redirect(memberConsentPath("/member"));
@@ -26,11 +28,12 @@ export default async function MemberPage({
   const verifiedPaymentStatus = searchParams.payment === "success"
     ? await resolvePaymentReturnStatus(searchParams.session_id, account.profile.id)
     : undefined;
-  const [registrations, pendingRegistrations, events, recaps] = await Promise.all([
+  const [registrations, pendingRegistrations, events, recaps, orders] = await Promise.all([
     getRegistrationsByMember(account.profile.id),
     getPendingRegistrationsByMember(account.profile.id),
     getEvents(),
     getRecaps(),
+    memberOrderRepository.list(account.user.id),
   ]);
   const dashboard = buildMemberDashboard({
     profile: account.profile,
@@ -44,6 +47,7 @@ export default async function MemberPage({
   return (
     <MemberDashboard
       dashboard={dashboard}
+      orders={orders}
       profile={account.profile}
       searchParams={searchParams}
       user={account.user}

@@ -36,11 +36,12 @@ function feedback(searchParams: { readonly [key: string]: string | string[] | un
   };
 }
 
-export default async function AdminMerchantsPage({
-  searchParams = {},
-}: {
-  readonly searchParams?: { readonly [key: string]: string | string[] | undefined };
-}) {
+export default async function AdminMerchantsPage(
+  props: {
+    readonly searchParams?: Promise<{ readonly [key: string]: string | string[] | undefined }>;
+  }
+) {
+  const searchParams = await props.searchParams ?? {};
   await requireAdmin();
   const events = await getAllEvents();
   const merchantOperations = await getMerchantAdminOperations();

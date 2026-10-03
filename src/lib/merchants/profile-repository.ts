@@ -88,7 +88,7 @@ function isMissingMerchantProfileTableError(error: { message?: string } | null) 
 function createSupabaseMerchantProfileSource(): MerchantProfileSource {
   return {
     async findByUserId(userId) {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data, error } = await supabase
         .from("merchant_profiles")
         .select(merchantProfileColumns)
@@ -99,7 +99,7 @@ function createSupabaseMerchantProfileSource(): MerchantProfileSource {
       return data ?? undefined;
     },
     async create(row) {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data, error } = await supabase
         .from("merchant_profiles")
         .insert(row)
@@ -127,7 +127,7 @@ function createSupabaseMerchantProfileSource(): MerchantProfileSource {
       return data;
     },
     async update(userId, patch) {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data, error } = await supabase
         .from("merchant_profiles")
         .update(patch)

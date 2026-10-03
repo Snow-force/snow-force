@@ -14,11 +14,12 @@ function nextPathFromSearchParams(value: string | undefined) {
   }
 }
 
-export default function ConfirmEmailPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | undefined>;
-}) {
+export default async function ConfirmEmailPage(
+  props: {
+    searchParams: Promise<Record<string, string | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const tokenHash = searchParams.token_hash?.trim() ?? "";
   const type = searchParams.type;
   const next = nextPathFromSearchParams(searchParams.next);

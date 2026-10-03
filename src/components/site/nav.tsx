@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 
 const navItems = [
   { href: "/events", label: { en: "Events", zh: "当前活动" } },
+  { href: "/shop", label: { en: "Shop", zh: "装备商城" } },
   { href: "/recaps", label: { en: "Recaps", zh: "往期回顾" } },
   { href: "/faq", label: { en: "FAQ", zh: "常见问题" } },
   { href: "/about", label: { en: "About", zh: "关于我们" } },
@@ -22,7 +24,7 @@ export function Nav() {
       <nav className="select-none h-16 border-b border-white/10 bg-black text-white">
         <div className="mx-auto flex h-full max-w-[980px] items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5 text-[24px] font-semibold leading-none text-white">
-            <img src="/logo.jpg" alt="SnowForce" className="h-9 w-9 rounded-[10px] object-cover" />
+            <Image src="/logo.jpg" alt="SnowForce" width={36} height={36} className="h-9 w-9 rounded-[10px] object-cover" />
             <span>SnowForce</span>
           </Link>
 

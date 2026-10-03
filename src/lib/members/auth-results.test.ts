@@ -12,6 +12,8 @@ describe("member auth callback results", () => {
     expect(sanitizeMemberNextPath("/events/mammoth-weekend")).toBe("/events/mammoth-weekend");
     expect(sanitizeMemberNextPath("/check-in/secure-code")).toBe("/check-in/secure-code");
     expect(sanitizeMemberNextPath("/reviews/access/secure-code")).toBe("/reviews/access/secure-code");
+    expect(sanitizeMemberNextPath("/shop/checkout")).toBe("/shop/checkout");
+    expect(sanitizeMemberNextPath("/shop/cart")).toBe("/shop/cart");
   });
 
   it("S2-callback-rejects-external-next", () => {
@@ -19,6 +21,8 @@ describe("member auth callback results", () => {
     expect(sanitizeMemberNextPath("//evil.example/member")).toBe("/member");
     expect(sanitizeMemberNextPath("\\\\evil.example\\member")).toBe("/member");
     expect(sanitizeMemberNextPath("/admin")).toBe("/member");
+    expect(sanitizeMemberNextPath("/shopping/checkout")).toBe("/member");
+    expect(sanitizeMemberNextPath("/shop\\evil.example")).toBe("/member");
   });
 
   it("S2-reset-redirect-target-is-callback-reset", () => {

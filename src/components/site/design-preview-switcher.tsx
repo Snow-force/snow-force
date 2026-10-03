@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GalleryHorizontalEnd, Home, Image as ImageIcon } from "lucide-react";
+import { GalleryHorizontalEnd, Home, Image as ImageIcon, UserRound } from "lucide-react";
 
 import { useLanguage } from "@/lib/language";
 
 const previewItems = [
+  {
+    href: "/design-preview/member",
+    label: { en: "Member center", zh: "会员中心" },
+    icon: UserRound,
+  },
   {
     href: "/design-preview/home",
     label: { en: "Home reel", zh: "首页回放" },
@@ -33,7 +38,7 @@ export function DesignPreviewSwitcher() {
       <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50">
         {t({ en: "Local design preview", zh: "本地设计预览" })}
       </p>
-      <nav className="grid grid-cols-3 gap-1 sm:flex" aria-label={t({ en: "Design preview views", zh: "设计预览页面" })}>
+      <nav className="grid grid-cols-4 gap-1 sm:flex" aria-label={t({ en: "Design preview views", zh: "设计预览页面" })}>
         {previewItems.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;

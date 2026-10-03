@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLanguage } from "@/lib/language";
 import {
   adminMerchantApplicationStatuses,
@@ -63,11 +63,6 @@ function OfflineInstructionsForm({
   const { t } = useLanguage();
   const [english, setEnglish] = useState(program.paymentInstructionsEn);
   const [chinese, setChinese] = useState(program.paymentInstructionsZh);
-
-  useEffect(() => {
-    setEnglish(program.paymentInstructionsEn);
-    setChinese(program.paymentInstructionsZh);
-  }, [program.paymentInstructionsEn, program.paymentInstructionsZh]);
 
   return (
     <form action={action} className="grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
@@ -170,6 +165,7 @@ export function MerchantOperationsView({
             {t({ en: "Offline payment instructions", zh: "线下付款说明" })} · {t(eventLabels[program.eventSlug] ?? { en: program.eventSlug, zh: program.eventSlug })}
           </h3>
           <OfflineInstructionsForm
+            key={JSON.stringify([program.paymentInstructionsEn, program.paymentInstructionsZh])}
             program={program}
             returnEvent={view.selectedEventSlug}
             returnStatus={view.selectedStatus}

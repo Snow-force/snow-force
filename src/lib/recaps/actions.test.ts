@@ -16,6 +16,7 @@ import {
 } from "./actions";
 import { RECAP_MEDIA_MAX_BYTES } from "./upload-signing";
 import type { Event, EventRecap, RecapMediaItem } from "../types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 function media(id: string, order: number, isCover = false): RecapMediaItem {
   return {
@@ -47,6 +48,14 @@ function eventForRecap(): Event {
     allowWaitlist: true,
     allowCancellation: true,
     feeAmount: "120",
+    paymentModel: "free",
+    depositAmount: null,
+    depositCurrency: "usd",
+    fullPaymentAmount: null,
+    waiverTextEn: null,
+    waiverTextSha: null,
+    merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     paymentInstructions: { zh: "付款说明", en: "Payment instructions" },
     seoTitle: { zh: "", en: "" },
     seoDescription: { zh: "", en: "" },

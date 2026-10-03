@@ -13,6 +13,7 @@ describe("Footer", () => {
     );
 
     expect(screen.getByRole("link", { name: "Refund Policy" })).toHaveAttribute("href", "/refund-policy");
+    expect(screen.getByRole("link", { name: "Shop Shipping & Returns" })).toHaveAttribute("href", "/shop/policies");
     expect(screen.queryByText(/Refund and itinerary change statement/)).not.toBeInTheDocument();
   });
 });

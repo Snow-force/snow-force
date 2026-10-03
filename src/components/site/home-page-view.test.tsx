@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LanguageProvider, type Lang } from "@/lib/language";
 import { HomePageView } from "./home-page-view";
+import { fixtureProducts } from "@/lib/shop/shop.fixtures";
 
 vi.mock("@/components/recaps/mountain-memory-reel", () => ({
   MountainMemoryReel: () => <section aria-label="Recap reel" />,
@@ -17,7 +18,7 @@ const playMock = vi.fn<() => Promise<void>>();
 function renderHome(lang: Lang = "en") {
   return render(
     <LanguageProvider initialLang={lang}>
-      <HomePageView events={[]} recaps={[]} />
+      <HomePageView events={[]} recaps={[]} shopProducts={fixtureProducts} />
     </LanguageProvider>,
   );
 }
@@ -54,5 +55,30 @@ describe("HomePageView public story", () => {
     expect(screen.getByRole("heading", { level: 1, name: "一起去雪山" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "查看正在报名" })).toHaveAttribute("href", "#open-events");
     expect(screen.getByRole("button", { name: "播放雪山视频" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["en", "Gear for your next mountain day.", "Explore the gear shop"],
+    ["zh", "下一趟滑行，装备就位。", "逛逛装备商城"],
+  ] as const)("promotes real shop products in the %s home scroll flow", (lang, title, cta) => {
+    renderHome(lang);
+    const section = screen.getByRole("region", { name: title });
+    expect(within(section).getByRole("link", { name: cta })).toHaveAttribute("href", "/shop");
+    expect(section.querySelectorAll("article")).toHaveLength(3);
+    for (const slug of fixtureProducts.map((product) => product.slug)) {
+      expect(section.querySelector(`a[href="/shop/${slug}"]`)).toBeInTheDocument();
+    }
+    expect(within(section).getByText("$79.95")).toBeInTheDocument();
+    expect(within(section).getByText("$29.95")).toBeInTheDocument();
+    expect(within(section).queryByText(/人民币|CNY|¥/)).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Recap reel" }).nextElementSibling).toBe(section);
+    expect(section.nextElementSibling).toBe(document.querySelector("#open-events"));
+  });
+  it("keeps the shop promotion without showing draft products or estimated prices", () => {
+    render(<LanguageProvider initialLang="zh"><HomePageView events={[]} recaps={[]} shopProducts={[]} /></LanguageProvider>);
+    const section = screen.getByRole("region", { name: "下一趟滑行，装备就位。" });
+    expect(section.querySelectorAll("article")).toHaveLength(0);
+    expect(within(section).getByText("探索新一季装备")).toBeInTheDocument();
+    expect(within(section).queryByText(/参考价|\$/)).not.toBeInTheDocument();
   });
 });

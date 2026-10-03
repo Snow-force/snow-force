@@ -1,3 +1,4 @@
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, expect, it } from "vitest";
 import type { Event, EventRecap, MemberProfile, Registration } from "@/lib/types";
 import { buildMemberDashboard } from "./dashboard";
@@ -55,6 +56,14 @@ function event(slug: string, eventDate: string): Event {
     seoDescription: { en: "", zh: "" },
     registrationQuestions: [],
     detailModules: [],
+    paymentModel: "free",
+    depositAmount: null,
+    depositCurrency: "usd",
+    fullPaymentAmount: null,
+    waiverTextEn: null,
+    waiverTextSha: null,
+    merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
   };
 }
 
@@ -69,6 +78,9 @@ function registration(eventSlug: string, createdAt: string): Registration {
     contactName: "Rider One",
     contactPhone: "555-0100",
     status: "confirmed",
+    attendanceStatus: "unmarked",
+    attendanceSource: null,
+    attendanceMarkedAt: null,
     createdAt,
     updatedAt: createdAt,
   };

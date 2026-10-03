@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Event } from "@/lib/types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 const actionMocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -90,6 +91,7 @@ const modularEvent: Event = {
   waiverTextEn: null,
   waiverTextSha: null,
   merchantBoothProgram: null,
+  reviewConfig: createDefaultReviewConfig(),
 };
 
 describe("event admin action helpers", () => {

@@ -92,7 +92,7 @@ describe("AdminMerchantsPage", () => {
   });
 
   it("renders only merchant operation data and preserves the requested event filter", async () => {
-    const page = await AdminMerchantsPage({ searchParams: { event: event.slug, status: "approved" } });
+    const page = await AdminMerchantsPage({ searchParams: Promise.resolve({ event: event.slug, status: "approved" }) });
 
     render(<LanguageProvider>{page}</LanguageProvider>);
 

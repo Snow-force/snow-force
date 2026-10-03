@@ -1,3 +1,4 @@
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -43,6 +44,7 @@ function createEvent(overrides: Partial<Event> = {}): Event {
     waiverTextEn: null,
     waiverTextSha: null,
     merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     ...overrides,
   };
 }

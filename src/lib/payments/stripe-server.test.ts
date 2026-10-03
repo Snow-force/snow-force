@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type Stripe from "stripe";
 
 vi.mock("server-only", () => ({}));
 
@@ -35,12 +36,20 @@ describe("stripe-server", () => {
       "./stripe-server"
     );
 
-    const mockEvent = {
+    // Signature verification passes through any signed Stripe event, regardless of its topic.
+    const mockEvent: Stripe.Event = {
       id: "evt_1",
-      type: "checkout.session.completed" as const,
+      object: "event",
+      api_version: null,
+      created: 1,
+      data: { object: { object: "balance", available: [], pending: [], livemode: false } },
+      livemode: false,
+      pending_webhooks: 0,
+      request: null,
+      type: "balance.available",
     };
     const stripe = getStripeServer();
-    stripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+    vi.mocked(stripe.webhooks.constructEvent).mockReturnValue(mockEvent);
 
     const rawBody = '{"test":true}';
     const signature = "t=123,v1=fake_signature";
@@ -62,7 +71,7 @@ describe("stripe-server", () => {
     );
 
     const stripe = getStripeServer();
-    stripe.webhooks.constructEvent.mockImplementation(() => {
+    vi.mocked(stripe.webhooks.constructEvent).mockImplementation(() => {
       throw new Error("invalid signature");
     });
 

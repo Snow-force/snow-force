@@ -1,0 +1,55 @@
+{
+  "name": "snowforce-commerce",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Medusa backend for the existing SnowForce storefront and Supabase database",
+  "scripts": {
+    "build": "medusa build",
+    "typecheck": "tsc --noEmit",
+    "dev": "node scripts/preflight.mjs && medusa develop",
+    "start": "node scripts/preflight.mjs && medusa start",
+    "migrate": "node scripts/migrate.mjs",
+    "import:drafts": "node scripts/preflight.mjs && medusa exec ./src/scripts/import-drafts.ts",
+    "export:drafts": "node scripts/export-drafts.mjs",
+    "upload:draft-assets": "node scripts/upload-draft-assets.mjs",
+    "configure:database": "node scripts/configure-database.mjs",
+    "configure:storefront": "node scripts/configure-storefront.mjs",
+    "setup:shipping": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-shipping.ts",
+    "setup:fulfillment": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-fulfillment.ts",
+    "setup:store": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-store.ts",
+    "test": "node --test --test-concurrency=1 tests/*.spec.mjs"
+  },
+  "dependencies": {
+    "@medusajs/admin-sdk": "2.21.2",
+    "@medusajs/caching-redis": "2.21.2",
+    "@medusajs/cli": "2.21.2",
+    "@medusajs/dashboard": "2.21.2",
+    "@medusajs/framework": "2.21.2",
+    "@medusajs/medusa": "2.21.2",
+    "@medusajs/ui": "4.2.6",
+    "@supabase/supabase-js": "2.106.2",
+    "@tanstack/react-query": "5.64.2",
+    "pg": "8.23.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "stripe": "23.0.0",
+    "zod": "4.2.0"
+  },
+  "devDependencies": {
+    "@swc/core": "1.15.18",
+    "@types/node": "24.12.0",
+    "@types/react": "18.3.2",
+    "@types/react-dom": "18.3.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.6.3",
+    "vite": "7.3.6"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0"
+  },
+  "overrides": {
+    "lodash": "4.18.1",
+    "ajv@>=7.0.0 <8.18.0": "8.18.0",
+    "uuid@<11.1.1": "11.1.1"
+  }
+}

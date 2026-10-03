@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 import { useLanguage } from "@/lib/language";
 import {
@@ -40,7 +41,7 @@ export function RecapMediaGallery({ recap, draftPayload, busy }: RecapMediaGalle
       {recap.media.map((item, index) => (
         <article key={item.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="relative h-40 bg-gray-100">
-            <img src={item.url} alt="" className="h-full w-full object-cover" />
+            <Image src={item.url} alt="" fill sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw" unoptimized className="h-full w-full object-cover" />
             {item.isCover ? (
               <span className="absolute left-2 top-2 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
                 {t(adminCopy.recapEditor.cover)}

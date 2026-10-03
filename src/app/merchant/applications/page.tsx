@@ -1,9 +1,10 @@
 import { MerchantPortalPage } from "@/components/merchants/merchant-portal-page";
 
 type MerchantApplicationsPageProps = {
-  readonly searchParams: Record<string, string | undefined>;
+  readonly searchParams: Promise<Record<string, string | undefined>>;
 };
 
-export default async function MerchantApplicationsPage({ searchParams }: MerchantApplicationsPageProps) {
+export default async function MerchantApplicationsPage(props: MerchantApplicationsPageProps) {
+  const searchParams = await props.searchParams;
   return <MerchantPortalPage searchParams={searchParams} section="applications" />;
 }

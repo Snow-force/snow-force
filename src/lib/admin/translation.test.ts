@@ -8,7 +8,7 @@ describe("translateAdminItems", () => {
   });
 
   it("sends batched text to Google Cloud Translation v2 and maps results by item id", async () => {
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       new Response(
         JSON.stringify({
           data: {
@@ -53,7 +53,7 @@ describe("translateAdminItems", () => {
 
   it("uses GOOGLE_TRANSLATE_API_KEY when no explicit api key is injected", async () => {
     vi.stubEnv("GOOGLE_TRANSLATE_API_KEY", "env-key");
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json({ data: { translations: [{ translatedText: "translated" }] } }),
     );
 

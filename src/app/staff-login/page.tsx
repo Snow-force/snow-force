@@ -1,10 +1,11 @@
 import { loginStaff } from "@/lib/auth/admin";
 
-export default function StaffLoginPage({
-  searchParams,
-}: {
-  searchParams: { error?: string };
-}) {
+export default async function StaffLoginPage(
+  props: {
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const errorMessage =
     searchParams.error === "unauthorized"
       ? "This account is not authorized for staff access."

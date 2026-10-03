@@ -61,6 +61,9 @@ describe("registration store", () => {
           ...data,
           id: "reg_db_1",
           status: "confirmed",
+          attendanceStatus: "unmarked",
+          attendanceSource: null,
+          attendanceMarkedAt: null,
           createdAt: "2026-05-24T00:00:00.000Z",
           updatedAt: "2026-05-24T00:00:00.000Z",
         };

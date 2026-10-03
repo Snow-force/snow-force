@@ -24,3 +24,11 @@ client_secret_*.apps.googleusercontent.com.json
 
 .env.production.local
 .env.staging
+
+# Independent commerce runtime secrets and generated output
+.cache/
+coverage/
+services/commerce/.env*
+!services/commerce/.env.example
+services/commerce/.medusa/
+services/commerce/.cache/

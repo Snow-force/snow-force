@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Pause, Play } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { MountainMemoryReel } from "@/components/recaps/mountain-memory-reel";
+import { HomeShopSection } from "./home-shop-section";
+import type { StoreProduct } from "@/lib/shop/storefront";
 import { useLanguage, type Lang } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
 
@@ -14,6 +16,7 @@ type HomePageViewProps = {
   events: Event[];
   recaps: EventRecap[];
   eventLoadError?: boolean;
+  shopProducts?: StoreProduct[];
 };
 
 type OpenEventsSectionProps = {
@@ -23,7 +26,7 @@ type OpenEventsSectionProps = {
   t: Translate;
 };
 
-export function HomePageView({ events, recaps, eventLoadError = false }: HomePageViewProps) {
+export function HomePageView({ events, recaps, eventLoadError = false, shopProducts = [] }: HomePageViewProps) {
   const { lang, t } = useLanguage();
   const recentRecaps = recaps.slice(0, 4);
 
@@ -34,6 +37,7 @@ export function HomePageView({ events, recaps, eventLoadError = false }: HomePag
       <ActivityModesSection t={t} />
       <CommunityExperienceSection t={t} />
       <MountainMemoryReel recaps={recentRecaps} />
+      <HomeShopSection products={shopProducts} />
       <OpenEventsSection
         events={events}
         eventLoadError={eventLoadError}

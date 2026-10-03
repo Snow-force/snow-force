@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 
 type SafeRecapImageProps = {
   src: string;
@@ -17,7 +17,11 @@ type SafeRecapImageProps = {
   unavailableLabel: string;
 };
 
-export function SafeRecapImage({
+export function SafeRecapImage(props: SafeRecapImageProps) {
+  return <RecapImageWithFallback key={JSON.stringify([props.src, props.fallbackSrc])} {...props} />;
+}
+
+function RecapImageWithFallback({
   src,
   alt,
   sizes,
@@ -35,14 +39,6 @@ export function SafeRecapImage({
   const [loading, setLoading] = useState(Boolean(initialSrc));
   const [usedFallback, setUsedFallback] = useState(!src && Boolean(fallbackSrc));
   const [failed, setFailed] = useState(!initialSrc);
-
-  useEffect(() => {
-    const nextSrc = src || fallbackSrc;
-    setActiveSrc(nextSrc);
-    setLoading(Boolean(nextSrc));
-    setUsedFallback(!src && Boolean(fallbackSrc));
-    setFailed(!nextSrc);
-  }, [src, fallbackSrc]);
 
   function handleError() {
     if (!usedFallback && fallbackSrc && activeSrc !== fallbackSrc) {

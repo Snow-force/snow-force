@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Event } from "@/lib/types";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import {
   __setMerchantStateDepsForTests,
   allocateMerchantBoothResult,
@@ -16,12 +17,16 @@ import {
   createMerchantRepositoryFake,
   type MerchantRepository,
 } from "./repository";
-import type { MerchantAuthAccount } from "./auth-boundary";
+import { createMerchantAuthAccount, type MerchantAuthAccount } from "./auth-boundary";
 import type { MerchantProfile } from "./types";
+
+const profileTestState = vi.hoisted(() => ({
+  sourceByUser: new Map<string, MerchantProfile>(),
+}));
 
 vi.mock("./profile-repository", async (importOriginal) => {
   const original = await importOriginal<typeof import("./profile-repository")>();
-  const sourceByUser = new Map<string, MerchantProfile>();
+  const { sourceByUser } = profileTestState;
   return {
     ...original,
     __setMerchantProfileSourceForTests: vi.fn(),
@@ -44,45 +49,39 @@ vi.mock("./profile-repository", async (importOriginal) => {
       sourceByUser.set(input.userId, stub);
       return stub;
     }),
-    __seedProfileForTests(userId: string, profile: MerchantProfile) {
-      // Use the same id pattern as the merchant repository's profile mock so
-      // the application-state machine and the repository can match the
-      // profile by id without a per-test override. The repository mock
-      // always generates `merchant-profile-${userId}`, so the profile mock
-      // has to do the same.
-      const normalized = { ...profile, id: `merchant-profile-${userId}` };
-      sourceByUser.set(userId, normalized);
-      return normalized;
-    },
   };
 });
-
-import { __seedProfileForTests } from "./profile-repository";
 
 const STAFF = { userId: "staff-user-1", email: "staff@example.com" };
 
 function verifiedMerchantAccount(profile: MerchantProfile | null = null): MerchantAuthAccount {
-  return {
+  return createMerchantAuthAccount({
     user: {
       id: profile?.userId ?? "merchant-user-1",
       email: profile?.contactEmail ?? "booth@example.com",
-      emailConfirmedAt: "2026-07-22T10:00:00.000Z",
+      email_confirmed_at: "2026-07-22T10:00:00.000Z",
+      app_metadata: {},
+      user_metadata: {},
+      aud: "authenticated",
+      created_at: "2026-07-22T10:00:00.000Z",
     },
     profile,
-    emailConfirmed: true,
-  } as unknown as MerchantAuthAccount;
+  });
 }
 
 function unverifiedMerchantAccount(profile: MerchantProfile | null = null): MerchantAuthAccount {
-  return {
+  return createMerchantAuthAccount({
     user: {
       id: profile?.userId ?? "merchant-user-1",
       email: profile?.contactEmail ?? "booth@example.com",
-      emailConfirmedAt: null,
+      email_confirmed_at: undefined,
+      app_metadata: {},
+      user_metadata: {},
+      aud: "authenticated",
+      created_at: "2026-07-22T10:00:00.000Z",
     },
     profile,
-    emailConfirmed: false,
-  } as unknown as MerchantAuthAccount;
+  });
 }
 
 function form(entries: Record<string, string>) {
@@ -156,6 +155,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
         { id: "booth-a-02", boothPlanId: "plan-standard", boothCode: "A-02" },
       ],
     },
+    reviewConfig: createDefaultReviewConfig(),
     ...overrides,
   };
 }
@@ -180,7 +180,10 @@ function setupHarness(overrides: { event?: Event | undefined } = {}): Harness {
 }
 
 function seedProfileForTest(profile: MerchantProfile): MerchantProfile {
-  return __seedProfileForTests(profile.userId, profile);
+  // Match the fake durable repository's stable profile identity.
+  const normalized = { ...profile, id: `merchant-profile-${profile.userId}` };
+  profileTestState.sourceByUser.set(profile.userId, normalized);
+  return normalized;
 }
 
 async function seedProfileInRepository(
@@ -319,6 +322,7 @@ async function seedMerchantApplication(
 }
 
 beforeEach(() => {
+  profileTestState.sourceByUser.clear();
   __setMerchantStateDepsForTests(null);
 });
 

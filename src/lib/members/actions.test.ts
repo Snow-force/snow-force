@@ -35,7 +35,7 @@ const mockIsEventOpen = vi.hoisted(() => vi.fn());
 const mockRevalidatePath = vi.hoisted(() => vi.fn());
 const mockBuildStaffNotificationEmail = vi.hoisted(() => vi.fn());
 const mockSendEmail = vi.hoisted(() => vi.fn());
-const mockCookieGetAll = vi.hoisted(() => vi.fn(() => []));
+const mockCookieGetAll = vi.hoisted(() => vi.fn<() => Array<{ name: string; value: string }>>(() => []));
 const mockCookieSet = vi.hoisted(() => vi.fn());
 const mockCookieGet = vi.hoisted(() => vi.fn());
 const mockHeadersGet = vi.hoisted(() => vi.fn());
@@ -46,7 +46,7 @@ const mockRecordCurrentMemberConsents = vi.hoisted(() => vi.fn());
 const mockResolveMemberAuthDestination = vi.hoisted(() => vi.fn());
 const mockMemberAuthCallbackUrl = vi.hoisted(() => vi.fn());
 const mockCreateClient = vi.hoisted(() =>
-  vi.fn(() => ({
+  vi.fn(async () => ({
     auth: {
       signUp: mockSignUp,
       verifyOtp: mockVerifyOtp,
@@ -72,8 +72,8 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => ({ get: mockCookieGet, getAll: mockCookieGetAll, set: mockCookieSet })),
-  headers: vi.fn(() => ({ get: mockHeadersGet })),
+  cookies: vi.fn(async () => ({ get: mockCookieGet, getAll: mockCookieGetAll, set: mockCookieSet })),
+  headers: vi.fn(async () => ({ get: mockHeadersGet })),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({

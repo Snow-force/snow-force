@@ -98,6 +98,43 @@ describe("public recap redesign", () => {
     expect(screen.getByText("Community archive fallback")).toBeInTheDocument();
   });
 
+  it("retries a new recap source after both previous image sources failed", () => {
+    const labels = { sizes: "160px", fallbackLabel: "Community archive fallback", unavailableLabel: "Photo unavailable" };
+    const page = render(<SafeRecapImage {...labels} src="/missing-first.jpg" alt="First recap frame" />);
+    fireEvent.error(screen.getByAltText("First recap frame"));
+    fireEvent.error(screen.getByAltText("First recap frame"));
+    expect(screen.getByRole("img", { name: "First recap frame. Photo unavailable" })).toBeInTheDocument();
+
+    page.rerender(<SafeRecapImage {...labels} src="/new-frame.jpg" alt="New recap frame" />);
+
+    const replacement = screen.getByAltText("New recap frame");
+    expect(replacement).toHaveAttribute("src", "/new-frame.jpg");
+    expect(screen.queryByText("Photo unavailable")).not.toBeInTheDocument();
+    expect(screen.getByText("SnowForce")).toBeInTheDocument();
+    fireEvent.load(replacement);
+    expect(screen.queryByText("SnowForce")).not.toBeInTheDocument();
+    expect(screen.queryByText("Community archive fallback")).not.toBeInTheDocument();
+  });
+
+  it("resets a loaded fallback when its configuration changes", () => {
+    const labels = { src: "/missing.jpg", alt: "Recap frame", sizes: "160px", fallbackLabel: "Community archive fallback", unavailableLabel: "Photo unavailable" };
+    const page = render(<SafeRecapImage {...labels} fallbackSrc="/archive-one.jpg" fallbackAlt="First archive" />);
+    fireEvent.error(screen.getByAltText("Recap frame"));
+    fireEvent.load(screen.getByAltText("First archive"));
+    expect(screen.getByText("Community archive fallback")).toBeInTheDocument();
+
+    page.rerender(<SafeRecapImage {...labels} fallbackSrc="/archive-two.jpg" fallbackAlt="Second archive" />);
+
+    expect(screen.getByAltText("Recap frame")).toHaveAttribute("src", "/missing.jpg");
+    expect(screen.queryByText("Community archive fallback")).not.toBeInTheDocument();
+    expect(screen.getByText("SnowForce")).toBeInTheDocument();
+    fireEvent.error(screen.getByAltText("Recap frame"));
+    const fallback = screen.getByAltText("Second archive");
+    expect(fallback).toHaveAttribute("src", "/archive-two.jpg");
+    fireEvent.error(fallback);
+    expect(screen.getByRole("img", { name: "Recap frame. Photo unavailable" })).toBeInTheDocument();
+  });
+
   it("keeps the full-screen photo stream keyboard accessible and restores trigger focus", () => {
     renderInEnglish(<ScrollingMediaStream media={seedRecaps[0].media} />);
 

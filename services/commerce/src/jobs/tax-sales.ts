@@ -1,0 +1,13 @@
+import type { MedusaContainer } from "@medusajs/framework/types";
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
+import { discoverTaxSales, processTaxSale } from "../lib/tax-sale-worker";
+
+export default async function taxSalesJob(container: MedusaContainer) {
+  await discoverTaxSales(container);
+  for (let index = 0; index < 10; index++) {
+    const result = await processTaxSale(container);
+    if (!result) break;
+    if (result.status === "reconcile_required") container.resolve(ContainerRegistrationKeys.LOGGER).error(`Sale tax task ${result.id} needs reconciliation.`);
+  }
+}
+export const config = { name: "snowforce-tax-sales", schedule: "*/2 * * * *" };

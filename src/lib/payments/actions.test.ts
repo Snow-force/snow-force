@@ -44,6 +44,7 @@ vi.mock("next/cache", () => ({ revalidatePath: actionMocks.revalidatePath }));
 import type Stripe from "stripe";
 import type { Event } from "@/lib/types";
 import type { PendingRegistration } from "@/lib/registrations/pending-repository";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { createCheckoutSessionAction, createCheckoutSessionResult } from "./actions";
 
 const MEMBER_ID = "member-1";
@@ -77,6 +78,9 @@ function createEvent(overrides: Partial<Event>): Event {
     registrationQuestions: [],
     detailModules: [],
     merchantBoothProgram: null,
+    waiverTextEn: null,
+    waiverTextSha: null,
+    reviewConfig: createDefaultReviewConfig(),
   };
   return { ...defaults, ...overrides };
 }

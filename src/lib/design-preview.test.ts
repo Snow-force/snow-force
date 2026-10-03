@@ -7,7 +7,7 @@ describe("isDesignPreviewEnabled", () => {
     expect(isDesignPreviewEnabled("development")).toBe(true);
   });
 
-  it.each(["production", "test", undefined])("blocks the local preview for %s", (nodeEnv) => {
+  it.each(["production", "test", undefined] as const)("blocks the local preview for %s", (nodeEnv) => {
     expect(isDesignPreviewEnabled(nodeEnv)).toBe(false);
   });
 });

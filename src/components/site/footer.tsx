@@ -23,6 +23,8 @@ export function Footer() {
         <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <FooterColumn title="SnowForce">
             <FooterLink href="/events">{t({ en: "Events", zh: "当前活动" })}</FooterLink>
+            <FooterLink href="/shop">{t({ en: "Gear Shop", zh: "装备商城" })}</FooterLink>
+            <FooterLink href="/shop/policies">{t({ en: "Shop Shipping & Returns", zh: "商城配送与退换政策" })}</FooterLink>
             <FooterLink href="/recaps">{t({ en: "Recaps", zh: "往期回顾" })}</FooterLink>
             <FooterLink href="/faq">{t({ en: "FAQ", zh: "常见问题" })}</FooterLink>
             <FooterLink href="/refund-policy">{t({ en: "Refund Policy", zh: "退款政策" })}</FooterLink>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Event, Registration } from "@/lib/types";
 import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "./admin-view";
+import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 function registration(
   id: string,
@@ -19,6 +20,9 @@ function registration(
     contactName: id,
     contactPhone: "",
     status: "confirmed",
+    attendanceStatus: "unmarked",
+    attendanceSource: null,
+    attendanceMarkedAt: null,
     createdAt,
     updatedAt: createdAt,
   };
@@ -43,6 +47,14 @@ function event(slug: string, titleEn: string, titleZh = ""): Event {
     allowWaitlist: false,
     allowCancellation: false,
     feeAmount: "",
+    paymentModel: "free",
+    depositAmount: null,
+    depositCurrency: "usd",
+    fullPaymentAmount: null,
+    waiverTextEn: null,
+    waiverTextSha: null,
+    merchantBoothProgram: null,
+    reviewConfig: createDefaultReviewConfig(),
     paymentInstructions: { en: "", zh: "" },
     seoTitle: { en: "", zh: "" },
     seoDescription: { en: "", zh: "" },
