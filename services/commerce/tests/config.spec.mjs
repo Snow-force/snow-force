@@ -20,7 +20,7 @@ async function configResult(overrides = {}) {
       "SUPABASE_PUBLISHABLE_KEY=sb_publishable_fixture",
     ].join("\n"));
     const environment = { ...process.env, NODE_ENV: "development", TS_NODE_PROJECT: resolve(backend, "tsconfig.json") };
-    for (const key of ["JWT_SECRET", "COOKIE_SECRET", "DATABASE_URL", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "REDIS_URL", "COMMERCE_STRIPE_API_KEY", "COMMERCE_STRIPE_WEBHOOK_SECRET"]) delete environment[key];
+    for (const key of ["JWT_SECRET", "COOKIE_SECRET", "DATABASE_URL", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "REDIS_URL", "COMMERCE_STRIPE_API_KEY", "COMMERCE_STRIPE_WEBHOOK_SECRET", "COMMERCE_OPERATING_MODE"]) delete environment[key];
     Object.assign(environment, overrides);
     const script = `
       require(${JSON.stringify(resolve(backend, "node_modules/ts-node/register/transpile-only"))});
@@ -58,4 +58,9 @@ test("explicit runtime secrets take precedence over the development file", async
 test("commerce authorizes Stripe payments before operator capture", async () => {
   const result = await configResult({ COMMERCE_STRIPE_API_KEY: "sk_test_fixture", COMMERCE_STRIPE_WEBHOOK_SECRET: "whsec_fixture" });
   assert.equal(result.stripeCapture, false);
+});
+
+test("management mode omits the Stripe provider even when old test keys remain in the environment", async () => {
+  const result = await configResult({ COMMERCE_OPERATING_MODE: "management", COMMERCE_STRIPE_API_KEY: "sk_test_fixture", COMMERCE_STRIPE_WEBHOOK_SECRET: "whsec_fixture" });
+  assert.equal(result.stripeCapture, undefined);
 });

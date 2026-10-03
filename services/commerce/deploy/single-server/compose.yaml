@@ -1,0 +1,108 @@
+name: snowforce-commerce
+
+services:
+  commerce:
+    image: ${COMMERCE_IMAGE:?Load and specify the tested Medusa image}
+    pull_policy: never
+    env_file:
+      - path: ${COMMERCE_ENV_FILE:?Set the protected production environment file}
+        format: raw
+      - path: ${REDIS_SECRETS_DIR:?Initialize Redis secrets first}/redis.env
+        format: raw
+    environment:
+      NODE_ENV: production
+      COMMERCE_OPERATING_MODE: management
+      COMMERCE_TAX_POLICY_CONFIRMED: "false"
+      MEDUSA_WORKER_MODE: shared
+      PORT: "9000"
+      NODE_EXTRA_CA_CERTS: /run/secrets/redis_ca
+    secrets:
+      - redis_ca
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [web, queue]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: ${COMMERCE_MEMORY_LIMIT:-1280m}
+    logging: &bounded-logs
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7.4-alpine
+    command: [redis-server, /usr/local/etc/redis/redis.conf]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-data:/data
+    secrets:
+      - redis_ca
+      - redis_server_cert
+      - redis_server_key
+      - redis_acl
+      - redis_password
+    networks: [queue]
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs: [/tmp:size=16m]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    logging: *bounded-logs
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - REDISCLI_AUTH="$$(cat /run/secrets/redis_password)" redis-cli --tls --cacert /run/secrets/redis_ca -h redis ping | grep -qx PONG
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set the verified public DNS hostname}
+      ACME_EMAIL: ${ACME_EMAIL:?Set the certificate contact email}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [web]
+    depends_on:
+      commerce:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp:size=16m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    mem_limit: 128m
+    logging: *bounded-logs
+
+networks:
+  web: {}
+  queue:
+    internal: true
+
+volumes:
+  redis-data: {}
+  caddy-data: {}
+  caddy-config: {}
+
+secrets:
+  redis_ca:
+    file: ${REDIS_SECRETS_DIR}/ca.pem
+  redis_server_cert:
+    file: ${REDIS_SECRETS_DIR}/server.pem
+  redis_server_key:
+    file: ${REDIS_SECRETS_DIR}/server-key.pem
+  redis_acl:
+    file: ${REDIS_SECRETS_DIR}/users.acl
+  redis_password:
+    file: ${REDIS_SECRETS_DIR}/password

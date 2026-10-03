@@ -17,7 +17,27 @@ test("rejects a second database, public schema, privileged roles, and transactio
 test("accepts the existing Supabase session pooler", () => assert.deepEqual(configurationErrors({ ...env(), DATABASE_URL: "postgresql://commerce.bhmwxkynhyhquspiyact:pw@aws-0-us-east-2.pooler.supabase.com:5432/postgres" }), []));
 test("requires durable TLS infrastructure and HTTPS origins in production", () => {
   assert.ok(configurationErrors({ ...env(), NODE_ENV: "production" }).length >= 5);
-  assert.deepEqual(configurationErrors({ ...env(), NODE_ENV: "production", REDIS_URL: "rediss://fixture.redis.invalid:6379", DATABASE_CA_CERT: "fixture-ca", STORE_CORS: "https://snow-force.com", ADMIN_CORS: "https://commerce.snow-force.com", AUTH_CORS: "https://snow-force.com,https://commerce.snow-force.com", COMMERCE_STRIPE_API_KEY: "sk_test_fixture", COMMERCE_STRIPE_WEBHOOK_SECRET: "whsec_fixture", COMMERCE_TAX_POLICY_CONFIRMED: "true", COMMERCE_ORDER_SYNC_SECRET: "c".repeat(48), SNOWFORCE_STOREFRONT_URL: "https://snow-force.com" }), []);
+  assert.deepEqual(configurationErrors({ ...env(), NODE_ENV: "production", COMMERCE_OPERATING_MODE: "sales", REDIS_URL: "rediss://fixture.redis.invalid:6379", DATABASE_CA_CERT: "fixture-ca", STORE_CORS: "https://snow-force.com", ADMIN_CORS: "https://commerce.snow-force.com", AUTH_CORS: "https://snow-force.com,https://commerce.snow-force.com", COMMERCE_STRIPE_API_KEY: "sk_test_fixture", COMMERCE_STRIPE_WEBHOOK_SECRET: "whsec_fixture", COMMERCE_TAX_POLICY_CONFIRMED: "true", COMMERCE_ORDER_SYNC_SECRET: "c".repeat(48), SNOWFORCE_STOREFRONT_URL: "https://snow-force.com" }), []);
+});
+
+export const managementEnv = () => ({ ...env(), NODE_ENV: "production", COMMERCE_OPERATING_MODE: "management",
+  REDIS_URL: "rediss://fixture.redis.invalid:6379", DATABASE_CA_CERT: "fixture-ca",
+  STORE_CORS: "https://snow-force.com", ADMIN_CORS: "https://commerce.snow-force.com", AUTH_CORS: "https://snow-force.com,https://commerce.snow-force.com",
+  COMMERCE_TAX_POLICY_CONFIRMED: "false", COMMERCE_ORDER_SYNC_SECRET: "c".repeat(48), SNOWFORCE_STOREFRONT_URL: "https://snow-force.com",
+});
+
+test("management deployment needs no Stripe credentials or tax launch confirmation", () => {
+  assert.deepEqual(configurationErrors(managementEnv()), []);
+  for (const mode of [undefined, "", "typo"]) assert.ok(configurationErrors({ ...managementEnv(), COMMERCE_OPERATING_MODE: mode }).length);
+  for (const confirmation of [undefined, "true", "FALSE"]) assert.ok(configurationErrors({ ...managementEnv(), COMMERCE_TAX_POLICY_CONFIRMED: confirmation }).length);
+});
+
+test("management mode preserves production security and persistent infrastructure requirements", () => {
+  for (const change of [{ REDIS_URL: "redis://fixture.invalid" }, { DATABASE_CA_CERT: undefined }, { S3_SECRET_ACCESS_KEY: undefined }, { STORE_CORS: "http://localhost:3100" }, { COMMERCE_ORDER_SYNC_SECRET: undefined }]) {
+    assert.ok(configurationErrors({ ...managementEnv(), ...change }).length);
+  }
+  assert.ok(configurationErrors({ ...managementEnv(), COMMERCE_OPERATING_MODE: "sales" }).some(error => error.includes("Stripe provider")));
+  assert.ok(configurationErrors({ ...managementEnv(), COMMERCE_OPERATING_MODE: "sales" }).some(error => error.includes("sales-tax")));
 });
 test("never exposes credentials in validation messages", () => {
   const credential = "fixture-secret-password";

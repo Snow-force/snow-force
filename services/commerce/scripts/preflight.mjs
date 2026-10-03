@@ -5,6 +5,10 @@ const projectRef = "bhmwxkynhyhquspiyact";
 
 export function configurationErrors(env) {
   const errors = [];
+  const management = env.COMMERCE_OPERATING_MODE === "management";
+  if (env.COMMERCE_OPERATING_MODE && !["management", "sales"].includes(env.COMMERCE_OPERATING_MODE)) errors.push("COMMERCE_OPERATING_MODE must be management or sales.");
+  if (env.NODE_ENV === "production" && !["management", "sales"].includes(env.COMMERCE_OPERATING_MODE)) errors.push("Production requires an explicit COMMERCE_OPERATING_MODE.");
+  if (management && env.COMMERCE_TAX_POLICY_CONFIRMED !== "false") errors.push("Management mode requires COMMERCE_TAX_POLICY_CONFIRMED=false; payments stay disabled.");
   let database;
   try { database = new URL(env.DATABASE_URL); } catch { errors.push("DATABASE_URL is required."); }
   if (database) {
@@ -37,8 +41,8 @@ export function configurationErrors(env) {
     if (!env.DATABASE_CA_CERT) errors.push("Production requires DATABASE_CA_CERT with certificate verification enabled.");
   }
   const stripeKey = env.COMMERCE_STRIPE_API_KEY;
-  if (env.NODE_ENV === "production" && !stripeKey) errors.push("Production requires the configured commerce Stripe provider; manual test payments are not a launch configuration.");
-  if (env.NODE_ENV === "production" && env.COMMERCE_TAX_POLICY_CONFIRMED !== "true") errors.push("Confirm the actual US sales-tax configuration before enabling production checkout.");
+  if (env.NODE_ENV === "production" && !management && !stripeKey) errors.push("Sales mode requires the configured commerce Stripe provider; manual test payments are not a launch configuration.");
+  if (env.NODE_ENV === "production" && !management && env.COMMERCE_TAX_POLICY_CONFIRMED !== "true") errors.push("Confirm the actual US sales-tax configuration before enabling production checkout.");
   if (env.NODE_ENV === "production" || env.COMMERCE_ORDER_SYNC_SECRET || env.SNOWFORCE_STOREFRONT_URL) {
     if (!env.COMMERCE_ORDER_SYNC_SECRET || env.COMMERCE_ORDER_SYNC_SECRET.length < 32 || [env.JWT_SECRET, env.COOKIE_SECRET].includes(env.COMMERCE_ORDER_SYNC_SECRET)) errors.push("Configure an independent COMMERCE_ORDER_SYNC_SECRET in both backend and storefront.");
     try {

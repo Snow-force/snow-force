@@ -1,0 +1,18 @@
+# Allow only files needed by the build. Local credentials and data never enter the context.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!medusa-config.ts
+!Dockerfile
+!.dockerignore
+!src/
+!src/**
+!scripts/
+!scripts/preflight.mjs
+!scripts/start-production.mjs
+**/.env*
+**/.data/**
+**/.cache/**
+**/node_modules/**
+**/*.log

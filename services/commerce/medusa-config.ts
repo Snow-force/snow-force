@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "@medusajs/framework/utils";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { isManagementMode } from "./src/lib/operating-mode";
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 // Medusa loads .env for development; our ignored operator file is explicit.
@@ -57,7 +58,7 @@ module.exports = defineConfig({
       { resolve: "@medusajs/medusa/workflow-engine-redis", options: { redis: { redisUrl } } },
       { resolve: "@medusajs/medusa/locking", options: { providers: [{ resolve: "@medusajs/medusa/locking-redis", id: "locking-redis", is_default: true, options: { redisUrl } }] } },
     ] : []),
-    ...(process.env.COMMERCE_STRIPE_API_KEY ? [{
+    ...(!isManagementMode() && process.env.COMMERCE_STRIPE_API_KEY ? [{
       resolve: "@medusajs/medusa/payment",
       options: { providers: [{ resolve: "@medusajs/medusa/payment-stripe", id: "stripe", options: { apiKey: process.env.COMMERCE_STRIPE_API_KEY, webhookSecret: process.env.COMMERCE_STRIPE_WEBHOOK_SECRET, automaticPaymentMethods: true, capture: false } }] },
     }] : []),

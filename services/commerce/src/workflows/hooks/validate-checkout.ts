@@ -8,9 +8,11 @@ import { assertWorkflowPolicySnapshot } from "../../lib/policy-consent";
 import { assertCartProductTaxClassifications } from "../../lib/tax-classification";
 import { assertActiveStripeTaxSetup } from "../../lib/tax-setup";
 import { assertPersistedCartTaxQuote, assertWorkflowTaxQuoteSnapshot } from "../../lib/tax-quote-ledger";
+import { assertSalesOperations } from "../../lib/operating-mode";
 
 // Also runs for webhook completion and native API calls, before order creation/payment authorization.
 export async function validateCheckoutCart(input: { id: string }, initialCart: unknown, container: MedusaContainer) {
+  assertSalesOperations();
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
   const { data } = await query.graph({ entity: "cart", fields: checkoutFields, filters: { id: input.id } });
   try {
