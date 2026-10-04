@@ -1,14 +1,50 @@
 # SnowForce 商城后台公网部署方案
 
-部署检查更新：2026-10-03。价格核对日期见各方案来源，实际订阅页面为准。状态：SnowForce Railway 账户已升级 Hobby，GitHub 单仓库授权已生效，正在配置首次部署。此前个人账户的空项目未用于部署。后台尚未通过公网验收。目标包含控制托管成本。
+部署检查更新：2026-10-03。价格核对日期见各方案来源，实际订阅页面为准。状态：SnowForce Railway 账户已升级 Hobby，GitHub 单仓库授权已生效，商城后台和私有 Redis 已上线。此前个人账户的空项目未用于部署。公网 API 与负责人登录后的管理界面已通过核验。Vercel 已保存商城读取配置，重新部署因旧仓库连接失效被拒绝；前台联动仍待仓库授权与重连。目标包含控制托管成本。
 
 本轮核对账户仍为 `snowforceclub@gmail.com`，工作区仍为 `snowforce-club's Projects`。用户已授权计算资源每账单周期 US$25 硬上限、US$20 邮件提醒；已在平台保存并回读确认。达到硬上限会停止工作区的计算服务，税费及现有 Vercel、Supabase 费用另计。截图为 `output/shop-railway-compute-budget-saved.jpg`。
 
-GitHub App 访问范围由用户限定为 `Snow-force/snow-force`。服务源准备使用 `codex/commerce-public-admin` 分支的已检验提交，暂存配置中商城实例为 1 vCPU / 2 GB。新增 Redis 服务 `snowforce-redis`（`c8a53cb7-dac1-4c36-839c-6b429c22d5d1`）暂存容量为 0.5 vCPU / 0.5 GB，挂载 `/data` 的 512 MB 持久化卷 `93488860-141b-41d4-927e-7a7a2e6941cd`。Redis 使用私有网络、TLS、密码认证和 noeviction；不创建公网 Redis 域名或 TCP 代理。
+GitHub App 访问范围由用户限定为 `Snow-force/snow-force`。两个服务均使用 `codex/commerce-public-admin` 分支的已检验提交 `30f671dec973d659fb47403122456686d318a7b7`，商城实例容量为 1 vCPU / 2 GB。新增 Redis 服务 `snowforce-redis`（`c8a53cb7-dac1-4c36-839c-6b429c22d5d1`）容量为 0.5 vCPU / 0.5 GB，挂载 `/data` 的 512 MB 持久化卷 `93488860-141b-41d4-927e-7a7a2e6941cd`。Redis 使用私有网络、TLS、密码认证和 noeviction；不创建公网 Redis 域名或 TCP 代理。
 
 用户已授权将商城专用数据库连接、登录签名密钥、订单同步密钥、Redis 和 S3 凭据保存到该商城项目。用户自行生成并保存了 Supabase S3 访问密钥。S3 官方项目密钥可访问项目全部存储桶并绕过 RLS；Medusa 的图片配置固定为 `shop-products`，不能把此代码限制误称为密钥自身只有这个桶的权限。凭据只用于服务器，不包含数据库 bootstrap 连接或 Stripe 密钥，不提交 Git。
 
-本轮 Redis 配置支持 `REDIS_CA_CERT`，同一证书校验覆盖管理员会话、缓存、事件、工作流和锁；私有 DNS 使用双栈解析。网站 954 项测试、构建与覆盖率通过；后台 397 项测试通过，类型检查及生产构建通过。Redis 初始化工具行覆盖率 100%、分支覆盖率 84.62%，实际 shell 启动脚本已验证缺失或畸形凭据时在监听前拒绝启动且不输出密钥。新 Linux 镜像的完整启动、Redis 重启持久化和云端容量验证仍须完成，不能将这些本地检查当作公网后台验收。
+本轮 Redis 配置支持 `REDIS_CA_CERT`，同一证书校验覆盖管理员会话、缓存、事件、工作流和锁；私有 DNS 使用双栈解析。网站 954 项测试、构建与覆盖率通过；后台 397 项测试通过，类型检查及生产构建通过。Redis 初始化工具行覆盖率 100%、分支覆盖率 84.62%，实际 shell 启动脚本已验证缺失或畸形凭据时在监听前拒绝启动且不输出密钥。两个 Linux 镜像已在 Railway 成功启动。真实 Redis TLS 连接、错误密码拒绝、无明文监听、AOF 和 RDB 快照写入均已验证。管理后台重启后，专用验收草稿的价格、Irvine 库存和 Supabase 图片保持完整；测试草稿、库存项和上传图片已清理。Redis 自身重启恢复与异地恢复仍待单独演练。
+
+
+## 当前公网入口与验收结果
+
+- 管理员登录：[SnowForce 商城后台](https://snowforce-commerce-production.up.railway.app/app/login)。账号为 `snowforceclub@gmail.com`，使用现有管理员密码。
+- 项目：[SnowForce Commerce](https://railway.com/project/026e1ce6-a125-422c-b29f-a44ee11bdac1)。托管身份已核对为 SnowForce 账户。
+- 运行模式：`management`；付款、订单写入、退款及支付 webhook 仍关闭。没有上传 Stripe 密钥或执行真实收费。
+
+| 核验 | 结果 |
+| --- | --- |
+| HTTPS `/health`、Admin 登录页 | HTTP 200；浏览器登录表单和资源能加载 |
+| 未登录商品、库存管理 API | HTTP 401 |
+| 现有 club 管理员密码 | 公网 API 登录与身份读取成功 |
+| 原有商品 | 管理接口核对 14 件草稿；公开接口返回 0 件商品 |
+| 临时验收草稿 | 创建尺码 M、US$25.99、Irvine 库存 3；保存与应用重启后读取均成功 |
+| 商品图片 | 实际经 Medusa 上传到 Supabase，下载字节与原文件一致；应用重启后仍可读取 |
+| 结账、购物车写入、Stripe webhook | 返回 `not_allowed`，明确为管理模式阻断 |
+| Redis | 私网 TLS + 密码连接成功，错误密码被拒绝，`port=0`、`tls-port=6379`，AOF/RDB 写入成功 |
+| 浏览器管理界面 | 负责人实际登录；14 件草稿、商品详情、USD 规格表单、Inventory、运费及政策页面可加载；未保存验收表单或发布现有商品 |
+| Vercel 前台连接 | Production 已保存 `MEDUSA_BACKEND_URL` 与商城公开读取用的 `MEDUSA_PUBLISHABLE_KEY`；重新部署因旧仓库连接失效被拒绝，尚未生效 |
+
+最初云端样本：后台内存约 368 MB、Redis 约 10 MB，后台启动峰值约 710 MB。短时样本不能作为整月账单承诺；保留 2 GB 应用容量与 US$25 工作区计算硬上限。达到硬上限服务会停止。
+
+Railway 当前 Hobby 的 Backups 页面明确：创建平台备份和 PITR 需要 Pro。本次未升级套餐。Redis 的 `/data` 持久化卷、AOF 与快照已经启用，但这些不能当作独立备份；恢复演练和异地备份方案须在销售上线前完成。Redis 云端宿主机还提示 memory overcommit 未启用；当前 `BGSAVE` 成功、AOF 写入正常，后续需结合负载与恢复测试核对，不能通过修改容器配置宣称已改变宿主机内核设置。
+
+证据：`output/shop-railway-public-http-verification.json`、`output/shop-railway-admin-acceptance.json`、`output/shop-railway-public-admin-login.jpg`、`output/shop-railway-redis-persistence.jpg`、`output/shop-railway-backup-plan-limit.jpg`。以上记录不含登录密码、JWT 或平台变量值。
+
+### Vercel 仓库连接待处理
+
+现有 `snow-force` Vercel 项目（`prj_9HOG2P3lLvuKiv4h2NmAmjMh2Zxs`）的旧连接仍为 `Harrymeit/snow-force`，Git 设置明确显示 `Project Link not found`；重新部署被拒绝，提示 `The provided GitHub repository can't be found`，没有产生新部署。当前线上部署仍为已核对的 `98e1ae9`。网站代码与本次发布分支中的 `src`、根目录依赖和环境模板相同；本次不部署本地未提交素材或其他工作。
+
+已准备将 Vercel App 的授权限定到现有组织仓库 `Snow-force/snow-force`，授权页等待用户确认。该步骤会新增 Vercel 的仓库访问权限，需要明确确认；没有点击 Install 或扩大到全部仓库。授权后应重新连接同一个 Vercel 项目，使用已验证代码重新部署，再核对公开商城草稿隐藏与后台数据联动。已有网站域名及会员 Supabase 登录继续使用原配置。本次只新增商城公开读取配置，没有向 Vercel 复制 Railway 的数据库、S3、Redis 或管理员签名密钥；购物车签名和订单同步生产密钥亦未新增。
+
+界面证据：`output/shop-railway-admin-products.jpg`、`output/shop-railway-admin-usd-form.jpg`、`output/shop-railway-admin-shipping.jpg`、`output/shop-railway-admin-policies.jpg`、`output/shop-vercel-commerce-env.jpg`、`output/shop-vercel-git-link-error.jpg`。合伙人在自己电脑上的实际培训和销售上线验收属于后续交接项。
+
+交接提交前再次运行网站 954 项测试与构建，均通过。最初构建因 Next 扫描 `.data` 下受保护的部署临时凭据目录而返回访问拒绝；将本轮临时文件移至仍受保护、仍被 Git 忽略的 `.cache/railway-production` 后恢复，没有更改凭据权限或应用代码。PDF 按二进制保存，已核对 Git 中的字节与本地原文件一致；两份 PDF 的目录章节、可点击公网登录链接及渲染版面均已检查。最终构建记录为 `output/shop-cloud-handoff-root-validation.json`。
 
 ## 目标与数据归属
 
@@ -63,7 +99,7 @@ US$35 / 月是 Render 的一种托管组合报价：2 GB 后台 US$25，加持�
 
 Railway 新账号试用每个服务的 RAM 上限为 1 GB，免费计划为 0.5 GB；不能用免费运行成功或失败代替本项目完整生产容量验证。生产验收需要满足实际内存需求的付费计划。
 
-针对用户当前优先控制费用的要求，建议先评估 Railway 的实际账单；正式生产预算可先按 Pro 的 US$20 最低消费考虑，是否超过取决于服务实测用量。若更希望基础资源费用可预测，并减少 Redis 维护，选择 Render 的 US$35 管理阶段组合。之前优先推荐 Render 是基于减少维护和预算确定性；Railway 有节省初期资源费的可能，尚未验证一定更便宜。平台、账号和实际费用授权仍待用户决定，当前未创建付费资源。
+上述为平台选择阶段的比较记录。用户已选择 SnowForce Railway Hobby 并授权 US$20 计算提醒、US$25 计算硬上限，现已部署；本次没有升级 Pro。是否长期更便宜需要实际账单核对，不能用短时样本承诺。
 
 来源：[Railway 套餐、资源单价和额度抵扣](https://docs.railway.com/pricing/plans)、[Railway 套餐功能与定位](https://railway.com/pricing)、[Railway Redis 模板的维护责任](https://docs.railway.com/databases/redis)、[Render 2026 年 9 月资源报价](https://render.com/articles/production-rails-hosting-guide)、[Render Key Value 持久化](https://render.com/docs/key-value)。
 
@@ -124,7 +160,7 @@ docker build -t snowforce-commerce:management services/commerce
 
 已实际构建 Linux / amd64 镜像 `snowforce-commerce:management`，镜像标识为 `sha256:090b1df9e9e6a9b531ebf7c9ed62fd73d282ef2c902f81da0cd69e33b18f9b9d`。断网容器检查确认 Admin 构建、CLI 和启动脚本存在，使用非 root 用户运行，本地凭据及数据库引导工具未进入镜像，默认关闭付款。未配置真实生产环境时，容器在连接数据库前拒绝启动。
 
-另外使用假配置和受控子进程在断网容器中实测启动包装进程：监听参数为平台端口 `8080`、主机 `0.0.0.0`，`SIGTERM` 转发到子进程，正常退出码为 `0`。本次探针没有运行完整 Medusa 应用，也没有连接数据库；完整服务的数据库连接、图片上传和重启后持久化仍待托管环境验收。
+此前使用假配置和受控子进程在断网容器中实测启动包装进程：监听参数为平台端口 `8080`、主机 `0.0.0.0`，`SIGTERM` 转发到子进程，正常退出码为 `0`。该本地探针没有运行完整 Medusa 或连接数据库；后续真实云端连接、图片上传与应用重启保留已通过本页开头的托管验收。
 
 本次本地检查：网站 954 项测试、后台 394 项测试、类型检查及双方构建通过；不加载本地开发凭据的 Medusa 生产构建也通过。2026-10-03 复核后台构建时，默认 CLI 配置目录因本机沙箱权限返回 EPERM；改用项目内 `.cache/railway-build-config` 并保持 production / telemetry disabled 后构建成功，没有修改个人 CLI 配置。复核结果保存在 `output/shop-railway-root-validation.json` 和 `output/shop-railway-backend-validation.json`。发布前再次核对覆盖率：网站整体行覆盖率 58.28%、分支 51.68%；本次管理模式路由和开关的行、分支与函数覆盖率均为 100%，实际配置的 HTTP 中间件测试也通过。报告为 `output/shop-railway-release-root-coverage.log` 和 `output/shop-railway-release-management-coverage.log`。容器检查结果保存在 `output/shop-public-admin-container-layout.json`、`output/shop-public-admin-container-lifecycle.json` 和 `output/shop-public-admin-container-preflight.log`。
 
@@ -140,21 +176,21 @@ Linux 安装日志存在上游间接依赖 `lodash.isequal`、`cron-parser` 的�
 
 此前误在个人账户 `taiyuanmei0824@gmail.com` 的 `harrymeit's Projects` 工作区建立私有项目 [SnowForce Commerce](https://railway.com/project/1710a67c-26c5-403b-9225-6bcd78238564)，工作区 ID 为 `3868cc9d-721a-42cf-9fe1-e4e0ba51b752`。其中空服务 `snowforce-commerce` 保存了源目录 `/services/commerce` 和健康检查 `/health`，状态为 offline；没有连接代码源、上传凭据、启动后台或生成公网域名。该项目不是已核对的 SnowForce 账户部署目标。个人账户的空项目尚未转移或删除。
 
-2026-10-03 用户完成登录后，已从平台界面核对账户 `snowforceclub@gmail.com` 和工作区 `snowforce-club's Projects`，工作区 ID 为 `18937ccb-da72-4953-9c43-9daddc58553b`。在该工作区新建了私有项目 [SnowForce Commerce](https://railway.com/project/026e1ce6-a125-422c-b29f-a44ee11bdac1)，项目 ID 为 `026e1ce6-a125-422c-b29f-a44ee11bdac1`，production 环境 ID 为 `1245a65e-0f62-4182-8c85-1858aa98c634`。已应用空服务 `snowforce-commerce` 的设置：服务 ID 为 `ecc29173-f680-4ed5-a6e9-b69bffe8d17a`，源目录 `/services/commerce`，健康检查 `/health`。架构界面显示服务 offline，没有代码源、运行中的后台或公网域名。
+2026-10-03 用户完成登录后，已从平台界面核对账户 `snowforceclub@gmail.com` 和工作区 `snowforce-club's Projects`，工作区 ID 为 `18937ccb-da72-4953-9c43-9daddc58553b`。在该工作区新建了私有项目 [SnowForce Commerce](https://railway.com/project/026e1ce6-a125-422c-b29f-a44ee11bdac1)，项目 ID 为 `026e1ce6-a125-422c-b29f-a44ee11bdac1`，production 环境 ID 为 `1245a65e-0f62-4182-8c85-1858aa98c634`。已应用空服务 `snowforce-commerce` 的设置：服务 ID 为 `ecc29173-f680-4ed5-a6e9-b69bffe8d17a`，源目录 `/services/commerce`，健康检查 `/health`。初始架构界面显示服务 offline；本次已连接 GitHub 代码并成功部署，当前状态见文首。
 
-正确账户目前也是 Trial，服务界面显示 1 GB 内存上限。已在 SnowForce 工作区打开 Hobby 订阅页面，尚未提交订阅：先收 US$5 激活，此后每月最低 US$5，超出额度按实际资源用量收费。用户尚未授权月费用上限，订阅步骤已交由用户自行完成。正确账户和项目截图为 `output/shop-railway-snowforce-project-created.jpg`，订阅页截图为 `output/shop-railway-snowforce-hobby-subscription.jpg`。原个人账户空项目保持原状，未做跨账户转移。
+首次创建时正确账户仍为 Trial（现已升级 Hobby），服务界面显示 1 GB 内存上限。已在 SnowForce 工作区打开 Hobby 订阅页面，尚未提交订阅：先收 US$5 激活，此后每月最低 US$5，超出额度按实际资源用量收费。当时用户尚未授权月费用上限，订阅步骤交由用户自行完成；本次已授权并保存 US$20 提醒、US$25 计算硬上限。正确账户和项目截图为 `output/shop-railway-snowforce-project-created.jpg`，订阅页截图为 `output/shop-railway-snowforce-hobby-subscription.jpg`。原个人账户空项目保持原状，未做跨账户转移。
 
 此前个人账号为 Trial。服务设置中显示每个服务最多 1 GB 内存 / 2 vCPU；套餐说明卡片另写 0.5 GB，两处均低于 Medusa 建议的 2 GB 托管容量。此前个人账户的 [Hobby 订阅页面](https://railway.com/workspace/upgrade) 显示最低 US$5 / 月、含 US$5 用量，超出按实际消耗收费；页面明确先收 US$5 激活。没有填写银行卡信息，没有提交订阅，没有升级 Pro。此记录不能证明 SnowForce 账户的套餐或账单状态，后续应在正确账户重新核对。初期只做商品管理，可由用户评估 Hobby；Pro 为最低 US$20 / 月，提供团队、日志和支持方面的额外功能。最终套餐和实际预算由用户决定。
 
 插件管理此前确认 Railway 插件已安装、启用，但最初没有可调用的操作工具，因此建项目通过用户已登录的浏览器完成。2026-10-03 后续复核时，Railway 连接器工具已可调用；whoami 返回 `snowforceclub@gmail.com`，工作区及项目列表也确认正确归属。CLI 仍未配置。后续优先使用该连接器，避免将数据库和后台密钥通过聊天或截图交接。
 
-连接器已保存并重新读取验证 Dockerfile 构建、源目录 `/services/commerce`、健康检查 `/health` 与 300 秒等待时间。已录入 13 个非密钥变量，包括 production、management、shared、关闭付款的税务开关、9000 端口、commerce schema、现有图片 bucket 配置，以及已确认可访问的网站 origin `https://snow-force.com`。设置变量时使用 skipDeploys，平台 status 仍显示 latestDeployment 为 null，没有运行中的后台；数据库密码、JWT / cookie / 同步密钥、Redis 与 S3 access pair 均未上传。
+早期准备记录：连接器已保存并重新读取验证 Dockerfile 构建、源目录 `/services/commerce`、健康检查 `/health` 与 300 秒等待时间。已录入 13 个非密钥变量，包括 production、management、shared、关闭付款的税务开关、9000 端口、commerce schema、现有图片 bucket 配置，以及已确认可访问的网站 origin `https://snow-force.com`。设置变量时使用 skipDeploys，平台 status 仍显示 latestDeployment 为 null，没有运行中的后台；数据库密码、JWT / cookie / 同步密钥、Redis 与 S3 access pair 均未上传。
 
-提前生成 Railway 公网域名的请求被自动审批拒绝：代码源、生产密钥和部署验收尚未完成，此时生成域名会提前扩大服务暴露面。没有通过浏览器或其他方式绕过；待代码与生产配置齐备，再进行公网地址与上线步骤。目前没有已创建的后台公网域名，ADMIN_CORS / AUTH_CORS 也尚未写入占位域名。
+提前生成 Railway 公网域名的请求被自动审批拒绝：代码源、生产密钥和部署验收尚未完成，此时生成域名会提前扩大服务暴露面。没有通过浏览器或其他方式绕过；待代码与生产配置齐备，再进行公网地址与上线步骤。当时没有创建公网域名。本次在代码、凭据和私网启动验收完成后，通过连接器创建了上文 HTTPS 域名，并把 ADMIN_CORS / AUTH_CORS 设置为实际地址。
 
 部署代码已推送到现有私有 GitHub 仓库 `Snow-force/snow-force` 的独立分支 `codex/commerce-public-admin`，从已核对的 `main` 提交 `98e1ae9` 开始，部署代码提交为 `4e6a166`。GitHub 在推送时确认原 `Harrymeit/snow-force` 地址已迁移到该组织仓库；后续使用规范地址 `https://github.com/Snow-force/snow-force.git`。Railway 连接该分支中经过审查与测试的部署提交；不要直接假设 `main` 已包含部署文件。该发布分支只收录商城部署代码、相关测试及部署说明，不收录本地环境文件、凭据、运行记录、商品原始素材或其他未提交工作。Railway 目标是已核对的 SnowForce 工作区。连接私有仓库时核对实际授权范围。
 
-本轮 SnowForce 服务的 Connect Repo 窗口显示 No repositories found，并提供 Configure GitHub App；当前没有可选代码仓库，未连接 GitHub 源，也未授予新的仓库权限。后续如选择 GitHub 自动部署，授权应限定到所需仓库，并在实际授权界面核对权限；不扩大到所有私有仓库。也可使用经授权的 CLI 上传经过审查的后台构建上下文。
+早期 SnowForce 服务的 Connect Repo 窗口显示 No repositories found，并提供 Configure GitHub App；当时没有可选仓库；本次用户完成单仓库授权，两个服务均已连接 `Snow-force/snow-force` 的已检验提交。后续如选择 GitHub 自动部署，授权应限定到所需仓库，并在实际授权界面核对权限；不扩大到所有私有仓库。也可使用经授权的 CLI 上传经过审查的后台构建上下文。
 
 | 设置 | 本项目所需值 |
 | --- | --- |
@@ -164,7 +200,7 @@ Linux 安装日志存在上游间接依赖 `lodash.isequal`、`cron-parser` 的�
 | 健康检查 | `/health`，启动等待时间可先设为 300 秒，再依据实际启动耗时调整 |
 | 实例 | 管理阶段一个 shared 后台；可用内存按至少 2 GB 容量验收，实际消耗另行计费 |
 | 图片 | 现有 Supabase Storage；不把新上传图片放在容器临时文件系统 |
-| 队列 | 满足 TLS、密码认证、持久化和备份要求的 Redis；当前未在 Railway 验证，不能把默认模板直接当作已满足要求 |
+| 队列 | 已部署私网 TLS Redis 并验证认证、AOF 和 RDB；独立备份及 Redis 自身恢复演练仍待完成 |
 | 外部入口 | 平台 HTTPS 域名验收通过后，再配置自定义域名及 CORS |
 
 Railway 官方最新 IaC 文档说明，`railway.json` / `railway.toml` 已弃用，新服务不能采用旧配置方式，旧服务文件于 2026-12-01 停止生效。因此本项目没有新增旧式配置文件。首次可以使用平台界面设置；选定账号后，如需配置即代码，使用当前 `.railway/railway.ts` 方式，并先预览目标环境的变更。该文件描述项目资源，删去资源可能导致后续 apply 删除资源；只在独立商城项目和经过审查的变更中使用。
@@ -175,7 +211,7 @@ Railway 官方最新 IaC 文档说明，`railway.json` / `railway.toml` 已弃�
 
 来源：[Railway Dockerfile 检测](https://docs.railway.com/builds/dockerfiles)、[独立子目录部署](https://docs.railway.com/deployments/monorepo)、[新的 IaC 配置与旧配置截止日期](https://docs.railway.com/infrastructure-as-code)、[密封变量的限制](https://docs.railway.com/variables)、[部署健康检查范围](https://docs.railway.com/deployments/healthchecks)。
 
-### 2026-10-03 本地配置复核
+### 2026-10-03 早期本地配置复核（历史记录）
 
 复核只读取本地受保护配置并运行生产配置校验，没有启动生产实例、连接商品数据库或打印密钥。当前配置能通过已有数据库、CA、独立后台密钥和 Auth 项目的相关校验；但仍是本地开发配置，生产校验未通过。
 
@@ -198,6 +234,7 @@ Railway 官方最新 IaC 文档说明，`railway.json` / `railway.toml` 已弃�
 | `DATABASE_SCHEMA` | `commerce` |
 | `DATABASE_CA_CERT` | 现有 Supabase CA PEM；保持证书验证 |
 | `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` | 现有会员 Auth 项目 |
+| `REDIS_CA_CERT` | 与私网 Redis 服务器证书匹配的 CA；所有 Redis 客户端校验证书与主机名 |
 | `REDIS_URL` | 可供 Medusa 队列、缓存和锁使用的 TLS Redis 连接串（`rediss://`）；不能只提供 HTTP REST API |
 | `JWT_SECRET` / `COOKIE_SECRET` | 两个独立随机密钥，至少 32 字符；所有后台实例一致 |
 | `COMMERCE_ORDER_SYNC_SECRET` | 与网站后端一致的独立随机密钥，不使用 JWT 或 cookie 密钥 |
@@ -209,11 +246,11 @@ Railway 官方最新 IaC 文档说明，`railway.json` / `railway.toml` 已弃�
 | `S3_ENDPOINT` / `S3_REGION` / `S3_BUCKET` / `S3_FILE_URL` | 沿用 `.env.example` 中现有 `shop-products` 配置 |
 | `COMMERCE_STRIPE_API_KEY` / `COMMERCE_STRIPE_WEBHOOK_SECRET` | 管理模式无需填写；正式收款前另行配置和验收 |
 
-Redis 与 S3 access pair 尚需在实际托管配置中提供并验证。网页里现有图片可以显示，不代表后台的新图片上传已经具备生产凭据。
+Redis 与 S3 凭据已在授权的 Railway 项目配置并实际验证。新上传图片通过 Supabase 持久化，不依赖后台容器磁盘。
 
 服务部署完成后再将 Vercel 中网站后端的 `MEDUSA_BACKEND_URL` 指向已验收地址，并核对网站的商城开关、公开商品查询与同一订单同步密钥。密钥不会暴露给浏览器。后台和网站共用数据库，不等于网站一定已切换到这个服务地址。
 
-可先使用平台生成的 HTTPS 域名。可选自定义地址 `commerce.snow-force.com/app` 只是建议，尚未配置 DNS，不能作为已可用的登录链接。
+本次使用平台生成的 HTTPS 域名 `https://snowforce-commerce-production.up.railway.app`。可选自定义地址 `commerce.snow-force.com/app` 只是建议，尚未配置 DNS，不能作为已可用的登录链接。
 
 ## 公网验收与交接
 
@@ -225,4 +262,4 @@ Redis 与 S3 access pair 尚需在实际托管配置中提供并验证。网页�
 6. 顾客付款、原生付款 API、支付 webhook、订单与退款写入仍拒绝执行。测试不得产生真实收费。
 7. 更新合伙人手册及 PDF，填入真正验收通过的公网登录地址。合伙人在另一台电脑实际登录后完成交接。
 
-只有完成这些检查，才把“公网后台部署”目标标为完成。Railway 平台及 SnowForce 账户已确定并核对；当前还需要套餐激活与费用范围、补齐 Redis 与图片上传配置、提供已验证的部署代码，并执行实际部署与验收。
+只有完成这些检查，才把“公网后台部署”目标标为完成。Railway 后台已上线，账号、商品写入、图片和应用重启持久化已通过公网 API 核验。仍需完成浏览器操作交接、Vercel 前台地址切换，以及销售启用前的备份恢复和支付税务验收；不能把管理阶段部署完成等同于已经开通收款。
