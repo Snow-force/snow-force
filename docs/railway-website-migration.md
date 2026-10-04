@@ -30,21 +30,82 @@
 
 ## 当前状态
 
-- SnowForce Railway 身份、现有两个服务已实时核对；新增网站服务及临时域名已建立。部署 `8186e356-4bd8-4a50-acfc-a3789bc0c030` 已成功，源码为 `e5e62100a462374ef1511bb119b22867884ee87e`，部署分支为 `codex/commerce-public-admin`。
-- 网站全量 955 项测试、生产构建和覆盖率命令通过。覆盖率为语句 57.18%、分支 51.68%、函数 54.58%、行 58.30%；新增 liveness 接口无外部服务依赖，该检查不能替代公网业务验收。
-- 凭据保存确认已向经营者发出，等待回复。Vercel sensitive 变量的 API 不返回明文，需要使用现有受保护配置并核对来源。
-- 临时网站 `/api/health`、首页、`/shop`、`/member` 和 `/staff-login` 均返回 200。首页仍显示活动数据未就绪；网站服务尚未配置必需的生产服务端凭据，当前只能视为容器与页面入口验收通过，不能视为数据、邮件、支付或登录流程验收通过。
-- Cloudflare 登录已交给经营者完成，等待登录确认；正式 apex / www 已在 Railway 建立自定义域名条目，但域名所有权和证书仍待验证。
-- 正式 DNS 尚未修改，现有 Vercel 网站继续提供服务。
+- SnowForce 身份已再次核对为 `snowforceclub@gmail.com`。网站、Medusa、私有 Redis 均在同一 SnowForce Commerce Railway 项目，三项服务在线。
+- 网站生产配置恢复部署 `377adb0c-cd7c-47ce-8656-edc9bbedb197` 成功；运行源码为 `1ee6e23223c7199d968338eda4f5c41aff167cf7`。Medusa 和 Redis 沿用之前的部署，本轮没有重启它们。
+- 经营者已明确授权将网站生产密钥及商城连接配置仅保存到 `snowforce-web`。现有 Supabase、Resend、翻译、活动 Stripe 与正式 webhook、购物车和订单同步配置已恢复；未创建或轮换凭据，未上传整个环境文件。
+- `snow-force.com` 与 `www.snow-force.com` 已切换至 Railway，两个域名的所有权验证和 TLS 证书有效。正式站点 HTTP 响应的 server 为 `railway-hikari`，健康接口返回 `snowforce-web`；不再依赖 Vercel 提供正式网站请求。
+- 正式首页、活动及详情、回顾、商城、政策入口正常。浏览器先在同一新连接确认 Railway 健康接口，再确认原会员已登录会话、行程及订单入口继续有效，无需重新注册或迁移账号。视频 readyState 为 4，已加载图片正常，无横向溢出。
+- 商城读取的是现有 Medusa 数据：公开商品 0、地区 0、已发布政策为 null；页面显示新品待上架和政策尚未生效，区别于连接失败。原有草稿由经营者填写后自行发布，管理模式和停止收款保持不变。
+- 最终 `npm test` 为 154 文件 / 959 项通过，`npm run build` 通过；回调修复轮的覆盖率命令也通过。没有发送测试邮件、收取款项、新建业务订单或重放 Stripe 事件。
+- Cloudflare 原有 12 条记录中，仅两个网站 CNAME 的目标改变，额外添加两个 Railway 所有权 TXT。其他 10 条记录逐项对比保持原值，包括 Microsoft 365 和 Resend 邮件记录。
 
-尚未完成公网验收或域名切换，不能把本文件当作迁移完成证明。
+本轮完成的是前端托管迁移与前后端统一，不是商城正式销售启用。经营主体、税务许可、商品正式价格和库存、政策发布及真实交易全链路验收仍属于销售上线前的独立工作。
 
-## 2026-10-04 临时域名补充验收
+## 2026-10-04 临时域名准备阶段记录
+
+以下保留配置恢复前的核验过程；完成结果以“当前状态”和文末验收证据为准。
 
 - 实际部署的 CSS、Logo 图片优化接口和首页 MP4 均返回 200，类型分别为 CSS、JPEG、MP4。浏览器确认视频可用、商城两张展示图片加载正常、中英文切换有效，页面能看到 `Shop@snow-force.com`。
 - 未登录访问 `/admin`、`/admin/events` 和报名导出返回 307 至 `/staff-login`。会员行程和商家 dashboard 返回登录界面；这证明未登录守卫，不证明已登录账户的权限或业务流程。
 - 公开 GET 请求支付 webhook、订单同步接口返回 405；本轮没有发起支付、创建订单或同步写入。付款关闭的业务验收仍应沿用后台验证并在网站完整连接后复验。
 - Railway 变量名称已核对：网站没有 `SUPABASE_SECRET_KEY`、`MEDUSA_PUBLISHABLE_KEY`、邮件、翻译和活动支付配置。首页活动、回顾与商城政策尚未完成业务验收；不能将错误空状态视为真实空数据。
-- 实际登录回调曾返回 `https://0.0.0.0:3000/member?error=callback`，确认独立容器中的 request origin 不适合作为浏览器跳转地址。登录回调与旧报名确认路由改为站内相对 `Location`，保留已有跳转路径校验，并设置 `Cache-Control: no-store`。相对 Location 的语义见 [HTTP 标准](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2)。修复源码已通过检查，仍待新部署与公网复验。
+- 实际登录回调曾返回 `https://0.0.0.0:3000/member?error=callback`，确认独立容器中的 request origin 不适合作为浏览器跳转地址。登录回调与旧报名确认路由改为站内相对 `Location`，保留已有跳转路径校验，并设置 `Cache-Control: no-store`。相对 Location 的语义见 [HTTP 标准](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2)。新部署已成功，实际 HTTP 对会员、商家无验证码回调和旧报名确认链接均返回站内相对地址；浏览器确认无验证码回调最终停留在临时公开域名的 `/member?error=callback`。未提交登录验证码，成功登录的完整流程仍待验收。
 - 补充修复后 `npm test` 为 154 文件 / 959 项通过，`npm run build` 通过，覆盖率命令通过：语句 57.19%、分支 51.72%、函数 54.58%、行 58.31%。构建曾被 OneDrive 旧缓存属性阻止；旧 `.next` 已完整归档到 `.cache/next-build-backups/pre-callback-fix-20261004` 后重新生成，未修改源码或环境配置。
 - 只读 HTTP 证据：`output/shop-railway-web-preview-acceptance.json`。首次采样的网站当前内存约 0.088 GB，当前 CPU 约 0.0023 核；服务刚启动，小时平均包括未运行时间，不能据此估算整月费用。
+- 回调修复证据：`output/shop-railway-web-callback-http.json` 和 `output/shop-railway-web-callback-browser.png`。
+- 受保护配置只读盘点已记录变量名称、存在标志与 Stripe 模式，未记录值：`output/shop-railway-web-configuration-inventory.json`。`.env.local` 的活动 Stripe secret / publishable key 属于测试模式；`.stripe-live.env` 仅有正式 secret key。现有生产 webhook 签名密钥必须从受保护的生产恢复来源核对，不能使用本地 CLI 的测试签名密钥代替。当前网站活动支付使用托管 Stripe Checkout 跳转，不在源代码中读取旧的公开活动 publishable key；商城 Stripe 属于独立配置并继续关闭。
+- 正式域名实时核对仍未验证所有权，证书处于 `VALIDATING_OWNERSHIP`；`www` 仍指向原 Vercel CNAME。本轮未切换 DNS。续办 automation 的本地状态为 `PAUSED`，未改变其状态或启用旧的 Vercel 授权流程。
+
+## 生产配置恢复来源与已处理的依赖
+
+- 本地网站生产 Supabase URL / publishable key 与商城环境文件一致；网站与商城本地订单同步密钥也一致，网站 cart cookie 密钥达到现有代码的长度要求。仅比较本地受保护配置，Railway 渲染值被连接器隐藏，不能把本地比较当作服务器凭据逐值核对。部署缓存文件仍受 OS ACL 保护，没有更改权限；比较证据为 `output/shop-railway-web-config-comparison.json`。
+- 已使用现有 storefront publishable key 对 SnowForce 公网商城执行只读查询，Store API 均返回 200。当前公开商品 0、返回草稿 0、地区 0、已发布政策为 null；这些属于当前经营数据状态，不能将其写成网络故障，也不在迁移中自行发布商品或政策。证据为 `output/shop-railway-web-commerce-source-readonly.json` 和 `output/shop-railway-web-commerce-state-readonly.json`。
+- Stripe 连接器已确认正式 Snow Force Club 账户 `acct_1ToZcEAItQQT9la8`。现有端点 `we_1Tv2PpAItQQT9la8pAH6xLlv` 已启用，URL 为 `https://snow-force.com/api/stripe/webhook`，监听 `checkout.session.completed`。迁移保留此正式域名及路由，不需要新建或修改端点。API 未返回签名密钥。
+- 浏览器从同一 Snow Force Club 沙盒切换至正式账户，定位到现有端点详情；经营者授权后读取原有签名密钥，仅保存到指定网站服务。读取后隐藏源页面，不需要经营者重建 webhook 或发送密钥到聊天。Stripe 官方入口说明见 [签名验证与查看现有端点密钥](https://docs.stripe.com/webhooks#verify-signature)。来源证据为 `output/shop-railway-web-stripe-source-readonly.json`、`output/shop-railway-web-stripe-endpoint.png`，均不含密钥值。
+- 两项原阻塞均已处理：经营者完成 Cloudflare 登录，并明确授权指定生产配置保存至 `snowforce-web`。没有代替经营者接受条款、购买升级或扩大预算。
+
+## 环境配置与运行验收
+
+网站保留公开 Supabase 构建配置和正式 `NEXT_PUBLIC_SITE_URL=https://snow-force.com`。服务端恢复以下变量，值仅在 Railway 网站服务保存：
+
+| 变量 | 来源和用途 |
+| --- | --- |
+| `SUPABASE_SECRET_KEY` | 网站现有受保护生产配置；服务端仓储读取和业务写入 |
+| `RESEND_API_KEY` | 网站现有受保护生产配置；保留原邮件服务 |
+| `STAFF_NOTIFICATION_EMAIL` | 保留现有配置；当前源码的通知函数仍使用既有收件设置，不能仅凭该变量存在宣称邮件送达通过 |
+| `GOOGLE_TRANSLATE_API_KEY` | 网站现有受保护生产配置；保留原翻译服务 |
+| `STRIPE_SECRET_KEY` | 受保护的正式活动 Stripe 密钥，不使用本地测试密钥 |
+| `STRIPE_WEBHOOK_SECRET` | 原有正式 webhook 详情页；URL 仍为 `/api/stripe/webhook` |
+| `MEDUSA_PUBLISHABLE_KEY` | 现有商城读取配置；只在网站服务器使用 |
+| `SHOP_CART_COOKIE_SECRET` | 现有购物车签名配置，不更换现有签名密钥 |
+| `COMMERCE_ORDER_SYNC_SECRET` | 现有网站与商城共享的同步签名配置 |
+
+- 订单同步缺少签名返回 401；使用恢复的共享密钥签名、但提交无效结构返回 400 `invalid`。后者确认网站运行时密钥匹配，在结构校验处停止，没有写入订单。
+- 活动 webhook 无效签名返回 400；本轮未通过有效事件写入账本或执行资金操作。商城 checkout 的只读探测被管理模式拒绝，并返回停止销售与付款的明确说明。
+- 网站服务没有复制数据库 bootstrap 管理员连接、Redis、S3 或 Medusa 管理员密码。数据库和顾客身份不变；Medusa 管理员仍从其独立后台入口登录。
+- 迁移不等于邮件送达、翻译准确性、新登录邮件或真实活动收费的端到端验收。没有替经营者发信或收费；原服务配置和正式 URL 保留。
+
+## DNS 与回滚
+
+| 名称 | 原控制台记录 | Railway 目标 | 代理 / TTL |
+| --- | --- | --- | --- |
+| `snow-force.com` | CNAME `2f583a945b1214e5.vercel-dns-017.com` | `yms0edov.up.railway.app` | DNS only / Auto |
+| `www.snow-force.com` | CNAME `2f583a945b1214e5.vercel-dns-017.com` | `vpb9mqhe.up.railway.app` | DNS only / Auto |
+
+控制台确认 apex 原记录是 Cloudflare 扁平化的 CNAME；早期公共 DNS 看到的两个 A 地址只是解析结果，不应作为控制台回滚记录。需要回滚时，仅将上述两个现有 CNAME 的目标改回原值，保留邮件、验证和其他服务记录。记录 ID 和完整回滚指引在 `output/shop-railway-web-dns-rollback.json`。
+
+本轮保持 DNS only，没有修改 Cloudflare TLS 验证或绕过浏览器证书警告。域名验证和证书说明参考 [Railway 域名文档](https://docs.railway.com/networking/domains/working-with-domains)。浏览器首次复验曾使用旧连接，并出现一次本机 `ERR_BLOCKED_BY_CLIENT`；新浏览器连接随后正常打开正式站点、健康接口及原会员会话，未修改浏览器保护。浏览器日志另有来自 `chrome-extension://` 的扩展消息错误，未发现来自网站本身的控制台错误。
+
+## 验收证据与交接
+
+- `output/shop-railway-web-configured-http.json`：配置后的临时站点入口、业务公开内容、守卫和相对回调。
+- `output/shop-railway-web-formal-http.json`：正式域名 20 个入口，Railway 响应头、公开活动和回顾、私有路由守卫及 canonical。
+- `output/shop-railway-web-config-boundaries.json`：运行时订单同步签名、管理模式和无效 webhook 边界；无业务数据库写入。
+- `output/shop-railway-web-member-before.json`、`output/shop-railway-web-member-after.json`：真实已登录会员会话在迁移前后保留，不记录账户资料或 token。
+- `output/shop-railway-web-dns-audit.json`：两条网站路由改变、两个新增 TXT、其他十条记录保持原值。
+- `output/shop-railway-web-config-applied.png`、`output/shop-railway-web-cloudflare-after.png`、`output/shop-railway-web-formal-home.png`、`output/shop-railway-web-formal-shop.png`：掩码配置、DNS 与公开页面截图。
+- `output/shop-railway-web-final-tests.log`、`output/shop-railway-web-final-build.log`：最终全量测试及生产构建通过。
+
+日常管理从 [公网商城后台](https://snowforce-commerce-production.up.railway.app/app/login) 完成；商品、美元价格、库存和图片不需要重新部署网站。后续网站代码发布应先测试和构建，再在 Railway 更新经过验收的源码版本。当前部署固定到已验收的源码提交，推送说明文档不会触发后端或 Redis 重启。
+
+保留原有未提交文件和旧目录。Vercel 项目暂留作回滚来源，未删除项目或配置；正式 DNS 已指向 Railway。续办 automation 保持 `PAUSED`，完成本轮后不启用旧的 Vercel 授权任务。
