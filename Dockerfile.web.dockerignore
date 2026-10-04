@@ -1,0 +1,19 @@
+# This deployment contains the website only. Credentials and local artifacts
+# never enter its build context; Medusa and Redis use their existing contexts.
+**
+!package.json
+!package-lock.json
+!next.config.js
+!tsconfig.json
+!next-env.d.ts
+!postcss.config.js
+!tailwind.config.ts
+!eslint.config.mjs
+!vitest.config.mts
+!proxy.ts
+!src/
+!src/**
+!public/
+!public/**
+!Dockerfile.web
+!Dockerfile.web.dockerignore
