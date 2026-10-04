@@ -1,6 +1,6 @@
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, X509Certificate } from "node:crypto";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, resolve } from "node:path";
@@ -119,6 +119,23 @@ test("a missing OpenSSL executable creates no partial directory or secret files"
   const target = resolve(fixture, "not-created");
   assert.throws(() => initializeRedisSecrets(target, resolve(fixture, "missing-openssl")), /OpenSSL must be installed/);
   assert.equal(existsSync(target), false);
+});
+
+test("Railway initialization certifies only the explicit private DNS name and rejects unsafe names before creating files", () => {
+  const target = resolve(fixture, "railway");
+  const hostname = "snowforce-redis.railway.internal";
+  initializeRedisSecrets(target, openssl, hostname);
+  const certificate = new X509Certificate(readFileSync(resolve(target, "server.pem")));
+  assert.equal(certificate.checkHost(hostname), hostname);
+  assert.equal(certificate.checkHost("wrong.railway.internal"), undefined);
+  assert.equal(certificate.checkHost("redis"), undefined);
+  const url = new URL(readFileSync(resolve(target, "redis.env"), "utf8").trim().slice("REDIS_URL=".length));
+  assert.equal(url.hostname, hostname);
+  for (const invalid of ["", "../redis", "redis\nport 6379", "https://redis", "*.railway.internal", "Redis", "a".repeat(64)]) {
+    const invalidTarget = resolve(fixture, "invalid-host");
+    assert.throws(() => initializeRedisSecrets(invalidTarget, openssl, invalid), /valid lowercase DNS/);
+    assert.equal(existsSync(invalidTarget), false);
+  }
 });
 
 test("the operator CLI redacts successful initialization and refuses a second initialization", () => {

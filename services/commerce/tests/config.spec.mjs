@@ -20,7 +20,7 @@ async function configResult(overrides = {}) {
       "SUPABASE_PUBLISHABLE_KEY=sb_publishable_fixture",
     ].join("\n"));
     const environment = { ...process.env, NODE_ENV: "development", TS_NODE_PROJECT: resolve(backend, "tsconfig.json") };
-    for (const key of ["JWT_SECRET", "COOKIE_SECRET", "DATABASE_URL", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "REDIS_URL", "COMMERCE_STRIPE_API_KEY", "COMMERCE_STRIPE_WEBHOOK_SECRET", "COMMERCE_OPERATING_MODE"]) delete environment[key];
+    for (const key of ["JWT_SECRET", "COOKIE_SECRET", "DATABASE_URL", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "REDIS_URL", "REDIS_CA_CERT", "COMMERCE_STRIPE_API_KEY", "COMMERCE_STRIPE_WEBHOOK_SECRET", "COMMERCE_OPERATING_MODE"]) delete environment[key];
     Object.assign(environment, overrides);
     const script = `
       require(${JSON.stringify(resolve(backend, "node_modules/ts-node/register/transpile-only"))});
@@ -31,7 +31,8 @@ async function configResult(overrides = {}) {
         schema: config.projectConfig.databaseSchema,
         authMethods: config.projectConfig.http.authMethodsPerActor,
         stripeCapture: Object.values(config.modules || {}).find(m => m.resolve === "@medusajs/medusa/payment")?.options?.providers?.[0]?.options.capture,
-        fulfillmentProviders: Object.values(config.modules || {}).find(m => m.resolve === "@medusajs/medusa/fulfillment")?.options?.providers?.map(({ resolve, id }) => ({ resolve, id }))
+        fulfillmentProviders: Object.values(config.modules || {}).find(m => m.resolve === "@medusajs/medusa/fulfillment")?.options?.providers?.map(({ resolve, id }) => ({ resolve, id })),
+        redisClients: [config.projectConfig.redisOptions, ...Object.values(config.modules || {}).filter(m => /caching|event-bus-redis|workflow-engine-redis|locking$/.test(m.resolve)).flatMap(m => m.options?.providers ? m.options.providers.map(p => p.options.redisOptions) : [m.options?.redis?.redisOptions || m.options?.redisOptions])].map(options => ({family:options?.family, verifies:options?.tls?.rejectUnauthorized, caMatches:options?.tls?.ca === 'fixture-public-ca\\nsecond-line'}))
       }));
     `;
     const result = spawnSync(process.execPath, ["-e", script], { cwd: directory, env: environment, encoding: "utf8", timeout: 30_000 });
@@ -63,4 +64,10 @@ test("commerce authorizes Stripe payments before operator capture", async () => 
 test("management mode omits the Stripe provider even when old test keys remain in the environment", async () => {
   const result = await configResult({ COMMERCE_OPERATING_MODE: "management", COMMERCE_STRIPE_API_KEY: "sk_test_fixture", COMMERCE_STRIPE_WEBHOOK_SECRET: "whsec_fixture" });
   assert.equal(result.stripeCapture, undefined);
+});
+
+test("sessions, cache, events, workflows and locks all verify private Redis TLS with the configured CA", async () => {
+  const result = await configResult({ REDIS_URL: "rediss://snowforce-redis.railway.internal:6379", REDIS_CA_CERT: "fixture-public-ca\\nsecond-line" });
+  assert.equal(result.redisClients.length, 5);
+  for (const client of result.redisClients) assert.deepEqual(client, { family: 0, verifies: true, caMatches: true });
 });

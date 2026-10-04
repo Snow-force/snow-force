@@ -10,6 +10,11 @@ if ((process.env.NODE_ENV || "development") === "development" && existsSync(deve
   process.loadEnvFile(developmentEnv);
 }
 const redisUrl = process.env.REDIS_URL;
+// Railway private DNS is dual-stack. Every Redis client uses the same verified trust.
+const redisOptions = {
+  family: 0,
+  ...(process.env.REDIS_CA_CERT ? { tls: { rejectUnauthorized: true, ca: process.env.REDIS_CA_CERT.replace(/\\n/g, "\n") } } : {}),
+};
 const production = process.env.NODE_ENV === "production";
 const workerMode = process.env.MEDUSA_WORKER_MODE;
 if (workerMode && !["shared", "server", "worker"].includes(workerMode)) throw new Error("Invalid commerce worker mode");
@@ -25,6 +30,7 @@ module.exports = defineConfig({
       pool: { min: 0, max: 5 },
     },
     redisUrl,
+    redisOptions,
     workerMode: workerMode === "server" || workerMode === "worker" ? workerMode : "shared",
     http: {
       storeCors: process.env.STORE_CORS || "http://127.0.0.1:3100",
@@ -53,10 +59,10 @@ module.exports = defineConfig({
       },
     },
     ...(redisUrl ? [
-      { resolve: "@medusajs/medusa/caching", options: { providers: [{ resolve: "@medusajs/caching-redis", id: "caching-redis", is_default: true, options: { redisUrl } }] } },
-      { resolve: "@medusajs/medusa/event-bus-redis", options: { redisUrl } },
-      { resolve: "@medusajs/medusa/workflow-engine-redis", options: { redis: { redisUrl } } },
-      { resolve: "@medusajs/medusa/locking", options: { providers: [{ resolve: "@medusajs/medusa/locking-redis", id: "locking-redis", is_default: true, options: { redisUrl } }] } },
+      { resolve: "@medusajs/medusa/caching", options: { providers: [{ resolve: "@medusajs/caching-redis", id: "caching-redis", is_default: true, options: { redisUrl, redisOptions } }] } },
+      { resolve: "@medusajs/medusa/event-bus-redis", options: { redisUrl, redisOptions } },
+      { resolve: "@medusajs/medusa/workflow-engine-redis", options: { redis: { redisUrl, redisOptions } } },
+      { resolve: "@medusajs/medusa/locking", options: { providers: [{ resolve: "@medusajs/medusa/locking-redis", id: "locking-redis", is_default: true, options: { redisUrl, redisOptions } }] } },
     ] : []),
     ...(!isManagementMode() && process.env.COMMERCE_STRIPE_API_KEY ? [{
       resolve: "@medusajs/medusa/payment",

@@ -1,6 +1,14 @@
 # SnowForce 商城后台公网部署方案
 
-部署检查更新：2026-10-03。价格核对日期见各方案来源，实际订阅页面为准。状态：已登录并核对 SnowForce Railway 账户，在正确工作区建立了商城项目和空服务。此前个人账户的空项目未用于部署。当前等待 SnowForce 账户套餐激活，尚未部署公网后台。目标包含控制托管成本。
+部署检查更新：2026-10-03。价格核对日期见各方案来源，实际订阅页面为准。状态：SnowForce Railway 账户已升级 Hobby，GitHub 单仓库授权已生效，正在配置首次部署。此前个人账户的空项目未用于部署。后台尚未通过公网验收。目标包含控制托管成本。
+
+本轮核对账户仍为 `snowforceclub@gmail.com`，工作区仍为 `snowforce-club's Projects`。用户已授权计算资源每账单周期 US$25 硬上限、US$20 邮件提醒；已在平台保存并回读确认。达到硬上限会停止工作区的计算服务，税费及现有 Vercel、Supabase 费用另计。截图为 `output/shop-railway-compute-budget-saved.jpg`。
+
+GitHub App 访问范围由用户限定为 `Snow-force/snow-force`。服务源准备使用 `codex/commerce-public-admin` 分支的已检验提交，暂存配置中商城实例为 1 vCPU / 2 GB。新增 Redis 服务 `snowforce-redis`（`c8a53cb7-dac1-4c36-839c-6b429c22d5d1`）暂存容量为 0.5 vCPU / 0.5 GB，挂载 `/data` 的 512 MB 持久化卷 `93488860-141b-41d4-927e-7a7a2e6941cd`。Redis 使用私有网络、TLS、密码认证和 noeviction；不创建公网 Redis 域名或 TCP 代理。
+
+用户已授权将商城专用数据库连接、登录签名密钥、订单同步密钥、Redis 和 S3 凭据保存到该商城项目。用户自行生成并保存了 Supabase S3 访问密钥。S3 官方项目密钥可访问项目全部存储桶并绕过 RLS；Medusa 的图片配置固定为 `shop-products`，不能把此代码限制误称为密钥自身只有这个桶的权限。凭据只用于服务器，不包含数据库 bootstrap 连接或 Stripe 密钥，不提交 Git。
+
+本轮 Redis 配置支持 `REDIS_CA_CERT`，同一证书校验覆盖管理员会话、缓存、事件、工作流和锁；私有 DNS 使用双栈解析。网站 954 项测试、构建与覆盖率通过；后台 397 项测试通过，类型检查及生产构建通过。Redis 初始化工具行覆盖率 100%、分支覆盖率 84.62%，实际 shell 启动脚本已验证缺失或畸形凭据时在监听前拒绝启动且不输出密钥。新 Linux 镜像的完整启动、Redis 重启持久化和云端容量验证仍须完成，不能将这些本地检查当作公网后台验收。
 
 ## 目标与数据归属
 
