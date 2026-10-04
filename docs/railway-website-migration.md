@@ -106,6 +106,17 @@
 - `output/shop-railway-web-config-applied.png`、`output/shop-railway-web-cloudflare-after.png`、`output/shop-railway-web-formal-home.png`、`output/shop-railway-web-formal-shop.png`：掩码配置、DNS 与公开页面截图。
 - `output/shop-railway-web-final-tests.log`、`output/shop-railway-web-final-build.log`：最终全量测试及生产构建通过。
 
-日常管理从 [公网商城后台](https://snowforce-commerce-production.up.railway.app/app/login) 完成；商品、美元价格、库存和图片不需要重新部署网站。后续网站代码发布应先测试和构建，再在 Railway 更新经过验收的源码版本。当前部署固定到已验收的源码提交，推送说明文档不会触发后端或 Redis 重启。
+日常管理从 [公网商城后台](https://snowforce-commerce-production.up.railway.app/app/login) 完成；商品、美元价格、库存和图片不需要重新部署网站。2026-10-04 后续已将网站改为跟随 `main`、启用 Wait for CI；网站相关文件推送后，GitHub Quality Gate 的测试和生产构建成功才发布。仅修改文档或 `services/commerce` 不触发网站发布。商城后台仍固定到 `30f671d`，Redis 不跟随网站代码发布。详见下方自动发布验收记录。
 
 保留原有未提交文件和旧目录。Vercel 项目暂留作回滚来源，未删除项目或配置；正式 DNS 已指向 Railway。续办 automation 保持 `PAUSED`，完成本轮后不启用旧的 Vercel 授权任务。
+
+## 2026-10-04 自动发布验收记录
+
+- 用户已授权关闭 Vercel 自动部署并启用 GitHub CI 通过后自动部署。
+- 实时检查旧 Vercel 项目的 Settings → Git：项目未连接 Git 仓库，未配置 Deploy Hook，因此 GitHub 推送不会触发 Vercel 自动部署。保留项目、旧部署、环境配置作为回滚来源。
+- Railway `snowforce-web` source 已切换到 `Snow-force/snow-force` 的 `main`，清除 commit pin；界面显示 Auto deploys when pushed to GitHub，Wait for CI 开启。
+- `.github/workflows/ci.yml` 的 Quality Gate 在 main push 和 PR 运行，执行 `npm ci`、`npm test`、`npm run build`。提交 `4f4a71a` 的 GitHub run `37237632153` 已成功。
+- 切换后的 Railway 部署 `26535a38-6782-4569-80f2-c5f760bc5322` 曾显示 Waiting for CI，随后 SUCCESS；运行 main 提交 `4f4a71a`。本轮未改变业务数据、凭据、预算或商城收款状态。
+- 网站 watch paths 包括 `/src/**`、`/public/**`、根 package/lockfile、Next/TypeScript/proxy/ESLint/PostCSS/Tailwind/Vitest 配置、`/next-env.d.ts`、`/Dockerfile.web`、Docker ignore 文件及 `/.github/workflows/ci.yml`。文档、报告、商品素材源目录和后台目录的单独变更不触发网站发布。
+- 商城后台无需独立 repository：保留同仓库的 `services/commerce`，独立依赖、Dockerfile、环境变量和 Railway 服务。网站 CI 当前未验证后台，故后台继续固定在已验收版本。若后续启用后台自动发布，应先补充后台 test/typecheck/build CI，再启用后台服务的 Wait for CI 和仅覆盖 `/services/commerce/**` 的 watch paths；数据库迁移应单独审核，不将自动发布等同于自动运行迁移。
+- 证据截图：`output/vercel-git-disconnected.png`、`output/railway-web-ci-autodeploy.png`。旧阶段固定版本记录为历史，不代表此节更新后的前台发布设置。
