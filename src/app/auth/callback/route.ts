@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeMemberNextPath } from "@/lib/members/auth-results";
 import { sanitizeMerchantNextPath } from "@/lib/merchants/auth-results";
@@ -20,36 +20,40 @@ function sanitizeNextForPath(rawNext: string | null): string {
   return sanitizeMemberNextPath(value);
 }
 
+function redirectWithinSite(path: string) {
+  // Keep redirects on the browser's origin, even behind a container proxy.
+  return new Response(null, {
+    status: 307,
+    headers: { Location: path, "Cache-Control": "no-store" },
+  });
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = sanitizeNextForPath(requestUrl.searchParams.get("next"));
 
   if (!code) {
-    return NextResponse.redirect(
-      new URL(next.startsWith("/merchant") ? "/merchant?error=callback" : "/member?error=callback", requestUrl.origin),
-    );
+    return redirectWithinSite(next.startsWith("/merchant") ? "/merchant?error=callback" : "/member?error=callback");
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(
-      new URL(next.startsWith("/merchant") ? "/merchant?error=callback" : "/member?error=callback", requestUrl.origin),
-    );
+    return redirectWithinSite(next.startsWith("/merchant") ? "/merchant?error=callback" : "/member?error=callback");
   }
 
   if (next.startsWith("/merchant")) {
-    return NextResponse.redirect(new URL(next, requestUrl.origin));
+    return redirectWithinSite(next);
   }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.redirect(new URL("/member?error=callback", requestUrl.origin));
+    return redirectWithinSite("/member?error=callback");
   }
 
   const destination = await resolveMemberAuthDestination(user, next, supabase);
-  return NextResponse.redirect(new URL(destination, requestUrl.origin));
+  return redirectWithinSite(destination);
 }

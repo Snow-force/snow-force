@@ -1,7 +1,6 @@
-function redirectTo(request: Request, path: string) {
-  return Response.redirect(new URL(path, request.url), 307);
-}
-
-export async function GET(request: Request) {
-  return redirectTo(request, "/member?registration=member-only");
+export async function GET() {
+  return new Response(null, {
+    status: 307,
+    headers: { Location: "/member?registration=member-only", "Cache-Control": "no-store" },
+  });
 }

@@ -30,9 +30,21 @@
 
 ## 当前状态
 
-- SnowForce Railway 身份、现有两个服务已实时核对；新增网站服务及临时域名已建立，尚未部署。
+- SnowForce Railway 身份、现有两个服务已实时核对；新增网站服务及临时域名已建立。部署 `8186e356-4bd8-4a50-acfc-a3789bc0c030` 已成功，源码为 `e5e62100a462374ef1511bb119b22867884ee87e`，部署分支为 `codex/commerce-public-admin`。
 - 网站全量 955 项测试、生产构建和覆盖率命令通过。覆盖率为语句 57.18%、分支 51.68%、函数 54.58%、行 58.30%；新增 liveness 接口无外部服务依赖，该检查不能替代公网业务验收。
 - 凭据保存确认已向经营者发出，等待回复。Vercel sensitive 变量的 API 不返回明文，需要使用现有受保护配置并核对来源。
+- 临时网站 `/api/health`、首页、`/shop`、`/member` 和 `/staff-login` 均返回 200。首页仍显示活动数据未就绪；网站服务尚未配置必需的生产服务端凭据，当前只能视为容器与页面入口验收通过，不能视为数据、邮件、支付或登录流程验收通过。
+- Cloudflare 登录已交给经营者完成，等待登录确认；正式 apex / www 已在 Railway 建立自定义域名条目，但域名所有权和证书仍待验证。
 - 正式 DNS 尚未修改，现有 Vercel 网站继续提供服务。
 
 尚未完成公网验收或域名切换，不能把本文件当作迁移完成证明。
+
+## 2026-10-04 临时域名补充验收
+
+- 实际部署的 CSS、Logo 图片优化接口和首页 MP4 均返回 200，类型分别为 CSS、JPEG、MP4。浏览器确认视频可用、商城两张展示图片加载正常、中英文切换有效，页面能看到 `Shop@snow-force.com`。
+- 未登录访问 `/admin`、`/admin/events` 和报名导出返回 307 至 `/staff-login`。会员行程和商家 dashboard 返回登录界面；这证明未登录守卫，不证明已登录账户的权限或业务流程。
+- 公开 GET 请求支付 webhook、订单同步接口返回 405；本轮没有发起支付、创建订单或同步写入。付款关闭的业务验收仍应沿用后台验证并在网站完整连接后复验。
+- Railway 变量名称已核对：网站没有 `SUPABASE_SECRET_KEY`、`MEDUSA_PUBLISHABLE_KEY`、邮件、翻译和活动支付配置。首页活动、回顾与商城政策尚未完成业务验收；不能将错误空状态视为真实空数据。
+- 实际登录回调曾返回 `https://0.0.0.0:3000/member?error=callback`，确认独立容器中的 request origin 不适合作为浏览器跳转地址。登录回调与旧报名确认路由改为站内相对 `Location`，保留已有跳转路径校验，并设置 `Cache-Control: no-store`。相对 Location 的语义见 [HTTP 标准](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2)。修复源码已通过检查，仍待新部署与公网复验。
+- 补充修复后 `npm test` 为 154 文件 / 959 项通过，`npm run build` 通过，覆盖率命令通过：语句 57.19%、分支 51.72%、函数 54.58%、行 58.31%。构建曾被 OneDrive 旧缓存属性阻止；旧 `.next` 已完整归档到 `.cache/next-build-backups/pre-callback-fix-20261004` 后重新生成，未修改源码或环境配置。
+- 只读 HTTP 证据：`output/shop-railway-web-preview-acceptance.json`。首次采样的网站当前内存约 0.088 GB，当前 CPU 约 0.0023 核；服务刚启动，小时平均包括未运行时间，不能据此估算整月费用。

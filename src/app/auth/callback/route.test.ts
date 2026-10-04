@@ -38,7 +38,7 @@ describe("Supabase auth callback", () => {
   it("rejects a missing member code without creating a Supabase client", async () => {
     const response = await GET(new NextRequest("https://snowforce.test/auth/callback?next=/events/trip"));
 
-    expect(response.headers.get("location")).toBe("https://snowforce.test/member?error=callback");
+    expect(response.headers.get("location")).toBe("/member?error=callback");
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
@@ -49,7 +49,7 @@ describe("Supabase auth callback", () => {
     const response = await GET(new NextRequest("https://snowforce.test/auth/callback?code=bad&next=/merchant/dashboard"));
 
     expect(mocks.sanitizeMerchantNextPath).toHaveBeenCalledWith("/merchant/dashboard");
-    expect(response.headers.get("location")).toBe("https://snowforce.test/merchant?error=callback");
+    expect(response.headers.get("location")).toBe("/merchant?error=callback");
   });
 
   it("routes a member through the unified post-auth privacy decision", async () => {
@@ -67,7 +67,7 @@ describe("Supabase auth callback", () => {
       expect.any(Object),
     );
     expect(response.headers.get("location")).toBe(
-      "https://snowforce.test/member/consent?next=%2Fevents%2Fmammoth-weekend",
+      "/member/consent?next=%2Fevents%2Fmammoth-weekend",
     );
   });
 
@@ -78,6 +78,38 @@ describe("Supabase auth callback", () => {
 
     expect(mocks.getUser).not.toHaveBeenCalled();
     expect(mocks.resolveMemberAuthDestination).not.toHaveBeenCalled();
-    expect(response.headers.get("location")).toBe("https://snowforce.test/merchant/dashboard");
+    expect(response.headers.get("location")).toBe("/merchant/dashboard");
+  });
+
+  it.each([
+    ["https://0.0.0.0:3000/auth/callback", "/member?error=callback"],
+    ["https://0.0.0.0:3000/auth/callback?next=/merchant/dashboard", "/merchant?error=callback"],
+  ])("keeps an unsuccessful proxied callback on the visitor's site: %s", async (url, location) => {
+    const response = await GET(new NextRequest(url, {
+      headers: { host: "snowforce-web-production-5cbf.up.railway.app", "x-forwarded-host": "untrusted.example" },
+    }));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(location);
+    expect(new URL(location, "https://snow-force.com/auth/callback").origin).toBe("https://snow-force.com");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it("keeps a successful proxied member callback on the visitor's site", async () => {
+    mocks.resolveMemberAuthDestination.mockResolvedValue("/member/trips");
+    const response = await GET(new NextRequest("https://0.0.0.0:3000/auth/callback?code=valid"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("/member/trips");
+    expect(mocks.exchangeCodeForSession).toHaveBeenCalledWith("valid");
+  });
+
+  it("returns to member sign-in when the exchanged session has no user", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null } });
+    const response = await GET(new NextRequest("https://0.0.0.0:3000/auth/callback?code=valid"));
+
+    expect(response.headers.get("location")).toBe("/member?error=callback");
+    expect(mocks.resolveMemberAuthDestination).not.toHaveBeenCalled();
   });
 });
