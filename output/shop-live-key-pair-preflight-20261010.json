@@ -1,0 +1,10 @@
+{
+  "live": true,
+  "charged": false,
+  "intent_id": "pi_3UP5DXAItQQT9la81eC3NS43",
+  "initial_status": "requires_payment_method",
+  "amount_received": 0,
+  "publishable_same_account": true,
+  "final_status": "canceled",
+  "final_amount_received": 0
+}

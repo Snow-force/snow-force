@@ -1,6 +1,6 @@
 # SnowForce 商城后台公网部署方案
 
-部署检查更新：2026-10-03。价格核对日期见各方案来源，实际订阅页面为准。状态：SnowForce Railway 账户已升级 Hobby，GitHub 单仓库授权已生效，商城后台和私有 Redis 已上线。此前个人账户的空项目未用于部署。公网 API 与负责人登录后的管理界面已通过核验。Vercel 已保存商城读取配置，重新部署因旧仓库连接失效被拒绝；前台联动仍待仓库授权与重连。目标包含控制托管成本。
+部署检查更新：2026-10-04。价格核对日期见各方案来源，实际订阅页面为准。状态：SnowForce Railway 账户已升级 Hobby，GitHub 单仓库授权已生效，商城后台和私有 Redis 已上线。此前个人账户的空项目未用于部署。公网 API 与负责人登录后的管理界面已通过核验。Vercel 已保存商城读取配置，移除失效旧仓库连接后，重新连接被 Hobby 的组织私有仓库套餐限制拒绝，等待托管方案决定。当前目标为公网部署后完成完整测试，并提交推送到 main；此前已批准的计算费用上限继续保留。
 
 本轮核对账户仍为 `snowforceclub@gmail.com`，工作区仍为 `snowforce-club's Projects`。用户已授权计算资源每账单周期 US$25 硬上限、US$20 邮件提醒；已在平台保存并回读确认。达到硬上限会停止工作区的计算服务，税费及现有 Vercel、Supabase 费用另计。截图为 `output/shop-railway-compute-budget-saved.jpg`。
 
@@ -27,8 +27,8 @@ GitHub App 访问范围由用户限定为 `Snow-force/snow-force`。两个服务
 | 商品图片 | 实际经 Medusa 上传到 Supabase，下载字节与原文件一致；应用重启后仍可读取 |
 | 结账、购物车写入、Stripe webhook | 返回 `not_allowed`，明确为管理模式阻断 |
 | Redis | 私网 TLS + 密码连接成功，错误密码被拒绝，`port=0`、`tls-port=6379`，AOF/RDB 写入成功 |
-| 浏览器管理界面 | 负责人实际登录；14 件草稿、商品详情、USD 规格表单、Inventory、运费及政策页面可加载；未保存验收表单或发布现有商品 |
-| Vercel 前台连接 | Production 已保存 `MEDUSA_BACKEND_URL` 与商城公开读取用的 `MEDUSA_PUBLISHABLE_KEY`；重新部署因旧仓库连接失效被拒绝，尚未生效 |
+| 浏览器管理界面 | 负责人实际登录；临时草稿的 SKU、US$38.50、Irvine 库存 4 件及图片实际保存成功，刷新和 API 读取通过；临时数据已清理，原有 14 件草稿保留 |
+| Vercel 前台连接 | Production 已保存 `MEDUSA_BACKEND_URL` 与商城公开读取用的 `MEDUSA_PUBLISHABLE_KEY`；旧连接已移除，现有授权可列出正确仓库，但 Hobby 无法连接组织私有仓库，尚未重新部署 |
 
 最初云端样本：后台内存约 368 MB、Redis 约 10 MB，后台启动峰值约 710 MB。短时样本不能作为整月账单承诺；保留 2 GB 应用容量与 US$25 工作区计算硬上限。达到硬上限服务会停止。
 
@@ -38,13 +38,17 @@ Railway 当前 Hobby 的 Backups 页面明确：创建平台备份和 PITR 需�
 
 ### Vercel 仓库连接待处理
 
-现有 `snow-force` Vercel 项目（`prj_9HOG2P3lLvuKiv4h2NmAmjMh2Zxs`）的旧连接仍为 `Harrymeit/snow-force`，Git 设置明确显示 `Project Link not found`；重新部署被拒绝，提示 `The provided GitHub repository can't be found`，没有产生新部署。当前线上部署仍为已核对的 `98e1ae9`。网站代码与本次发布分支中的 `src`、根目录依赖和环境模板相同；本次不部署本地未提交素材或其他工作。
+现有 `snow-force` Vercel 项目（`prj_9HOG2P3lLvuKiv4h2NmAmjMh2Zxs`）的旧连接地址为 `Harrymeit/snow-force`，重新部署再次被拒绝，提示 `The provided GitHub repository can't be found`，没有产生新部署。已移除失效的旧仓库连接并保留项目配置，正在选择正确的现有组织仓库。当前线上部署仍为已核对的 `98e1ae9`。网站代码与本次发布分支中的 `src`、根目录依赖和环境模板相同；本次不部署本地未提交素材或其他工作。
 
-已准备将 Vercel App 的授权限定到现有组织仓库 `Snow-force/snow-force`，授权页等待用户确认。该步骤会新增 Vercel 的仓库访问权限，需要明确确认；没有点击 Install 或扩大到全部仓库。授权后应重新连接同一个 Vercel 项目，使用已验证代码重新部署，再核对公开商城草稿隐藏与后台数据联动。已有网站域名及会员 Supabase 登录继续使用原配置。本次只新增商城公开读取配置，没有向 Vercel 复制 Railway 的数据库、S3、Redis 或管理员签名密钥；购物车签名和订单同步生产密钥亦未新增。
+此前准备的 GitHub App 授权页未代替用户提交。本轮 Vercel 已能通过现有访问列出现有组织仓库 `Snow-force/snow-force`，但连接该仓库被 Hobby 套餐拒绝：组织的私有仓库需要 Pro。当前项目保留配置、域名及既有生产部署，旧 Git 连接已移除，没有新部署；不将这个状态误称为网站前台已连接新后台。等待用户决定升级现有 Vercel 团队，或把前台连接另行安排。Pro 每月 US$20 平台费包含一个部署席位和 US$20 用量额度，额外席位、用量及税费另计，本次没有提交订阅。2026-10-04 核对依据：[Vercel Git 仓库限制](https://vercel.com/docs/git)、[Vercel Pro](https://vercel.com/docs/plans/pro-plan)。
+
+确定方案后使用已验证代码重新部署，再核对公开商城草稿隐藏与后台数据联动。已有网站域名及会员 Supabase 登录继续使用原配置。本次只新增商城公开读取配置，没有向 Vercel 复制 Railway 的数据库、S3、Redis 或管理员签名密钥；购物车签名和订单同步生产密钥亦未新增。若后续出现新增权限授权，仍须由用户确认。
 
 界面证据：`output/shop-railway-admin-products.jpg`、`output/shop-railway-admin-usd-form.jpg`、`output/shop-railway-admin-shipping.jpg`、`output/shop-railway-admin-policies.jpg`、`output/shop-vercel-commerce-env.jpg`、`output/shop-vercel-git-link-error.jpg`。合伙人在自己电脑上的实际培训和销售上线验收属于后续交接项。
 
 交接提交前再次运行网站 954 项测试与构建，均通过。最初构建因 Next 扫描 `.data` 下受保护的部署临时凭据目录而返回访问拒绝；将本轮临时文件移至仍受保护、仍被 Git 忽略的 `.cache/railway-production` 后恢复，没有更改凭据权限或应用代码。PDF 按二进制保存，已核对 Git 中的字节与本地原文件一致；两份 PDF 的目录章节、可点击公网登录链接及渲染版面均已检查。最终构建记录为 `output/shop-cloud-handoff-root-validation.json`。
+
+在迁移后的 OneDrive 目录再次完成网站 954 项测试与构建、后台 397 项测试、类型检查及生产构建。公网另有 31 项 HTTP 管理阶段检查通过。完整记录与仍未完成的项目见 [公网后台完整测试记录](shop-public-admin-test-report.md)，不能据本地构建或部分验收宣称所有部署要求完成。
 
 ## 目标与数据归属
 
@@ -105,7 +109,7 @@ Railway 新账号试用每个服务的 RAM 上限为 1 GB，免费计划为 0.5 
 
 ## Render 与其他云服务器的比较
 
-以下是基础资源费用，不包含现有 Vercel / Supabase 费用、税费、超额流量和额外备份；后台托管平台尚未确定。
+以下保留平台选择阶段的基础资源比较，不包含现有 Vercel / Supabase 费用、税费、超额流量和额外备份。当前已选定并部署 SnowForce Railway，实际运行状态见本文开头。
 
 | 方案 | 当前参考月费 | 适合的使用方式 |
 | --- | --- | --- |
@@ -262,4 +266,4 @@ Redis 与 S3 凭据已在授权的 Railway 项目配置并实际验证。新上�
 6. 顾客付款、原生付款 API、支付 webhook、订单与退款写入仍拒绝执行。测试不得产生真实收费。
 7. 更新合伙人手册及 PDF，填入真正验收通过的公网登录地址。合伙人在另一台电脑实际登录后完成交接。
 
-只有完成这些检查，才把“公网后台部署”目标标为完成。Railway 后台已上线，账号、商品写入、图片和应用重启持久化已通过公网 API 核验。仍需完成浏览器操作交接、Vercel 前台地址切换，以及销售启用前的备份恢复和支付税务验收；不能把管理阶段部署完成等同于已经开通收款。
+只有完成本轮范围内的检查，才把“公网后台部署”目标标为完成。Railway 后台已上线，账号、商品写入、图片和应用重启持久化已通过公网 API 核验；浏览器也已实际保存并读回商品 SKU、美元价格、Irvine 库存和图片，专用测试数据已清理。当前等待 Redis 重启授权及 Vercel 前台托管方案决定；合伙人在另一台电脑的实际培训和登录交接未代替她完成。销售启用前仍需独立备份恢复及支付税务验收，管理阶段部署完成不代表已开通收款。本轮验证结果见 [完整测试记录](shop-public-admin-test-report.md)。

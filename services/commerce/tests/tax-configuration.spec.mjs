@@ -20,7 +20,7 @@ function fixture(metadata={...businessPolicyMetadata(),snowforce_fulfillment_loc
   f.reader={retrieve:async id=>{assert.equal(f.depth,0);f.providerCalls++;assert.equal(id,shippingCodeFixture().id);return shippingCodeFixture();},list:async()=>assert.fail("No full catalog during activation")};
   return f;
 }
-const draft=()=>({legal_seller_name:"Fixture seller",stock_location_id:"sloc_fixture",shipping_tax_code:"txcd_92010001",california_permit_confirmed:true,obligations_reviewed:true,shipping_tax_treatment_reviewed:true,review_note:"Reviewed fixture permit, obligations and shipping category conditions."});
+const draft=()=>({legal_seller_name:"Fixture seller",stock_location_id:"sloc_fixture",shipping_tax_code:"txcd_92010001",california_permit_confirmed:true,california_permit_type:"ongoing",california_permit_valid_from:"2025-01-01",california_permit_valid_through:null,obligations_reviewed:true,shipping_tax_treatment_reviewed:true,review_note:"Reviewed fixture permit, obligations and shipping category conditions."});
 const save=(content=draft())=>({command:"save_draft",request_id:requestId,expected_revision:0,content});
 async function activation(f){const loaded=await service.adminTaxConfiguration(f.scope,auth);return {command:"activate",request_id:"123e4567-e89b-42d3-a456-426614174022",expected_revision:loaded.state.revision,source_fingerprint:loaded.source_fingerprint,confirm_review:true};}
 test("initial admin configuration is an unconfirmed draft with the actual warehouse and no default tax code",async()=>{
@@ -43,6 +43,27 @@ test("activation records reviewed native facts and exact official category; prov
 });
 test("incomplete business, permit, obligations, shipping treatment or review basis cannot activate",async()=>{
   for(const patch of [{legal_seller_name:""},{stock_location_id:null},{shipping_tax_code:null},{california_permit_confirmed:false},{obligations_reviewed:false},{shipping_tax_treatment_reviewed:false},{review_note:"too short"}]){const f=fixture();await service.changeTaxConfiguration(f.scope,auth,save({...draft(),...patch}),f.reader);const command=await activation(f);await assert.rejects(()=>service.changeTaxConfiguration(f.scope,auth,command,f.reader),/Complete the legal seller/);assert.equal(f.writes,1);assert.equal(f.providerCalls,0);}
+});
+
+test("missing dates, future or expired permits cannot activate or authorize new quotes",async()=>{
+  for(const patch of [{california_permit_type:null},{california_permit_valid_from:null},{california_permit_valid_from:"2099-01-01"},{california_permit_type:"temporary",california_permit_valid_through:null},{california_permit_type:"temporary",california_permit_valid_through:"2025-01-02"}]){
+    const f=fixture();await service.changeTaxConfiguration(f.scope,auth,save({...draft(),...patch}),f.reader);
+    const command=await activation(f);
+    await assert.rejects(()=>service.changeTaxConfiguration(f.scope,auth,command,f.reader));
+    assert.equal(f.writes,1);assert.equal(f.providerCalls,0);
+    const configured=fixture(configuredMetadata());
+    Object.assign(configured.store.metadata.snowforce_tax_configuration.publications[0].content,patch);
+    await assert.rejects(()=>service.readReviewedTaxConfiguration(configured.scope,configurationSetup),/current, reviewed business/);
+  }
+});
+
+test("temporary permit expiry between Stripe lookup and activation rolls back the publication",async()=>{
+  const f=fixture();f.store.database_now="2027-01-05T07:59:59.000Z";
+  await service.changeTaxConfiguration(f.scope,auth,save({...draft(),california_permit_type:"temporary",california_permit_valid_from:"2026-10-07",california_permit_valid_through:"2027-01-04"}),f.reader);
+  const command=await activation(f);
+  f.onTransaction=()=>{f.store.database_now="2027-01-05T08:00:00.000Z";};
+  await assert.rejects(()=>service.changeTaxConfiguration(f.scope,auth,command,f.reader),/verified current permit/);
+  assert.equal(f.writes,1);assert.equal(f.store.metadata.snowforce_tax_configuration.active_revision,null);
 });
 test("unpublished or different policy seller, unavailable warehouse and stale source cannot activate",async()=>{
   for(const kind of ["policy","seller","warehouse","address","source"]){const f=fixture();await service.changeTaxConfiguration(f.scope,auth,save(),f.reader);const command=await activation(f);

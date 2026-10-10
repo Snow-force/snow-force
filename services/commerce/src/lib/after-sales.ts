@@ -6,9 +6,11 @@ import { orderMemberId } from "./order-sync";
 import { afterSalesInput, afterSalesReview, afterSalesCustomerUpdate, afterSalesRow, assertAfterSalesItems, assertCustomerUpdate, customerAfterSales, returnableQuantity, type AfterSalesRow } from "./after-sales-policy";
 import { assertRefundFundsSucceeded, lastOrderRefundFunds, saveRefundFundsCheck, verifyOrderRefundFunds, type RefundFundsCheck, type StripeRefundReader } from "./refund-finality";
 import { afterSalesTiming, afterSalesTimingOrder, assessReturnWindow, assertReturnWindowReview, calendarDeadline, verifiedOrderPurchasePolicy } from "./after-sales-timing";
+import { assertAfterSalesRefundCompletion } from "./after-sales-refund-completion";
+import type { TaxQuoteConnection } from "./tax-quote-ledger";
 
 type Binding = string | number;
-export type AfterSalesConnection = { raw: (sql: string, values?: Binding[]) => Promise<{ rows: unknown[] }>; transaction: <T>(operation: (connection: AfterSalesConnection) => Promise<T>) => Promise<T> };
+export type AfterSalesConnection = TaxQuoteConnection;
 const rows = z.array(afterSalesRow);
 const id = z.string().uuid();
 const orderIdSchema = z.string().regex(/^order_[A-Za-z0-9]+$/);
@@ -22,7 +24,7 @@ export function parseInput<Schema extends z.ZodType>(schema: Schema, value: unkn
 }
 async function ownedOrder(scope: MedusaContainer, orderId: string, customerId: string) {
   if (!orderIdSchema.safeParse(orderId).success) throw notFound();
-  const { result } = await getOrderDetailWorkflow(scope).run({ input: { order_id: orderId, fields: ["id","customer_id","created_at","metadata","status","currency_code","items.id","items.title","items.variant_title","items.detail.*","fulfillments.canceled_at","fulfillments.delivered_at","fulfillments.items.line_item_id"], filters: { customer_id: customerId, is_draft_order: false } } });
+  const { result } = await getOrderDetailWorkflow(scope).run({ input: { order_id: orderId, fields: ["id","customer_id","created_at","metadata","status","currency_code","items.*","items.detail.*","fulfillments.canceled_at","fulfillments.delivered_at","fulfillments.items.line_item_id"], filters: { customer_id: customerId, is_draft_order: false } } });
   const order = orderSchema.parse(result);
   if (order.customer_id !== customerId) throw notFound();
   const memberId = await orderMemberId(customerId, scope); if (!memberId) throw notFound();
@@ -84,7 +86,12 @@ export async function adminAfterSalesList(scope: MedusaContainer, status: unknow
   return { requests: rows.parse(result.rows), count, offset: pageOffset };
 }
 const nativeQuantity = z.union([z.instanceof(BigNumber),z.number(),z.string()]).transform((value)=>MathBN.convert(value).toNumber()).pipe(z.number().int().nonnegative());
-const nativeReturn = z.object({ id:z.string(), display_id:z.union([z.number(),z.string()]).optional(),created_at:z.coerce.date(), order_id:z.string(), status:z.string(), canceled_at:z.unknown().nullable(), exchange_id:z.string().nullable(), claim_id:z.string().nullable(), items:z.array(z.object({ item_id:z.string(), quantity:nativeQuantity, received_quantity:nativeQuantity })) });
+const nativeReturn = z.object({ id:z.string(), display_id:z.union([z.number(),z.string()]).optional(),created_at:z.coerce.date(), order_id:z.string(), status:z.string(), canceled_at:z.unknown().nullable(), exchange_id:z.string().nullish(), claim_id:z.string().nullish(),
+  exchange:z.object({id:z.string()}).nullish(),claim:z.object({id:z.string()}).nullish(),
+  items:z.array(z.object({ item_id:z.string(), quantity:nativeQuantity, received_quantity:nativeQuantity })) }).transform(value=>{
+  if(value.exchange_id&&value.exchange&&value.exchange_id!==value.exchange.id||value.claim_id&&value.claim&&value.claim_id!==value.claim.id)throw conflict();
+  return {...value,exchange_id:value.exchange_id??value.exchange?.id??null,claim_id:value.claim_id??value.claim?.id??null};
+});
 export function validateNativeReturn(row: AfterSalesRow, raw: unknown) {
   const value = nativeReturn.parse(raw);
   if (value.order_id !== row.order_id || value.created_at.getTime()<new Date(row.created_at).getTime() || value.canceled_at || value.status === "canceled" || value.claim_id || (row.kind === "return" && value.exchange_id) || value.items.length !== row.items.length || row.items.some((line)=>!value.items.some((native)=>native.item_id===line.id && native.quantity===line.quantity))) throw conflict();
@@ -92,7 +99,7 @@ export function validateNativeReturn(row: AfterSalesRow, raw: unknown) {
 }
 async function nativeCandidates(scope: MedusaContainer, row: AfterSalesRow) {
   const query = scope.resolve(ContainerRegistrationKeys.QUERY);
-  const returns = await query.graph({entity:"return",fields:["id","display_id","created_at","order_id","status","canceled_at","exchange_id","claim_id","items.item_id","items.quantity","items.received_quantity"],filters:{order_id:row.order_id}});
+  const returns = await query.graph({entity:"return",fields:["id","display_id","created_at","order_id","status","canceled_at","exchange_id","claim_id","exchange.id","claim.id","items.item_id","items.quantity","items.received_quantity"],filters:{order_id:row.order_id}});
   const exchanges = row.kind === "exchange" ? await query.graph({entity:"order_exchange",fields:["id","display_id","order_id","return_id","canceled_at","additional_items.item_id","additional_items.quantity"],filters:{order_id:row.order_id}}) : {data:[]};
   const parsedReturns = z.array(nativeReturn).parse(returns.data);
   const parsedExchanges = z.array(z.object({id:z.string(),display_id:z.union([z.number(),z.string()]).optional(),order_id:z.string(),return_id:z.string().nullable(),canceled_at:z.unknown().nullable(),additional_items:z.array(z.object({item_id:z.string(),quantity:nativeQuantity}))})).parse(exchanges.data);
@@ -131,14 +138,18 @@ export async function reviewAfterSales(scope: MedusaContainer, requestId: string
   actor(staffId); const input = parseInput(afterSalesReview,raw);
   // Stripe network calls must not hold the case or payment row locks.
   let fundsCheck: RefundFundsCheck | undefined;
+  let completionOrderId: string | undefined;
   if (input.command === "complete") {
     const initial = await readCase(connection(scope), requestId);
     if (initial.version !== input.version || initial.status !== "processing") throw conflict();
     await ownedOrder(scope, initial.order_id, initial.customer_id);
+    completionOrderId = initial.order_id;
     fundsCheck = await verifyOrderRefundFunds(scope, initial.order_id, reader);
     assertRefundFundsSucceeded(fundsCheck);
   }
   return connection(scope).transaction(async(db)=>{
+    // Use the same order -> case -> payment lock order as refund reservations.
+    if (completionOrderId && (await db.raw('select id from commerce."order" where id=? and deleted_at is null and status<>\'canceled\' and currency_code=\'usd\' for update', [completionOrderId])).rows.length !== 1) throw conflict();
     const row = await readCase(db,requestId,true); if(row.version!==input.version) throw conflict();
     let sql:string, values:Binding[];
     if(input.command==="review") {
@@ -157,11 +168,12 @@ export async function reviewAfterSales(scope: MedusaContainer, requestId: string
       if(input.command==="link") { if(row.status!=="approved") throw conflict();sql="status='processing',native_id=?";values=[native.id]; }
       else {
         if(row.status!=="processing") throw conflict();
-        const {result}=await getOrderDetailWorkflow(scope).run({input:{order_id:row.order_id,fields:["id","summary.*","items.id","items.detail.*"]}});
+        const {result}=await getOrderDetailWorkflow(scope).run({input:{order_id:row.order_id,fields:["id","summary.*","items.*","items.detail.*"]}});
         const order=z.object({summary:z.object({pending_difference:z.unknown()}),items:z.array(z.object({id:z.string(),detail:z.object({delivered_quantity:nativeQuantity})}))}).parse(result);
         assertNativeCompletion(native.returned,order.summary.pending_difference,native.additional.map((line)=>({quantity:line.quantity,delivered:order.items.find((item)=>item.id===line.item_id)?.detail.delivered_quantity??0})));
         if (!fundsCheck) throw conflict();
         await saveRefundFundsCheck(db, fundsCheck, { source: "staff", staff_id: staffId, request_id: requestId });
+        await assertAfterSalesRefundCompletion(db, row, native.returned.id, fundsCheck);
         sql="status='completed',customer_message=?";values=[input.message];
       }
     }

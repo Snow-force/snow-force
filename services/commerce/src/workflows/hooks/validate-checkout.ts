@@ -36,7 +36,7 @@ completeCartWorkflow.hooks.validate(async ({ input, cart: initialCart }, { conta
 export async function assertEditableCart(id: string, container: MedusaContainer) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
   const { data } = await query.graph({ entity: "cart", fields: ["id", "completed_at", "metadata", "payment_collection.payment_sessions.status"], filters: { id } });
-  const cart = z.object({ completed_at: z.unknown().nullable(), metadata:z.record(z.string(),z.unknown()).nullable().optional(), payment_collection: z.object({ payment_sessions: z.array(z.object({ status: z.string() })) }).nullable() }).parse(data[0]);
+  const cart = z.object({ completed_at: z.unknown().nullable(), metadata:z.record(z.string(),z.unknown()).nullable().optional(), payment_collection: z.object({ payment_sessions: z.array(z.object({ status: z.string() })) }).nullable().default(null) }).parse(data[0]);
   if (cart.completed_at || cart.payment_collection?.payment_sessions.length || (cart.metadata&&Object.hasOwn(cart.metadata,"snowforce_tax_quote"))) throw new MedusaError(MedusaError.Types.CONFLICT, "Check the existing quote and payment before changing this cart.");
 }
 // Native workflows hold the cart lock before these hooks. Rechecking here closes the read/mutate race in HTTP middleware.

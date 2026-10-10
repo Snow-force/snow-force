@@ -19,6 +19,7 @@ async function mount(t, data, mutate = () => ok({})) {
   const previousFetch = globalThis.fetch, calls = [];
   globalThis.fetch = async (url, options = {}) => {
     if (options.method === "POST") { const body = JSON.parse(options.body); calls.push(body); return mutate(body); }
+    if(url.endsWith("/refunds"))return ok({case_id:key,version:data.request.version,can_prepare:false,execution_enabled:false,items:[],shipping_available:false,fees:[],plans:[]});
     return url.includes("?status=") ? ok({ requests: [data.request], count: 1 }) : ok(data);
   };
   const container = document.createElement("div"); document.body.append(container);
@@ -73,4 +74,15 @@ test("approved exceptions remain readable in the staff review record", async t =
   assert.match(ui.container.textContent, /Internal review note/);
   assert.match(ui.container.textContent, /Courtesy exception for a delayed carrier delivery/);
   assert.equal(ui.container.querySelector("#policy-exception"), null);
+});
+
+test("processing explains individual refunds and tax completion, submits versioned completion and stays open on conflict",async t=>{
+  const ui=await mount(t,fixture({status:"processing"}),()=>new Response("{}",{status:409}));
+  assert.match(ui.container.textContent,/each Stripe refund, native bookkeeping and tax reversal/);
+  assert.match(ui.container.textContent,/equal-value exchanges need no cash refund/);
+  assert.match(ui.container.textContent,/all received units/);
+  assert.equal(ui.button("Verify and complete").disabled,true);
+  await ui.edit("review-message","Return received, refunded and tax reversed.");await ui.click(ui.button("Verify and complete"));
+  assert.deepEqual(ui.calls,[{command:"complete",version:1,message:"Return received, refunded and tax reversed."}]);
+  assert.match(ui.container.querySelector('[role="alert"]').textContent,/individual refunds\/tax reversals/);assert.ok(ui.button("Verify and complete"));
 });

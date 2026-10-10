@@ -1,6 +1,6 @@
 # SnowForce 商城后台使用手册
 
-适用人员：商品、库存、客服和发货负责人。版本：1.1，2026-10-03（洛杉矶时间）。按当前项目代码 `09b757e`、已安装 Medusa 2.21.2 和官方操作文档编写。
+适用人员：商品、库存、客服和发货负责人。版本：1.2，2026-10-04（洛杉矶时间）。按当前项目代码、已安装 Medusa 2.21.2、实际公网浏览器验收和官方操作文档编写。
 
 **先看这一页：现在可以管理商品草稿、价格、库存和运营配置。顾客在线付款仍关闭；订单收款、发货和退款章节是上线验收通过后的操作流程，当前不要用真实资金演练。**
 
@@ -32,7 +32,7 @@
 | 顾客订单 | [我的订单](https://snow-force.com/member/orders) | 原 SnowForce 会员账号 |
 | 对外商城政策 | [配送与退换货](https://snow-force.com/shop/policies) | 无需登录 |
 
-商城后台已部署在 SnowForce Railway 项目，可从其他电脑打开 HTTPS 入口。现有 club 管理员账号、商品草稿、美元价格、库存、图片上传和应用重启后数据保留已通过公网 API 核验；负责人已实际登录，商品列表、USD 规格表单、库存、运费和政策界面均能加载。合伙人的实际操作培训仍需双方完成。Vercel 已保存商城读取配置，但重新部署因旧 GitHub 仓库连接失效被拒绝，前台联动尚未生效。当前保持管理模式，付款关闭。
+商城后台已部署在 SnowForce Railway 项目，可从其他电脑打开 HTTPS 入口。现有 club 管理员账号、商品草稿、美元价格、库存、图片上传和应用重启后数据保留已通过公网 API 核验；浏览器已实际保存并重新读取练习草稿的 SKU、美元价格、Irvine 库存和图片，练习数据已清理。合伙人的实际操作培训仍需双方完成。Vercel 已保存商城读取配置，但当前 Hobby 套餐不支持连接组织的私有仓库，前台联动尚未生效，等待托管方案决定。当前保持管理模式，付款关闭。
 
 已建立的商城管理员：
 
@@ -44,7 +44,7 @@
 ### 首次登录
 
 1. 已持有管理员密码时，直接打开上方公网登录页；无需在另一台电脑安装项目。
-2. 初始密码由负责人在开发电脑的受保护文件 `C:\Project\snow-force\services\commerce\.data\admin-initial-access.json` 中查找，只通过双方认可的私密方式交接；不要把整个凭据文件发送给合伙人。
+2. 初始密码由负责人在开发电脑的受保护文件 `C:\Users\taiyu\OneDrive\Project\snow-force\services\commerce\.data\admin-initial-access.json` 中查找，只通过双方认可的私密方式交接；不要把整个凭据文件发送给合伙人。
 3. 登录后进入 **Settings → Users**，打开自己的用户记录。
 4. 从用户操作菜单选择 **Copy reset password link**，自行打开链接并设置密码。链接短期有效，新链接会使旧链接失效。
 5. 退出，再用新密码登录。初始密码文件不会自动更新，不要继续把它当成当前密码来源。
@@ -57,23 +57,23 @@
 
 | 菜单 | 主要用途 | 使用时机 |
 | --- | --- | --- |
-| [Products](http://127.0.0.1:9000/app/products) | 商品、图片、颜色尺码、SKU、发布状态 | 新品准备、商品调整 |
-| [Inventory](http://127.0.0.1:9000/app/inventory) | 各 SKU 的仓库库存和预留数量 | 入库、补货、盘点 |
-| [Orders](http://127.0.0.1:9000/app/orders) | 原生订单、资金、履约、退货和换货 | 上线后处理订单 |
+| [Products](https://snowforce-commerce-production.up.railway.app/app/products) | 商品、图片、颜色尺码、SKU、发布状态 | 新品准备、商品调整 |
+| [Inventory](https://snowforce-commerce-production.up.railway.app/app/inventory) | 各 SKU 的仓库库存和预留数量 | 入库、补货、盘点 |
+| [Orders](https://snowforce-commerce-production.up.railway.app/app/orders) | 原生订单、资金、履约、退货和换货 | 上线后处理订单 |
 | Customers | 顾客记录及关联订单 | 查询和客服核查 |
 | Price Lists | 另行配置活动价或价格覆盖 | 促销价格经测试后使用 |
 | Promotions | 原生优惠规则 | 单独验算和验收后使用 |
 | Settings | 用户、销售渠道、地区、仓库与配送设置 | 基础配置、仓库调整 |
-| [SnowForce shipping](http://127.0.0.1:9000/app/snowforce-shipping) | 标准美元运费和包邮门槛 | 改运费 |
-| [SnowForce policies](http://127.0.0.1:9000/app/snowforce-policies) | 双语配送、退换货、客服及政策发布 | 保存草稿、正式审阅发布 |
-| [SnowForce returns](http://127.0.0.1:9000/app/snowforce-after-sales) | 顾客退换货申请、回复和处理关联 | 客服审核、跟进 |
-| [SnowForce payments](http://127.0.0.1:9000/app/snowforce-payments) | 初始化中断的付款核对与原付款关联 | 付款异常 |
-| [SnowForce product tax](http://127.0.0.1:9000/app/snowforce-tax) | 每款商品的官方税务分类审核 | 规格资料完成后、销售前 |
-| [SnowForce business tax](http://127.0.0.1:9000/app/snowforce-tax-configuration) | 主体、仓库、许可核实和运费税务处理 | 经营资料草稿与审核 |
-| [SnowForce tax setup](http://127.0.0.1:9000/app/snowforce-tax-setup) | 只读核对实际 Stripe 税务设置 | 税务准备和异常排查 |
-| [SnowForce tax sales](http://127.0.0.1:9000/app/snowforce-tax-sales) | 成交税账和持久重试任务 | 上线后核对成交记账 |
+| [SnowForce shipping](https://snowforce-commerce-production.up.railway.app/app/snowforce-shipping) | 标准美元运费和包邮门槛 | 改运费 |
+| [SnowForce policies](https://snowforce-commerce-production.up.railway.app/app/snowforce-policies) | 双语配送、退换货、客服及政策发布 | 保存草稿、正式审阅发布 |
+| [SnowForce returns](https://snowforce-commerce-production.up.railway.app/app/snowforce-after-sales) | 顾客退换货申请、回复和处理关联 | 客服审核、跟进 |
+| [SnowForce payments](https://snowforce-commerce-production.up.railway.app/app/snowforce-payments) | 初始化中断的付款核对与原付款关联 | 付款异常 |
+| [SnowForce product tax](https://snowforce-commerce-production.up.railway.app/app/snowforce-tax) | 每款商品的官方税务分类审核 | 规格资料完成后、销售前 |
+| [SnowForce business tax](https://snowforce-commerce-production.up.railway.app/app/snowforce-tax-configuration) | 主体、仓库、许可核实和运费税务处理 | 经营资料草稿与审核 |
+| [SnowForce tax setup](https://snowforce-commerce-production.up.railway.app/app/snowforce-tax-setup) | 只读核对实际 Stripe 税务设置 | 税务准备和异常排查 |
+| [SnowForce tax sales](https://snowforce-commerce-production.up.railway.app/app/snowforce-tax-sales) | 成交税账和持久重试任务 | 上线后核对成交记账 |
 
-没有看到菜单时，先核对进入的是 `9000/app` 商城后台，并刷新或重新登录。一般原生导航说明见 [Medusa 操作手册](https://docs.medusajs.com/user-guide)。
+没有看到菜单时，先核对进入的是上方公网商城后台的 `/app` 页面，并刷新或重新登录。一般原生导航说明见 [Medusa 操作手册](https://docs.medusajs.com/user-guide)。
 
 ## 3. 第一次使用：先准备一个商品
 
@@ -115,7 +115,7 @@
 
 新增颜色或尺码以后，仍要创建对应 **Variant**；只有选项名称不会产生可售 SKU。不存在的组合不要创建，也不要使用 `To confirm` 作为正式销售规格。商品编辑入口依据：[编辑商品](https://docs.medusajs.com/user-guide/products/edit)。
 
-现有草稿照片已存入商品 Storage。运营人员从 Media 上传新图片还依赖后台 S3 配置，当前未完成上传的浏览器验收；上传失败或前台无法显示时，请技术人员核对商品图片服务及公开 HTTPS 地址，不用本机临时路径替代。
+现有草稿照片已存入商品 Storage。公网后台从 Media 上传、保存并重新读取新图片已通过实际浏览器及文件内容核验。运营人员上传后应保存、重新打开确认；前台显示仍须等网站连接同一后台后核对。上传失败时，请技术人员核对商品图片服务及公开 HTTPS 地址，不用本机临时路径替代。
 
 ### 4.2 管理每个颜色 × 尺码组合
 

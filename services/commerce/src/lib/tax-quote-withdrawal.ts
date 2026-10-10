@@ -25,7 +25,7 @@ export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthCon
       const leases=[...signals,outer,native];lease(leases);
       const query=scope.resolve(ContainerRegistrationKeys.QUERY);
       const {data:owners}=await query.graph({entity:"cart",fields:["id","customer_id","completed_at","payment_collection.payment_sessions.id"],filters:{id:id.data}});
-      z.array(z.object({id:z.literal(id.data),customer_id:z.literal(auth.actor_id),completed_at:z.null(),payment_collection:z.object({payment_sessions:z.array(z.unknown()).length(0)}).nullable()})).length(1).parse(owners);
+      z.array(z.object({id:z.literal(id.data),customer_id:z.literal(auth.actor_id),completed_at:z.null(),payment_collection:z.object({payment_sessions:z.array(z.unknown()).length(0)}).nullable().default(null)})).length(1).parse(owners);
       const {data}=await query.graph({entity:"cart",fields:[...checkoutFields,...taxQuoteNativeAmountFields],filters:{id:id.data}});
       const initial=checkoutCartSchema.parse(z.array(z.unknown()).length(1).parse(data)[0]);
       if(initial.customer_id!==auth.actor_id||initial.id!==id.data||initial.completed_at||initial.payment_collection?.payment_sessions.length)throw conflict();

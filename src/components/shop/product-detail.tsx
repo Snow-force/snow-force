@@ -4,19 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ChevronRight, Minus, Plus, Ruler, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/lib/language";
-import { formatStorePrice, selectedStoreVariant, storeCategories, type StoreProduct } from "@/lib/shop/storefront";
+import { formatStorePrice, selectedStoreVariant, type StoreProduct } from "@/lib/shop/storefront";
+import { categoryHref, type StoreCategory } from "@/lib/shop/navigation";
 import { useShopCart } from "./shop-provider";
 import { ProductCard } from "./product-card";
 import { ProductPhoto } from "./product-photo";
 
-export function ProductDetail({ product, related }: { product: StoreProduct; related: StoreProduct[] }) {
+export function ProductDetail({ product, related, categories = [] }: { product: StoreProduct; related: StoreProduct[]; categories?: StoreCategory[] }) {
   const { lang } = useLanguage();
   const { add, busy } = useShopCart();
   const [choices, setChoices] = useState<Record<string, string>>(() => Object.fromEntries(product.options.filter((option) => option.values.length === 1).map((option) => [option.id, option.values[0].value])));
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const text = (en: string, zh: string) => lang === "zh" ? zh : en;
-  const category = storeCategories.find((item) => item.id === product.category);
+  const category = categories.find(item => product.categoryIds.includes(item.id));
   const variant = selectedStoreVariant(product, choices);
   const price = variant ? variant.price : product.price;
   const maxQuantity = variant?.availableQuantity === null ? 99 : Math.min(99, variant?.availableQuantity ?? 99);
@@ -27,7 +28,7 @@ export function ProductDetail({ product, related }: { product: StoreProduct; rel
     setError(""); await add(variant.id, quantity);
   }
   return <div className="shop-container pb-24 pt-5 sm:pb-12 sm:pt-7">
-    <nav aria-label={text("Breadcrumb", "当前位置")} className="flex flex-wrap items-center gap-2 text-xs leading-relaxed text-[#666]"><Link href="/shop">{text("Gear shop", "装备商城")}</Link><ChevronRight size={12} /><Link href={`/shop?category=${encodeURIComponent(product.category)}#catalog`}>{category?.label[lang] ?? text("Gear", "装备")}</Link><ChevronRight size={12} /><span>{product.name[lang]}</span></nav>
+    <nav aria-label={text("Breadcrumb", "当前位置")} className="flex flex-wrap items-center gap-2 text-xs leading-relaxed text-[#666]"><Link href="/shop">{text("Gear shop", "装备商城")}</Link><ChevronRight size={12} />{category && <><Link href={categoryHref(category)}>{category.label[lang]}</Link><ChevronRight size={12} /></>}<span>{product.name[lang]}</span></nav>
     <div className="mt-6 grid items-start gap-7 lg:grid-cols-[1.05fr_1fr] lg:gap-12"><ProductPhoto product={product} /><div className="lg:sticky lg:top-40">
       <p className="shop-eyebrow">{product.brand}</p><h1 className="mt-4 text-[28px] font-semibold leading-tight tracking-tight sm:text-[36px]">{product.name[lang]}</h1><p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-[#666]">{product.description[lang]}</p>
       <div className="mt-5 rounded-xl bg-[#f5f5f7] p-5"><p className="text-[30px] font-semibold leading-none">{price === null ? text("Currently unavailable", "暂不可售") : formatStorePrice(price, lang)}</p>{variant?.originalPrice !== null && variant?.originalPrice !== undefined && price !== null && variant.originalPrice > price && <p className="mt-3 text-sm text-[#777] line-through">{formatStorePrice(variant.originalPrice, lang)}</p>}<p className="mt-3 text-xs text-[#666]">USD{!variant && product.variants.length > 1 ? text(" · from", " · 起") : ""}</p></div>

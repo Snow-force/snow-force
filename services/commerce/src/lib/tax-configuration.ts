@@ -9,7 +9,7 @@ import { publishedShopPolicy } from "./shop-policy";
 import { assertActiveStripeTaxSetup } from "./tax-setup";
 import type { TaxSetupSnapshot } from "./tax-setup-contract";
 import { taxQuoteAddress, type TaxQuoteInput } from "./tax-quote-contract";
-import { adminTaxConfigurationSchema, shippingTaxCodeIds, taxConfigurationCommandSchema, taxConfigurationKey, taxConfigurationStateSchema, taxWarehouseSchema, type TaxConfigurationCommand, type TaxConfigurationState, type TaxConfigurationPublication, type TaxWarehouse } from "./tax-configuration-contract";
+import { adminTaxConfigurationSchema, californiaPermitValidAt, shippingTaxCodeIds, taxConfigurationCommandSchema, taxConfigurationKey, taxConfigurationStateSchema, taxWarehouseSchema, type TaxConfigurationCommand, type TaxConfigurationState, type TaxConfigurationPublication, type TaxWarehouse } from "./tax-configuration-contract";
 
 export type TaxConfigurationConnection={raw(sql:string,bindings?:(string|number)[]):Promise<{rows:unknown[]}>;transaction<T>(action:(db:TaxConfigurationConnection)=>Promise<T>):Promise<T>};
 const dbFor=(scope:MedusaContainer)=>scope.resolve<TaxConfigurationConnection>(ContainerRegistrationKeys.PG_CONNECTION);
@@ -43,7 +43,7 @@ export function applyTaxConfiguration(state:TaxConfigurationState,command:TaxCon
   const next=taxConfigurationStateSchema.parse({...state,revision,...(command.command==="save_draft"?{draft:command.content}:{active_revision:revision,publications:[...state.publications,{...publication,revision,reviewed_by:staff}]}),receipts:[...state.receipts,{request_id:command.request_id,digest:commandDigest(staff,command),revision,command:command.command}].slice(-64)});
   return {state:next,replayed:false,applied_revision:revision};
 }
-function reviewedContent(state:TaxConfigurationState){const c=state.draft;if(!c.legal_seller_name||!c.stock_location_id||!c.shipping_tax_code||!c.california_permit_confirmed||!c.obligations_reviewed||!c.shipping_tax_treatment_reviewed||c.review_note.length<20)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Complete the legal seller, verified permit, obligations and reviewed shipping tax treatment before activation.");return c;}
+function reviewedContent(state:TaxConfigurationState,at:string){const c=state.draft;if(!c.legal_seller_name||!c.stock_location_id||!c.shipping_tax_code||!californiaPermitValidAt(c,at)||!c.obligations_reviewed||!c.shipping_tax_treatment_reviewed||c.review_note.length<20)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Complete the legal seller, verified current permit and validity dates, obligations and reviewed shipping tax treatment before activation.");return c;}
 export async function changeTaxConfiguration(scope:MedusaContainer,auth:AuthContext|undefined,raw:unknown,reader?:TaxCodeReader){
   const staff=actor(auth),parsed=taxConfigurationCommandSchema.safeParse(raw);if(!parsed.success)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Check the tax configuration and explicit review.");const command=parsed.data;
   try{const db=dbFor(scope),initial=await storeFor(db),previous=stateFor(initial).state,prior=replay(previous,staff,command);
@@ -51,7 +51,7 @@ export async function changeTaxConfiguration(scope:MedusaContainer,auth:AuthCont
     if(previous.revision!==command.expected_revision)throw conflict();
     let setup:TaxSetupSnapshot|undefined,code:z.infer<typeof taxCodeSchema>|undefined;
     if(command.command==="activate"){
-      const c=reviewedContent(previous);setup=await assertActiveStripeTaxSetup(scope);code=taxCodeSchema.parse(await(reader??createTaxCodeReader()).retrieve(c.shipping_tax_code!));
+      const c=reviewedContent(previous,initial.database_now);setup=await assertActiveStripeTaxSetup(scope);code=taxCodeSchema.parse(await(reader??createTaxCodeReader()).retrieve(c.shipping_tax_code!));
       if(code.id!==c.shipping_tax_code||!shippingTaxCodeIds.some(id=>id===code!.id)||!supportedProductTaxCode(code))throw new MedusaError(MedusaError.Types.INVALID_DATA,"Choose a supported official shipping category and review its conditions.");
     }
     return await db.transaction(async tx=>{
@@ -61,7 +61,7 @@ export async function changeTaxConfiguration(scope:MedusaContainer,auth:AuthCont
       const warehouse=await warehouseFor(tx,store.metadata?.snowforce_fulfillment_location_id,command.command==="activate"),source=taxConfigurationResources(store,warehouse);
       let publication:Omit<TaxConfigurationPublication,"revision"|"reviewed_by">|undefined;
       if(command.command==="activate"){
-        const c=reviewedContent(current),ship_from_address=warehouseTaxAddress(warehouse);
+        const c=reviewedContent(current,store.database_now),ship_from_address=warehouseTaxAddress(warehouse);
         const at=Math.floor(Date.parse(store.database_now)/1000);
         if(source.source_fingerprint!==command.source_fingerprint||!source.policy_version||source.policy_seller_name!==c.legal_seller_name||warehouse?.id!==c.stock_location_id||!setup?.api_ready||!code||at-setup.observed_at>60||setup.observed_at>at+3)throw conflict();
         publication={content:c,source_fingerprint:source.source_fingerprint,ship_from_address,shipping_code:code,stock_location_id:c.stock_location_id!,policy_version:source.policy_version,account_id:setup.account_id,livemode:setup.livemode,setup_fingerprint:setup.fingerprint,reviewed_at:store.database_now};
@@ -77,7 +77,7 @@ export async function changeTaxConfiguration(scope:MedusaContainer,auth:AuthCont
 export async function readReviewedTaxConfiguration(scope:MedusaContainer,setup:TaxSetupSnapshot){
   try{const db=dbFor(scope),store=await storeFor(db),state=stateFor(store).state,active=state.publications.find(p=>p.revision===state.active_revision);
     if(!active||!setup.api_ready||active.account_id!==setup.account_id||active.livemode!==setup.livemode||active.setup_fingerprint!==setup.fingerprint||active.content.shipping_tax_code!==active.shipping_code.id||active.content.stock_location_id!==active.stock_location_id||!shippingTaxCodeIds.some(id=>id===active.shipping_code.id)||!supportedProductTaxCode(active.shipping_code))throw conflict();
-    reviewedContent({...state,draft:active.content});const warehouse=await warehouseFor(db,store.metadata?.snowforce_fulfillment_location_id),source=taxConfigurationResources(store,warehouse);
+    reviewedContent({...state,draft:active.content},store.database_now);const warehouse=await warehouseFor(db,store.metadata?.snowforce_fulfillment_location_id),source=taxConfigurationResources(store,warehouse);
     if(source.source_fingerprint!==active.source_fingerprint||source.policy_seller_name!==active.content.legal_seller_name||source.policy_version!==active.policy_version||warehouse?.id!==active.stock_location_id||JSON.stringify(warehouseTaxAddress(warehouse))!==JSON.stringify(active.ship_from_address))throw conflict();
     return {active,database_now:Math.floor(Date.parse(store.database_now)/1000)};
   }catch{throw new MedusaError(MedusaError.Types.NOT_ALLOWED,"Checkout needs current, reviewed business tax configuration.");}

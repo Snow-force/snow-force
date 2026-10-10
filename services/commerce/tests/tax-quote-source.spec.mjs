@@ -9,6 +9,20 @@ const { taxQuoteInputSchema } = require("../src/lib/tax-quote-contract.ts");
 const { governmentFeeMetadataKey } = require("../src/lib/tax-quote-money.ts");
 import {auth,nativeCart,fixture,read} from "./fixtures/tax-source.mjs";
 
+test("reads an unpaid native graph cart without a payment collection", async () => {
+  const f = fixture(); delete f.cart.payment_collection;
+  const result = await read(f);
+  assert.equal(result.cart.payment_collection, null);
+  assert.equal(result.input.customer_id, auth.actor_id);
+  assert.equal(result.input.lines.length, 1);
+  assert.doesNotThrow(() => service.assertTaxMoneySourceSnapshot(result, f.cart));
+  for (const collection of [{}, { payment_sessions: [{ id: "payses_started" }] }]) {
+    const started = fixture(); started.cart.payment_collection = collection;
+    await assert.rejects(() => read(started));
+    assert.equal(started.providerCalls, 0);
+  }
+});
+
 test("quote source derives exact native discounted money, reviewed codes, private flags and database time", async () => {
   const f = fixture(), result = await read(f);
   assert.equal(result.input.tax_date, Math.floor(Date.parse(f.date) / 1000));

@@ -1,0 +1,94 @@
+{
+  "verifiedAt": "2026-10-10T18:02:18.216Z",
+  "account": "acct_1ToZcNAbMQunT3pr",
+  "livemode": false,
+  "scope": "isolated native HTTP API to real Stripe Sandbox and actual member projection",
+  "fullStorefrontBrowserAcceptance": false,
+  "productionEnabled": false,
+  "order": "order_01M4JNYRK7D8AXYZZ0GD49260X",
+  "payment": "pay_01M4JNYRX7DCXJRRC95CG1AY01",
+  "paymentIntent": "pi_3UOxYxAbMQunT3pr2FWDLewS",
+  "taxTransaction": "tax_1UOxYvAbMQunT3przO1Pqcxi",
+  "goodsCents": 3000,
+  "shippingCents": 0,
+  "taxCents": 233,
+  "totalCents": 3233,
+  "refunds": [
+    {
+      "operation": "c56c2360-ae9a-4994-9609-2ba4dffa7341",
+      "amountCents": 1078
+    },
+    {
+      "operation": "aa30de36-8eee-4d97-8e68-db59e94a4578",
+      "amountCents": 1078
+    },
+    {
+      "operation": "05fcb0ee-026d-4e16-b5b0-b25556023a45",
+      "amountCents": 1077
+    }
+  ],
+  "finality": {
+    "tasks": [
+      {
+        "id": "c56c2360-ae9a-4994-9609-2ba4dffa7341",
+        "cash_state": "ready",
+        "stripe_refund": "re_3UOxYxAbMQunT3pr2DbJJ5sO",
+        "tax_state": "ready",
+        "reversal_id": "tax_1UP4V8AbMQunT3prqCOCLCbF"
+      },
+      {
+        "id": "aa30de36-8eee-4d97-8e68-db59e94a4578",
+        "cash_state": "ready",
+        "stripe_refund": "re_3UOxYxAbMQunT3pr2SqMPeAy",
+        "tax_state": "ready",
+        "reversal_id": "tax_1UP4V9AbMQunT3pr6MqcCCYn"
+      },
+      {
+        "id": "05fcb0ee-026d-4e16-b5b0-b25556023a45",
+        "cash_state": "ready",
+        "stripe_refund": "re_3UOxYxAbMQunT3pr2qzNtNmb",
+        "tax_state": "ready",
+        "reversal_id": "tax_1UP4VAAbMQunT3preWEJxLhR"
+      }
+    ],
+    "nativeIds": [
+      "ref_01M4KFA8C3F25CV9G3HZXW7P0N",
+      "ref_01M4KFAAEXKK08P7TWX52TA0AK",
+      "ref_01M4KFACFATVESY5GX8828MZCR"
+    ],
+    "refundedCents": 3233,
+    "reversedTaxCents": 233
+  },
+  "checks": [
+    "Real native emailpass staff login and authenticated admin API",
+    "Native admin HTTP creates linked US region, Irvine warehouse, shipping, priced product and ten stock units",
+    "Native staff APIs publish isolated test policy, bind actual CA Sandbox setup and classify only the fixture product",
+    "Actual verified Supabase member, owned profile/consent, original Medusa Supabase auth provider and native customer registration",
+    "Actual native customer-owned cart, eligible shipping, Stripe Tax quote, effective policy acceptance and persisted Stripe payment session",
+    "Real Stripe authorization webhook completes the native cart, creates an owned native order/payment and reserves three stock units",
+    "Authenticated native capture rejects a partial amount before Stripe, then captures the original full 3233 cents once",
+    "Real capture and succeeded webhook leave exactly one native capture; actual scheduled worker records one Stripe Tax Transaction; signed native event synchronization creates an owned Supabase member order",
+    "Native staff fulfillment/delivery, actual customer return request, staff review/link and native receipt of three units make exact refund plans available",
+    "Actual staff refund API reserves three immutable original-amount allocations and queues reviewed execution, totaling exactly 3233 cents",
+    "Actual scheduled cash/tax jobs perform three original refunds with verified signed Stripe webhooks, three native refunds and exact tax reversals; staff reconciles funds and completes the received return",
+    "Repeated staff execution is rejected without a fourth refund; native inventory returns to ten unreserved units and the actual member-owned projection shows refunded"
+  ],
+  "repeatedExecutionStatus": 409,
+  "inventory": {
+    "stocked_quantity": 10,
+    "reserved_quantity": 0
+  },
+  "caseCompleted": true,
+  "cleanupCompleted": true,
+  "cleanup": {
+    "memberRemoved": true,
+    "memberProjectionRemoved": true,
+    "databaseRemoved": true,
+    "runtimeStopped": true,
+    "storefrontStopped": true,
+    "stripeListenerStopped": true,
+    "postgresStopped": true,
+    "fixtureCredentialsCleared": true,
+    "completedAt": "2026-10-10T18:05:07.105Z"
+  }
+}

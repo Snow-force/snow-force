@@ -2,6 +2,7 @@ import { authenticate, defineMiddlewares } from "@medusajs/framework/http";
 import { requireOwnedCart, useCheckoutBoundary } from "./cart-ownership";
 import { useAfterSalesBoundary } from "./after-sales-boundary";
 import { useManagementBoundary } from "./management-boundary";
+import { useFullCaptureBoundary } from "../lib/full-capture";
 
 export default defineMiddlewares({ routes: [{
   matcher: "/store/*", methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"], middlewares: [useManagementBoundary],
@@ -9,6 +10,12 @@ export default defineMiddlewares({ routes: [{
   matcher: "/admin/*", methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"], middlewares: [useManagementBoundary],
 }, {
   matcher: "/hooks/payment/*", methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"], middlewares: [useManagementBoundary],
+}, {
+  matcher: "/admin/payments/:id/capture", methods: ["POST"],
+  middlewares: [useFullCaptureBoundary],
+}, {
+  matcher: "/admin/snowforce/after-sales/:id/refunds/:operation/execute", methods: ["POST"],
+  middlewares: [authenticate("user", ["session", "bearer"])],
 }, {
   matcher: "/store/snowforce/customer", methods: ["POST"],
   middlewares: [authenticate("customer", ["bearer"], { allowUnregistered: true })],

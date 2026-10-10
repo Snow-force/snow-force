@@ -34,16 +34,17 @@ describe("database storefront products", () => {
   });
   it("filters runtime brands and bilingual names, keeping null prices last in either order", () => {
     expect(filterStoreProducts(fixtureProducts, { ...defaultStoreFilters, query: "磁吸" }).map((product) => product.slug)).toEqual(["fixture-goggles"]);
-    expect(filterStoreProducts(fixtureProducts, { ...defaultStoreFilters, brand: "VECTOR", category: "kids" })).toHaveLength(1);
+    expect(filterStoreProducts(fixtureProducts, { ...defaultStoreFilters, brand: "VECTOR", category: "pcat_kids" })).toHaveLength(1);
     const rows = [...fixtureProducts, fixtureProduct({ slug: "unpriced", price: null })];
     expect(filterStoreProducts(rows, { ...defaultStoreFilters, sort: "price-high" }).at(-1)?.slug).toBe("unpriced");
     expect(filterStoreProducts(rows, { ...defaultStoreFilters, sort: "price-low" })[0].slug).toBe("fixture-goggles");
     expect(storeFiltersFromSearchParams({ brand: "NEW BRAND", category: "kids", q: "child", sort: "price-high" })).toEqual({ brand: "NEW BRAND", category: "kids", query: "child", sort: "price-high" });
-    expect(storeFiltersFromSearchParams({ category: "bogus", q: ["ignored"] })).toEqual(defaultStoreFilters);
+    expect(storeFiltersFromSearchParams({ category: ["ignored"], q: ["ignored"] })).toEqual(defaultStoreFilters);
+    expect(storeFiltersFromSearchParams({ category: "new-category" }).category).toBe("new-category");
   });
   it("accepts only public HTTPS images and falls back without unsafe HTML", () => {
     for (const url of [null, "javascript:alert(1)", "http://images.example.com/a", "https://secret@images.example.com/a", "/untrusted", "not a URL"]) expect(safeProductImage(url)).toBeNull();
     const product = mapStoreProduct(nativeProductSchema.parse({ ...fixtureNativeProduct, thumbnail: null, images: [], metadata: null, description: null }));
-    expect(product).toMatchObject({ image: "/shop/product-placeholder.svg", brand: "SnowForce", name: { zh: "Current jacket title" }, description: { en: "", zh: "" } });
+    expect(product).toMatchObject({ image: "/shop/product-placeholder.svg", brand: "", name: { zh: "Current jacket title" }, description: { en: "", zh: "" } });
   });
 });

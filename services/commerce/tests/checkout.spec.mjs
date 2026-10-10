@@ -26,6 +26,22 @@ const fixturePolicy = () => policy.publishedShopPolicy(policyMetadata(), accepte
 const preparation = (value) => ({ kind: "prepare", fingerprint: consent.policyReviewFingerprint(value, fixturePolicy()), policyVersion: 1, agreed: true });
 function rawCart() { return checkoutCartSchema.parse({ id: "cart_fixture", customer_id: "cus_fixture", currency_code: "usd", region_id: "reg_us", email: "fixture@example.com", completed_at: null, total: 89.9, subtotal: 79.95, tax_total: 0, item_total: 79.95, item_tax_total: 0, discount_total: 0, shipping_total: 9.95, shipping_address: { first_name: "Fixture", last_name: "Rider", address_1: "Test street", address_2: "", city: "Test city", province: "ca", postal_code: "90001", country_code: "us", phone: "5551234567" }, shipping_methods: [{ id: "casm_fixture", shipping_option_id: "so_fixture", name: "US standard", amount: 9.95 }], items: [{ id: "cali_fixture", variant_id: "variant_fixture", product_handle: "test-gear", product_title: "Test gear", title: "Test gear", variant_title: "M", thumbnail: null, quantity: 1, unit_price: 79.95, total: 79.95 }], payment_collection: { id: "paycol_fixture", amount: 89.9, currency_code: "usd", payment_sessions: [{ id: "payses_fixture", amount: 89.9, currency_code: "usd", provider_id: "pp_stripe_stripe", status: "pending", data: { id: "pi_fixture", amount: 8990, currency: "usd", livemode: false, metadata: { session_id: "payses_fixture" }, client_secret: "pi_fixture_secret_fixture" } }] } }); }
 function cart() { const value = rawCart(); value.metadata = { [consent.policyAcceptanceKey]: consent.sealPolicyAcceptance(value, fixturePolicy(), acceptedAt) }; attachTaxQuote(value); return value; }
+
+test("accepts native graph's unlinked collection but still requires a payment for checkout", async () => {
+  const { payment_collection: _collection, ...unlinked } = rawCart();
+  const parsed = checkoutCartSchema.parse(unlinked);
+  assert.equal(parsed.payment_collection, null);
+  assert.equal(paymentStarted(parsed), false);
+  assert.throws(() => assertPaymentMatches(parsed));
+  const scope = value => ({ resolve: () => ({ graph: async () => ({ data: [value] }) }) });
+  await assertEditableCart(unlinked.id, scope(unlinked));
+  await assert.rejects(() => assertEditableCart(unlinked.id, scope({ ...unlinked, completed_at: new Date() })));
+  await assert.rejects(() => assertEditableCart(unlinked.id, scope({ ...unlinked, metadata: { snowforce_tax_quote: {} } })));
+  for (const malformed of [{}, { payment_sessions: undefined }, { payment_sessions: [{}] }]) {
+    assert.throws(() => checkoutCartSchema.parse({ ...unlinked, payment_collection: malformed }));
+    await assert.rejects(() => assertEditableCart(unlinked.id, scope({ ...unlinked, payment_collection: malformed })));
+  }
+});
 test("binds the quote to items, totals, identity and address while excluding payment secrets", () => {
   const original = cart(); const expected = checkoutFingerprint(original);
   assert.match(expected, /^[a-f0-9]{64}$/);

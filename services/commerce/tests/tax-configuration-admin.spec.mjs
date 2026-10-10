@@ -65,6 +65,8 @@ async function mount(t, handle) {
     },
     async fill() {
       await this.input("business-seller", "Fixture seller");
+      await this.input("business-permit-type", "ongoing");
+      await this.input("business-permit-from", "2025-01-01");
       await this.click("Load official categories");
       await this.input("business-shipping-code", shippingCodeFixture().id);
       await this.input("business-review-note", "Verified fixture business permit, obligations and shipping category conditions.");
@@ -154,4 +156,19 @@ test("official category failure does not choose a fallback or mutate configurati
   assert.equal(app.element("business-shipping-code").value, "");
   assert.ok(app.calls.every(call => !call.body));
   assert.equal(contract.adminTaxConfigurationSchema.safeParse(projection()).success, true);
+});
+
+test("expired temporary and undated permits cannot enable activation in the Admin form", async t => {
+  const app = await mount(t, handler());
+  await app.fill();
+  await app.input("business-permit-type", "temporary");
+  await app.input("business-permit-through", "2025-01-02");
+  await app.click("Save draft");
+  assert.equal(app.element("business-confirm").disabled, true);
+  assert.equal(app.button("Activate business tax configuration").disabled, true);
+  assert.equal(app.calls.filter(call => call.body?.command === "activate").length, 0);
+  await app.input("business-permit-through", "2099-01-01");
+  await app.input("business-permit-from", "");
+  await app.click("Save draft");
+  assert.equal(app.button("Activate business tax configuration").disabled, true);
 });

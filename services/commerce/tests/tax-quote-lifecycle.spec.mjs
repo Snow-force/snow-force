@@ -14,6 +14,20 @@ const {POST:edit}=require("../src/api/store/snowforce/checkout/[id]/edit/route.t
 const {POST:quote}=require("../src/api/store/snowforce/checkout/[id]/quote/route.ts");
 process.env.JWT_SECRET="fixture-lifecycle-signing-key-at-least-32-characters";
 const withdraw=f=>withdrawCartTaxQuote(f.scope,auth,f.cart.id);
+
+test("fresh native graph carts without a collection can enter the quote lifecycle", async () => {
+  const f = await applicationFixture(), resolve = f.scope.resolve.bind(f.scope);
+  f.scope = { resolve: (key, options) => {
+    const dependency = resolve(key, options);
+    return key !== "query" ? dependency : { graph: async request => {
+      const result = await dependency.graph(request);
+      if (request.entity === "cart") for (const cart of result.data) if (cart.payment_collection === null) delete cart.payment_collection;
+      return result;
+    } };
+  } };
+  assert.deepEqual(await withdraw(f), { status: "editable", quote_removed: false, review_required: true });
+  assert.equal(f.applications.size, 0);
+});
 const refresh=f=>withEnabled(()=>refreshCartTaxQuote(f.scope,auth,f.cart.id));
 
 test("expired quotes can be withdrawn with tax disabled while private history and unrelated metadata remain",async()=>{

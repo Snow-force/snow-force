@@ -66,7 +66,7 @@ module.exports = defineConfig({
     ] : []),
     ...(!isManagementMode() && process.env.COMMERCE_STRIPE_API_KEY ? [{
       resolve: "@medusajs/medusa/payment",
-      options: { providers: [{ resolve: "@medusajs/medusa/payment-stripe", id: "stripe", options: { apiKey: process.env.COMMERCE_STRIPE_API_KEY, webhookSecret: process.env.COMMERCE_STRIPE_WEBHOOK_SECRET, automaticPaymentMethods: true, capture: false } }] },
+      options: { providers: [{ resolve: "./src/modules/snowforce-stripe", id: "stripe", options: { apiKey: process.env.COMMERCE_STRIPE_API_KEY, webhookSecret: process.env.COMMERCE_STRIPE_WEBHOOK_SECRET, automaticPaymentMethods: true, capture: false } }] },
     }] : []),
     ...(process.env.S3_ACCESS_KEY_ID ? [{
       resolve: "@medusajs/medusa/file",

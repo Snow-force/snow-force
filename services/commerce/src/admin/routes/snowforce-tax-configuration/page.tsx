@@ -1,7 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Button, Container, Heading, Input, Label, Text, Textarea } from "@medusajs/ui";
 import { useEffect, useRef, useState } from "react";
-import { adminTaxConfigurationSchema, shippingTaxCodeIds, type TaxConfigurationCommand, type TaxConfigurationContent } from "../../../lib/tax-configuration-contract";
+import { adminTaxConfigurationSchema, californiaPermitValidAt, shippingTaxCodeIds, type TaxConfigurationCommand, type TaxConfigurationContent } from "../../../lib/tax-configuration-contract";
 import { taxCodeCatalogSchema, type TaxCode } from "../../../lib/tax-classification-contract";
 import type { z } from "zod";
 import { taxQuoteAddress } from "../../../lib/tax-quote-contract";
@@ -21,7 +21,7 @@ export default function BusinessTaxConfigurationPage(){
   const active=loaded?.state.publications.find(p=>p.revision===loaded.state.active_revision);
   const address=loaded?.warehouse?.address;
   const addressValid=taxQuoteAddress.safeParse({country:address?.country_code.toUpperCase(),state:address?.province?.toUpperCase(),city:address?.city,line1:address?.address_1,line2:address?.address_2??"",postal_code:address?.postal_code}).success;
-  const complete=!!content?.legal_seller_name&&content.legal_seller_name===loaded?.policy_seller_name&&!!loaded.policy_version&&addressValid&&content.stock_location_id===loaded.warehouse?.id&&!!content.shipping_tax_code&&shippingTaxCodeIds.some(id=>id===content.shipping_tax_code)&&content.california_permit_confirmed&&content.obligations_reviewed&&content.shipping_tax_treatment_reviewed&&content.review_note.trim().length>=20;
+  const complete=!!content?.legal_seller_name&&content.legal_seller_name===loaded?.policy_seller_name&&!!loaded.policy_version&&addressValid&&content.stock_location_id===loaded.warehouse?.id&&!!content.shipping_tax_code&&shippingTaxCodeIds.some(id=>id===content.shipping_tax_code)&&californiaPermitValidAt(content,new Date())&&content.obligations_reviewed&&content.shipping_tax_treatment_reviewed&&content.review_note.trim().length>=20;
   const locked=busy||!!pending;
   useEffect(()=>{alive.current=true;const controller=new AbortController();api(undefined,controller.signal).then(result=>{if(alive.current){setLoaded(result);setContent(result.state.draft);}}).catch(reason=>{if(alive.current)setError(reason instanceof ApiError?reason.message:"无法载入经营税务配置。 / Unable to load business tax configuration.");}).finally(()=>{if(alive.current)setBusy(false);});return()=>{alive.current=false;controller.abort();};},[]);
   function update<K extends keyof TaxConfigurationContent>(key:K,value:TaxConfigurationContent[K]){if(content&&!locked){setContent({...content,[key]:value});setReviewed(false);setNotice("");}}
@@ -53,6 +53,9 @@ export default function BusinessTaxConfigurationPage(){
         <Text>应由经营者或申报负责人审阅运费安排、实际运输成本和分类适用条件；不自动把运费设为免税。 / Review the shipping arrangement, actual carrier costs and category conditions with the responsible filer.</Text>
       </div>
       <div className="space-y-3">
+        <div><Label htmlFor="business-permit-type">许可类型 / Permit type</Label><select id="business-permit-type" className="w-full rounded-md border p-2" value={content.california_permit_type??""} disabled={locked} onChange={e=>update("california_permit_type",e.target.value==="temporary"?"temporary":e.target.value==="ongoing"?"ongoing":null)}><option value="">请选择 / Select</option><option value="ongoing">持续经营 / Ongoing</option><option value="temporary">临时许可 / Temporary</option></select></div>
+        <div><Label htmlFor="business-permit-from">生效日期（加州时间）/ Effective date (California)</Label><Input id="business-permit-from" type="date" value={content.california_permit_valid_from??""} disabled={locked} onChange={e=>update("california_permit_valid_from",e.target.value||null)} /></div>
+        <div><Label htmlFor="business-permit-through">最后有效日期（临时许可必填）/ Valid through (required for temporary permits)</Label><Input id="business-permit-through" type="date" value={content.california_permit_valid_through??""} disabled={locked} onChange={e=>update("california_permit_valid_through",e.target.value||null)} /><Text>临时许可到期后将停止新的计税与付款准备。原订单售后与历史税账继续处理。持续经营应核对 ongoing permit。 / After expiry, new checkout preparation stops. Historical orders and tax records remain available. Review an ongoing permit for continued operation.</Text></div>
         <Label className="flex items-start gap-2"><input id="business-permit" type="checkbox" checked={content.california_permit_confirmed} disabled={locked} onChange={e=>update("california_permit_confirmed",e.target.checked)} />已核实本主体有效加州销售许可 / Valid California seller permit verified</Label>
         <Label className="flex items-start gap-2"><input id="business-obligations" type="checkbox" checked={content.obligations_reviewed} disabled={locked} onChange={e=>update("obligations_reviewed",e.target.checked)} />已核对各渠道和州的登记/申报责任 / Registration and filing obligations reviewed</Label>
         <Label className="flex items-start gap-2"><input id="business-shipping-review" type="checkbox" checked={content.shipping_tax_treatment_reviewed} disabled={locked} onChange={e=>update("shipping_tax_treatment_reviewed",e.target.checked)} />已审阅运费税务处理及分类条件 / Shipping tax treatment and category conditions reviewed</Label>

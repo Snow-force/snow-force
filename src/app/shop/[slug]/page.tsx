@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/shop/product-detail";
 import Link from "next/link";
 import { getStorefrontCatalog } from "@/lib/shop/storefront-repository";
+import { flattenCategories } from "@/lib/shop/navigation";
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -16,6 +17,6 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
   const { products } = catalog;
   const product = products.find((item) => item.slug === params.slug);
   if (!product) notFound();
-  const related = products.filter((item) => item.slug !== product.slug && (item.brand === product.brand || item.category === product.category)).slice(0, 4);
-  return <ProductDetail key={product.slug} product={product} related={related} />;
+  const related = products.filter((item) => item.slug !== product.slug && ((product.brand && item.brand === product.brand) || item.categoryIds.some(id => product.categoryIds.includes(id)))).slice(0, 4);
+  return <ProductDetail key={product.slug} product={product} related={related} categories={flattenCategories(catalog.navigation?.categories ?? [])} />;
 }

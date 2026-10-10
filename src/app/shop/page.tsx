@@ -3,6 +3,7 @@ import { ShopPageView } from "@/components/shop/shop-page-view";
 import { storeFiltersFromSearchParams } from "@/lib/shop/storefront";
 import { getStorefrontCatalog } from "@/lib/shop/storefront-repository";
 import { getShopSupportEmail } from "@/lib/shop/support-repository";
+import { emptyStoreNavigation } from "@/lib/shop/navigation";
 
 export const metadata: Metadata = {
   title: "Gear Shop · 装备商城 | SnowForce",
@@ -17,5 +18,5 @@ export default async function ShopPage(
     getStorefrontCatalog().catch(() => null),
     getShopSupportEmail(),
   ]);
-  return <ShopPageView key={JSON.stringify(filters)} products={catalog?.products ?? []} unavailable={catalog === null} initialFilters={filters} supportEmail={supportEmail} />;
+  return <ShopPageView key={JSON.stringify(filters)} products={catalog?.products ?? []} navigation={catalog?.navigation ?? emptyStoreNavigation} unavailable={catalog === null} initialFilters={filters} supportEmail={supportEmail} />;
 }

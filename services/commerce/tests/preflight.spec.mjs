@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { configurationErrors } from "../scripts/preflight.mjs";
 
 const env = () => ({
@@ -10,6 +11,16 @@ const env = () => ({
   S3_ENDPOINT: "https://bhmwxkynhyhquspiyact.storage.supabase.co/storage/v1/s3", S3_FILE_URL: "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products",
 });
 test("accepts the existing database with a dedicated commerce role", () => assert.deepEqual(configurationErrors(env()), []));
+
+test("refund execution defaults off and requires sales mode with server and webhook credentials", () => {
+  const example = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
+  assert.match(example, /^COMMERCE_REFUND_EXECUTION_ENABLED=false$/m);
+  const enabled = { ...env(), COMMERCE_OPERATING_MODE: "sales", COMMERCE_REFUND_EXECUTION_ENABLED: "true", COMMERCE_STRIPE_API_KEY: "rk_test_fixture", COMMERCE_STRIPE_WEBHOOK_SECRET: "whsec_fixture" };
+  assert.deepEqual(configurationErrors(enabled), []);
+  for (const patch of [{ COMMERCE_REFUND_EXECUTION_ENABLED: "TRUE" }, { COMMERCE_OPERATING_MODE: "management", COMMERCE_TAX_POLICY_CONFIRMED: "false" }, { COMMERCE_OPERATING_MODE: undefined }, { COMMERCE_STRIPE_API_KEY: "pk_test_fixture" }, { COMMERCE_STRIPE_WEBHOOK_SECRET: "" }]) {
+    assert.ok(configurationErrors({ ...enabled, ...patch }).some(error => /refund/i.test(error)));
+  }
+});
 test("rejects a second database, public schema, privileged roles, and transaction poolers", () => {
   for (const url of ["postgresql://commerce:pw@db.other.supabase.co/postgres", "postgresql://postgres:pw@db.bhmwxkynhyhquspiyact.supabase.co/postgres", "postgresql://commerce.bhmwxkynhyhquspiyact:pw@aws-0-us-east-2.pooler.supabase.com:6543/postgres", "postgresql://commerce:pw@db.bhmwxkynhyhquspiyact.supabase.co/another_database"]) assert.ok(configurationErrors({ ...env(), DATABASE_URL: url }).length);
   assert.ok(configurationErrors({ ...env(), DATABASE_SCHEMA: "public" }).length);

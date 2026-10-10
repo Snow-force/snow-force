@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import { formatStorePrice, type StoreProduct } from "@/lib/shop/storefront";
+import { isDiscountedProduct } from "@/lib/shop/navigation";
 
 export function ProductCard({ product, presentation = "editorial" }: { product: StoreProduct; presentation?: "editorial" | "catalog" }) {
   const { lang } = useLanguage();
@@ -12,6 +13,7 @@ export function ProductCard({ product, presentation = "editorial" }: { product: 
     <Link href={`/shop/${product.slug}`} className="group block rounded-[18px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0071e3]">
       <div className={`relative overflow-hidden bg-[#f5f5f7] ${compact ? "aspect-square" : "aspect-[4/5] rounded-[18px]"}`}>
         <Image src={product.image} alt={product.name[lang]} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-contain transition duration-300 group-hover:scale-[1.03] motion-reduce:transition-none" />
+        {isDiscountedProduct(product) && <span className="absolute left-3 top-3 rounded bg-white px-2 py-1 text-xs font-medium">{lang === "zh" ? "部分规格特价" : "Sale on selected options"}</span>}
         <span className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-white"><ArrowUpRight size={18} aria-hidden="true" /></span>
       </div>
       <div className={compact ? "px-3 pt-4 sm:px-4" : "pt-4"}><p className="text-[11px] font-semibold leading-relaxed tracking-[.13em] text-[#666]">{product.brand}</p><h3 className={`mt-2 font-medium leading-snug group-hover:text-[#0066cc] ${compact ? "line-clamp-2 min-h-10 text-sm sm:min-h-11" : "text-[16px]"}`}>{product.name[lang]}</h3></div>

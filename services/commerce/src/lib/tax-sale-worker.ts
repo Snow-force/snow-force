@@ -22,7 +22,7 @@ export function createTaxSaleProvider(): TaxSaleProvider {
     retrieve: id => client.tax.transactions.retrieve(saleTransactionId.parse(id)), lines: (id, cursor) => client.tax.transactions.listLineItems(saleTransactionId.parse(id), { limit: 100, ...(cursor ? { starting_after: cursor } : {}) }),
   };
 }
-export async function assertTaxSaleFunds(source: TaxSaleSource, provider: TaxSaleProvider) {
+export async function assertTaxSaleFunds(source: TaxSaleSource, provider: Pick<TaxSaleProvider, "account" | "intent" | "livemode">) {
   const { quote } = checkedTaxSaleSource(source);
   const [account, rawIntent] = await Promise.all([provider.account(), provider.intent(source.intent_id)]);
   const accountId = z.object({ id: z.string().regex(/^acct_[A-Za-z0-9]+$/) }).parse(account).id;

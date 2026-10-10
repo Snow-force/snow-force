@@ -45,7 +45,7 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
   const query = scope.resolve(ContainerRegistrationKeys.QUERY);
   const { data: owners } = await query.graph({ entity: "cart", fields: taxQuoteOwnerFields, filters: { id: parsedId.data } }).catch(() => { throw interrupted(); });
   if (owners.length !== 1 || owners[0]?.id !== parsedId.data || owners[0]?.customer_id !== auth.actor_id) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart not found.");
-  const owner = z.object({ completed_at: z.unknown().nullable(), payment_collection: z.object({ payment_sessions: z.array(z.object({ id:z.string() })) }).nullable() }).safeParse(owners[0]);
+  const owner = z.object({ completed_at: z.unknown().nullable(), payment_collection: z.object({ payment_sessions: z.array(z.object({ id:z.string() })) }).nullable().default(null) }).safeParse(owners[0]);
   if (!owner.success || owner.data.completed_at || owner.data.payment_collection?.payment_sessions.length || process.env.COMMERCE_TAX_POLICY_CONFIRMED !== "true") throw interrupted();
   async function ownedSource() {
     const { data } = await query.graph({ entity: "cart", fields: taxQuoteSourceFields, filters: { id: parsedId.data } }).catch(() => { throw interrupted(); });
@@ -127,7 +127,7 @@ export async function readCartTaxMoneySource(scope: MedusaContainer, auth: AuthC
 
 /** Revalidate the exact source under native cart/line/adjustment row locks, before any write. */
 export function assertTaxMoneySourceSnapshot(expected:Awaited<ReturnType<typeof readCartTaxMoneySource>>,raw:unknown){
-  const value=z.object({payment_collection:z.object({payment_sessions:z.array(z.record(z.string(),z.unknown()))}).passthrough().nullable()}).passthrough().parse(raw);
+  const value=z.object({payment_collection:z.object({payment_sessions:z.array(z.record(z.string(),z.unknown()))}).passthrough().nullable().default(null)}).passthrough().parse(raw);
   const safe={...value,payment_collection:value.payment_collection?{...value.payment_collection,payment_sessions:value.payment_collection.payment_sessions.map(session=>({...session,data:null}))}:null};
   const cart=checkoutCartSchema.parse(safe),source=sourceSchema.parse(safe);
   if(cart.customer_id!==expected.cart.customer_id||cart.id!==expected.cart.id||cart.completed_at||paymentStarted(cart)||fingerprint(cart,source)!==expected.source_fingerprint)throw interrupted();

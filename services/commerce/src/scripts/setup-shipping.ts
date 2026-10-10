@@ -5,6 +5,7 @@ import { z } from "zod";
 import { initialShippingPolicy, readShippingPolicy, snowforceShippingCode, snowforceShippingProviderId } from "../lib/shipping-policy";
 import { uniqueSetupRecord } from "../lib/fulfillment-setup";
 import { configureSnowforceShippingWorkflow } from "../workflows/update-shipping-policy";
+import { shippingStoreRuleUpdates } from "../lib/shipping-store-rules";
 
 export default async function setupShipping({ container }: ExecArgs) {
   const [store] = await container.resolve<IStoreModuleService>(Modules.STORE).listStores({}, { take: 1 });
@@ -19,8 +20,10 @@ export default async function setupShipping({ container }: ExecArgs) {
   const { data: locations } = await query.graph({ entity: "stock_location", fields: ["id", "fulfillment_providers.id"], filters: { id: locationId } });
   const location = z.object({ id: z.literal(locationId), fulfillment_providers: z.array(z.object({ id: z.string() })) }).parse(locations[0]);
   if (!location.fulfillment_providers.some((value) => value.id === snowforceShippingProviderId)) await batchLinksWorkflow(container).run({ input: { create: [{ [Modules.STOCK_LOCATION]: { stock_location_id: locationId }, [Modules.FULFILLMENT]: { fulfillment_provider_id: snowforceShippingProviderId } }] } });
-  const existing = uniqueSetupRecord((await fulfillment.listShippingOptions({ service_zone: { id: serviceZoneId } }, { relations: ["type"] })).filter((option) => option.type?.code === snowforceShippingCode), "SnowForce shipping option");
+  const existing = uniqueSetupRecord((await fulfillment.listShippingOptions({ service_zone: { id: serviceZoneId } }, { relations: ["type", "rules"] })).filter((option) => option.type?.code === snowforceShippingCode), "SnowForce shipping option");
   if (existing) {
+    const ruleUpdates = shippingStoreRuleUpdates(existing.rules);
+    if (ruleUpdates.length) await fulfillment.updateShippingOptionRules(ruleUpdates);
     if (existing.provider_id === snowforceShippingProviderId && existing.price_type === "calculated" && existing.data?.snowforce_option_id === existing.id) { console.log("Existing database shipping policy preserved."); return; }
     if (existing.provider_id !== "manual_manual" || existing.price_type !== "flat") throw new Error("Review operator shipping changes before upgrading the calculation method.");
     const { data } = await query.graph({ entity: "shipping_option", fields: ["id", "prices.*", "prices.price_rules.*"], filters: { id: existing.id } });
@@ -35,7 +38,7 @@ export default async function setupShipping({ container }: ExecArgs) {
     name: "SnowForce US standard", service_zone_id: serviceZoneId, shipping_profile_id: profile.id,
     provider_id: snowforceShippingProviderId, price_type: "calculated", data: { id: snowforceShippingCode },
     type: { label: "Standard", description: "US self fulfillment", code: snowforceShippingCode },
-    rules: [{ attribute: "is_enabled_in_store", operator: "eq", value: "true" }, { attribute: "is_return", operator: "eq", value: "false" }],
+    rules: [{ attribute: "enabled_in_store", operator: "eq", value: "true" }, { attribute: "is_return", operator: "eq", value: "false" }],
   }] });
   const option = result[0];
   if (!option) throw new Error("Shipping option creation did not return a record.");

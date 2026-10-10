@@ -1,0 +1,21 @@
+{
+  "id": "we_1UP5DYAItQQT9la8bScU5Pfc",
+  "url": "https://snowforce-commerce-production.up.railway.app/hooks/payment/stripe_stripe",
+  "status": "disabled",
+  "livemode": true,
+  "events": [
+    "payment_intent.created",
+    "payment_intent.processing",
+    "payment_intent.canceled",
+    "payment_intent.payment_failed",
+    "payment_intent.requires_action",
+    "payment_intent.amount_capturable_updated",
+    "payment_intent.partially_funded",
+    "payment_intent.succeeded",
+    "refund.created",
+    "refund.updated",
+    "refund.failed"
+  ],
+  "api_version": "2024-04-10",
+  "secret_saved_privately": true
+}

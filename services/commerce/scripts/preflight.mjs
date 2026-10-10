@@ -6,6 +6,11 @@ const projectRef = "bhmwxkynhyhquspiyact";
 export function configurationErrors(env) {
   const errors = [];
   const management = env.COMMERCE_OPERATING_MODE === "management";
+  if (env.COMMERCE_REFUND_EXECUTION_ENABLED && !["true", "false"].includes(env.COMMERCE_REFUND_EXECUTION_ENABLED)) errors.push("COMMERCE_REFUND_EXECUTION_ENABLED must be true or false.");
+  if (env.COMMERCE_REFUND_EXECUTION_ENABLED === "true") {
+    if (env.COMMERCE_OPERATING_MODE !== "sales") errors.push("Refund execution requires sales mode.");
+    if (!/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/.test(env.COMMERCE_STRIPE_API_KEY ?? "") || !/^whsec_[A-Za-z0-9]+$/.test(env.COMMERCE_STRIPE_WEBHOOK_SECRET ?? "")) errors.push("Refund execution requires dedicated Stripe server and webhook credentials.");
+  }
   if (env.COMMERCE_OPERATING_MODE && !["management", "sales"].includes(env.COMMERCE_OPERATING_MODE)) errors.push("COMMERCE_OPERATING_MODE must be management or sales.");
   if (env.NODE_ENV === "production" && !["management", "sales"].includes(env.COMMERCE_OPERATING_MODE)) errors.push("Production requires an explicit COMMERCE_OPERATING_MODE.");
   if (management && env.COMMERCE_TAX_POLICY_CONFIRMED !== "false") errors.push("Management mode requires COMMERCE_TAX_POLICY_CONFIRMED=false; payments stay disabled.");

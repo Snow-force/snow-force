@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const actions = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn() }));
 vi.mock("@/lib/shop/cart-actions", () => ({ getShopCartAction: actions.get, changeShopCartAction: actions.change }));
 import { LanguageProvider } from "@/lib/language";
-import { fixtureCart, fixtureProduct, fixtureProducts } from "@/lib/shop/shop.fixtures";
+import { fixtureCart, fixtureProduct, fixtureProducts, fixtureNavigation } from "@/lib/shop/shop.fixtures";
 import { ShopProvider } from "./shop-provider";
 import { ShopPageView } from "./shop-page-view";
 import { ProductDetail } from "./product-detail";
@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 function shop(lang: "en" | "zh" = "en", unavailable = false) {
-  return render(<LanguageProvider initialLang={lang}><ShopProvider><ShopPageView products={unavailable ? [] : fixtureProducts} unavailable={unavailable} /></ShopProvider></LanguageProvider>);
+  return render(<LanguageProvider initialLang={lang}><ShopProvider><ShopPageView products={unavailable ? [] : fixtureProducts} navigation={fixtureNavigation} unavailable={unavailable} /></ShopProvider></LanguageProvider>);
 }
 describe("live shop browsing", () => {
   it.each(["en", "zh"] as const)("shows a visible shop email near the title in %s, including service failures", (lang) => {
@@ -39,7 +39,7 @@ describe("live shop browsing", () => {
   it("combines filters, searches and recovers from an empty result", async () => {
     shop();
     expect(screen.getByText("3 styles")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Little riders" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kids" }));
     expect(screen.getByText("1 styles")).toBeInTheDocument();
     fireEvent.change(screen.getByRole("searchbox", { name: "Search gear" }), { target: { value: "missing" } });
     expect(screen.getByText("No matching gear yet")).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe("live shop browsing", () => {
     expect(screen.queryByText("New gear is on its way")).not.toBeInTheDocument();
   });
   it("supports URL entry and price sorting using database prices", () => {
-    render(<LanguageProvider initialLang="en"><ShopPageView products={fixtureProducts} initialFilters={{ category: "kids", brand: "VECTOR", query: "Rogue", sort: "featured" }} /></LanguageProvider>);
+    render(<LanguageProvider initialLang="en"><ShopPageView products={fixtureProducts} navigation={fixtureNavigation} initialFilters={{ category: "kids", brand: "VECTOR", query: "Rogue", sort: "featured" }} /></LanguageProvider>);
     expect(screen.getByText("1 styles")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Choose Rogue kids jacket" })).toHaveAttribute("href", "/shop/fixture-kids");
     fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));

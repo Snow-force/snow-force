@@ -10,9 +10,23 @@ export const taxConfigurationContentSchema = z.object({
   stock_location_id: z.string().regex(/^sloc_[A-Za-z0-9]+$/).nullable(),
   shipping_tax_code: taxCodeId.nullable(),
   california_permit_confirmed: z.boolean(), obligations_reviewed: z.boolean(),
+  california_permit_type: z.enum(["ongoing", "temporary"]).nullable().optional(),
+  california_permit_valid_from: z.iso.date().nullable().optional(),
+  california_permit_valid_through: z.iso.date().nullable().optional(),
   shipping_tax_treatment_reviewed: z.boolean(), review_note: z.string().trim().max(2000),
 }).strict();
 export type TaxConfigurationContent = z.infer<typeof taxConfigurationContentSchema>;
+/** California permit dates are inclusive local calendar dates, independent of host timezone. */
+export function californiaPermitValidAt(content: TaxConfigurationContent, at: string | Date): boolean {
+  const date = new Date(at);
+  if (!Number.isFinite(date.getTime()) || !content.california_permit_confirmed || !content.california_permit_type || !content.california_permit_valid_from) return false;
+  if (content.california_permit_type === "temporary" && !content.california_permit_valid_through) return false;
+  if (content.california_permit_valid_through && content.california_permit_valid_through < content.california_permit_valid_from) return false;
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const part = (type: string) => parts.find(value => value.type === type)?.value;
+  const localDate = `${part("year")}-${part("month")}-${part("day")}`;
+  return localDate >= content.california_permit_valid_from && (!content.california_permit_valid_through || localDate <= content.california_permit_valid_through);
+}
 export const taxWarehouseSchema = z.object({ id: z.string().regex(/^sloc_[A-Za-z0-9]+$/), name: z.string(), address_id: z.string().nullable(),
   address: z.object({ address_1: z.string(), address_2: z.string().nullable(), city: z.string().nullable(), province: z.string().nullable(), postal_code: z.string().nullable(), country_code: z.string() }).nullable(),
 }).strict();

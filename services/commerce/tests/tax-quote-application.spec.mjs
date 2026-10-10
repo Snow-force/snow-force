@@ -1,6 +1,7 @@
 import {createRequire} from "node:module";
 import {test} from "node:test";
 import assert from "node:assert/strict";
+import {dirname,join} from "node:path";
 import {auth} from "./fixtures/tax-source.mjs";
 import {creationFixture} from "./fixtures/tax-creation.mjs";
 const require=createRequire(import.meta.url);require("ts-node/register/transpile-only");
@@ -16,10 +17,30 @@ process.env.JWT_SECRET="fixture-atomic-tax-signing-secret-at-least-32-characters
 
 import {applicationFixture,withEnabled} from "./fixtures/tax-application.mjs";
 
+test("applies tax when native graph omits the unlinked collection, retaining strict SQL validation", async () => {
+  const f = await applicationFixture(), resolve = f.scope.resolve.bind(f.scope);
+  f.scope = { resolve: (key, options) => {
+    const dependency = resolve(key, options);
+    return key !== "query" ? dependency : { graph: async request => {
+      const result = await dependency.graph(request);
+      if (request.entity === "cart") for (const cart of result.data) if (cart.payment_collection === null) delete cart.payment_collection;
+      return result;
+    } };
+  } };
+  const result = await withEnabled(() => applyCartTaxQuote(f.scope, auth, f.cart.id, f.prepared.quote_id));
+  assert.equal(result.applied, true);
+  assert.equal(f.applications.size, 1);
+  money.assertNativeTaxQuoteAmounts(f.prepared.quote, f.cart);
+});
+
 test("native line and shipping taxes, private application and signed cart reference commit together",async()=>{
   const f=await applicationFixture(),result=await f.apply();
   assert.equal(result.applied,true);assert.equal(result.reused,false);assert.equal(f.applications.size,1);
   money.assertNativeTaxQuoteAmounts(f.prepared.quote,f.cart);assert.equal(f.cart.metadata.snowforce_tax_quote.quote_id,f.prepared.quote_id);
+  for (const item of f.cart.items) assert.deepEqual(item.tax_lines[0].metadata,{quote_id:f.prepared.quote_id,cart_line_id:item.id});
+  const {prepareLineItemData}=require(join(dirname(require.resolve("@medusajs/core-flows")),"cart/utils/prepare-line-item-data.js"));
+  const nativeOrderLine=prepareLineItemData({item:f.cart.items[0],cartId:f.cart.id,unitPrice:f.cart.items[0].unit_price,taxLines:f.cart.items[0].tax_lines});
+  assert.deepEqual(nativeOrderLine.tax_lines[0].metadata,f.cart.items[0].tax_lines[0].metadata);
   const before=f.writes.length,again=await f.apply();assert.equal(again.reused,true);assert.equal(f.writes.length,before);
   const proof=await assertPersistedCartTaxQuote(checkoutCartSchema.parse(f.cart),f.scope,await readStripeTaxSetup(f.setup));assert.equal(proof.receipt.quote_id,f.prepared.quote_id);
 });

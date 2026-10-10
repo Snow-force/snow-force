@@ -17,6 +17,7 @@
     "setup:shipping": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-shipping.ts",
     "setup:fulfillment": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-fulfillment.ts",
     "setup:store": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-store.ts",
+    "setup:catalog-taxonomy": "node scripts/preflight.mjs && medusa exec ./src/scripts/setup-catalog-taxonomy.ts",
     "test": "node --test --test-concurrency=1 tests/*.spec.mjs"
   },
   "dependencies": {

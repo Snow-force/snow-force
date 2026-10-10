@@ -34,7 +34,7 @@ export async function applyCartTaxQuote(scope: MedusaContainer, auth: AuthContex
         const query = scope.resolve(ContainerRegistrationKeys.QUERY);
         const { data: owners } = await query.graph({ entity: "cart", fields: [...taxQuoteOwnerFields, "metadata"], filters: { id: id.data } });
         const owner = z.array(z.object({ id: z.literal(id.data), customer_id: z.literal(auth.actor_id), completed_at: z.null(),
-          metadata: z.record(z.string(), z.unknown()).nullable(), payment_collection: z.object({ payment_sessions: z.array(z.unknown()).length(0) }).nullable(),
+          metadata: z.record(z.string(), z.unknown()).nullable(), payment_collection: z.object({ payment_sessions: z.array(z.unknown()).length(0) }).nullable().default(null),
         })).length(1).parse(owners)[0];
         lease(leases);
         if (owner.metadata && Object.hasOwn(owner.metadata, taxQuoteReceiptKey)) {
@@ -96,7 +96,7 @@ export async function applyCartTaxQuote(scope: MedusaContainer, auth: AuthContex
             lease(leases);
             const tax = item.tax_lines[0];
             await tx.raw(`insert into commerce.cart_line_item_tax_line(id,item_id,code,rate,description,provider_id,metadata)
-              values (?,?,?,?::numeric,?,'snowforce_stripe_tax',?::jsonb)`, [generateEntityId(undefined, "calitxl"), item.id, tax.code, String(tax.rate), tax.description, marker]);
+              values (?,?,?,?::numeric,?,'snowforce_stripe_tax',?::jsonb)`, [generateEntityId(undefined, "calitxl"), item.id, tax.code, String(tax.rate), tax.description, JSON.stringify({ quote_id: quoteId.data, cart_line_id: item.id })]);
           }
           for (const method of plan.shipping_methods) {
             lease(leases);
