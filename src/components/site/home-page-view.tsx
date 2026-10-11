@@ -6,6 +6,8 @@ import { Pause, Play } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { MountainMemoryReel } from "@/components/recaps/mountain-memory-reel";
 import { HomeShopSection } from "./home-shop-section";
+import { NewcomerWelcome } from "./newcomer-welcome";
+import type { NewcomerPolicy } from "@/lib/shop/newcomer-contract";
 import type { StoreProduct } from "@/lib/shop/storefront";
 import { useLanguage, type Lang } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
@@ -17,6 +19,7 @@ type HomePageViewProps = {
   recaps: EventRecap[];
   eventLoadError?: boolean;
   shopProducts?: StoreProduct[];
+  newcomerPolicy?: NewcomerPolicy | null;
 };
 
 type OpenEventsSectionProps = {
@@ -26,12 +29,13 @@ type OpenEventsSectionProps = {
   t: Translate;
 };
 
-export function HomePageView({ events, recaps, eventLoadError = false, shopProducts = [] }: HomePageViewProps) {
+export function HomePageView({ events, recaps, eventLoadError = false, shopProducts = [], newcomerPolicy = null }: HomePageViewProps) {
   const { lang, t } = useLanguage();
   const recentRecaps = recaps.slice(0, 4);
 
   return (
     <div className="bg-[#07090c] text-white">
+      {newcomerPolicy && <NewcomerWelcome policy={newcomerPolicy} />}
       <HeroSection t={t} />
       <PhilosophySection t={t} />
       <ActivityModesSection t={t} />

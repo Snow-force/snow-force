@@ -89,6 +89,7 @@ export function AdminEventsView({ events }: { events: Event[] }) {
                 </td>
                 <td className="py-3 pl-4">
                   <div className="flex flex-wrap gap-1">
+                    <Link href={`/admin/events/promotion?source=${encodeURIComponent(event.slug)}`} className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100">{t({ en: "Email promotion", zh: "邮件推广" })}</Link>
                     <Link
                       href={`/admin/events/${event.slug}/edit`}
                       className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"

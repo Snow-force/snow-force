@@ -16,6 +16,10 @@ const mockParseMemberPasswordUpdate = vi.hoisted(() => vi.fn());
 const mockParseMemberProfileUpdate = vi.hoisted(() => vi.fn());
 const mockGetMemberProfile = vi.hoisted(() => vi.fn());
 const mockUpdateMemberProfile = vi.hoisted(() => vi.fn());
+const mockMarketingRequest = vi.hoisted(() => vi.fn());
+const mockQueueMemberWelcome = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/shop/newcomer-welcome", () => ({ queueMemberWelcome: mockQueueMemberWelcome }));
+vi.mock("@/lib/marketing/client", () => ({ marketingRequest: mockMarketingRequest }));
 const mockAddMemberPass = vi.hoisted(() => vi.fn());
 const mockGetSavedEvents = vi.hoisted(() => vi.fn());
 const mockMarkNotificationRead = vi.hoisted(() => vi.fn());
@@ -196,6 +200,22 @@ beforeEach(() => {
 });
 
 describe("registerMemberProfile", () => {
+  it("queues a welcome email for an immediately verified signup only after consent and profile creation", async () => {
+    const user = { id: "verified-new-member", identities: [{}], email_confirmed_at: "2026-10-11T00:00:00Z" };
+    mockSignUp.mockResolvedValueOnce({ data: { user, session: { access_token: "verified" } }, error: null });
+    await expect(registerMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member?registered=1");
+    expect(mockEnsureMemberProfileAfterConsent).toHaveBeenCalledWith(user, expect.any(Object));
+    expect(mockQueueMemberWelcome).toHaveBeenCalledWith("/member");
+  });
+  it("does not fail an otherwise successful signup when optional welcome profile preparation is unavailable", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      mockSignUp.mockResolvedValueOnce({ data: { user: { id: "new-member", identities: [{}], email_confirmed_at: "2026-10-11T00:00:00Z" }, session: { access_token: "verified" } }, error: null });
+      mockEnsureMemberProfileAfterConsent.mockRejectedValueOnce(new Error("private db error"));
+      await expect(registerMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member?registered=1");
+      expect(mockQueueMemberWelcome).not.toHaveBeenCalled(); expect(error).toHaveBeenCalledWith("[member.welcome] Welcome benefit could not be queued; registration remains successful.");
+    } finally { error.mockRestore(); }
+  });
   it.each([
     ["email", "register_email"],
     ["password", "register_password"],
@@ -232,6 +252,7 @@ describe("registerMemberProfile", () => {
       source: "email_registration",
       userId: "auth-user-1",
     }));
+    expect(mockQueueMemberWelcome).not.toHaveBeenCalled();
   });
 
   it("S2-signup-error-keeps-the-registration-form-open", async () => {
@@ -368,7 +389,7 @@ describe("getCurrentMemberAccount", () => {
 
 describe("member profile updates", () => {
   function signedInProfile() {
-    const profile = { id: "profile-1", userId: "auth-user-1" };
+    const profile = { id: "profile-1", userId: "auth-user-1", email: "member@example.com" };
     mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
     mockGetUser.mockResolvedValue({ data: { user: { id: profile.userId, email_confirmed_at: "2026-07-29T00:00:00.000Z" } } });
     mockGetMemberProfile.mockResolvedValue(profile);
@@ -402,6 +423,7 @@ describe("member profile updates", () => {
 
   it("S1-allows-a-member-to-disable-only-their-marketing-emails", async () => {
     const profile = signedInProfile();
+    mockUpdateMemberProfile.mockResolvedValue(profile);
 
     await expect(saveMemberPrivacyPreferences(new FormData())).rejects.toThrow(
       "REDIRECT:/member/settings?privacySaved=1#privacy",
@@ -410,6 +432,20 @@ describe("member profile updates", () => {
     expect(mockUpdateMemberProfile).toHaveBeenCalledWith(profile.userId, {
       marketingEmailOptIn: false,
     });
+  });
+  it("reports failed preference writes instead of claiming success", async () => {
+    signedInProfile(); mockUpdateMemberProfile.mockResolvedValue(undefined);
+    await expect(saveMemberPrivacyPreferences(new FormData())).rejects.toThrow("privacyError=1");
+  });
+  it("synchronizes an explicit subscription choice only for the authenticated member", async () => {
+    vi.stubEnv("MARKETING_INTERNAL_SECRET", "fixture-internal-secret");
+    const profile = signedInProfile(); mockUpdateMemberProfile.mockResolvedValue(profile); mockMarketingRequest.mockResolvedValue({ saved: true });
+    const form = new FormData(); form.set("marketingEmailOptIn", "on"); form.set("email", "attacker@example.com");
+    await expect(saveMemberPrivacyPreferences(form)).rejects.toThrow("privacySaved=1");
+    expect(mockMarketingRequest).toHaveBeenCalledWith({ kind: "preference", email: profile.email, optIn: true });
+    mockMarketingRequest.mockRejectedValue(new Error("unavailable"));
+    await expect(saveMemberPrivacyPreferences(form)).rejects.toThrow("privacyError=1");
+    vi.unstubAllEnvs();
   });
 
   it("S1-rejects-privacy-preference-writes-without-a-member-session", async () => {
@@ -574,7 +610,7 @@ describe("confirmMemberPendingRegistrationAction", () => {
 
 describe("confirmMemberEmail", () => {
   it("S1-confirms-a-token-only-after-the-confirmation-page-posts-it", async () => {
-    mockVerifyOtp.mockResolvedValueOnce({ data: { user: { id: "auth-user-1" } }, error: null });
+    mockVerifyOtp.mockResolvedValueOnce({ data: { user: { id: "auth-user-1", email_confirmed_at: "2026-10-11T00:00:00Z" } }, error: null });
     const formData = new FormData();
     formData.set("tokenHash", "safe-token-hash");
     formData.set("next", "/events/mammoth-weekend");
@@ -586,6 +622,7 @@ describe("confirmMemberEmail", () => {
       token_hash: "safe-token-hash",
       type: "email",
     });
+    expect(mockQueueMemberWelcome).toHaveBeenCalledWith("/events/mammoth-weekend");
   });
 
   it("S1-rejects-a-missing-token-without-calling-Supabase", async () => {

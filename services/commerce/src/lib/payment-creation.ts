@@ -8,6 +8,7 @@ import { verifyPolicyAcceptance } from "./policy-consent";
 import { paymentRecoveryFingerprint, readNativePaymentRecovery, type PaymentRecoveryConnection } from "./payment-recovery";
 import { assertActiveStripeTaxSetup } from "./tax-setup";
 import { assertPersistedCartTaxQuote, bindTaxQuotePayment } from "./tax-quote-ledger";
+import { reserveNewcomerPayment } from "./newcomer-redemption";
 import { normalizeQuotedPaymentCollection } from "./payment-amount";
 
 const attemptKey = "snowforce_payment_creation";
@@ -83,6 +84,8 @@ export async function createDurableCartPayment(cart: CheckoutCart, scope: Medusa
     const { data: regions } = await query.graph({ entity: "region", fields: ["id", "currency_code", "countries.iso_2", "payment_providers.id", "payment_providers.is_enabled"], filters: { id: cart.region_id } });
     const region = z.object({ id: z.literal(cart.region_id), currency_code: z.literal("usd"), countries: z.array(z.object({ iso_2: z.literal("us") })).length(1), payment_providers: z.array(z.object({ id: z.string(), is_enabled: z.boolean() })) }).parse(regions[0]);
     if (!region.payment_providers.some((provider) => provider.id === stripeProviderId && provider.is_enabled)) throw conflict();
+    assertLease(signals);
+    await reserveNewcomerPayment(cart, scope, Boolean(cart.payment_collection?.payment_sessions.length));
     assertLease(signals);
     const db = scope.resolve<PaymentRecoveryConnection>(ContainerRegistrationKeys.PG_CONNECTION);
     // Persist the actual native session before making a Stripe request. Its ID

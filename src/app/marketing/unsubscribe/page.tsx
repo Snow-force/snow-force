@@ -1,0 +1,4 @@
+export default async function UnsubscribePage({ searchParams }: { searchParams: Promise<{ token?: string; done?: string; error?: string }> }) {
+  const params = await searchParams;
+  return <main className="mx-auto max-w-xl px-6 py-16"><h1 className="text-2xl font-semibold">SnowForce email preferences</h1>{params.done ? <p className="mt-6">You have unsubscribed from SnowForce event and shop marketing emails. Essential account, registration and order messages continue.</p> : <><p className="mt-6">Stop receiving SnowForce event and shop promotional emails.</p>{params.error && <p role="alert" className="mt-4">We could not confirm your request. Please retry using the link in your email.</p>}<form action="/marketing/unsubscribe/confirm" method="post" className="mt-6"><input type="hidden" name="token" value={params.token ?? ""} /><button className="rounded bg-snow-600 px-5 py-3 text-white">Unsubscribe</button></form></>}</main>;
+}

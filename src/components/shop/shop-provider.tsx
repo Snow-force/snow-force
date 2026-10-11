@@ -1,21 +1,24 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { useLanguage } from "@/lib/language";
-import { changeShopCartAction, getShopCartAction } from "@/lib/shop/cart-actions";
+import { applyShopPromotionAction, changeShopCartAction, getShopCartAction } from "@/lib/shop/cart-actions";
 import type { CartResult } from "@/lib/shop/commerce-cart";
 import { formatStorePrice } from "@/lib/shop/storefront";
 
-type CartContext = { state: CartResult; busy: boolean; error: CartResult["status"] | null; open: () => void; reload: () => Promise<void>; add: (variantId: string, quantity: number) => Promise<boolean>; update: (itemId: string, quantity: number) => Promise<boolean>; remove: (itemId: string) => Promise<boolean> };
+type CartContext = { state: CartResult; busy: boolean; error: CartResult["status"] | null; open: () => void; reload: () => Promise<void>; add: (variantId: string, quantity: number) => Promise<boolean>; update: (itemId: string, quantity: number) => Promise<boolean>; remove: (itemId: string) => Promise<boolean>; promotion: (code: string, remove?: boolean) => Promise<boolean> };
 const Context = createContext<CartContext | null>(null);
 export function useShopCart() { const context = useContext(Context); if (!context) throw new Error("Shop cart requires ShopProvider"); return context; }
 
 export function CartContents({ onContinue }: { onContinue?: () => void }) {
   const { lang } = useLanguage();
-  const { state, error, busy, update, remove, reload } = useShopCart();
+  const { state, error, busy, update, remove, reload, promotion } = useShopCart();
+  const [code, setCode] = useState("");
+  const codeInputId = useId();
+  const [promotionStatus, setPromotionStatus] = useState<"applied" | "rejected" | null>(null);
   const text = (en: string, zh: string) => lang === "zh" ? zh : en;
   const cart = state.status === "ready" ? state.cart : null;
   return <div aria-busy={busy}>
@@ -31,6 +34,12 @@ export function CartContents({ onContinue }: { onContinue?: () => void }) {
             <p className="mt-3 text-right text-sm font-semibold">{formatStorePrice(item.total, lang)}</p>
           </div>
         </li>)}</ul>
+        <form className="my-5 border-t border-[#e0e0e0] pt-5" onSubmit={async event => { event.preventDefault(); setPromotionStatus(null); const applied = await promotion(code.trim()); setPromotionStatus(applied ? "applied" : "rejected"); if (applied) setCode(""); }}>
+          <label htmlFor={codeInputId} className="text-sm font-medium">{text("Promotion code", "折扣码")}</label><div className="mt-2 flex gap-2"><input id={codeInputId} name="promotionCode" value={code} onChange={event => { setCode(event.target.value); setPromotionStatus(null); }} maxLength={100} autoComplete="off" className="min-w-0 flex-1 rounded-lg border border-[#d2d2d7] px-3 py-3 text-sm" /><button type="submit" disabled={busy || !code.trim()} className="btn-primary disabled:opacity-50">{text("Apply", "使用")}</button></div>
+          {promotionStatus && <p role={promotionStatus === "rejected" ? "alert" : "status"} className="mt-3 text-xs">{promotionStatus === "applied" ? text("Code applied. Review your updated savings below.", "折扣码已使用，请查看下方更新后的优惠金额。") : text("This code could not be applied. Check its expiry, minimum spend and account eligibility.", "此码无法使用，请核对有效期、最低消费及账户资格。")}</p>}
+          {!!cart.promotionCodes?.length && <ul className="mt-3 space-y-2">{cart.promotionCodes.map(activeCode => <li key={activeCode} className="flex items-center gap-3 text-xs"><code className="break-all">{activeCode}</code><button type="button" disabled={busy} onClick={async () => { setPromotionStatus(null); if (!await promotion(activeCode, true)) setPromotionStatus("rejected"); }} className="min-h-11 shrink-0 text-[#0066cc] underline">{text("Remove code", "移除折扣码")}</button></li>)}</ul>}
+          <Link href="/member/welcome" className="mt-2 inline-flex min-h-11 items-center text-xs text-[#0066cc] underline">{text("View my welcome code", "查看我的新人折扣码")}</Link>
+        </form>
         <dl className="space-y-3 border-t border-[#e0e0e0] py-5 text-sm"><div className="flex justify-between"><dt>{text("Subtotal", "商品小计")}</dt><dd>{formatStorePrice(cart.subtotal, lang)}</dd></div>{cart.discountTotal > 0 && <div className="flex justify-between"><dt>{text("Discount", "优惠")}</dt><dd>−{formatStorePrice(cart.discountTotal, lang)}</dd></div>}<div className="flex justify-between"><dt>{text("Tax", "税费")}</dt><dd>{text("Calculated at checkout", "结账时计算")}</dd></div><div className="flex justify-between"><dt>{text("Shipping", "运费")}</dt><dd>{text("Calculated at checkout", "结账时计算")}</dd></div></dl>
         <p className="text-xs leading-relaxed text-[#666]">{text("Stock is checked when your cart changes and at checkout. Adding gear doesn't reserve it.", "购物车更新及结账时会重新核验库存，加入购物车不会锁定库存。")}</p>
         <Link className="btn-primary mt-5 w-full" href="/shop/checkout" onClick={onContinue}>{text("Proceed to checkout", "前往结账")}</Link>
@@ -82,7 +91,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     return () => { element?.close(); document.body.style.overflow = previousOverflow; };
   }, [opened]);
   const count = state.status === "ready" ? state.cart?.items.reduce((total, item) => total + item.quantity, 0) ?? 0 : 0;
-  return <Context.Provider value={{ state, busy, error, reload, open: () => setOpened(true), add: async (variantId, quantity) => { const done = await perform(() => changeShopCartAction({ kind: "add", variantId, quantity })); setOpened(true); return done; }, update: (itemId, quantity) => perform(() => changeShopCartAction({ kind: "update", itemId, quantity })), remove: (itemId) => perform(() => changeShopCartAction({ kind: "remove", itemId })) }}>
+  return <Context.Provider value={{ state, busy, error, reload, open: () => setOpened(true), add: async (variantId, quantity) => { const done = await perform(() => changeShopCartAction({ kind: "add", variantId, quantity })); setOpened(true); return done; }, update: (itemId, quantity) => perform(() => changeShopCartAction({ kind: "update", itemId, quantity })), remove: (itemId) => perform(() => changeShopCartAction({ kind: "remove", itemId })), promotion: (code, remove = false) => perform(() => applyShopPromotionAction({ code, remove })) }}>
     <div className="shop-shell"><div className="shop-local-nav"><div className="shop-container flex min-h-16 items-center justify-between gap-3 py-3"><Link href="/shop" className="text-base font-semibold tracking-tight sm:text-lg">{text("Gear shop", "装备商城")}<span className="ml-3 hidden text-xs font-normal tracking-widest text-[#777] sm:inline">SNOWFORCE</span></Link><div className="flex items-center gap-2 sm:gap-5"><Link href="/shop#catalog" className="hidden min-h-11 items-center gap-2 text-sm text-[#666] sm:flex"><Search size={17} />{text("Browse all gear", "浏览全部装备")}</Link><button className="shop-pill shop-bag-button" onClick={() => setOpened(true)}><ShoppingBag size={17} aria-hidden="true" />{text("Cart", "购物车")}<span className="shop-count">{count}</span></button></div></div></div>{children}
       <dialog ref={dialog} className="shop-dialog" aria-labelledby="cart-title" onCancel={() => setOpened(false)} onClose={() => setOpened(false)} onClick={(event) => { if (event.target === event.currentTarget) setOpened(false); }}><div className="flex items-start justify-between gap-4 border-b border-[#e0e0e0] pb-5"><div><p className="shop-eyebrow">SNOWFORCE / GEAR</p><h2 id="cart-title" className="mt-2 text-2xl font-semibold">{text("Your gear cart", "你的购物车")}</h2></div><button autoFocus className="shop-icon-button" aria-label={text("Close cart", "关闭购物车")} onClick={() => setOpened(false)}><X size={22} /></button></div>{opened && <CartContents onContinue={() => setOpened(false)} />}</dialog>
     </div>

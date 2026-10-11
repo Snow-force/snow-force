@@ -17,6 +17,9 @@ export default defineMiddlewares({ routes: [{
   matcher: "/admin/snowforce/after-sales/:id/refunds/:operation/execute", methods: ["POST"],
   middlewares: [authenticate("user", ["session", "bearer"])],
 }, {
+  matcher: "/store/snowforce/newcomer", methods: ["POST"],
+  middlewares: [authenticate("customer", ["bearer"])],
+}, {
   matcher: "/store/snowforce/customer", methods: ["POST"],
   middlewares: [authenticate("customer", ["bearer"], { allowUnregistered: true })],
 }, {

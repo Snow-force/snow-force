@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 import { EventEditorForm } from "@/components/admin/event-editor-form";
 import { EventEditorHeading } from "@/components/admin/event-editor-heading";
@@ -21,6 +22,7 @@ export default async function EditEventPage(
   return (
     <div>
       <EventEditorHeading mode="edit" saved={Boolean(searchParams.saved)} missing={missing} />
+      <Link className="mb-4 inline-block rounded border px-3 py-2 text-sm" href={`/admin/events/promotion?source=${encodeURIComponent(event.slug)}`}>Email promotion / 邮件推广</Link>
       <EventEditorForm event={event} isNew={false} />
     </div>
   );

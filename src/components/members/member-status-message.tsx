@@ -69,6 +69,9 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   if (searchParams.privacySaved) {
     return { tone: "success", text: { en: "Privacy preferences saved.", zh: "隐私偏好已保存。" } };
   }
+  if (searchParams.privacyError) {
+    return { tone: "error", text: { en: "We could not confirm your email preference update. Please retry.", zh: "邮件订阅偏好更新未确认，请重试。" } };
+  }
   if (searchParams.payment === "success") {
     return { tone: "success", text: { en: "Payment received - your trip is confirmed. Find it under My Trips.", zh: "付款已收到，行程已确认。请在“我的行程”中查看。" } };
   }

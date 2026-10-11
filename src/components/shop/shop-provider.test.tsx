@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CartResult } from "@/lib/shop/commerce-cart";
 import { LanguageProvider } from "@/lib/language";
 
-const actions = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn() }));
-vi.mock("@/lib/shop/cart-actions", () => ({ getShopCartAction: actions.get, changeShopCartAction: actions.change }));
+const actions = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), promotion: vi.fn() }));
+vi.mock("@/lib/shop/cart-actions", () => ({ getShopCartAction: actions.get, changeShopCartAction: actions.change, applyShopPromotionAction: actions.promotion }));
 
-import { ShopProvider, useShopCart } from "./shop-provider";
+import { CartContents, ShopProvider, useShopCart } from "./shop-provider";
 
 function deferred<T>() {
   let resolve: (value: T) => void = () => { throw new Error("Request was not initialized."); };
@@ -32,6 +32,30 @@ beforeEach(() => {
 });
 
 describe("cart request loading", () => {
+  it("applies a code, shows native savings and removes it through the shared cart request lock", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test jacket", variant: "M", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 100, total: 100 }], subtotal: 100, total: 100, taxTotal: 0, shippingTotal: 0, discountTotal: 0, promotionCodes: [] };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    const pending = deferred<CartResult>(); actions.promotion.mockReturnValueOnce(pending.promise).mockResolvedValue({ status: "ready", cart });
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents /></ShopProvider></LanguageProvider>);
+    const input = await screen.findByLabelText("Promotion code"); fireEvent.change(input, { target: { value: "SAVE10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    expect(actions.promotion).toHaveBeenCalledWith({ code: "SAVE10", remove: false });
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
+    await act(async () => { pending.resolve({ status: "ready", cart: { ...cart, total: 90, discountTotal: 10, promotionCodes: ["SAVE10"] } }); });
+    expect(await screen.findByText("Code applied. Review your updated savings below.")).toBeInTheDocument();
+    expect(screen.getByText("−$10.00")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove code" }));
+    await screen.findByText("Test jacket");
+    expect(actions.promotion).toHaveBeenLastCalledWith({ code: "SAVE10", remove: true });
+  });
+  it("shows a failed eligibility message without replacing the current cart with invented savings", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test jacket", variant: "M", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 100, total: 100 }], subtotal: 100, total: 100, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
+    actions.get.mockResolvedValue({ status: "ready", cart }); actions.promotion.mockResolvedValue({ status: "rejected" });
+    render(<LanguageProvider initialLang="zh"><ShopProvider><CartContents /></ShopProvider></LanguageProvider>);
+    fireEvent.change(await screen.findByLabelText("折扣码"), { target: { value: "USED" } }); fireEvent.click(screen.getByRole("button", { name: "使用" }));
+    expect(await screen.findByText("此码无法使用，请核对有效期、最低消费及账户资格。")).toBeInTheDocument();
+    expect(screen.queryByText("优惠", { selector: "dt" })).not.toBeInTheDocument();
+  });
   it("locks mutations during initial loading and preserves busy state for subsequent requests", async () => {
     const initial = deferred<CartResult>();
     const update = deferred<CartResult>();

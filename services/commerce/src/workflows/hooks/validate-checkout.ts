@@ -1,4 +1,4 @@
-import { addShippingMethodToCartWorkflow, addToCartWorkflow, completeCartWorkflow, refreshPaymentCollectionForCartWorkflow, updateCartWorkflow, updateLineItemInCartWorkflow } from "@medusajs/medusa/core-flows";
+import { addShippingMethodToCartWorkflow, addToCartWorkflow, completeCartWorkflow, refreshPaymentCollectionForCartWorkflow, updateCartWorkflow, updateCartPromotionsWorkflow, updateLineItemInCartWorkflow } from "@medusajs/medusa/core-flows";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { assertCartProductTaxClassifications } from "../../lib/tax-classificatio
 import { assertActiveStripeTaxSetup } from "../../lib/tax-setup";
 import { assertPersistedCartTaxQuote, assertWorkflowTaxQuoteSnapshot } from "../../lib/tax-quote-ledger";
 import { assertSalesOperations } from "../../lib/operating-mode";
+import { reserveNewcomerRedemption } from "../../lib/newcomer-redemption";
 
 // Also runs for webhook completion and native API calls, before order creation/payment authorization.
 export async function validateCheckoutCart(input: { id: string }, initialCart: unknown, container: MedusaContainer) {
@@ -27,6 +28,7 @@ export async function validateCheckoutCart(input: { id: string }, initialCart: u
     assertWorkflowTaxQuoteSnapshot(initialCart, cart);
     assertPaymentMatches(cart, quote.receipt.total_cents);
     await assertWorkflowPolicySnapshot(initialCart, cart, container);
+    await reserveNewcomerRedemption(initialCart, cart, container);
   } catch {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Checkout needs a current shipping, tax and payment review.");
   }
@@ -41,6 +43,7 @@ export async function assertEditableCart(id: string, container: MedusaContainer)
 }
 // Native workflows hold the cart lock before these hooks. Rechecking here closes the read/mutate race in HTTP middleware.
 updateCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.id, container));
+updateCartPromotionsWorkflow.hooks.validate(async ({ input, cart }, { container }) => assertEditableCart(input.cart_id ?? cart.id, container));
 addToCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.cart_id, container));
 updateLineItemInCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.cart_id, container));
 addShippingMethodToCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.cart_id, container));

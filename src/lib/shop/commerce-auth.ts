@@ -12,5 +12,5 @@ export async function getCommerceCustomerSession() {
   if (error || !data.session || data.session.user.id !== account.user.id) throw new CommerceAuthorizationError();
   const request = commerceClient();
   const customer = await linkCommerceCustomer(data.session.access_token, request);
-  return { ...customer, userId: account.user.id, email: z.string().email().parse(account.user.email), request };
+  return { ...customer, userId: account.user.id, createdAt: account.user.created_at, email: z.string().email().parse(account.user.email), request };
 }

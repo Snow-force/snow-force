@@ -12,7 +12,7 @@ export async function saveOrderSnapshot(input: unknown): Promise<void> {
   if (error) throw new Error("Order synchronization unavailable");
 }
 
-export async function syncOwnedMemberOrder(customer: Awaited<ReturnType<typeof getCommerceCustomerSession>>, orderId: string): Promise<void> {
+export async function syncOwnedMemberOrder(customer: Pick<Awaited<ReturnType<typeof getCommerceCustomerSession>>, "request" | "token" | "userId">, orderId: string): Promise<void> {
   if (!/^order_[A-Za-z0-9]{1,114}$/.test(orderId)) throw new CommerceAuthorizationError();
   const snapshot: OrderSyncSnapshot = await customer.request(`/store/snowforce/orders/${orderId}`, orderSyncSnapshotSchema, { token: customer.token });
   if (snapshot.order.user_id !== customer.userId || snapshot.order.id !== orderId) throw new CommerceAuthorizationError();

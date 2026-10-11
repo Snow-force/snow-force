@@ -13,6 +13,7 @@ type AdminLink = {
 const adminLinks: AdminLink[] = [
   { href: "/admin", label: { en: "Dashboard", zh: "仪表盘" }, exact: true },
   { href: "/admin/events", label: { en: "Events", zh: "活动管理" } },
+  { href: "/admin/events/promotion", label: { en: "Event promotion", zh: "活动推广" } },
   { href: "/admin/registrations", label: { en: "Registrations", zh: "报名管理" } },
   { href: "/admin/reviews", label: { en: "Check-in & Reviews", zh: "签到与反馈" } },
   { href: "/admin/coupons", label: { en: "Coupons", zh: "优惠码" } },
@@ -31,7 +32,7 @@ export function AdminNav({ canManageStaff }: { canManageStaff: boolean }) {
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-gray-200 pb-2">
       {links.map((link) => {
-        const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
+        const active = link.exact ? pathname === link.href : pathname.startsWith(link.href) && !links.some(other => other.href !== link.href && other.href.startsWith(`${link.href}/`) && pathname.startsWith(other.href));
         return (
           <Link
             key={link.href}

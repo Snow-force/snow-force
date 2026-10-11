@@ -14,6 +14,20 @@ const changeSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("update"), itemId: commerceId("cali"), quantity: z.number().int().min(1).max(99) }).strict(),
   z.object({ kind: z.literal("remove"), itemId: commerceId("cali") }).strict(),
 ]);
+const promotionSchema = z.object({ code: z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/), remove: z.boolean().default(false) }).strict();
+export async function applyShopPromotionAction(input: unknown): Promise<CartResult> {
+  const parsed = promotionSchema.safeParse(input);
+  if (!parsed.success) return { status: "invalid" };
+  try {
+    const { repository, customer, cartId } = await cartContext();
+    if (!cartId) return { status: "invalid" };
+    const cart = await repository.get(cartId);
+    if (!cart?.items.length) return { status: "invalid" };
+    const regionId = await getUsCommerceRegion(customer.request);
+    if (!regionId || cart.region_id !== regionId) return { status: "not-configured" };
+    return { status: "ready", cart: cartSnapshot(await repository.promotion(cartId, parsed.data.code, parsed.data.remove)) };
+  } catch (error) { return failed(error); }
+}
 function failed(error: unknown): CartResult {
   if (error instanceof CommerceAuthorizationError) return { status: "signed-out" };
   if (error instanceof CommerceRejectedError) return { status: "rejected" };

@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({ session: vi.fn(), request: vi.fn(), cookieGet:
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: mocks.cookieGet, set: mocks.cookieSet }) }));
 vi.mock("./commerce-auth", () => ({ getCommerceCustomerSession: mocks.session }));
 vi.mock("./storefront-repository", () => ({ loadStorefrontCatalog: mocks.catalog, getUsCommerceRegion: mocks.region }));
-import { changeShopCartAction, getShopCartAction } from "./cart-actions";
+import { applyShopPromotionAction, changeShopCartAction, getShopCartAction } from "./cart-actions";
 import { CommerceAuthorizationError, CommerceRejectedError } from "./commerce-client";
 import { CART_COOKIE_NAME, signCartCookie } from "./cart-cookie";
 import { fixtureCart, fixtureProducts, fixtureUserId } from "./shop.fixtures";
@@ -20,6 +20,26 @@ describe("authenticated cart server actions", () => {
   it("rejects client cart IDs, amounts and malformed quantities without contacting commerce", async () => {
     for (const input of [{ kind: "add", variantId: "variant_pink", quantity: 1, price: 0.01 }, { kind: "update", cartId: "cart_other", itemId: "cali_fixture", quantity: 1 }, { kind: "add", variantId: "variant_pink", quantity: 1.1 }]) expect(await changeShopCartAction(input)).toEqual({ status: "invalid" });
     expect(mocks.session).not.toHaveBeenCalled(); expect(mocks.request).not.toHaveBeenCalled();
+  });
+  it("applies and removes codes through native evaluation after clearing old quotes", async () => {
+    mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) });
+    const code = "WELCOME-FIXTURE";
+    mocks.request.mockImplementation(async (path: string) => ({ cart: { ...fixtureCart, promotions: path.includes("/promotions") ? [{ code }] : [] } }));
+    expect((await applyShopPromotionAction({ code })).status).toBe("ready");
+    expect(mocks.request.mock.calls[1][0]).toContain("/checkout/cart_fixture/edit");
+    expect(mocks.request.mock.calls[2][2]).toMatchObject({ method: "POST", body: { promo_codes: [code] }, token: "trusted-server-token" });
+    expect((await applyShopPromotionAction({ code, remove: true })).status).toBe("ready");
+    expect(mocks.request.mock.calls[5][2]).toMatchObject({ method: "DELETE", body: { promo_codes: [code] } });
+    mocks.request.mockResolvedValue({ cart: fixtureCart });
+    expect(await applyShopPromotionAction({ code })).toEqual({ status: "rejected" });
+  });
+  it("rejects client prices, cart IDs, unsafe codes, missing carts and foreign ownership", async () => {
+    for (const input of [{ code: "SAVE10", amount: 1 }, { code: "SAVE10", cartId: "cart_other" }, { code: "../SAVE" }, { code: "" }]) expect(await applyShopPromotionAction(input)).toEqual({ status: "invalid" });
+    expect(mocks.session).not.toHaveBeenCalled();
+    expect(await applyShopPromotionAction({ code: "SAVE10" })).toEqual({ status: "invalid" });
+    mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) }); mocks.request.mockResolvedValue({ cart: { ...fixtureCart, customer: { id: "cus_other" } } });
+    expect(await applyShopPromotionAction({ code: "SAVE10" })).toEqual({ status: "signed-out" });
+    expect(mocks.request).toHaveBeenCalledOnce();
   });
   it("never creates carts for unverified or signed-out members", async () => {
     mocks.session.mockRejectedValue(new CommerceAuthorizationError());
