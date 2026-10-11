@@ -1,6 +1,7 @@
 import { Resend } from "resend";
+import { generalContactEmail } from "@/lib/contact";
 
-const FROM = "SnowForce <onboarding@resend.dev>";
+const FROM = "SnowForce <noreply@notifications.snow-force.com>";
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -24,7 +25,7 @@ export async function sendEmail(
   }
 
   try {
-    const { error } = await resend.emails.send({ from: FROM, ...payload });
+    const { error } = await resend.emails.send({ from: FROM, replyTo: generalContactEmail, ...payload });
     if (error) {
       console.error("[EMAIL] Resend error:", error);
       return { success: false, error: error.message };
@@ -77,7 +78,7 @@ export function buildStaffNotificationEmail(
   registrantName: string,
 ): EmailPayload {
   return {
-    to: "staff@snowforce.example.com",
+    to: generalContactEmail,
     subject: `New Registration — ${eventTitle}`,
     html: `<p>${registrantName} just registered for <strong>${eventTitle}</strong>.</p><p>Check the admin panel for details.</p>`,
   };

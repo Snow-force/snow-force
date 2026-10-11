@@ -9,8 +9,8 @@ const codeSchema = z.string().regex(/^WELCOME-[A-F0-9]{32}$/);
 const rowSchema = z.object({ code: codeSchema, email: z.email(), ends_at: z.coerce.date(), status: z.string(), first_attempt_at: z.coerce.date().nullable(), attempts: z.number().int(), message: z.unknown().nullable() });
 export function newcomerEmailConfiguration(env: NodeJS.ProcessEnv = process.env) {
   if (env.NEWCOMER_EMAIL_ENABLED !== "true") return null;
-  const from = env.NEWCOMER_EMAIL_FROM ?? env.MARKETING_EMAIL_FROM ?? "";
-  const reply = env.NEWCOMER_REPLY_TO ?? env.MARKETING_REPLY_TO ?? "";
+  const from = env.NEWCOMER_EMAIL_FROM ?? env.MARKETING_SHOP_EMAIL_FROM ?? env.MARKETING_EMAIL_FROM ?? "";
+  const reply = env.NEWCOMER_REPLY_TO ?? env.MARKETING_SHOP_REPLY_TO ?? env.MARKETING_REPLY_TO ?? "";
   const key = env.NEWCOMER_RESEND_API_KEY ?? env.MARKETING_RESEND_API_KEY ?? "";
   const address = env.MARKETING_POSTAL_ADDRESS ?? "", secret = env.MARKETING_UNSUBSCRIBE_SECRET ?? "";
   const rate = Number(env.MARKETING_SENDS_PER_MINUTE ?? "30");

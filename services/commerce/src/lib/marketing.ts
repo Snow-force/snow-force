@@ -4,17 +4,17 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 import { z } from "zod";
 import type { TaxQuoteConnection } from "./tax-quote-ledger";
 import { applyNewcomerEmailEvents } from "./newcomer-email";
-import { classifyContact, contactSchema, deliverMarketing, marketingCommand, marketingContent, marketingOrigin, marketingSource, renderMarketing, signMarketing, unsubscribeToken, verifyUnsubscribe } from "./marketing-policy";
+import { classifyContact, contactSchema, deliverMarketing, marketingCommand, marketingContent, marketingOrigin, marketingSender, marketingSource, renderMarketing, signMarketing, unsubscribeToken, verifyUnsubscribe } from "./marketing-policy";
 
 const dbFor = (scope: MedusaContainer) => scope.resolve<TaxQuoteConnection>(ContainerRegistrationKeys.PG_CONNECTION);
 const campaignSchema = z.object({ id: z.uuid(), surface: z.enum(["event", "shop"]), source: marketingSource, source_fingerprint: z.string(), content: marketingContent, version: z.number().int(), status: z.string(), send_key: z.string().nullable(), audience: z.unknown().nullable(), created_at: z.coerce.date(), sent_at: z.coerce.date().nullable() });
 const sourceFingerprint = (content: z.infer<typeof marketingContent>) => createHash("sha256").update(JSON.stringify(marketingContent.parse(content))).digest("hex");
 type Campaign = z.infer<typeof campaignSchema>;
 const conflict = () => new MedusaError(MedusaError.Types.CONFLICT, "Refresh the draft and audience before sending.");
-function configuration() {
+function configuration(surface: "event" | "shop") {
   if (process.env.MARKETING_ENABLED !== "true") throw new Error("Marketing delivery is disabled.");
   const origin = marketingOrigin(process.env.SNOWFORCE_STOREFRONT_URL ?? "");
-  const from = process.env.MARKETING_EMAIL_FROM ?? "", reply = process.env.MARKETING_REPLY_TO ?? "", address = process.env.MARKETING_POSTAL_ADDRESS ?? "";
+  const { from, reply } = marketingSender(surface), address = process.env.MARKETING_POSTAL_ADDRESS ?? "";
   const key = process.env.MARKETING_RESEND_API_KEY ?? "", secret = process.env.MARKETING_UNSUBSCRIBE_SECRET ?? "";
   const rate = Number(process.env.MARKETING_SENDS_PER_MINUTE ?? "30");
   if (!key || secret.length < 32 || !address.trim() || !z.email().safeParse(reply).success || !/^[^\r\n]+<[^<>\s]+@[^<>\s]+>$/.test(from) || from.includes("resend.dev") || !Number.isInteger(rate) || rate < 1 || rate > 120) throw new Error("Marketing sender, address, delivery rate or credentials are not configured.");
@@ -43,6 +43,7 @@ export async function sourceDraft(scope: MedusaContainer, source: z.infer<typeof
   if (source.kind === "promotion") {
     const promotion = z.object({ code: z.string(), active: z.boolean() }).parse((await db.raw("select p.code,(p.status='active' and (p.limit is null or p.used<p.limit) and (p.campaign_id is null or cam.id is not null) and (cam.starts_at is null or cam.starts_at<=clock_timestamp()) and (cam.ends_at is null or cam.ends_at>clock_timestamp()) and (b.id is null or b.attribute is not null or b.limit is null or b.used<b.limit)) as active from commerce.promotion p left join commerce.promotion_campaign cam on cam.id=p.campaign_id and cam.deleted_at is null left join commerce.promotion_campaign_budget b on b.campaign_id=cam.id and b.deleted_at is null where p.id=? and p.deleted_at is null", [source.id])).rows[0]);
     code = promotion.code; offerActive = promotion.active;
+    if (/^WELCOME-[A-F0-9]{32}$/.test(code)) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Personal welcome codes cannot be used for customer-wide campaigns.");
     const linked = z.array(z.object({ id: z.string() })).parse((await db.raw("select id from commerce.product_collection where metadata->>'snowforce_promotion_code'=? and deleted_at is null order by id limit 1", [code])).rows);
     if (!linked.length) return { publishable: offerActive, content: marketingContent.parse({ subject: `SnowForce offer · ${code}`, preheader: "Discover offers from SnowForce", heading: "Your next mountain adventure starts here", body: `Explore SnowForce gear with promotion code ${code}.\n\nEligibility, restrictions and final savings are confirmed in your cart.`, image: "", button: "Shop SnowForce", path: "/shop/sale" }) };
     collectionId = linked[0].id;
@@ -79,7 +80,7 @@ async function campaignResult(db: TaxQuoteConnection, campaign: Campaign) {
   return { campaign, stats, failures };
 }
 function message(campaign: Campaign, email: string, test = false) {
-  const config = configuration();
+  const config = configuration(campaign.surface);
   const unsub = `${config.origin}/marketing/unsubscribe?token=${encodeURIComponent(unsubscribeToken(email, config.secret))}`;
   const content = renderMarketing(campaign.content, config.origin, config.address, unsub);
   return { from: config.from, reply_to: config.reply, to: [email], subject: `${test ? "[TEST] " : ""}${campaign.content.subject}`, ...content, headers: { "List-Unsubscribe": `<${unsub.replace("/marketing/unsubscribe?", "/api/marketing/unsubscribe?")}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };
@@ -92,12 +93,12 @@ export async function marketingOperation(scope: MedusaContainer, surface: "event
   if (input.action === "sources") {
     const schema = z.object({ sources: z.array(z.object({ kind: z.string(), id: z.string(), title: z.string(), status: z.string() })) });
     if (surface === "event") return schema.parse(await websiteSource({ action: "events" }));
-    const result = await db.raw("select 'product' as kind,id,title,status from commerce.product where deleted_at is null union all select 'collection' as kind,id,title,'collection' as status from commerce.product_collection where deleted_at is null union all select 'promotion' as kind,id,code as title,status from commerce.promotion where deleted_at is null order by kind,title,id");
+    const result = await db.raw("select 'product' as kind,id,title,status from commerce.product where deleted_at is null union all select 'collection' as kind,id,title,'collection' as status from commerce.product_collection where deleted_at is null union all select 'promotion' as kind,id,code as title,status from commerce.promotion where deleted_at is null and code !~ '^WELCOME-[A-F0-9]{32}$' order by kind,title,id");
     return schema.parse({ sources: result.rows });
   }
   if (input.action === "list") {
     const campaigns = z.array(campaignSchema).parse((await db.raw("select * from commerce.snowforce_marketing_campaigns where surface=? order by created_at desc limit 100", [surface])).rows);
-    let ready = true; try { configuration(); } catch { ready = false; }
+    let ready = true; try { configuration(surface); } catch { ready = false; }
     return { campaigns, ready };
   }
   if (input.action === "create") {
@@ -130,13 +131,13 @@ export async function marketingOperation(scope: MedusaContainer, surface: "event
     return { ...await campaignResult(db, campaign), counts: recipients.counts, audienceHash: recipients.hash, publishable: source.publishable && campaign.source_fingerprint === sourceFingerprint(source.content), preview: renderMarketing(campaign.content, origin, process.env.MARKETING_POSTAL_ADDRESS || "Postal address — configure before sending", "#unsubscribe-preview") };
   }
   if (input.action === "test") {
-    const config = configuration();
+    const config = configuration(surface);
     const result = await deliverMarketing(message(campaign, input.email, true), `marketing-test/${campaign.id}/${campaign.version}/${createHash("sha256").update(input.email).digest("hex")}`, config.key);
     if (result.status !== "accepted") throw new MedusaError(MedusaError.Types.CONFLICT, "Test delivery is unconfirmed. Retry this version and address.");
     await db.raw("update commerce.snowforce_marketing_campaigns set test_version=? where id=? and version=? and status='draft'", [campaign.version, campaign.id, campaign.version]);
     return { accepted: true };
   }
-  configuration();
+  configuration(surface);
   const source = await sourceDraft(scope, campaign.source);
   if (!source.publishable || campaign.content.path !== source.content.path || campaign.source_fingerprint !== sourceFingerprint(source.content)) throw new MedusaError(MedusaError.Types.CONFLICT, "Source must be public and unchanged; regenerate the draft after source changes.");
   const recipients = await audience(scope);
@@ -188,7 +189,9 @@ async function applyMarketingEvents(db: TaxQuoteConnection) {
   });
 }
 export async function processMarketing(scope: MedusaContainer) {
-  const config = configuration(), db = dbFor(scope);
+  const config = (["shop", "event"] as const).map(surface => { try { return configuration(surface); } catch { return null; } }).find(value => value !== null);
+  if (!config) throw new Error("Marketing delivery is disabled or not configured.");
+  const db = dbFor(scope);
   // Serialize workers globally so the configured rate is shared across surfaces/processes.
   const locking = scope.resolve<import("@medusajs/framework/types").ILockingModule>("locking");
   return locking.execute("snowforce-marketing-worker", async signal => {

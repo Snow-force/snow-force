@@ -55,7 +55,7 @@ If registering on behalf of a minor, I confirm that I am the parent/legal guardi
 
 Questions / Customer Support
 For any questions regarding your booking, waiver, or event details, please contact us:
-Email: snowforceclub@gmail.com
+Email: hello@snow-force.com
 Instagram: @snowforceclub
 We generally respond within 1–2 business days.
 

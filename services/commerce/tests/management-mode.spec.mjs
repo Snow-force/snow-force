@@ -44,6 +44,29 @@ test("management blocks customer mutations, checkout reads and all payment webho
   assert.equal(preflight, true);
 }));
 
+test("enabled welcome registration bypasses only the management gate while retaining customer authentication and financial gates", async () => management(() => {
+  const config = { NEWCOMER_ENABLED: "true", NEWCOMER_VALID_DAYS: "30", NEWCOMER_ELIGIBILITY: "new_accounts", NEWCOMER_REGISTERED_AFTER: "2026-10-11T05:00:00Z", NEWCOMER_SIGNING_SECRET: "fixture-welcome-secret-at-least-32-characters" };
+  const saved = Object.fromEntries(Object.keys(config).map(key => [key, process.env[key]]));
+  try {
+    Object.assign(process.env, config);
+    for (const path of ["/store/snowforce/customer", "/store/snowforce/newcomer"]) {
+      let continued = false;
+      useManagementBoundary({ method: "POST", path }, {}, () => { continued = true; });
+      assert.equal(continued, true);
+      const protectedRoute = routes.find(route => route.matcher === path && route.methods.includes("POST"));
+      assert.ok(protectedRoute.middlewares.length > 0, "The native customer authentication middleware must remain configured");
+      for (const method of ["PUT", "PATCH", "DELETE"]) assert.throws(() => useManagementBoundary({ method, path }, {}, () => assert.fail("Unsupported mutation")));
+    }
+    for (const path of ["/store/carts", "/store/snowforce/customer/other", "/store/snowforce/newcomer/other", "/store/payment-collections", "/hooks/payment/stripe_stripe"]) assert.throws(() => useManagementBoundary({ method: "POST", path }, {}, () => assert.fail("Financial or unrelated mutation")));
+    process.env.NEWCOMER_ENABLED = "false";
+    assert.throws(() => useManagementBoundary({ method: "POST", path: "/store/snowforce/newcomer" }, {}, () => assert.fail("Disabled offer")));
+    process.env.NEWCOMER_ENABLED = "true"; process.env.NEWCOMER_SIGNING_SECRET = "short";
+    assert.throws(() => useManagementBoundary({ method: "POST", path: "/store/snowforce/customer" }, {}, () => assert.fail("Invalid offer configuration")));
+  } finally {
+    for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+  }
+}));
+
 test("native and custom order, capture, refund and after-sales writes stay closed", async () => management(() => {
   for (const path of ["/admin/orders/order_fixture/fulfillments", "/admin/draft-orders", "/admin/payments/pay_fixture/capture", "/admin/payments/pay_fixture/refund", "/admin/payment-collections", "/admin/returns", "/admin/exchanges", "/admin/claims", "/admin/workflows-executions/exec_fixture/retry", "/admin/snowforce/payments/pay_fixture", "/admin/snowforce/after-sales/request_fixture/funds", "/admin/snowforce/tax/sales/order_fixture"]) {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) assert.throws(() => useManagementBoundary({ method, path }, {}, () => assert.fail("must not mutate")), /administration only/);

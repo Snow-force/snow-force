@@ -11,6 +11,16 @@ const { marketingWebhook } = require("../src/lib/marketing.ts");
 const member = "123e4567-e89b-42d3-a456-426614174001", code = newcomerCode(member), email = "member@example.com", customer = "cus_member";
 const env = { NEWCOMER_EMAIL_ENABLED: "true", NEWCOMER_RESEND_API_KEY: "fixture-private-key", NEWCOMER_EMAIL_FROM: "SnowForce <welcome@example.com>", NEWCOMER_REPLY_TO: "hello@example.com", SNOWFORCE_STOREFRONT_URL: "https://snowforce.test", MARKETING_POSTAL_ADDRESS: "Address <script>bad</script>", MARKETING_UNSUBSCRIBE_SECRET: "fixture-unsubscribe-secret-over-32", MARKETING_SENDS_PER_MINUTE: "30" };
 beforeEach(() => { Object.assign(process.env, env); });
+test("welcome emails inherit only the shop contact address and permit an explicit welcome override", () => {
+  const config = { ...env, NEWCOMER_EMAIL_FROM: undefined, NEWCOMER_REPLY_TO: undefined, MARKETING_SHOP_EMAIL_FROM: "SnowForce <noreply@example.com>", MARKETING_SHOP_REPLY_TO: "shop@example.com", MARKETING_EVENT_REPLY_TO: "events@example.com" };
+  const sender = newcomerEmailConfiguration(config);
+  assert.equal(sender.reply, "shop@example.com");
+  assert.equal(sender.from, "SnowForce <noreply@example.com>");
+  const payload = renderNewcomerEmail(email, code, new Date("2026-11-10T00:00:00Z"), sender);
+  assert.equal(payload.reply_to, "shop@example.com");
+  assert.ok(payload.text.includes("shop@example.com"));
+  assert.equal(newcomerEmailConfiguration({ ...config, NEWCOMER_REPLY_TO: "welcome@example.com" }).reply, "welcome@example.com");
+});
 async function fixture() {
   const pg = new PGlite();
   await pg.exec('create schema commerce; create role snowforce_commerce; grant usage on schema commerce to snowforce_commerce; create role anon; create role authenticated; create role service_role;');

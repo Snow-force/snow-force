@@ -2,8 +2,7 @@
 
 import { sendEmail } from "@/lib/email/adapter";
 import { createInquiry } from "./repository";
-
-const STAFF_EMAIL = "snowforceclub@gmail.com";
+import { generalContactEmail } from "@/lib/contact";
 
 type PartnerInquiryInput = {
   organizationName: string;
@@ -31,7 +30,7 @@ export async function submitPartnerInquiry(input: PartnerInquiryInput) {
   // Fire-and-forget notification: the inquiry is already persisted;
   // email failure must not surface as a user-facing error.
   sendEmail({
-    to: STAFF_EMAIL,
+    to: generalContactEmail,
     subject: `Partner Inquiry — ${input.organizationName}`,
     html: `<h2>New Partner Inquiry</h2>
 <p><strong>Organization:</strong> ${escapeHtml(input.organizationName)}</p>

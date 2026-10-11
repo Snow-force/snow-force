@@ -1,6 +1,7 @@
 import { MathBN, MedusaError, Modules } from "@medusajs/framework/utils";
 import type { ComputeActionContext, IPromotionModuleService, MedusaContainer } from "@medusajs/framework/types";
 import { z } from "zod";
+import { hasNewcomerEconomics } from "./newcomer-policy";
 
 export const isNewcomerCode = (code: unknown): code is string => typeof code === "string" && /^WELCOME-[A-F0-9]{32}$/.test(code);
 const adjustment = z.object({ code: z.string().nullish(), amount: z.number().nonnegative().optional() }).passthrough();
@@ -22,8 +23,17 @@ export async function evaluateNewcomerContext(cart: ComputeActionContext, codes:
   const context = newcomerPromotionContext(cart, codes, action);
   const previous = cartSchema.parse(cart).promotions.map(p => p.code);
   if (context.snowforce_no_stacking !== "true" || ![...codes, ...previous].some(isNewcomerCode)) return context;
+  const activeCodes = action === "remove" ? previous.filter(code => !codes.includes(code ?? "")) : action === "replace" ? codes : [...codes, ...previous];
+  const welcomeCodes = [...new Set(activeCodes.filter(isNewcomerCode))];
+  const service = scope.resolve<IPromotionModuleService>(Modules.PROMOTION);
+  if (welcomeCodes.length) {
+    const promotions = await service.listPromotions({ code: welcomeCodes }, { relations: ["application_method"], take: welcomeCodes.length });
+    if (promotions.length !== welcomeCodes.length || promotions.some(promotion => !hasNewcomerEconomics(promotion))) {
+      throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Welcome codes must give 10% off merchandise. Review this code with support.");
+    }
+  }
   // Compute only automatic offers without previous adjustments; this is a read-only native evaluation.
-  const automatic = await scope.resolve<IPromotionModuleService>(Modules.PROMOTION).computeActions([], {
+  const automatic = await service.computeActions([], {
     ...cart, snowforce_no_stacking: "false",
     items: cart.items?.map(line => ({ ...line, adjustments: [] })),
     shipping_methods: cart.shipping_methods?.map(line => ({ ...line, adjustments: [] })),

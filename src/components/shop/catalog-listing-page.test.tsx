@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const catalog = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/shop/storefront-repository", () => ({ getStorefrontCatalog: catalog }));
-vi.mock("@/lib/shop/support-repository", () => ({ getShopSupportEmail: async () => "Shop@snow-force.com" }));
+vi.mock("@/lib/shop/support-repository", () => ({ getShopSupportEmail: async () => "shop@snow-force.com" }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NEXT_NOT_FOUND"); } }));
 import { CatalogListingPage, shopListingMetadata } from "./catalog-listing-page";
 import { fixtureNavigation, fixtureProducts } from "@/lib/shop/shop.fixtures";

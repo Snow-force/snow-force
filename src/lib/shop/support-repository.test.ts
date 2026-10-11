@@ -15,11 +15,11 @@ describe("public shop support contact", () => {
 
   it("shows the confirmed contact before a policy is published", async () => {
     publishedPolicy.mockResolvedValue(null);
-    await expect(getShopSupportEmail()).resolves.toBe("Shop@snow-force.com");
+    await expect(getShopSupportEmail()).resolves.toBe("shop@snow-force.com");
   });
 
   it("keeps contact available when configuration, transport or policy validation fails", async () => {
     publishedPolicy.mockRejectedValue(new Error("private configuration detail"));
-    await expect(getShopSupportEmail()).resolves.toBe("Shop@snow-force.com");
+    await expect(getShopSupportEmail()).resolves.toBe("shop@snow-force.com");
   });
 });

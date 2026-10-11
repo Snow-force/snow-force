@@ -23,6 +23,7 @@ before(async () => {
   scope = { resolve: key => { if (key === "__pg_connection__") return db; if (key === "locking") return { execute: async (_key, fn) => fn(new AbortController().signal) }; throw new Error(`Unexpected dependency ${key}`); } };
 });
 beforeEach(async () => {
+  for (const key of ["MARKETING_SHOP_EMAIL_FROM", "MARKETING_EVENT_EMAIL_FROM", "MARKETING_SHOP_REPLY_TO", "MARKETING_EVENT_REPLY_TO"]) delete process.env[key];
   await pg.exec("truncate commerce.snowforce_marketing_campaigns,commerce.snowforce_marketing_recipients,commerce.snowforce_marketing_suppressions,commerce.snowforce_marketing_events,commerce.snowforce_marketing_rate_windows,commerce.snowforce_marketing_nonces cascade;");
   await pg.exec("truncate commerce.product,commerce.product_collection,commerce.promotion,commerce.promotion_campaign,commerce.promotion_campaign_budget;");
   Object.assign(process.env, { SNOWFORCE_STOREFRONT_URL: "https://snow-force.com", MARKETING_ENABLED: "true", MARKETING_INTERNAL_SECRET: "fixture-marketing-internal-secret-32", MARKETING_UNSUBSCRIBE_SECRET: "fixture-marketing-unsubscribe-secret-32", MARKETING_RESEND_API_KEY: "fixture-provider-key", MARKETING_EMAIL_FROM: "SnowForce <news@notifications.snow-force.com>", MARKETING_REPLY_TO: "hello@snow-force.com", MARKETING_POSTAL_ADDRESS: "123 Main St", MARKETING_SENDS_PER_MINUTE: "5" });
@@ -45,6 +46,32 @@ async function queue() {
   return marketingOperation(scope, "event", "staff", { action: "send", id: campaignId, version: 1, requestKey: sendKey, audienceHash: preview.audienceHash });
 }
 async function recipients() { return (await pg.query("select * from commerce.snowforce_marketing_recipients order by email")).rows; }
+test("personal newcomer codes are excluded from sources and rejected when selected directly or copied", async () => {
+  const code = "WELCOME-" + "A".repeat(32);
+  await pg.query("insert into commerce.promotion(id,code,is_automatic,status,\"limit\",used) values('promo_personal',$1,false,'active',1,0)", [code]);
+  const sources = await marketingOperation(scope, "shop", "staff", { action: "sources" });
+  assert.equal(sources.sources.some(source => source.id === "promo_personal"), false);
+  await assert.rejects(sourceDraft(scope, { kind: "promotion", id: "promo_personal" }), /Personal welcome/);
+  await assert.rejects(marketingOperation(scope, "shop", "staff", { action: "create", source: { kind: "promotion", id: "promo_personal" }, requestKey: campaignId }), /Personal welcome/);
+  assert.equal((await pg.query("select count(*)::int as count from commerce.snowforce_marketing_campaigns")).rows[0].count, 0);
+});
+test("real event and shop drafts deliver tests with separate reply addresses and independent readiness", async () => {
+  process.env.MARKETING_SHOP_REPLY_TO = "shop@example.com";
+  process.env.MARKETING_EVENT_REPLY_TO = "events@example.com";
+  process.env.MARKETING_EMAIL_FROM = "SnowForce <noreply@notifications.snow-force.com>";
+  await marketingOperation(scope, "event", "staff", { action: "create", source: { kind: "event", id: "future-ride" }, requestKey: campaignId });
+  await pg.exec("insert into commerce.product values ('prod_email','Gear','gear','New gear',null,'published',null,null);");
+  await marketingOperation(scope, "shop", "staff", { action: "create", source: { kind: "product", id: "prod_email" }, requestKey: sendKey });
+  await marketingOperation(scope, "event", "staff", { action: "test", id: campaignId, version: 1, email: "test@example.com" });
+  await marketingOperation(scope, "shop", "staff", { action: "test", id: sendKey, version: 1, email: "test@example.com" });
+  assert.deepEqual(providerCalls.map(call => JSON.parse(call.body).reply_to), ["events@example.com", "shop@example.com"]);
+  assert.ok(providerCalls.every(call => JSON.parse(call.body).from === process.env.MARKETING_EMAIL_FROM));
+  process.env.MARKETING_EVENT_REPLY_TO = "";
+  assert.equal((await marketingOperation(scope, "event", "staff", { action: "list" })).ready, false);
+  assert.equal((await marketingOperation(scope, "shop", "staff", { action: "list" })).ready, true);
+  await assert.rejects(marketingOperation(scope, "event", "staff", { action: "test", id: campaignId, version: 1, email: "test@example.com" }));
+  assert.equal(providerCalls.length, 2);
+});
 test("migration denies public customer-data access and atomically enqueues a unique recipient snapshot", async () => {
   const permissions = await pg.query("select has_table_privilege('anon','commerce.snowforce_marketing_recipients','select') as anonymous,has_table_privilege('authenticated','commerce.snowforce_marketing_campaigns','select') as member");
   assert.deepEqual(permissions.rows[0], { anonymous: false, member: false });

@@ -8,7 +8,9 @@
 
 ## 启用前配置
 
-折扣及使用范围已确认；有效期和正式启用时间待配置，功能默认关闭。先应用 `20261011025512_newcomer_email_limits.sql` 迁移，再在商城后端设置以下变量并重新发布：
+经营者已确认领取后有效期为 **30 天**。发件身份共用 `SnowForce <noreply@notifications.snow-force.com>`，回复地址使用商城 `shop@snow-force.com`，不使用活动联系地址。
+
+折扣及使用范围已确认；后台已准备 30 天有效期及 `2026-10-11T05:00:00Z` 的新账户资格起点（洛杉矶 10 月 10 日 22:00）。配置须发布后才生效，代码默认关闭。先应用 `20261011025512_newcomer_email_limits.sql` 迁移，再在商城后端设置以下变量并重新发布：
 
 | 变量 | 内容 |
 | --- | --- |
@@ -39,9 +41,11 @@
 
 网络超时和临时服务错误自动退避重试，冻结第一次投递的内容、收件人和发送标识；超过 23 小时仍无法确认的请求进入 `attention`，不会自动重新发送。依据 [Resend 发送标识文档](https://resend.com/docs/dashboard/emails/idempotency-keys) 保持在其 24 小时缓存窗口内。已接受的邮件不会再次入队。退信和投递反馈沿用[邮件推广 webhook 配置](marketing-email-operations.md)，可处理重复回调及早于发送结果到达的事件。工作人员应核实 `attention` / `failed` 记录对应的 Resend 实际结果，再决定后续操作，不直接清除记录重发。
 
-网站端仅需同一个 `NEWCOMER_SIGNING_SECRET`，沿用已有 `MEDUSA_BACKEND_URL` 和 `MEDUSA_PUBLISHABLE_KEY`。密钥不得使用 `NEXT_PUBLIC_` 前缀。商城须处于销售模式；管理模式不会显示或发放优惠。配置缺失或服务不可用时首页正常展示，不打开优惠弹窗。
+网站端仅需同一个 `NEWCOMER_SIGNING_SECRET`，沿用已有 `MEDUSA_BACKEND_URL` 和 `MEDUSA_PUBLISHABLE_KEY`。密钥不得使用 `NEXT_PUBLIC_` 前缀。配置完整且明确启用时，注册弹窗及验证用户领码可以在商城管理模式下开放；此时只允许经过现有 customer 身份认证的客户关联和新人码领取，不开放购物车、支付、结账或订单操作。实际兑换仍须通过既有销售、税务和付款门槛。配置缺失或服务不可用时首页正常展示，不打开优惠弹窗。
 
 网站只签名经 Supabase `getUser()` 验证的会员 ID、已验证邮箱和账户创建时间，后端还将该 ID 与客户 JWT 对应的不可变 Supabase provider identity 比对。客户不能提供其他人的身份、价格或折扣金额。领取不依赖邮件营销订阅。
+
+个人新人码的原生应用方法必须保持 percentage / 10 / items / each / USD 和一次使用上限。后台修改为固定金额、其他比例或其他应用范围后，领取、购物车应用和兑换均拒绝该码，不会继续显示或使用错误的折扣规则。通用 `SNOWFORCECLUB` 促销不属于个人新人码；其折扣类型已在原生后台纠正为 10%，既有商品范围及总使用上限保留。
 
 ## 使用与结账
 

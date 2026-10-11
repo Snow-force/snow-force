@@ -35,11 +35,16 @@ commerce 配置：
 | `MARKETING_RESEND_API_KEY` | 专用于营销发送的 Resend 服务端密钥 |
 | `MARKETING_EMAIL_FROM` | 已验证域名上的发件身份，例如 `SnowForce <news@notifications.snow-force.com>` |
 | `MARKETING_REPLY_TO` | 客服回复邮箱 |
+| `MARKETING_SHOP_REPLY_TO` | 商城专用回复地址：`shop@snow-force.com`；也用于新人欢迎信 |
+| `MARKETING_EVENT_REPLY_TO` | 活动及一般咨询：`hello@snow-force.com` |
+| `MARKETING_SHOP_EMAIL_FROM`、`MARKETING_EVENT_EMAIL_FROM` | 可分别覆盖发件身份；未设置时共用 `MARKETING_EMAIL_FROM` |
 | `MARKETING_POSTAL_ADDRESS` | 实际公司邮寄地址，必填；不要使用示例地址 |
 | `MARKETING_UNSUBSCRIBE_SECRET` | 至少 32 字符的独立随机密钥；保持稳定以使历史邮件的退订链接有效 |
 | `MARKETING_SENDS_PER_MINUTE` | 默认 30，允许 1–120；按实际 Resend 套餐额度配置 |
 
 网站配置 `MARKETING_WEBHOOK_SECRET`。在营销 Resend 账户创建 webhook，地址为 `https://<网站域名>/api/marketing/webhook`，订阅 `email.delivered`、`email.bounced`、`email.complained`、`email.failed`。签名验证使用原始请求正文。
+
+本次发件身份为 `SnowForce <noreply@notifications.snow-force.com>`，由已验证的 Resend 域名投递。商城和活动分别校验自己的回复地址；显式设置空值会暂停对应页面发送，不会自动转到另一类邮箱。个人 `WELCOME-…` 新人码不会出现在推广来源列表，直接选择也会被服务端拒绝；此类码只通过对应注册用户的欢迎信发放。
 
 先完成 Resend 发件域名验证及 SPF/DKIM/DMARC 配置，检查账户发送额度。不要复制或提交实际密钥。
 
@@ -54,6 +59,10 @@ commerce 配置：
 每分钟 job 消费持久化队列，跨 worker 使用数据库限额及共享锁。重试使用固定收件任务键和冻结后的邮件正文。临时失败采用退避；不会因为配置缺失把邮件标记为已发送。
 
 ## 验证
+
+2026-10-10 发布准备：生产已应用三份迁移，远端版本分别为 `20261011052451`（marketing_campaigns）、`20261011052455`（newcomer_email_limits）、`20261011052459`（newcomer_welcome_emails）。这些版本对应仓库中的 `20261011003726`、`20261011025512`、`20261011030617`，不要重复应用。Resend webhook 及 Railway 环境配置已准备；环境变量和最新后端代码仍须发布后才生效。
+
+验收收件人统一为 `hello@snow-force.com`。发件身份为 noreply，商城与欢迎信回复至 `shop@snow-force.com`，活动回复至 `hello@snow-force.com`。网站一般咨询、活动内部通知及公开联系信息也使用 hello。发布验收只试发到指定测试邮箱，不向现有客户群发。
 
 根目录运行 `npm test`、`npm run test:coverage`、`npm run build`；commerce 目录运行 `npm test`、`npm run typecheck`、`npm run build`。营销 SQL 集成测试使用开发依赖 PGlite，在独立本地数据库验证迁移、权限、队列、重试、退订、限额及 webhook 顺序，不使用生产客户或真实发送服务。
 

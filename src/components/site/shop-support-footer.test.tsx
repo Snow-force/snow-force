@@ -10,5 +10,5 @@ it("renders the server-resolved shop contact in the shared footer", async () => 
   supportEmail.mockResolvedValue("updated@example.test");
   render(<LanguageProvider initialLang="en">{await ShopSupportFooter()}</LanguageProvider>);
   expect(screen.getByRole("link", { name: "updated@example.test" })).toHaveAttribute("href", "mailto:updated@example.test");
-  expect(screen.queryByText("Shop@snow-force.com")).not.toBeInTheDocument();
+  expect(screen.queryByText("shop@snow-force.com")).not.toBeInTheDocument();
 });

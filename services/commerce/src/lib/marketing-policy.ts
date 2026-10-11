@@ -1,6 +1,12 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
+export function marketingSender(surface: "event" | "shop", env: NodeJS.ProcessEnv = process.env) {
+  const prefix = surface === "event" ? "MARKETING_EVENT" : "MARKETING_SHOP";
+  return { from: env[`${prefix}_EMAIL_FROM`] ?? env.MARKETING_EMAIL_FROM ?? "",
+    reply: env[`${prefix}_REPLY_TO`] ?? env.MARKETING_REPLY_TO ?? "" };
+}
+
 export function signMarketing(payload: unknown, secret: string, now = Date.now()) {
   if (secret.length < 32) throw new Error("Marketing service is not configured.");
   const timestamp = Math.floor(now / 1000), nonce = randomUUID(), body = JSON.stringify(payload);

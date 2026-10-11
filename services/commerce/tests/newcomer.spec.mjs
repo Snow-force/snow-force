@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 const require = createRequire(import.meta.url); require("ts-node/register/transpile-only");
-const { newcomerPolicy, newcomerPromotion, newcomerCode } = require("../src/lib/newcomer-policy.ts");
+const { newcomerPolicy, newcomerPromotion, newcomerCode, hasNewcomerEconomics } = require("../src/lib/newcomer-policy.ts");
 const { claimNewcomer, newcomerEmailHash } = require("../src/lib/newcomer.ts");
 const { reserveNewcomerRedemption, reserveNewcomerPayment } = require("../src/lib/newcomer-redemption.ts");
 const { signMarketing } = require("../src/lib/marketing-policy.ts");
@@ -53,6 +53,16 @@ test("uses native rules for ownership, currency and no stacking without a minimu
   assert.equal(newcomerCode(userId), promotion.code); assert.notEqual(newcomerCode("123e4567-e89b-42d3-a456-426614174002"), promotion.code);
 });
 
+test("refuses native admin edits that replace 10% with cash or change its scope", async () => {
+  assert.equal(hasNewcomerEconomics(fixture().promotion), true);
+  for (const changes of [{ type: "fixed" }, { value: 9 }, { value: 20 }, { allocation: "across" }, { target_type: "shipping_methods" }, { currency_code: "eur" }]) {
+    const { scope, promotion } = fixture();
+    Object.assign(promotion.application_method, changes);
+    assert.equal(hasNewcomerEconomics(promotion), false);
+    await assert.rejects(claimNewcomer(scope, customerId, signed(), now), /10%/);
+  }
+});
+
 test("native discount computation gives 10% only to regular-price items in a mixed cart", () => {
   const promotion = fixture().promotion;
   promotion.application_method.target_rules = promotion.application_method.target_rules.map(rule => ({ ...rule, values: rule.values.map(value => ({ value })) }));
@@ -84,7 +94,7 @@ test("payment validation rejects sale-item discounts, manual or automatic stacki
 test("preflights automatic promotions before displaying welcome savings without mutating the cart", async () => {
   const code = newcomerCode(userId), cart = { currency_code: "usd", items: [{ unit_price: 100, quantity: 1, adjustments: [{ code, amount: 10 }] }] };
   const snapshot = structuredClone(cart); let calls = 0;
-  const scope = { resolve: () => ({ computeActions: async (codes, context) => {
+  const scope = { resolve: () => ({ listPromotions: async () => [fixture().promotion], computeActions: async (codes, context) => {
     calls++; assert.deepEqual(codes, []); assert.deepEqual(context.items[0].adjustments, []); assert.equal(context.snowforce_no_stacking, "false");
     return [{ action: "addItemAdjustment", amount: 5, code: "AUTO" }];
   } }) };
@@ -92,8 +102,13 @@ test("preflights automatic promotions before displaying welcome savings without 
   assert.deepEqual(cart, snapshot); assert.equal(calls, 1);
   assert.equal((await evaluateNewcomerContext(cart, [code, "OTHER"], "add", scope)).snowforce_no_stacking, "false"); assert.equal(calls, 1);
   assert.equal((await evaluateNewcomerContext(cart, [], "add", scope)).snowforce_no_stacking, "true"); assert.equal(calls, 1);
-  const available = { resolve: () => ({ computeActions: async () => [{ action: "removeItemAdjustment", code }, { action: "addItemAdjustment", amount: 0, code: "ZERO" }] }) };
+  const available = { resolve: () => ({ listPromotions: async () => [fixture().promotion], computeActions: async () => [{ action: "removeItemAdjustment", code }, { action: "addItemAdjustment", amount: 0, code: "ZERO" }] }) };
   assert.equal((await evaluateNewcomerContext(cart, [code], "add", available)).snowforce_no_stacking, "true");
+  const corrupted = fixture().promotion; corrupted.application_method.type = "fixed";
+  await assert.rejects(evaluateNewcomerContext(cart, [code], "add", { resolve: () => ({ listPromotions: async () => [corrupted] }) }), /10%/);
+  await assert.rejects(evaluateNewcomerContext(cart, [code], "add", { resolve: () => ({ listPromotions: async () => [] }) }), /10%/);
+  // Removing an invalid code remains possible without retrieving or applying it.
+  assert.equal((await evaluateNewcomerContext({ ...cart, promotions: [{ code }] }, [code], "remove", available)).snowforce_no_stacking, "true");
 });
 
 test("private Postgres claims enforce normalized email uniqueness across accounts and preserve failed-creation retries", async () => {
@@ -150,10 +165,11 @@ test("refuses tampered identity, ownership, old registrations, previous orders a
   promotion.campaign.ends_at = new Date("2026-12-10"); promotion.status = "inactive";
   assert.deepEqual(await claimNewcomer(scope, customerId, signed(), now), { status: "expired" });
 });
-test("store API hides offers in management mode and never accepts a supplied customer ID", async () => {
+test("store API advertises explicitly enabled welcome benefits independently of payments and never accepts a supplied customer ID", async () => {
   let output;
   const res = { setHeader: () => {}, json: value => { output = value; } };
-  process.env.COMMERCE_OPERATING_MODE = "management"; await GET({}, res); assert.deepEqual(output, { policy: null });
+  process.env.COMMERCE_OPERATING_MODE = "management"; await GET({}, res); assert.equal(output.policy.value, 10);
+  process.env.NEWCOMER_ENABLED = "false"; await GET({}, res); assert.deepEqual(output, { policy: null });
   process.env.NEWCOMER_ENABLED = "false"; await POST({ scope: {}, auth_context: { actor_id: customerId }, body: { customerId: "cus_other" } }, res); assert.deepEqual(output, { status: "disabled" });
 });
 test("creates once, preserves issued economics and recovers persisted results after a lost response", async () => {
@@ -174,12 +190,16 @@ test("creates once, preserves issued economics and recovers persisted results af
 test("Postgres atomically reserves one cart, permits its retries, rejects a second cart and expired or foreign codes", async () => {
   const pg = new PGlite();
   try {
-    await pg.exec('create schema commerce; create table commerce.promotion_campaign(id text primary key,deleted_at timestamptz,starts_at timestamptz,ends_at timestamptz); create table commerce.promotion(id text primary key,code text,campaign_id text,status text,"limit" int,used int,metadata jsonb,deleted_at timestamptz);');
+    await pg.exec('create schema commerce; create table commerce.promotion_campaign(id text primary key,deleted_at timestamptz,starts_at timestamptz,ends_at timestamptz); create table commerce.promotion(id text primary key,code text,campaign_id text,status text,"limit" int,used int,metadata jsonb,deleted_at timestamptz); create table commerce.promotion_application_method(promotion_id text,deleted_at timestamptz,type text,value numeric,target_type text,allocation text,currency_code text);');
+    await pg.exec("insert into commerce.promotion_application_method values ('promo_fixture',null,'percentage',10,'items','each','usd');");
     await pg.exec("insert into commerce.promotion_campaign values ('pcamp_fixture',null,now()-interval '1 day',now()+interval '30 days');");
     await pg.query("insert into commerce.promotion values ('promo_fixture',$1,'pcamp_fixture','active',1,0,$2,null)", [newcomerCode(userId), { snowforce_newcomer: "v1", snowforce_customer_id: customerId }]);
     const scope = { resolve: () => ({ raw: (sql, values) => { let i = 0; return pg.query(sql.replace(/\?/g, () => `$${++i}`), values); } }) };
     const initial = { items: [{ unit_price: 100, quantity: 1, adjustments: [{ code: newcomerCode(userId), amount: 10 }] }] };
     const first = { id: "cart_first", customer_id: customerId }, second = { id: "cart_second", customer_id: customerId };
+    await pg.exec("update commerce.promotion_application_method set type='fixed';");
+    await assert.rejects(reserveNewcomerRedemption(initial, first, scope));
+    await pg.exec("update commerce.promotion_application_method set type='percentage';");
     const outcomes = await Promise.allSettled([reserveNewcomerRedemption(initial, first, scope), reserveNewcomerRedemption(initial, second, scope)]);
     assert.equal(outcomes.filter(item => item.status === "fulfilled").length, 1);
     const winner = outcomes[0].status === "fulfilled" ? first : second, loser = winner === first ? second : first;

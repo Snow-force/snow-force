@@ -40,7 +40,7 @@ describe("published shop policy view", () => {
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(screen.queryByText(/30|Park Plaza|support@/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← 返回装备商城" })).toHaveAttribute("href", "/shop");
-    expect(screen.getByRole("link", { name: "Shop@snow-force.com" })).toHaveAttribute("href", "mailto:Shop@snow-force.com");
+    expect(screen.getByRole("link", { name: "shop@snow-force.com" })).toHaveAttribute("href", "mailto:shop@snow-force.com");
   });
   it("does not display stale content when policy loading failed", () => {
     render(<LanguageProvider initialLang="en"><ShopPolicyView policy={policy} unavailable /></LanguageProvider>);
@@ -49,6 +49,6 @@ describe("published shop policy view", () => {
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(screen.queryByText(/Published English/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "support@example.test" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Shop@snow-force.com" })).toHaveAttribute("href", "mailto:Shop@snow-force.com");
+    expect(screen.getByRole("link", { name: "shop@snow-force.com" })).toHaveAttribute("href", "mailto:shop@snow-force.com");
   });
 });

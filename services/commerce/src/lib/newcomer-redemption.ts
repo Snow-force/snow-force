@@ -16,7 +16,9 @@ export async function reserveNewcomerRedemption(initialCart: unknown, cart: { id
   if (codes.length !== 1 || !/^WELCOME-[A-F0-9]{32}$/.test(codes[0]) || !cart.customer_id) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Review your welcome code.");
   const db = scope.resolve<TaxQuoteConnection>(ContainerRegistrationKeys.PG_CONNECTION);
   const result = await db.raw(`update commerce.promotion p set metadata=coalesce(p.metadata,'{}'::jsonb)||jsonb_build_object('snowforce_newcomer_cart',cast(? as text))
-    from commerce.promotion_campaign c where p.code=? and p.campaign_id=c.id
+    from commerce.promotion_campaign c, commerce.promotion_application_method a where p.code=? and p.campaign_id=c.id
+    and a.promotion_id=p.id and a.deleted_at is null and a.type='percentage' and a.value=10
+    and a.target_type='items' and a.allocation='each' and a.currency_code='usd'
     and p.deleted_at is null and c.deleted_at is null and p.status='active' and p.limit=1
     and p.metadata->>'snowforce_newcomer'='v1' and p.metadata->>'snowforce_customer_id'=?
     and ((p.used=0 and p.metadata->>'snowforce_newcomer_cart' is null and c.starts_at<=clock_timestamp() and c.ends_at>clock_timestamp())

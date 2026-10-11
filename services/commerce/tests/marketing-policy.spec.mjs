@@ -6,6 +6,13 @@ const require = createRequire(import.meta.url); require("ts-node/register/transp
 const policy = require("../src/lib/marketing-policy.ts");
 const content = { subject: "Future ride", preheader: "Mammoth", heading: "Join <SnowForce>", body: "Ride together\n\n<script>unsafe</script>", image: "https://snow-force.com/gear.jpg", button: "View event", path: "/events/future-ride" };
 const secret = "fixture-marketing-signing-secret-at-least-32";
+test("event and shop sender identities are independent, including deliberately missing event settings", () => {
+  const env = { MARKETING_EMAIL_FROM: "SnowForce <noreply@example.com>", MARKETING_REPLY_TO: "legacy@example.com", MARKETING_EVENT_REPLY_TO: "events@example.com", MARKETING_SHOP_REPLY_TO: "shop@example.com" };
+  assert.equal(policy.marketingSender("event", env).reply, "events@example.com");
+  assert.equal(policy.marketingSender("shop", env).reply, "shop@example.com");
+  assert.equal(policy.marketingSender("event", { ...env, MARKETING_EVENT_REPLY_TO: "" }).reply, "");
+  assert.equal(policy.marketingSender("shop", { ...env, MARKETING_SHOP_EMAIL_FROM: "Shop <noreply@shop.example.com>" }).from, "Shop <noreply@shop.example.com>");
+});
 test("internal protocol rejects altered, expired and malformed signatures", () => {
   const envelope = policy.signMarketing({ action: "list" }, secret, 1000000);
   assert.deepEqual(policy.verifyMarketing(envelope, secret, 1000100).payload, { action: "list" });

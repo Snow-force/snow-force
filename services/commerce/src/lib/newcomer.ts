@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createHash } from "node:crypto";
 import { verifyMarketing } from "./marketing-policy";
 import { orderMemberId } from "./order-sync";
-import { newcomerCode, newcomerPolicy, newcomerPolicySchema, newcomerPromotion } from "./newcomer-policy";
+import { hasNewcomerEconomics, newcomerCode, newcomerPolicy, newcomerPolicySchema, newcomerPromotion } from "./newcomer-policy";
 import type { TaxQuoteConnection } from "./tax-quote-ledger";
 import { queueNewcomerEmail } from "./newcomer-email";
 
@@ -57,6 +57,7 @@ export async function claimNewcomer(scope: MedusaContainer, customerId: string, 
     }
     const bound = promotion.rules?.some(rule => rule.attribute === "customer_id" && rule.operator === "eq" && rule.values?.length === 1 && rule.values[0].value === customerId);
     if (!bound || promotion.metadata?.snowforce_member_id !== member.userId || promotion.limit !== 1) throw new Error("Welcome offer ownership is invalid.");
+    if (!hasNewcomerEconomics(promotion)) throw new Error("Welcome offer must give 10% off regular-price merchandise.");
     if ((promotion.used ?? 0) >= 1) return { status: "used" as const };
     const endsAt = promotion.campaign?.ends_at ? new Date(promotion.campaign.ends_at).toISOString() : null;
     if (promotion.status !== "active" || !endsAt || new Date(endsAt) <= now) return { status: "expired" as const };

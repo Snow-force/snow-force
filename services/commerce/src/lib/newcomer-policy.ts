@@ -10,6 +10,14 @@ export const newcomerPolicySchema = z.object({
   .refine(p => Number(p.value.toFixed(2)) === p.value && Number(p.minimum.toFixed(2)) === p.minimum)
   .refine(p => p.eligibility !== "new_accounts" || p.registeredAfter !== null);
 export type NewcomerPolicy = z.infer<typeof newcomerPolicySchema>;
+/** Native admin edits must not silently turn a welcome percentage into a cash discount. */
+export function hasNewcomerEconomics(promotion: unknown): boolean {
+  return z.object({
+    limit: z.literal(1),
+    application_method: z.object({ type: z.literal("percentage"), value: z.coerce.number().refine(value => value === 10),
+      target_type: z.literal("items"), allocation: z.literal("each"), currency_code: z.literal("usd") }),
+  }).safeParse(promotion).success;
+}
 export function newcomerPolicy(env: NodeJS.ProcessEnv = process.env): NewcomerPolicy | null {
   if (env.NEWCOMER_ENABLED !== "true") return null;
   const parsed = newcomerPolicySchema.safeParse({ type: env.NEWCOMER_DISCOUNT_TYPE ?? "percentage",

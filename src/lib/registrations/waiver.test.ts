@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeWaiverSha } from "./waiver";
+import { computeWaiverSha, DEFAULT_WAIVER_TEXT } from "./waiver";
 
 describe("computeWaiverSha", () => {
+  it("directs event questions to the confirmed general mailbox", () => {
+    expect(DEFAULT_WAIVER_TEXT).toContain("Email: hello@snow-force.com");
+    expect(DEFAULT_WAIVER_TEXT).not.toContain("snowforceclub@gmail.com");
+  });
   it("returns a 64-character hex string", async () => {
     const sha = await computeWaiverSha("hello");
     expect(sha).toHaveLength(64);
