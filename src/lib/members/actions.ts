@@ -19,6 +19,7 @@ import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
 import { memberAuthCallbackUrl, sanitizeMemberNextPath } from "./auth-results";
+import { queueMemberWelcome } from "@/lib/shop/newcomer-welcome";
 import {
   ensureMemberProfileAfterConsent,
   hasCurrentPrivacyConsent,
@@ -183,6 +184,11 @@ export async function registerMemberProfile(formData: FormData) {
   }
 
   revalidatePath("/member");
+  if (data.user.email_confirmed_at && data.session) {
+    try {
+      if (await ensureMemberProfileAfterConsent(data.user, supabase)) await queueMemberWelcome("/member");
+    } catch { console.error("[member.welcome] Welcome benefit could not be queued; registration remains successful."); }
+  }
   redirect("/member?registered=1");
 }
 
@@ -203,6 +209,7 @@ export async function loginMemberProfile(formData: FormData) {
 
   revalidatePath("/", "layout");
   const destination = await resolveMemberAuthDestination(data.user, nextPathFromForm(formData), supabase);
+  if (data.user.email_confirmed_at) await queueMemberWelcome(destination);
   redirect(destination);
 }
 
@@ -293,6 +300,7 @@ export async function confirmMemberEmail(formData: FormData) {
 
   revalidatePath("/member");
   const destination = await resolveMemberAuthDestination(data.user, nextPathFromForm(formData), supabase);
+  if (data.user.email_confirmed_at) await queueMemberWelcome(destination);
   redirect(destination);
 }
 
@@ -324,6 +332,7 @@ export async function acceptMemberConsent(formData: FormData) {
   }
 
   revalidatePath("/member");
+  if (user.email_confirmed_at) await queueMemberWelcome(next);
   redirect(next);
 }
 

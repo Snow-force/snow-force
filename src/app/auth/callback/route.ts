@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sanitizeMemberNextPath } from "@/lib/members/auth-results";
 import { sanitizeMerchantNextPath } from "@/lib/merchants/auth-results";
 import { resolveMemberAuthDestination } from "@/lib/members/member-consents";
+import { queueMemberWelcome } from "@/lib/shop/newcomer-welcome";
 
 /**
  * Pick the appropriate sanitizer based on the requested `next` path. Member
@@ -55,5 +56,6 @@ export async function GET(request: NextRequest) {
   }
 
   const destination = await resolveMemberAuthDestination(user, next, supabase);
+  if (user.email_confirmed_at) await queueMemberWelcome(destination);
   return redirectWithinSite(destination);
 }

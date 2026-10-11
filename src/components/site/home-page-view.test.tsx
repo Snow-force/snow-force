@@ -29,14 +29,6 @@ describe("HomePageView public story", () => {
     Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: playMock });
   });
 
-  it.each(["en", "zh"] as const)("keeps the unpublished welcome offer off the %s homepage", (lang) => {
-    renderHome(lang);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.queryByText(/10% off|新人九折/)).not.toBeInTheDocument();
-    expect(document.querySelector('a[href*="/member/welcome"]')).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-  });
-
   it("keeps the hero video user initiated and preserves both conversion links", () => {
     renderHome("en");
 

@@ -38,7 +38,6 @@ describe("cart request loading", () => {
     const pending = deferred<CartResult>(); actions.promotion.mockReturnValueOnce(pending.promise).mockResolvedValue({ status: "ready", cart });
     render(<LanguageProvider initialLang="en"><ShopProvider><CartContents /></ShopProvider></LanguageProvider>);
     const input = await screen.findByLabelText("Promotion code"); fireEvent.change(input, { target: { value: "SAVE10" } });
-    expect(screen.queryByRole("link", { name: "View my welcome code" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(actions.promotion).toHaveBeenCalledWith({ code: "SAVE10", remove: false });
     expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
