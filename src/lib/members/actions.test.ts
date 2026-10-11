@@ -17,8 +17,6 @@ const mockParseMemberProfileUpdate = vi.hoisted(() => vi.fn());
 const mockGetMemberProfile = vi.hoisted(() => vi.fn());
 const mockUpdateMemberProfile = vi.hoisted(() => vi.fn());
 const mockMarketingRequest = vi.hoisted(() => vi.fn());
-const mockQueueMemberWelcome = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/shop/newcomer-welcome", () => ({ queueMemberWelcome: mockQueueMemberWelcome }));
 vi.mock("@/lib/marketing/client", () => ({ marketingRequest: mockMarketingRequest }));
 const mockAddMemberPass = vi.hoisted(() => vi.fn());
 const mockGetSavedEvents = vi.hoisted(() => vi.fn());
@@ -200,22 +198,6 @@ beforeEach(() => {
 });
 
 describe("registerMemberProfile", () => {
-  it("queues a welcome email for an immediately verified signup only after consent and profile creation", async () => {
-    const user = { id: "verified-new-member", identities: [{}], email_confirmed_at: "2026-10-11T00:00:00Z" };
-    mockSignUp.mockResolvedValueOnce({ data: { user, session: { access_token: "verified" } }, error: null });
-    await expect(registerMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member?registered=1");
-    expect(mockEnsureMemberProfileAfterConsent).toHaveBeenCalledWith(user, expect.any(Object));
-    expect(mockQueueMemberWelcome).toHaveBeenCalledWith("/member");
-  });
-  it("does not fail an otherwise successful signup when optional welcome profile preparation is unavailable", async () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    try {
-      mockSignUp.mockResolvedValueOnce({ data: { user: { id: "new-member", identities: [{}], email_confirmed_at: "2026-10-11T00:00:00Z" }, session: { access_token: "verified" } }, error: null });
-      mockEnsureMemberProfileAfterConsent.mockRejectedValueOnce(new Error("private db error"));
-      await expect(registerMemberProfile(new FormData())).rejects.toThrow("REDIRECT:/member?registered=1");
-      expect(mockQueueMemberWelcome).not.toHaveBeenCalled(); expect(error).toHaveBeenCalledWith("[member.welcome] Welcome benefit could not be queued; registration remains successful.");
-    } finally { error.mockRestore(); }
-  });
   it.each([
     ["email", "register_email"],
     ["password", "register_password"],
@@ -252,7 +234,6 @@ describe("registerMemberProfile", () => {
       source: "email_registration",
       userId: "auth-user-1",
     }));
-    expect(mockQueueMemberWelcome).not.toHaveBeenCalled();
   });
 
   it("S2-signup-error-keeps-the-registration-form-open", async () => {
@@ -622,7 +603,6 @@ describe("confirmMemberEmail", () => {
       token_hash: "safe-token-hash",
       type: "email",
     });
-    expect(mockQueueMemberWelcome).toHaveBeenCalledWith("/events/mammoth-weekend");
   });
 
   it("S1-rejects-a-missing-token-without-calling-Supabase", async () => {

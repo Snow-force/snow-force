@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   resolveMemberAuthDestination: vi.fn(),
   sanitizeMemberNextPath: vi.fn(),
   sanitizeMerchantNextPath: vi.fn(),
-  queueMemberWelcome: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
@@ -17,7 +16,6 @@ vi.mock("@/lib/merchants/auth-results", () => ({ sanitizeMerchantNextPath: mocks
 vi.mock("@/lib/members/member-consents", () => ({
   resolveMemberAuthDestination: mocks.resolveMemberAuthDestination,
 }));
-vi.mock("@/lib/shop/newcomer-welcome", () => ({ queueMemberWelcome: mocks.queueMemberWelcome }));
 
 import { GET } from "./route";
 
@@ -37,17 +35,6 @@ beforeEach(() => {
 });
 
 describe("Supabase auth callback", () => {
-  it("queues the welcome benefit for a verified member even when redirecting to an event", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "member", email_confirmed_at: "2026-10-11T00:00:00Z" } } });
-    mocks.resolveMemberAuthDestination.mockResolvedValue("/events/trip");
-    const response = await GET(new NextRequest("https://snowforce.test/auth/callback?code=valid"));
-    expect(mocks.queueMemberWelcome).toHaveBeenCalledWith("/events/trip");
-    expect(response.headers.get("location")).toBe("/events/trip");
-  });
-  it("does not queue welcome mail for an unverified session", async () => {
-    await GET(new NextRequest("https://snowforce.test/auth/callback?code=valid"));
-    expect(mocks.queueMemberWelcome).not.toHaveBeenCalled();
-  });
   it("rejects a missing member code without creating a Supabase client", async () => {
     const response = await GET(new NextRequest("https://snowforce.test/auth/callback?next=/events/trip"));
 

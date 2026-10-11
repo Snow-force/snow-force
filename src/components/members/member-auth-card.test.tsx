@@ -29,7 +29,7 @@ describe("MemberAuthCard registration", () => {
     expect(screen.getByLabelText(/I have read and agree to the Privacy Notice, including permission/)).toBeRequired();
     expect(screen.queryByRole("checkbox", { name: /Optional: Allow SnowForce/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create SnowForce account" })).toBeDisabled();
-    expect(screen.getByText(/receive their personal shop discount code with a welcome email/)).toBeInTheDocument();
+    expect(screen.queryByText(/personal shop discount code|个人商城折扣码/)).not.toBeInTheDocument();
   });
 
   it("enables registration only after all field rules and the required privacy checkbox are satisfied", async () => {

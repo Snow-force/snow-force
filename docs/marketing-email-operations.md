@@ -38,7 +38,7 @@ commerce 配置：
 | `MARKETING_SHOP_REPLY_TO` | 商城专用回复地址：`shop@snow-force.com`；也用于新人欢迎信 |
 | `MARKETING_EVENT_REPLY_TO` | 活动及一般咨询：`hello@snow-force.com` |
 | `MARKETING_SHOP_EMAIL_FROM`、`MARKETING_EVENT_EMAIL_FROM` | 可分别覆盖发件身份；未设置时共用 `MARKETING_EMAIL_FROM` |
-| `MARKETING_POSTAL_ADDRESS` | 实际公司邮寄地址，必填；不要使用示例地址 |
+| `MARKETING_POSTAL_ADDRESS` | 实际公司邮寄地址，必填；不要使用示例地址。当前邮件显示名使用 Snow Force LLC，保留原地址 |
 | `MARKETING_UNSUBSCRIBE_SECRET` | 至少 32 字符的独立随机密钥；保持稳定以使历史邮件的退订链接有效 |
 | `MARKETING_SENDS_PER_MINUTE` | 默认 30，允许 1–120；按实际 Resend 套餐额度配置 |
 

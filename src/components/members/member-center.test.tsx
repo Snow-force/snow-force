@@ -6,7 +6,6 @@ import { previewAddresses, previewDashboard, previewOrders, previewProfile, prev
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }), usePathname: () => "/design-preview/member" }));
 vi.mock("@/lib/shop/member-actions", () => ({ saveShippingAddressAction: vi.fn(), deleteShippingAddressAction: vi.fn() }));
 vi.mock("@/lib/members/actions", () => ({ confirmMemberPendingRegistrationAction: vi.fn(), logoutMember: vi.fn() }));
-vi.mock("@/lib/shop/newcomer-actions", () => ({ claimNewcomerAction: vi.fn(async () => ({ status: "disabled" })) }));
 vi.mock("@/lib/payments/actions", () => ({ createCheckoutSessionAction: vi.fn() }));
 vi.mock("@/lib/shop/after-sales-actions",()=>({getAfterSalesAction:vi.fn(),submitAfterSalesAction:vi.fn(),updateAfterSalesAction:vi.fn()}));
 import { saveShippingAddressAction, deleteShippingAddressAction } from "@/lib/shop/member-actions";

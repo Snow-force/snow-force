@@ -10,7 +10,6 @@ import { getRegistrationsByMember } from "@/lib/registrations/repository";
 import { memberConsentPath } from "@/lib/members/member-consents";
 import { resolvePaymentReturnStatus } from "@/lib/payments/return-status";
 import { memberOrderRepository } from "@/lib/shop/member-order-repository";
-import { getNewcomerPolicy } from "@/lib/shop/newcomer";
 
 export default async function MemberPage(
   props: {
@@ -29,13 +28,12 @@ export default async function MemberPage(
   const verifiedPaymentStatus = searchParams.payment === "success"
     ? await resolvePaymentReturnStatus(searchParams.session_id, account.profile.id)
     : undefined;
-  const [registrations, pendingRegistrations, events, recaps, orders, newcomerPolicy] = await Promise.all([
+  const [registrations, pendingRegistrations, events, recaps, orders] = await Promise.all([
     getRegistrationsByMember(account.profile.id),
     getPendingRegistrationsByMember(account.profile.id),
     getEvents(),
     getRecaps(),
     memberOrderRepository.list(account.user.id),
-    getNewcomerPolicy(),
   ]);
   const dashboard = buildMemberDashboard({
     profile: account.profile,
@@ -53,7 +51,6 @@ export default async function MemberPage(
       profile={account.profile}
       searchParams={searchParams}
       user={account.user}
-      newcomerEnabled={Boolean(newcomerPolicy)}
       verifiedPaymentStatus={verifiedPaymentStatus}
     />
   );

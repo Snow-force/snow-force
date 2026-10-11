@@ -27,6 +27,16 @@ test("rendering escapes content, preserves plain text and disallows unsafe desti
   assert.ok(rendered.text.includes("123 Main St")); assert.ok(rendered.text.includes("Unsubscribe:"));
   for (const change of [{ image: "javascript:alert(1)" }, { image: "https://u:p@example.com/a" }, { path: "//attacker.example.com" }, { path: "/events/../admin" }, { subject: "Subject\r\nBcc: attacker@example.com" }]) assert.equal(policy.marketingContent.safeParse({ ...content, ...change }).success, false);
 });
+test("email HTML and plain text use the configured Snow Force LLC name and preserve the postal address", () => {
+  const address = "Snow Force LLC, 1 Park Plaza, #600 Office 44, Irvine, CA 92614, United States";
+  const rendered = policy.renderMarketing(content, "https://snow-force.com", address, "https://snow-force.com/unsubscribe");
+  for (const body of [rendered.html, rendered.text]) {
+    assert.ok(body.includes("Snow Force LLC"));
+    assert.ok(body.includes("1 Park Plaza, #600 Office 44, Irvine, CA 92614, United States"));
+    assert.ok(!body.includes("CLN GLOBAL LLC"));
+  }
+});
+
 test("consent is never inferred from purchase and suppression always wins", () => {
   const contact = { email: "member@example.com", sources: ["shop"], subscribed: false, optedOut: false };
   assert.equal(policy.classifyContact(contact, false), "pending");

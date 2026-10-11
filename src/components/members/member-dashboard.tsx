@@ -13,7 +13,6 @@ import type { MemberOrderList } from "@/lib/shop/member-order-repository";
 import { formatOrderDate } from "@/lib/shop/member-orders";
 import type { VerifiedPaymentStatus } from "@/lib/payments/checkout-attempt";
 import { MemberStatusMessage } from "./member-status-message";
-import { NewcomerBenefit } from "./newcomer-benefit";
 import { PendingPaymentButton } from "./pending-payment-button";
 import { MemberAccountShell, previewMemberHref } from "./member-account-shell";
 import { OrderCard, OrderReadNotice, OrdersEmptyState } from "./member-orders-view";
@@ -26,7 +25,6 @@ type MemberDashboardProps = {
   verifiedPaymentStatus?: VerifiedPaymentStatus;
   user: User;
   preview?: boolean;
-  newcomerEnabled?: boolean;
 };
 
 function PendingConfirmations({ dashboard, preview }: { dashboard: MemberDashboardData; preview: boolean }) {
@@ -57,7 +55,7 @@ function FreeConfirmationButton() {
   return <button type="submit" disabled={pending} className="min-h-11 rounded-full bg-[#0066cc] px-5 text-sm font-semibold text-white disabled:opacity-50">{t(pending ? { en: "Confirming…", zh: "确认中…" } : { en: "Confirm registration", zh: "确认报名" })}</button>;
 }
 
-export function MemberDashboard({ dashboard, orders, profile, searchParams, verifiedPaymentStatus, user, preview = false, newcomerEnabled = false }: MemberDashboardProps) {
+export function MemberDashboard({ dashboard, orders, profile, searchParams, verifiedPaymentStatus, user, preview = false }: MemberDashboardProps) {
   const { t, lang } = useLanguage();
   const firstName = profile.displayName || user.email?.split("@")[0] || t({ en: "rider", zh: "滑手" });
   const nextTrip = dashboard.upcomingTrips[0];
@@ -72,7 +70,6 @@ export function MemberDashboard({ dashboard, orders, profile, searchParams, veri
     title={t({ en: `Welcome back, ${firstName}.`, zh: `欢迎回来，${firstName}。` })}
     subtitle={t({ en: "Your gear orders, mountain plans and rider details. All in one place.", zh: "装备订单、雪山行程和滑手资料，都在这里。" })}>
     <MemberStatusMessage searchParams={searchParams} verifiedPaymentStatus={verifiedPaymentStatus} />
-    {!preview && newcomerEnabled && <NewcomerBenefit verified={Boolean(user.email_confirmed_at)} />}
     {dashboard.notifications.some((item) => item.type === "email_verification") && <p role="status" className="rounded-lg border border-[#bdcfe0] bg-white px-5 py-4 text-sm leading-6">{t({ en: "Verify your email to complete registrations and save shipping addresses.", zh: "请验证邮箱，以完成活动报名和保存收货地址。" })} <Link href="/member/account-settings" className="font-semibold text-[#0066cc]">{t({ en: "Account settings", zh: "查看账号设置" })}</Link></p>}
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(250px,0.85fr)]">
       <section className="relative flex min-h-[230px] items-center overflow-hidden rounded-[18px] bg-[#162723] p-6 text-white sm:p-8">

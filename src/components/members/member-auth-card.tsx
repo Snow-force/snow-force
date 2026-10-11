@@ -196,7 +196,6 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
                   </span>
                 </label>
               </div>
-              <p className="text-xs leading-5 text-white/60">{t({ en: "After email verification, eligible new members receive their personal shop discount code with a welcome email at their registered address.", zh: "验证邮箱后，符合新人优惠条件的会员会在注册邮箱收到欢迎信和个人商城折扣码。" })}</p>
               <RegisterSubmitButton enabled={registrationIsValid} pending={registerPending} />
             </form>
           ) : mode === "magic" ? (
