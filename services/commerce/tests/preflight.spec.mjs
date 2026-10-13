@@ -43,6 +43,16 @@ test("management deployment needs no Stripe credentials or tax launch confirmati
   for (const confirmation of [undefined, "true", "FALSE"]) assert.ok(configurationErrors({ ...managementEnv(), COMMERCE_TAX_POLICY_CONFIRMED: confirmation }).length);
 });
 
+test("cart preparation is explicit and does not remove production tax or payment requirements", () => {
+  const example = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
+  assert.match(example, /^COMMERCE_CART_ENABLED=false$/m);
+  for (const enabled of [undefined, "false", "true"]) assert.deepEqual(configurationErrors({ ...managementEnv(), COMMERCE_CART_ENABLED: enabled }), []);
+  for (const enabled of ["TRUE", "1", "enabled"]) assert.ok(configurationErrors({ ...managementEnv(), COMMERCE_CART_ENABLED: enabled }).some(error => error.includes("COMMERCE_CART_ENABLED")));
+  const sales = configurationErrors({ ...managementEnv(), COMMERCE_CART_ENABLED: "true", COMMERCE_OPERATING_MODE: "sales" });
+  assert.ok(sales.some(error => error.includes("Stripe provider")));
+  assert.ok(sales.some(error => error.includes("sales-tax")));
+});
+
 test("management mode preserves production security and persistent infrastructure requirements", () => {
   for (const change of [{ REDIS_URL: "redis://fixture.invalid" }, { DATABASE_CA_CERT: undefined }, { S3_SECRET_ACCESS_KEY: undefined }, { STORE_CORS: "http://localhost:3100" }, { COMMERCE_ORDER_SYNC_SECRET: undefined }]) {
     assert.ok(configurationErrors({ ...managementEnv(), ...change }).length);

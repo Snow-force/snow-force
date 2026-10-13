@@ -16,14 +16,14 @@ export default function BusinessTaxConfigurationPage(){
   const [loaded,setLoaded]=useState<Configuration|null>(null),[content,setContent]=useState<TaxConfigurationContent|null>(null);
   const [busy,setBusy]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState(""),[reviewed,setReviewed]=useState(false);
   const [pending,setPending]=useState<TaxConfigurationCommand|null>(null),[codes,setCodes]=useState<TaxCode[]>([]);
-  const inFlight=useRef(false),alive=useRef(true);
+  const inFlight=useRef(false);
   const saved=!!loaded?.persisted&&JSON.stringify(content)===JSON.stringify(loaded.state.draft);
   const active=loaded?.state.publications.find(p=>p.revision===loaded.state.active_revision);
   const address=loaded?.warehouse?.address;
   const addressValid=taxQuoteAddress.safeParse({country:address?.country_code.toUpperCase(),state:address?.province?.toUpperCase(),city:address?.city,line1:address?.address_1,line2:address?.address_2??"",postal_code:address?.postal_code}).success;
   const complete=!!content?.legal_seller_name&&content.legal_seller_name===loaded?.policy_seller_name&&!!loaded.policy_version&&addressValid&&content.stock_location_id===loaded.warehouse?.id&&!!content.shipping_tax_code&&shippingTaxCodeIds.some(id=>id===content.shipping_tax_code)&&californiaPermitValidAt(content,new Date())&&content.obligations_reviewed&&content.shipping_tax_treatment_reviewed&&content.review_note.trim().length>=20;
   const locked=busy||!!pending;
-  useEffect(()=>{alive.current=true;const controller=new AbortController();api(undefined,controller.signal).then(result=>{if(alive.current){setLoaded(result);setContent(result.state.draft);}}).catch(reason=>{if(alive.current)setError(reason instanceof ApiError?reason.message:"无法载入经营税务配置。 / Unable to load business tax configuration.");}).finally(()=>{if(alive.current)setBusy(false);});return()=>{alive.current=false;controller.abort();};},[]);
+  useEffect(()=>{const controller=new AbortController();api(undefined,controller.signal).then(result=>{if(!controller.signal.aborted){setLoaded(result);setContent(result.state.draft);}}).catch(reason=>{if(!controller.signal.aborted)setError(reason instanceof ApiError?reason.message:"无法载入经营税务配置。 / Unable to load business tax configuration.");}).finally(()=>{if(!controller.signal.aborted)setBusy(false);});return()=>controller.abort();},[]);
   function update<K extends keyof TaxConfigurationContent>(key:K,value:TaxConfigurationContent[K]){if(content&&!locked){setContent({...content,[key]:value});setReviewed(false);setNotice("");}}
   async function reload(){if(inFlight.current||pending)return;inFlight.current=true;setBusy(true);setError("");setNotice("");try{const result=await api();setLoaded(result);setContent(result.state.draft);setReviewed(false);}catch(reason){setError(reason instanceof ApiError?reason.message:"无法载入配置，请重试。 / Unable to reload. Please retry.");}finally{inFlight.current=false;setBusy(false);}}
   async function submit(command:TaxConfigurationCommand){if(inFlight.current)return;inFlight.current=true;setBusy(true);setError("");setNotice("");setPending(command);

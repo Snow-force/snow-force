@@ -15,6 +15,12 @@ async function management(callback) {
   try { await callback(); }
   finally { if (saved === undefined) delete process.env.COMMERCE_OPERATING_MODE; else process.env.COMMERCE_OPERATING_MODE = saved; }
 }
+async function cartPreparation(callback) {
+  const saved = process.env.COMMERCE_CART_ENABLED;
+  process.env.COMMERCE_CART_ENABLED = "true";
+  try { await management(callback); }
+  finally { if (saved === undefined) delete process.env.COMMERCE_CART_ENABLED; else process.env.COMMERCE_CART_ENABLED = saved; }
+}
 
 test("production fails closed unless an explicit sales mode is selected", () => {
   for (const mode of [undefined, "management", "typo"]) assert.equal(isManagementMode({ NODE_ENV: "production", COMMERCE_OPERATING_MODE: mode }), true);
@@ -43,6 +49,37 @@ test("management blocks customer mutations, checkout reads and all payment webho
   useManagementBoundary({ method: "OPTIONS", path: "/store/carts" }, {}, () => { preflight = true; });
   assert.equal(preflight, true);
 }));
+
+test("cart preparation permits only the exact customer and cart editing routes", async () => cartPreparation(() => {
+  for (const [method, path] of [["POST", "/store/snowforce/customer"], ["POST", "/store/carts"], ["POST", "/store/carts/cart_fixture/line-items"], ["POST", "/store/carts/cart_fixture/line-items/cali_fixture"], ["POST", "/store/carts/cart_fixture/promotions"], ["DELETE", "/store/carts/cart_fixture/promotions"], ["POST", "/store/snowforce/checkout/cart_fixture/edit"]]) {
+    let continued = false;
+    useManagementBoundary({ method, path }, {}, () => { continued = true; });
+    assert.equal(continued, true, `${method} ${path}`);
+  }
+  for (const [method, path] of [["POST", "/store/carts/cart_fixture"], ["POST", "/store/carts/cart_fixture/complete"], ["POST", "/store/carts/cart_fixture/shipping-methods"], ["DELETE", "/store/carts/cart_fixture/line-items/cali_fixture"], ["PUT", "/store/carts"], ["POST", "/store/carts/cart_fixture/line-items/complete"], ["POST", "/store/carts/cart_fixture/promotions/complete"], ["POST", "/store/carts/cart_fixture/line-items/../complete"], ["POST", "/store/carts/cart_fixture/promotions/"], ["GET", "/store/snowforce/checkout/cart_fixture"], ["POST", "/store/snowforce/checkout/cart_fixture"], ["POST", "/store/snowforce/checkout/cart_fixture/quote"], ["POST", "/store/payment-collections"], ["POST", "/store/snowforce/newcomer"], ["POST", "/hooks/payment/stripe_stripe"], ["POST", "/admin/payments/pay_fixture/capture"], ["POST", "/admin/orders/order_fixture/fulfillments"]]) {
+    assert.throws(() => useManagementBoundary({ method, path }, {}, () => assert.fail("Financial or unlisted route must stay closed")), /administration only/, `${method} ${path}`);
+  }
+  assert.throws(() => assertSalesOperations(), /administration only/);
+}));
+
+test("invalid cart flags and unknown production mode cannot open cart creation", async () => {
+  const previousFlag = process.env.COMMERCE_CART_ENABLED, previousMode = process.env.COMMERCE_OPERATING_MODE, previousNode = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = "production";
+    for (const flag of [undefined, "false", "TRUE", "1"]) {
+      if (flag === undefined) delete process.env.COMMERCE_CART_ENABLED; else process.env.COMMERCE_CART_ENABLED = flag;
+      process.env.COMMERCE_OPERATING_MODE = "management";
+      assert.throws(() => useManagementBoundary({ method: "POST", path: "/store/carts" }, {}, () => assert.fail("Cart switch must be explicit")), /administration only/);
+    }
+    process.env.COMMERCE_CART_ENABLED = "true";
+    for (const mode of [undefined, "typo"]) {
+      if (mode === undefined) delete process.env.COMMERCE_OPERATING_MODE; else process.env.COMMERCE_OPERATING_MODE = mode;
+      assert.throws(() => useManagementBoundary({ method: "POST", path: "/store/carts" }, {}, () => assert.fail("Unknown mode must fail closed")), /administration only/);
+    }
+  } finally {
+    for (const [key, value] of [["COMMERCE_CART_ENABLED", previousFlag], ["COMMERCE_OPERATING_MODE", previousMode], ["NODE_ENV", previousNode]]) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+  }
+});
 
 test("parked welcome routes cannot bypass management mode even with stale enabled variables", async () => management(() => {
   const previous = process.env.NEWCOMER_ENABLED;

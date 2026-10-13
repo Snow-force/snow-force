@@ -37,10 +37,10 @@ function handler(initial = projection()) {
     return response(current);
   };
 }
-async function mount(t, handle) {
+async function mount(t, handle, strict = false) {
   const calls = [], previous = globalThis.fetch;
   globalThis.fetch = async (url, options = {}) => {
-    const call = { url, body: options.body ? JSON.parse(options.body) : undefined };
+    const call = { url, signal: options.signal, body: options.body ? JSON.parse(options.body) : undefined };
     calls.push(call);
     return handle(call, calls);
   };
@@ -48,7 +48,7 @@ async function mount(t, handle) {
   document.body.append(container);
   const root = createRoot(container);
   t.after(async () => { await React.act(async () => root.unmount()); container.remove(); globalThis.fetch = previous; });
-  await React.act(async () => root.render(React.createElement(Page)));
+  await React.act(async () => root.render(strict ? React.createElement(React.StrictMode, null, React.createElement(Page)) : React.createElement(Page)));
   const element = id => { const field = container.querySelector(`#${id}`); assert.ok(field, `Missing ${id}`); return field; };
   const button = text => { const field = [...container.querySelectorAll("button")].find(item => item.textContent.includes(text)); assert.ok(field, `Missing ${text}`); return field; };
   return {
@@ -74,6 +74,36 @@ async function mount(t, handle) {
     }
   };
 }
+
+test("Strict Mode canceled initial request cannot report a load error or finish the current request", async t => {
+  let finishCurrent;
+  const app = await mount(t, (call, calls) => new Promise((resolve, reject) => {
+    if (calls.length === 1) call.signal.addEventListener("abort", () => reject(new DOMException("Request canceled", "AbortError")), { once: true });
+    else finishCurrent = () => resolve(response(projection()));
+  }), true);
+  assert.equal(app.calls.length, 2);
+  assert.equal(app.calls[0].signal.aborted, true);
+  assert.equal(app.container.querySelector('[role="alert"]') === null, true);
+  assert.equal(app.button("Reload").disabled, true);
+  await React.act(async () => finishCurrent());
+  assert.equal(app.button("Reload").disabled, false);
+  assert.equal(app.element("business-seller").value, "");
+  assert.equal(app.container.querySelector('[role="alert"]') === null, true);
+});
+
+test("late success from a canceled initial request cannot replace the current business draft", async t => {
+  const finish = [];
+  const app = await mount(t, () => new Promise(resolve => finish.push(resolve)), true);
+  const current = projection();
+  current.state.draft.legal_seller_name = "Current business draft";
+  await React.act(async () => finish[1](response(current)));
+  assert.equal(app.element("business-seller").value, "Current business draft");
+  const obsolete = projection();
+  obsolete.state.draft.legal_seller_name = "Obsolete business draft";
+  await React.act(async () => finish[0](response(obsolete)));
+  assert.equal(app.element("business-seller").value, "Current business draft");
+  assert.equal(app.container.querySelector('[role="alert"]') === null, true);
+});
 
 test("Admin initially reads an unconfirmed draft without writes or automatic shipping classification", async t => {
   const app = await mount(t, handler());

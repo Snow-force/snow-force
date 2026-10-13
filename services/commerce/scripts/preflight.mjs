@@ -6,6 +6,7 @@ const projectRef = "bhmwxkynhyhquspiyact";
 export function configurationErrors(env) {
   const errors = [];
   const management = env.COMMERCE_OPERATING_MODE === "management";
+  if (env.COMMERCE_CART_ENABLED && !["true", "false"].includes(env.COMMERCE_CART_ENABLED)) errors.push("COMMERCE_CART_ENABLED must be true or false.");
   if (env.COMMERCE_REFUND_EXECUTION_ENABLED && !["true", "false"].includes(env.COMMERCE_REFUND_EXECUTION_ENABLED)) errors.push("COMMERCE_REFUND_EXECUTION_ENABLED must be true or false.");
   if (env.COMMERCE_REFUND_EXECUTION_ENABLED === "true") {
     if (env.COMMERCE_OPERATING_MODE !== "sales") errors.push("Refund execution requires sales mode.");
