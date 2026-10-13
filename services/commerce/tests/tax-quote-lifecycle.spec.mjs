@@ -8,12 +8,29 @@ const {withdrawCartTaxQuote}=require("../src/lib/tax-quote-withdrawal.ts");
 const {refreshCartTaxQuote,createCartTaxRefresher}=require("../src/lib/tax-quote-refresh.ts");
 const {readHistoricalNativeTaxQuote,assertPersistedCartTaxQuote}=require("../src/lib/tax-quote-ledger.ts");
 const {checkoutCartSchema}=require("../src/lib/checkout-policy.ts");
+const {decorateCartTotals}=require("@medusajs/framework/utils");
 const {readStripeTaxSetup}=require("../src/lib/tax-setup.ts");
 const {GET}=require("../src/api/store/snowforce/checkout/[id]/route.ts");
 const {POST:edit}=require("../src/api/store/snowforce/checkout/[id]/edit/route.ts");
 const {POST:quote}=require("../src/api/store/snowforce/checkout/[id]/quote/route.ts");
 process.env.JWT_SECRET="fixture-lifecycle-signing-key-at-least-32-characters";
 const withdraw=f=>withdrawCartTaxQuote(f.scope,auth,f.cart.id);
+
+test("a new empty native cart with omitted address and collection remains editable without tax or money writes", async () => {
+  const f=await applicationFixture(),resolve=f.scope.resolve.bind(f.scope);
+  f.cart=JSON.parse(JSON.stringify(decorateCartTotals({...f.cart,shipping_address:null,shipping_methods:[],items:[]})));
+  f.scope={resolve:(key,options)=>{
+    const dependency=resolve(key,options);
+    return key!=="query"?dependency:{graph:async request=>{
+      const result=await dependency.graph(request);
+      if(request.entity==="cart")for(const cart of result.data){delete cart.shipping_address;delete cart.payment_collection;}
+      return result;
+    }};
+  }};
+  const before=structuredClone(f.cart),calls=f.providerCalls;
+  assert.deepEqual(await withdraw(f),{status:"editable",quote_removed:false,review_required:true});
+  assert.deepEqual(f.cart,before);assert.equal(f.writes.length,0);assert.equal(f.providerCalls,calls);assert.equal(f.applications.size,0);
+});
 
 test("fresh native graph carts without a collection can enter the quote lifecycle", async () => {
   const f = await applicationFixture(), resolve = f.scope.resolve.bind(f.scope);

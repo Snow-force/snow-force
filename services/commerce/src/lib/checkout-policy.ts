@@ -13,7 +13,8 @@ export const checkoutCartSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().default(null),
   total: amount, subtotal: amount, tax_total: amount, shipping_total: amount, discount_total: amount,
   item_total: amount, item_tax_total: amount,
-  shipping_address: z.object({ first_name: z.string(), last_name: z.string().nullable(), address_1: z.string(), address_2: z.string().nullable(), city: z.string(), province: z.string(), postal_code: z.string(), country_code: z.literal("us"), phone: z.string() }).nullable(),
+  // Native graph reads omit an address until the customer supplies one.
+  shipping_address: z.object({ first_name: z.string(), last_name: z.string().nullable(), address_1: z.string(), address_2: z.string().nullable(), city: z.string(), province: z.string(), postal_code: z.string(), country_code: z.literal("us"), phone: z.string() }).nullable().default(null),
   shipping_methods: z.array(z.object({ id: z.string(), shipping_option_id: z.string(), name: z.string(), amount })),
   items: z.array(z.object({ id: z.string(), variant_id: z.string().nullable(), product_handle: z.string().nullable(), product_title: z.string().nullable(), title: z.string(), variant_title: z.string().nullable(), thumbnail: z.string().nullable(), quantity: z.number().int().positive(), unit_price: amount, total: amount })),
   // Native graph reads omit an unlinked collection on a newly created cart.

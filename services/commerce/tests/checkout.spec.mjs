@@ -54,6 +54,14 @@ test("requires confirmed tax configuration, full US address, real items, shippin
   for (const changed of [{ ...cart(), shipping_address: null }, { ...cart(), items: [] }, { ...cart(), shipping_methods: [] }, { ...cart(), total: 0 }, { ...cart(), shipping_address: { ...cart().shipping_address, postal_code: "bad" } }]) assert.throws(() => assertCheckoutReady(changed, true));
   assert.throws(() => checkoutCartSchema.parse({ ...cart(), currency_code: "eur" }));
 });
+test("omitted native shipping address means no address and cannot authorize checkout", () => {
+  const value=cart();delete value.shipping_address;
+  const parsed=checkoutCartSchema.parse(value);
+  assert.equal(parsed.shipping_address,null);
+  assert.throws(()=>assertCheckoutReady(parsed,true));
+  assert.throws(()=>checkoutCartSchema.parse({...value,shipping_address:{country_code:"us"}}));
+});
+
 test("rejects foreign currencies or another region's tax context", () => {
   assert.doesNotThrow(() => assertUsCheckoutRegion({ currency_code: "usd", countries: [{ iso_2: "us" }] }));
   for (const region of [{ currency_code: "eur", countries: [{ iso_2: "us" }] }, { currency_code: "usd", countries: [{ iso_2: "ca" }] }, { currency_code: "usd", countries: [{ iso_2: "us" }, { iso_2: "ca" }] }]) assert.throws(() => assertUsCheckoutRegion(region));
