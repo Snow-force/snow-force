@@ -5,7 +5,7 @@ vi.mock("next/headers", () => ({ cookies: async () => ({ get: mocks.cookieGet, s
 vi.mock("./commerce-auth", () => ({ getCommerceCustomerSession: mocks.session }));
 vi.mock("./storefront-repository", () => ({ loadStorefrontCatalog: mocks.catalog, getUsCommerceRegion: mocks.region }));
 import { applyShopPromotionAction, changeShopCartAction, getShopCartAction } from "./cart-actions";
-import { CommerceAuthorizationError, CommerceRejectedError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { CART_COOKIE_NAME, signCartCookie } from "./cart-cookie";
 import { fixtureCart, fixtureProducts, fixtureUserId } from "./shop.fixtures";
 const secret = "a".repeat(64);
@@ -45,6 +45,15 @@ describe("authenticated cart server actions", () => {
     mocks.session.mockRejectedValue(new CommerceAuthorizationError());
     expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 })).toEqual({ status: "signed-out" });
     expect(mocks.request).not.toHaveBeenCalled();
+  });
+  it("reports sales closure before customer linking can create a cart or change stock", async () => {
+    mocks.session.mockRejectedValue(new CommerceSalesDisabledError());
+    expect(await getShopCartAction()).toEqual({ status: "sales-disabled" });
+    expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 })).toEqual({ status: "sales-disabled" });
+    expect(await applyShopPromotionAction({ code: "SAVE10" })).toEqual({ status: "sales-disabled" });
+    expect(mocks.catalog).not.toHaveBeenCalled();
+    expect(mocks.request).not.toHaveBeenCalled();
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
   });
   it("creates an owner-bound HTTP-only cookie and adds the current published variant", async () => {
     const result = await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 2 });

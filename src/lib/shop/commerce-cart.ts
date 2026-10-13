@@ -11,7 +11,7 @@ export const nativeCartSchema = z.object({
 });
 export type NativeCart = z.infer<typeof nativeCartSchema>;
 export type CommerceCart = { items: { id: string; name: string; variant: string; slug: string | null; image: string; quantity: number; unitPrice: number; total: number }[]; total: number; subtotal: number; taxTotal: number; shippingTotal: number; discountTotal: number; promotionCodes?: string[] };
-export type CartResult = { status: "ready"; cart: CommerceCart | null } | { status: "signed-out" | "unavailable" | "not-configured" | "rejected" | "invalid" };
+export type CartResult = { status: "ready"; cart: CommerceCart | null } | { status: "signed-out" | "unavailable" | "not-configured" | "sales-disabled" | "rejected" | "invalid" };
 const responseSchema = z.object({ cart: nativeCartSchema });
 export const CART_FIELDS = "id,currency_code,customer.id,region_id,completed_at,total,subtotal,tax_total,shipping_total,discount_total,promotions.code,items.id,items.variant_id,items.product_handle,items.product_title,items.title,items.variant_title,items.thumbnail,items.quantity,items.unit_price,items.total";
 export async function prepareCartEdit(request: CommerceRequest, token: string, cartId: string) {

@@ -5,7 +5,7 @@ vi.mock("./cart-context", () => ({ getCartContext: mocks.context }));
 vi.mock("./storefront-repository", () => ({ getUsCommerceRegion: mocks.region }));
 vi.mock("./order-sync", () => ({ syncOwnedMemberOrder: mocks.syncOrder }));
 import { getShopCheckoutAction, changeShopCheckoutAction } from "./checkout-actions";
-import { CommerceAuthorizationError, CommerceRejectedError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { fixtureCart } from "./shop.fixtures";
 import { nativeCheckoutAddress, type CheckoutAddress, type CheckoutTaxQuote } from "./checkout";
 import { shopPublishedPolicySchema } from "./policies";
@@ -43,6 +43,13 @@ describe("owned checkout commands", () => {
     mocks.context.mockRejectedValue(new CommerceAuthorizationError());
     expect(await changeShopCheckoutAction({ kind: "complete" })).toEqual({ status: "signed-out" });
     expect(mocks.request).not.toHaveBeenCalled();
+  });
+  it("shows checkout preparation instead of stock failure while sales are disabled", async () => {
+    mocks.context.mockRejectedValue(new CommerceSalesDisabledError());
+    expect(await getShopCheckoutAction()).toEqual({ status: "not-configured" });
+    expect(await changeShopCheckoutAction({ kind: "complete" })).toEqual({ status: "not-configured" });
+    expect(mocks.request).not.toHaveBeenCalled();
+    expect(mocks.syncOrder).not.toHaveBeenCalled();
   });
   it("displays totals and fingerprint from the same native quote and strips internal identifiers", async () => {
     const result = await getShopCheckoutAction();

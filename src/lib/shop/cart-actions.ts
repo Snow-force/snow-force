@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { CommerceAuthorizationError, CommerceRejectedError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { CART_COOKIE_MAX_AGE, CART_COOKIE_NAME, signCartCookie } from "./cart-cookie";
 import { cartSnapshot, type CartResult } from "./commerce-cart";
 import { getCartContext as cartContext } from "./cart-context";
@@ -30,6 +30,7 @@ export async function applyShopPromotionAction(input: unknown): Promise<CartResu
 }
 function failed(error: unknown): CartResult {
   if (error instanceof CommerceAuthorizationError) return { status: "signed-out" };
+  if (error instanceof CommerceSalesDisabledError) return { status: "sales-disabled" };
   if (error instanceof CommerceRejectedError) return { status: "rejected" };
   return { status: "unavailable" };
 }

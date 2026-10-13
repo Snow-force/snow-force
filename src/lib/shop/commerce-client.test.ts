@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { z } from "zod";
-import { createCommerceClient, linkCommerceCustomer, CommerceAuthorizationError, CommerceUnavailableError, CommerceNotFoundError, CommerceRejectedError } from "./commerce-client";
+import { createCommerceClient, linkCommerceCustomer, CommerceAuthorizationError, CommerceUnavailableError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 
 const config = { backendUrl: "https://commerce.snow-force.com", publishableKey: "pk_fixture" };
 describe("commerce transport", () => {
@@ -36,5 +36,27 @@ describe("commerce transport", () => {
   it("distinguishes rejected changes and missing records without exposing backend error bodies", async () => {
     for (const status of [400, 409, 422]) await expect(createCommerceClient(config, vi.fn().mockResolvedValue(new Response("private internal details", { status })))("/store/carts/cart_fixture", z.unknown())).rejects.toThrow(CommerceRejectedError);
     await expect(createCommerceClient(config, vi.fn().mockResolvedValue(new Response("private internal details", { status: 404 })))("/store/carts/cart_fixture", z.unknown())).rejects.toThrow(CommerceNotFoundError);
+  });
+  it("recognizes the production sales guard during customer linking and logs only safe request context", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-auth-token-with-length" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ type: "not_allowed", message: "The shop is open for administration only. Sales and payment operations are disabled.", private: "internal-secret" }), { status: 400 }));
+    await expect(linkCommerceCustomer("verified-supabase-access-token", createCommerceClient(config, fetcher))).rejects.toThrow(CommerceSalesDisabledError);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledExactlyOnceWith("[shop.commerce] sales-disabled", { method: "POST", path: "/store/snowforce/customer", httpStatus: 400 });
+    expect(JSON.stringify(warn.mock.calls)).not.toMatch(/internal-secret|fixture-auth-token|verified-supabase/);
+  });
+  it("does not classify unrelated, malformed or differently typed rejections as a sales closure", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    for (const body of ["not JSON", JSON.stringify({ type: "not_allowed", message: "Insufficient stock" }), JSON.stringify({ type: "invalid_data", message: "The shop is open for administration only. Sales and payment operations are disabled." })]) {
+      const request = createCommerceClient(config, vi.fn().mockResolvedValue(new Response(body, { status: 400 })));
+      const error = await request("/store/carts/cart_fixture", z.unknown()).catch(reason => reason);
+      expect(error).toBeInstanceOf(CommerceRejectedError);
+      expect(error).not.toBeInstanceOf(CommerceSalesDisabledError);
+      if (!(error instanceof CommerceRejectedError)) throw new Error("Expected a safe commerce rejection.");
+      expect(error.message).toBe("The requested commerce change was rejected.");
+    }
+    expect(warn).not.toHaveBeenCalled();
   });
 });

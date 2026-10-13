@@ -13,6 +13,13 @@ export class CommerceNotFoundError extends Error {
 export class CommerceRejectedError extends Error {
   constructor() { super("The requested commerce change was rejected."); this.name = "CommerceRejectedError"; }
 }
+export class CommerceSalesDisabledError extends CommerceRejectedError {
+  constructor() { super(); this.name = "CommerceSalesDisabledError"; this.message = "Shopping is temporarily paused."; }
+}
+const salesDisabledResponse = z.object({
+  type: z.literal("not_allowed"),
+  message: z.literal("The shop is open for administration only. Sales and payment operations are disabled."),
+});
 export type CommerceConfig = { backendUrl: string; publishableKey: string };
 export type CommerceRequest = <Schema extends z.ZodTypeAny>(path: string, response: Schema, options?: { method?: "GET" | "POST" | "DELETE"; body?: unknown; token?: string }) => Promise<z.output<Schema>>;
 
@@ -36,7 +43,14 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
     } catch { throw new CommerceUnavailableError(); }
     if (response.status === 401 || response.status === 403) throw new CommerceAuthorizationError();
     if (response.status === 404) throw new CommerceNotFoundError();
-    if ([400, 409, 422].includes(response.status)) throw new CommerceRejectedError();
+    if ([400, 409, 422].includes(response.status)) {
+      const body: unknown = await response.json().catch(() => null);
+      if (response.status === 400 && salesDisabledResponse.safeParse(body).success) {
+        console.warn("[shop.commerce] sales-disabled", { method: options.method ?? "GET", path: decoded, httpStatus: response.status });
+        throw new CommerceSalesDisabledError();
+      }
+      throw new CommerceRejectedError();
+    }
     if (!response.ok) throw new CommerceUnavailableError();
     try { return responseSchema.parse(await response.json()); } catch { throw new CommerceUnavailableError(); }
   };

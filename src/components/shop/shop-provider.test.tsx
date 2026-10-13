@@ -32,6 +32,15 @@ beforeEach(() => {
 });
 
 describe("cart request loading", () => {
+  it.each([
+    ["en", "Shopping is temporarily paused. You can browse gear; please check back later to purchase."],
+    ["zh", "商城暂未开放购买。你可以继续浏览装备，请稍后再来选购。"],
+  ] as const)("explains sales closure in %s without blaming inventory or price", async (lang, message) => {
+    actions.get.mockResolvedValue({ status: "sales-disabled" });
+    render(<LanguageProvider initialLang={lang}><ShopProvider><CartContents /></ShopProvider></LanguageProvider>);
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(screen.queryByText(/Stock or price may have changed|库存或价格可能已变化/)).not.toBeInTheDocument();
+  });
   it("applies a code, shows native savings and removes it through the shared cart request lock", async () => {
     const cart = { items: [{ id: "cali_fixture", name: "Test jacket", variant: "M", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 100, total: 100 }], subtotal: 100, total: 100, taxTotal: 0, shippingTotal: 0, discountTotal: 0, promotionCodes: [] };
     actions.get.mockResolvedValue({ status: "ready", cart });

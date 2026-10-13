@@ -1,7 +1,7 @@
 "use server";
 
 import { getCartContext } from "./cart-context";
-import { CommerceAuthorizationError, CommerceRejectedError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { cartSnapshot } from "./commerce-cart";
 import { createCheckoutRepository } from "./checkout-repository";
 import { checkoutAddressSchema, checkoutInputSchema, type CheckoutResult } from "./checkout";
@@ -14,6 +14,7 @@ async function context() {
 }
 function failed(error: unknown): CheckoutResult {
   if (error instanceof CommerceAuthorizationError) return { status: "signed-out" };
+  if (error instanceof CommerceSalesDisabledError) return { status: "not-configured" };
   if (error instanceof CommerceRejectedError) return { status: "rejected" };
   return { status: "unavailable" };
 }
