@@ -7,14 +7,24 @@ export function assertUsCheckoutRegion(value: unknown) {
   return z.object({ currency_code: z.literal("usd"), countries: z.array(z.object({ iso_2: z.literal("us") })).length(1) }).parse(value);
 }
 const amount = z.coerce.number().finite().nonnegative().max(20_000_000);
+const nativeEmptyAddress = z.object({
+  country_code: z.literal("us"), first_name: z.null().optional(), last_name: z.null().optional(),
+  address_1: z.null().optional(), address_2: z.null().optional(), city: z.null().optional(),
+  province: z.null().optional(), postal_code: z.null().optional(), phone: z.null().optional(),
+});
+const shippingAddress = z.preprocess(
+  value => nativeEmptyAddress.safeParse(value).success ? null : value,
+  z.object({ first_name: z.string(), last_name: z.string().nullable(), address_1: z.string(), address_2: z.string().nullable(), city: z.string(), province: z.string(), postal_code: z.string(), country_code: z.literal("us"), phone: z.string() }).nullable().default(null),
+);
 export const checkoutCartSchema = z.object({
   id: z.string().regex(/^cart_[a-zA-Z0-9]+$/), customer_id: z.string().nullable(),
   currency_code: z.literal("usd"), region_id: z.string(), email: z.string().email().nullable(), completed_at: z.unknown().nullable(),
   metadata: z.record(z.string(), z.unknown()).nullable().default(null),
   total: amount, subtotal: amount, tax_total: amount, shipping_total: amount, discount_total: amount,
   item_total: amount, item_tax_total: amount,
-  // Native graph reads omit an address until the customer supplies one.
-  shipping_address: z.object({ first_name: z.string(), last_name: z.string().nullable(), address_1: z.string(), address_2: z.string().nullable(), city: z.string(), province: z.string(), postal_code: z.string(), country_code: z.literal("us"), phone: z.string() }).nullable().default(null),
+  // Native US cart creation may omit the address or persist only its country.
+  // Both represent an unfilled address; assertCheckoutReady still rejects them.
+  shipping_address: shippingAddress,
   shipping_methods: z.array(z.object({ id: z.string(), shipping_option_id: z.string(), name: z.string(), amount })),
   items: z.array(z.object({ id: z.string(), variant_id: z.string().nullable(), product_handle: z.string().nullable(), product_title: z.string().nullable(), title: z.string(), variant_title: z.string().nullable(), thumbnail: z.string().nullable(), quantity: z.number().int().positive(), unit_price: amount, total: amount })),
   // Native graph reads omit an unlinked collection on a newly created cart.

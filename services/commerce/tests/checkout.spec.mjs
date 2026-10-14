@@ -59,7 +59,17 @@ test("omitted native shipping address means no address and cannot authorize chec
   const parsed=checkoutCartSchema.parse(value);
   assert.equal(parsed.shipping_address,null);
   assert.throws(()=>assertCheckoutReady(parsed,true));
-  assert.throws(()=>checkoutCartSchema.parse({...value,shipping_address:{country_code:"us"}}));
+  const countryOnly=checkoutCartSchema.parse({...value,shipping_address:{country_code:"us"}});
+  assert.equal(countryOnly.shipping_address,null);
+  assert.throws(()=>assertCheckoutReady(countryOnly,true));
+});
+
+test("a native default country-only address is unfilled and cannot authorize payment", () => {
+  const address={country_code:"us",first_name:null,last_name:null,address_1:null,address_2:null,city:null,province:null,postal_code:null,phone:null};
+  const parsed=checkoutCartSchema.parse({...cart(),shipping_address:address});
+  assert.equal(parsed.shipping_address,null);
+  assert.throws(()=>assertCheckoutReady(parsed,true));
+  for(const invalid of [{...address,country_code:"ca"},{...address,first_name:"Partially entered"},{...address,address_1:123}])assert.throws(()=>checkoutCartSchema.parse({...cart(),shipping_address:invalid}));
 });
 
 test("rejects foreign currencies or another region's tax context", () => {

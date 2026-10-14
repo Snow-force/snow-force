@@ -16,20 +16,22 @@ const {POST:quote}=require("../src/api/store/snowforce/checkout/[id]/quote/route
 process.env.JWT_SECRET="fixture-lifecycle-signing-key-at-least-32-characters";
 const withdraw=f=>withdrawCartTaxQuote(f.scope,auth,f.cart.id);
 
-test("a new empty native cart with omitted address and collection remains editable without tax or money writes", async () => {
-  const f=await applicationFixture(),resolve=f.scope.resolve.bind(f.scope);
-  f.cart=JSON.parse(JSON.stringify(decorateCartTotals({...f.cart,shipping_address:null,shipping_methods:[],items:[]})));
-  f.scope={resolve:(key,options)=>{
-    const dependency=resolve(key,options);
-    return key!=="query"?dependency:{graph:async request=>{
-      const result=await dependency.graph(request);
-      if(request.entity==="cart")for(const cart of result.data){delete cart.shipping_address;delete cart.payment_collection;}
-      return result;
+test("a new empty native cart with unfilled address and collection remains editable without tax or money writes", async () => {
+  for(const address of [null,{country_code:"us",first_name:null,last_name:null,address_1:null,address_2:null,city:null,province:null,postal_code:null,phone:null}]){
+    const f=await applicationFixture(),resolve=f.scope.resolve.bind(f.scope);
+    f.cart=JSON.parse(JSON.stringify(decorateCartTotals({...f.cart,shipping_address:address,shipping_methods:[],items:[]})));
+    f.scope={resolve:(key,options)=>{
+      const dependency=resolve(key,options);
+      return key!=="query"?dependency:{graph:async request=>{
+        const result=await dependency.graph(request);
+        if(request.entity==="cart")for(const cart of result.data){if(address===null)delete cart.shipping_address;delete cart.payment_collection;}
+        return result;
+      }};
     }};
-  }};
-  const before=structuredClone(f.cart),calls=f.providerCalls;
-  assert.deepEqual(await withdraw(f),{status:"editable",quote_removed:false,review_required:true});
-  assert.deepEqual(f.cart,before);assert.equal(f.writes.length,0);assert.equal(f.providerCalls,calls);assert.equal(f.applications.size,0);
+    const before=structuredClone(f.cart),calls=f.providerCalls;
+    assert.deepEqual(await withdraw(f),{status:"editable",quote_removed:false,review_required:true});
+    assert.deepEqual(f.cart,before);assert.equal(f.writes.length,0);assert.equal(f.providerCalls,calls);assert.equal(f.applications.size,0);
+  }
 });
 
 test("fresh native graph carts without a collection can enter the quote lifecycle", async () => {
@@ -73,7 +75,7 @@ test("withdrawal rolls back all taxes, fees, metadata and empty collection retir
 });
 
 test("payment/order/funds, forged proof, orphan fees, credits and ambiguous requests prevent quote cleanup",async()=>{
-  for(const kind of ["session","order","funds","payment","signature","amount","orphan","pending","credits"]){
+  for(const kind of ["session","order","funds","payment","signature","amount","orphan","pending","credits","default-address"]){
     const f=await applicationFixture({state:"CO",fee:28});await f.apply();
     if(kind==="session")f.cart.payment_collection={payment_sessions:[{id:"payses_fixture"}]};
     if(kind==="order")f.guard={has_order:true};if(kind==="funds")f.guard={has_collection_funds:true};if(kind==="payment")f.guard={has_payment:true};
@@ -81,6 +83,7 @@ test("payment/order/funds, forged proof, orphan fees, credits and ambiguous requ
     if(kind==="amount")f.cart.total+=1;if(kind==="orphan")delete f.cart.metadata.snowforce_tax_quote;
     if(kind==="pending")f.operations.set("pending_fixture",{id:"pending_fixture",state:"pending"});
     if(kind==="credits")f.cart.credit_lines=[{id:"cacl_fixture",amount:1}];
+    if(kind==="default-address")f.cart.shipping_address={country_code:"us",first_name:null,last_name:null,address_1:null,address_2:null,city:null,province:null,postal_code:null,phone:null};
     const before=structuredClone(f.cart),writes=f.writes.length;await assert.rejects(()=>withdraw(f));
     assert.deepEqual(f.cart,before);assert.equal(f.writes.length,writes);
   }
