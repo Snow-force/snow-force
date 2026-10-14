@@ -65,6 +65,35 @@ describe("owned checkout commands", () => {
     expect(mutations[1][2].body).toEqual({ email: "verified@example.com", shipping_address: nativeCheckoutAddress(address), billing_address: nativeCheckoutAddress(address) });
     expect(mutations).toHaveLength(2);
   });
+  it("saves the first address when Medusa omits an unlinked shipping address", async () => {
+    const unfilledCart = { ...fixtureCart, shipping_methods: [] };
+    const request = mocks.request.getMockImplementation()!;
+    let saved = false;
+    mocks.request.mockImplementation(async (path, schema, options) => {
+      if (path.startsWith("/store/carts/")) {
+        if (options?.method === "POST") saved = true;
+        return schema.parse({ cart: saved ? nativeCart : unfilledCart });
+      }
+      if (path === "/store/snowforce/checkout/cart_fixture" && !options?.method) {
+        return schema.parse(saved ? review : { ...review, cart: unfilledCart, taxQuote: null });
+      }
+      return request(path, schema, options);
+    });
+    expect(await getShopCheckoutAction()).toMatchObject({ status: "review", address: null, options: [], selectedOptionId: null });
+    expect(await changeShopCheckoutAction({ kind: "address", address })).toMatchObject({ status: "review", address });
+    const mutations = mocks.request.mock.calls.filter(call => call[2]?.method === "POST");
+    expect(mutations.map(call => call[0])).toEqual([
+      "/store/snowforce/checkout/cart_fixture/edit",
+      expect.stringMatching(/^\/store\/carts\/cart_fixture\?fields=/),
+    ]);
+    expect(mutations[1][2]).toMatchObject({ token: "trusted-token", body: { email: "verified@example.com", shipping_address: nativeCheckoutAddress(address) } });
+    expect(mocks.syncOrder).not.toHaveBeenCalled();
+  });
+  it("retains ownership checks for an unfilled native cart before saving an address", async () => {
+    mocks.request.mockImplementation(async (_path, schema) => schema.parse({ cart: { ...fixtureCart, customer: { id: "cus_other" }, shipping_methods: [] } }));
+    expect(await changeShopCheckoutAction({ kind: "address", address })).toEqual({ status: "signed-out" });
+    expect(mocks.request.mock.calls.some(call => call[2]?.method === "POST")).toBe(false);
+  });
   it("accepts only backend eligible shipping IDs without trusting a client fee", async () => {
     expect(await changeShopCheckoutAction({ kind: "shipping", optionId: "so_foreign" })).toEqual({ status: "rejected" });
     expect(mocks.request.mock.calls.filter((call) => call[2]?.method === "POST")).toHaveLength(0);

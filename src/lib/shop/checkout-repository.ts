@@ -6,7 +6,7 @@ import { checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSche
 import { commerceId, usdAmount } from "./storefront";
 
 const nativeAddress = z.object({ first_name: z.string().nullable(), last_name: z.string().nullable(), address_1: z.string().nullable(), address_2: z.string().nullable(), city: z.string().nullable(), province: z.string().nullable(), postal_code: z.string().nullable(), country_code: z.string().nullable(), phone: z.string().nullable() });
-export const checkoutNativeCartSchema = nativeCartSchema.extend({ shipping_address: nativeAddress.nullable(), shipping_methods: z.array(z.object({ shipping_option_id: commerceId("so"), name: z.string(), amount: usdAmount })) });
+export const checkoutNativeCartSchema = nativeCartSchema.extend({ shipping_address: nativeAddress.nullable().default(null), shipping_methods: z.array(z.object({ shipping_option_id: commerceId("so"), name: z.string(), amount: usdAmount })) });
 export const CHECKOUT_FIELDS = `${CART_FIELDS},shipping_address.first_name,shipping_address.last_name,shipping_address.address_1,shipping_address.address_2,shipping_address.city,shipping_address.province,shipping_address.postal_code,shipping_address.country_code,shipping_address.phone,shipping_methods.shipping_option_id,shipping_methods.name,shipping_methods.amount`;
 const statusResponseSchema = z.union([checkoutStatusSchema.options[0].extend({ cart: checkoutNativeCartSchema }), checkoutStatusSchema.options[1], checkoutStatusSchema.options[2], checkoutStatusSchema.options[3]]);
 export function createCheckoutRepository(request: CommerceRequest, customer: { customerId: string; token: string; email: string }, cartId: string) {
