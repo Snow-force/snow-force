@@ -50,7 +50,12 @@ describe("checkout latency optimizations", () => {
     expect(mocks.request.mock.calls.filter(([path]) => path.endsWith("/shipping-options"))).toHaveLength(2);
     expect(mocks.request.mock.calls.some(([, , options]) => options?.body?.kind === "prepare")).toBe(false);
   });
-  it.each([[], [{ shipping_option_id: "so_old", name: "Old method", amount: 9.95 }], [{ shipping_option_id: "so_fixture", name: "US standard", amount: 5 }], [cart.shipping_methods[0], cart.shipping_methods[0]]])("applies delivery when the returned method is missing, different, repriced or ambiguous: %j", async shipping_methods => {
+  it.each([
+    { reason: "missing", shipping_methods: [] },
+    { reason: "different", shipping_methods: [{ shipping_option_id: "so_old", name: "Old method", amount: 9.95 }] },
+    { reason: "repriced", shipping_methods: [{ shipping_option_id: "so_fixture", name: "US standard", amount: 5 }] },
+    { reason: "ambiguous", shipping_methods: [cart.shipping_methods[0], cart.shipping_methods[0]] },
+  ])("applies delivery when the returned method is $reason", async ({ shipping_methods }) => {
     const original = mocks.request.getMockImplementation()!;
     mocks.request.mockImplementation(async (path, schema, options) => path.startsWith("/store/carts/") && options?.method === "POST" && !path.includes("/shipping-methods")
       ? schema.parse({ cart: { ...cart, shipping_methods } }) : original(path, schema, options));
