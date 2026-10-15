@@ -10,7 +10,8 @@ import { syncOwnedMemberOrder } from "./order-sync";
 
 async function context() {
   const { customer, cartId } = await getCartContext();
-  return cartId ? { customer, repository: createCheckoutRepository(customer.request, customer, cartId) } : null;
+  let region: ReturnType<typeof getUsCommerceRegion> | undefined;
+  return cartId ? { customer, repository: createCheckoutRepository(customer.request, customer, cartId), region: () => region ??= getUsCommerceRegion(customer.request) } : null;
 }
 function failed(error: unknown): CheckoutResult {
   if (error instanceof CommerceAuthorizationError) return { status: "signed-out" };
@@ -18,19 +19,21 @@ function failed(error: unknown): CheckoutResult {
   if (error instanceof CommerceRejectedError) return { status: "rejected" };
   return { status: "unavailable" };
 }
-async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>): Promise<CheckoutResult> {
+async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>, includeOptions = true): Promise<CheckoutResult> {
   const { repository, customer } = session;
   const status = await repository.status();
   if (status.status === "complete") { await syncOwnedMemberOrder(customer, status.order.id); return status; }
   if (status.status !== "review") return { status: "processing" };
   const cart = status.cart;
   if (!cart.items.length) return { status: "empty" };
-  const regionId = await getUsCommerceRegion(customer.request);
+  const regionId = await session.region();
   if (!regionId || cart.region_id !== regionId) return { status: "not-configured" };
   const raw = cart.shipping_address;
   const parsed = checkoutAddressSchema.safeParse(raw ? { name: [raw.first_name, raw.last_name].filter(Boolean).join(" "), phone: raw.phone ?? "", address1: raw.address_1 ?? "", address2: raw.address_2 ?? "", city: raw.city ?? "", state: raw.province ?? "", postalCode: raw.postal_code ?? "", countryCode: raw.country_code?.toUpperCase() } : null);
   const publishableKey = process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY ?? "";
-  const options = parsed.success && !status.pickupSelected ? await repository.shippingOptions() : [];
+  // Address and pickup mutations need the current payment/configuration fences,
+  // but alternatives for the old address cannot authorize the new selection.
+  const options = includeOptions && parsed.success && !status.pickupSelected ? await repository.shippingOptions() : [];
   const selected = cart.shipping_methods.length === 1 ? cart.shipping_methods[0] : null;
   const selectedOptionId = selected && ((status.pickupSelected && status.pickupOffer?.id === selected.shipping_option_id && selected.amount === 0) || options.some((option) => option.id === selected.shipping_option_id && Math.round(option.price * 100) === Math.round(selected.amount * 100))) ? selected.shipping_option_id : null;
   return { ...status, configured: status.configured && /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publishableKey), cart: cartSnapshot(cart), address: parsed.success ? parsed.data : null, options, selectedOptionId };
@@ -70,7 +73,24 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
       await syncOwnedMemberOrder(session.customer, completed.order.id);
       return completed;
     }
-    const current = await review(session);
+    if (change.kind === "delivery" || change.kind === "pickup-review" || change.kind === "shipping-review") {
+      // Preparatory writes are authorized by their owned backend boundaries.
+      // Tax/payment readiness is verified when quoting and again before payment;
+      // fetching Stripe account settings before every address edit adds no fence.
+      if (cart.region_id !== await session.region()) return { status: "not-configured" };
+      if (change.kind === "pickup-review") {
+        await repository.pickup(change.contact);
+        await repository.quote();
+      } else {
+        if (change.kind === "delivery") await repository.address(change.address);
+        const options = await repository.shippingOptions();
+        const selected = change.kind === "shipping-review" ? options.find(option => option.id === change.optionId) : options.length === 1 ? options[0] : null;
+        if (change.kind === "shipping-review" && !selected) return { status: "rejected" };
+        if (selected) { await repository.shipping(selected.id); await repository.quote(); }
+      }
+      return await review(session);
+    }
+    const current = await review(session, !["address", "pickup"].includes(change.kind));
     if (current.status !== "review") return current;
     if (!current.configured) return { status: "not-configured" };
     if (change.kind === "address") {

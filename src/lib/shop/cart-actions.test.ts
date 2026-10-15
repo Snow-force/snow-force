@@ -3,7 +3,7 @@ vi.mock("server-only", () => ({}));
 const mocks = vi.hoisted(() => ({ session: vi.fn(), request: vi.fn(), cookieGet: vi.fn(), cookieSet: vi.fn(), catalog: vi.fn(), region: vi.fn() }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: mocks.cookieGet, set: mocks.cookieSet }) }));
 vi.mock("./commerce-auth", () => ({ getCommerceCustomerSession: mocks.session }));
-vi.mock("./storefront-repository", () => ({ loadStorefrontCatalog: mocks.catalog, getUsCommerceRegion: mocks.region }));
+vi.mock("./storefront-repository", () => ({ loadPurchasableVariant: mocks.catalog, getUsCommerceRegion: mocks.region }));
 import { applyShopPromotionAction, changeShopCartAction, getShopCartAction } from "./cart-actions";
 import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { CART_COOKIE_NAME, signCartCookie } from "./cart-cookie";
@@ -14,7 +14,7 @@ describe("authenticated cart server actions", () => {
     vi.resetAllMocks(); vi.stubEnv("SHOP_CART_COOKIE_SECRET", secret);
     mocks.session.mockResolvedValue({ customerId: "cus_fixture", token: "trusted-server-token", userId: fixtureUserId, request: mocks.request });
     mocks.request.mockResolvedValue({ cart: fixtureCart, parent: fixtureCart });
-    mocks.catalog.mockResolvedValue({ products: fixtureProducts, regionId: "reg_us" });
+    mocks.catalog.mockImplementation(async (_request, variantId) => ({ variant: fixtureProducts.flatMap(product => product.variants).find(variant => variant.id === variantId) ?? null, regionId: "reg_us" }));
     mocks.region.mockResolvedValue("reg_us");
   });
   it("rejects client cart IDs, amounts and malformed quantities without contacting commerce", async () => {
@@ -58,6 +58,7 @@ describe("authenticated cart server actions", () => {
   it("creates an owner-bound HTTP-only cookie and adds the current published variant", async () => {
     const result = await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 2 });
     expect(result.status).toBe("ready");
+    expect(mocks.catalog).toHaveBeenCalledExactlyOnceWith(mocks.request, "variant_pink");
     expect(mocks.cookieSet).toHaveBeenCalledWith(CART_COOKIE_NAME, expect.any(String), expect.objectContaining({ httpOnly: true, sameSite: "lax", path: "/" }));
     expect(mocks.request.mock.calls[2][2]).toMatchObject({ method: "POST", token: "trusted-server-token", body: { variant_id: "variant_pink", quantity: 2 } });
   });
@@ -65,7 +66,7 @@ describe("authenticated cart server actions", () => {
     expect(await changeShopCartAction({ kind: "add", variantId: "variant_blue", quantity: 1 })).toEqual({ status: "rejected" });
     expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 3 })).toEqual({ status: "rejected" });
     expect(mocks.request).not.toHaveBeenCalled();
-    mocks.catalog.mockResolvedValue({ products: [], regionId: null });
+    mocks.catalog.mockResolvedValue({ variant: null, regionId: null });
     expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 })).toEqual({ status: "not-configured" });
   });
   it("checks backend ownership and line membership before updating or deleting", async () => {

@@ -33,17 +33,19 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   const cart = await ownedCart(req);
   if (cart.completed_at) return res.json({ status: "complete", order: await completedOrder(req) });
   const { payment_collection: _payment, customer_id: customerId, email: _email, metadata: _metadata, ...safeCart } = cart;
-  const policyReview = await checkoutPolicyReview(cart, req.scope);
-  const classificationsReady = await assertCartProductTaxClassifications(cart, req.scope).then(() => true, () => false);
+  const [policyReview, classificationsReady, historical, pickupOffer] = await Promise.all([
+    checkoutPolicyReview(cart, req.scope),
+    assertCartProductTaxClassifications(cart, req.scope).then(() => true, () => false),
+    readHistoricalNativeTaxQuote(cart, req.scope).catch(() => null),
+    readPickupOffer(req.scope).catch(() => null),
+  ]);
   const setup = classificationsReady && process.env.COMMERCE_TAX_POLICY_CONFIRMED === "true" ? await assertActiveStripeTaxSetup(req.scope).catch(() => null) : null;
   const taxSetupReady = !!setup && await readReviewedTaxConfiguration(req.scope, setup).then(() => true, () => false);
-  const historical = await readHistoricalNativeTaxQuote(cart, req.scope).catch(() => null);
   const quoteReady = !!setup && !!historical && await assertPersistedCartTaxQuote(cart, req.scope, setup, paymentStarted(cart) ? "review" : "create_payment").then(() => true, () => false);
   // Fee lines are removed from the merchandise list only after private evidence
   // proves their native amounts; the public quote presents them separately.
   const goods = historical ? safeCart.items.filter(item => historical.quote.lines.some(line => line.id === item.id)) : safeCart.items;
   const taxQuote = historical ? { ...publicCartTaxQuote(historical.quote), ready: quoteReady } : null;
-  const pickupOffer = await readPickupOffer(req.scope).catch(() => null);
   const pickupSelected = !!pickupOffer && (() => { try { verifyPickupConfirmation(cart, pickupOffer); return true; } catch { return false; } })();
   // Quote and display amounts come from one read. Provider secrets never enter the review response.
   res.json({ status: "review", cart: { ...safeCart, items: goods, customer: { id: customerId } }, ...policyReview, taxQuote, pickupOffer, pickupSelected, paymentStarted: paymentStarted(cart), configured: taxSetupReady && !!policyReview.policy && policySigningConfigured() && !!process.env.COMMERCE_STRIPE_API_KEY && !!process.env.COMMERCE_STRIPE_WEBHOOK_SECRET });

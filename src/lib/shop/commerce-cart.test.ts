@@ -6,6 +6,11 @@ import { fixtureCart } from "./shop.fixtures";
 const config = { backendUrl: "https://commerce.example.com", publishableKey: "pk_fixture" };
 const customer = { customerId: "cus_fixture", token: "fixture-customer-token" };
 describe("customer cart repository", () => {
+  it("keeps merchandise subtotal separate from native cart subtotal including delivery", () => {
+    const cart = { ...fixtureCart, subtotal: 48.95, shipping_total: 9.95, tax_total: 3.02, total: 51.97, items: [{ ...fixtureCart.items[0], unit_price: 39, quantity: 1, total: 42.02 }] };
+    expect(cartSnapshot(cart)).toMatchObject({ subtotal: 39, shippingTotal: 9.95, taxTotal: 3.02, total: 51.97 });
+    expect(cartSnapshot({ ...cart, items: [{ ...cart.items[0], unit_price: 19.95, quantity: 3 }] }).subtotal).toBe(59.85);
+  });
   it("uses server totals and sends only IDs and quantities for item changes", async () => {
     const fetcher = vi.fn().mockImplementation(async (path: string) => new Response(JSON.stringify(path.endsWith("/edit") ? { status: "editable", quote_removed: true, review_required: true } : { cart: fixtureCart, parent: fixtureCart })));
     const repository = createCartRepository(createCommerceClient(config, fetcher), customer);

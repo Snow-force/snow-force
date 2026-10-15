@@ -36,7 +36,9 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
     let response: Response;
     try {
       response = await fetcher(`${url.origin}${path}`, {
-        method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000),
+        // Native checkout updates may refresh pricing, promotions and shipping.
+        // Do not abandon these writes while the backend is still committing.
+        method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(options.method && options.method !== "GET" && (/^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+(?:\/(?:pickup|quote|edit))?$/.test(decoded) || /^\/store\/carts(?:\/cart_[A-Za-z0-9]+(?:\/(?:shipping-methods|promotions|line-items(?:\/cali_[A-Za-z0-9]+)?))?)?$/.test(decoded)) ? 60_000 : 15_000),
         headers: { "Content-Type": "application/json", "x-publishable-api-key": config.publishableKey, ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
         ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
       });
@@ -65,6 +67,21 @@ const customerResult = z.object({ customer: z.object({ id: z.string().regex(/^cu
 export async function linkCommerceCustomer(accessToken: string, request: CommerceRequest) {
   const credentials = { method: "POST" as const, body: { access_token: accessToken } };
   const initial = await request("/auth/customer/supabase", authToken, credentials);
+  // This credential came from our configured backend after its membership check,
+  // never from the browser. Existing customers need no linking write or second
+  // authentication request. The native profile read still verifies both the
+  // JWT and the customer record, including an administratively deleted account.
+  let existingId: string | null = null;
+  try {
+    const claims: unknown = JSON.parse(Buffer.from(initial.token.split(".")[1], "base64url").toString("utf8"));
+    const linked = z.object({ actor_type: z.literal("customer"), actor_id: z.string().regex(/^cus_[A-Za-z0-9]+$/), app_metadata: z.object({ customer_id: z.string() }) }).safeParse(claims);
+    if (linked.success && linked.data.actor_id === linked.data.app_metadata.customer_id) existingId = linked.data.actor_id;
+  } catch { /* First-time registration still uses the locked customer bridge. */ }
+  if (existingId) {
+    const { customer } = await request("/store/customers/me", customerResult, { token: initial.token });
+    if (customer.id !== existingId) throw new CommerceAuthorizationError();
+    return { customerId: customer.id, token: initial.token };
+  }
   const { customer } = await request("/store/snowforce/customer", customerResult, { method: "POST", token: initial.token, body: {} });
   const refreshed = await request("/auth/customer/supabase", authToken, credentials);
   return { customerId: customer.id, token: refreshed.token };

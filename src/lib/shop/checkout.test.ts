@@ -20,6 +20,12 @@ const policy: ShopPublishedPolicy = {
 const review = { status: "review", fingerprint, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null, pickupOffer: null, pickupSelected: false };
 
 describe("checkout policy consent contract", () => {
+  it("automatic review commands accept only address/contact or an option ID, never payable amounts or consent", () => {
+    const contact = { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true };
+    expect(checkoutInputSchema.parse({ kind: "pickup-review", contact })).toEqual({ kind: "pickup-review", contact });
+    expect(checkoutInputSchema.parse({ kind: "shipping-review", optionId: "so_fixture" })).toEqual({ kind: "shipping-review", optionId: "so_fixture" });
+    for (const command of [{ kind: "pickup-review", contact: { ...contact, appointmentConfirmed: false } }, { kind: "shipping-review", optionId: "so_fixture", price: 0 }, { kind: "pickup-review", contact, agreed: true }, { kind: "delivery", address: { countryCode: "CA" } }]) expect(checkoutInputSchema.safeParse(command).success).toBe(false);
+  });
   it("accepts only reconciled exact cents and a minimal authenticated quote command", () => {
     const taxQuote = { totalCents: 11263, grossCents: 11000, discountCents: 1001, merchandiseCents: 9999, shippingCents: 995, salesTaxCents: 241, fees: [{ state: "CO", amountCents: 28 }], expiresAt: 2000000000 };
     expect(checkoutInputSchema.parse({ kind: "quote" })).toEqual({ kind: "quote" });

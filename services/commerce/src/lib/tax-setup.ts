@@ -47,14 +47,14 @@ function readerFor(scope: MedusaContainer) {
 export async function readStripeTaxSetup(reader: StripeTaxSetupReader, now = clock): Promise<TaxSetupSnapshot> {
   try {
     const started = z.number().int().positive().safe().parse(now());
-    const [rawAccount, rawSettings] = await Promise.all([reader.account(), reader.settings()]);
+    const [rawAccount, rawSettings, firstPage] = await Promise.all([reader.account(), reader.settings(), reader.registrations()]);
     const account = z.object({ id: z.string().regex(/^acct_[A-Za-z0-9]+$/), object: z.literal("account") }).parse(rawAccount);
     const settings = settingsSchema.parse(rawSettings);
     if (settings.livemode !== reader.livemode) throw unavailable();
     const registrations: z.infer<typeof registrationSchema>[] = [], seen = new Set<string>();
     let cursor: string | undefined, complete = false;
     for (let page = 0; page < 20; page++) {
-      const result = z.object({ object: z.literal("list"), has_more: z.boolean(), data: z.array(registrationSchema).max(100) }).parse(await reader.registrations(cursor));
+      const result = z.object({ object: z.literal("list"), has_more: z.boolean(), data: z.array(registrationSchema).max(100) }).parse(page === 0 ? firstPage : await reader.registrations(cursor));
       for (const registration of result.data) {
         if (seen.has(registration.id) || registration.livemode !== reader.livemode || registration.country === "US" && !registration.country_options.us || registration.expires_at !== null && registration.expires_at < registration.active_from) throw unavailable();
         seen.add(registration.id); registrations.push(registration);

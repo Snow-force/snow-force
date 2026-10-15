@@ -3,7 +3,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("react", async importOriginal => ({ ...await importOriginal<typeof import("react")>(), cache: <T extends (...args: never[]) => unknown>(operation: T) => operation }));
 import { z } from "zod";
 import { createCommerceClient } from "./commerce-client";
-import { getUsCommerceRegion, loadStorefrontCatalog, loadStoreNavigation } from "./storefront-repository";
+import { getUsCommerceRegion, loadStorefrontCatalog, loadStoreNavigation, loadPurchasableVariant, loadStorefrontNavigation } from "./storefront-repository";
 import { fixtureNativeProduct, fixtureCategoryRows, fixtureCollectionRows } from "./shop.fixtures";
 const config = { backendUrl: "https://commerce.example.com", publishableKey: "pk_fixture" };
 const regions = { regions: [{ id: "reg_us", currency_code: "usd", countries: [{ iso_2: "us" }] }] };
@@ -18,6 +18,27 @@ function fetchFixture(overrides: Partial<Record<string, (url: URL) => unknown>> 
 }
 describe("native Store API catalog", () => {
   beforeEach(() => vi.unstubAllEnvs());
+  it("checks only the requested published variant with current USD price and inventory", async () => {
+    const fetcher = fetchFixture(), variantId = fixtureNativeProduct.variants[0].id;
+    const result = await loadPurchasableVariant(createCommerceClient(config, fetcher), variantId);
+    expect(result.regionId).toBe("reg_us");
+    expect(result.variant?.id).toBe(variantId);
+    expect(fetcher.mock.calls).toHaveLength(2);
+    const query = new URL(String(fetcher.mock.calls[1][0])).searchParams;
+    expect(query.get("variants[id]")).toBe(variantId);
+    expect(query.get("fields")).toContain("variants.inventory_quantity");
+    expect(query.get("fields")).toContain("variants.calculated_price");
+    const draft = fetchFixture({ "/store/products": () => ({ products: [{ ...fixtureNativeProduct, status: "draft" }], count: 1 }) });
+    expect((await loadPurchasableVariant(createCommerceClient(config, draft), variantId)).variant).toBeNull();
+  });
+  it("loads header brands without asking for prices, inventory or regions", async () => {
+    const fetcher = fetchFixture();
+    const navigation = await loadStorefrontNavigation(createCommerceClient(config, fetcher));
+    expect(navigation.brands).toEqual(["VECTOR"]);
+    const urls = fetcher.mock.calls.map(call => new URL(String(call[0])));
+    expect(urls.some(url => url.pathname === "/store/regions")).toBe(false);
+    expect(urls.find(url => url.pathname === "/store/products")?.searchParams.get("fields")).toBe("id,status,metadata");
+  });
   it("requests USD region price and native stock, exhausts pagination and excludes drafts", async () => {
     const first = Array.from({ length: 100 }, (_, index) => ({ ...fixtureNativeProduct, id: `prod_${index}`, handle: `jacket-${index}` }));
     const fetcher = fetchFixture({ "/store/products": url => ({ products: url.searchParams.get("offset") === "0" ? first : [{ ...fixtureNativeProduct, status: "draft" }], count: 101 }) });

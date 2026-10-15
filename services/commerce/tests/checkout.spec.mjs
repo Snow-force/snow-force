@@ -122,6 +122,26 @@ function checkoutRequest(value, body, metadata = policyMetadata()) {
   } } };
 }
 
+test("checkout review overlaps independent policy and pickup reads without exposing private fields", { timeout: 2000 }, async () => {
+  const value = { ...cart(), payment_collection: null, metadata: null };
+  const req = checkoutRequest(value), resolve = req.scope.resolve;
+  let releasePickup, pickupStarted = false;
+  const pickupRead = new Promise(resolve => { releasePickup = resolve; });
+  req.scope.resolve = key => {
+    const service = resolve(key);
+    if (key === "__pg_connection__") return { ...service, raw: async (...args) => { await pickupRead; return service.raw(...args); } };
+    if (key === "query") return { graph: async input => { if (input.entity === "store") { pickupStarted = true; releasePickup(); } return service.graph(input); } };
+    return service;
+  };
+  let body;
+  await GET(req, { json: value => { body = value; } });
+  assert.equal(pickupStarted, true);
+  assert.equal(body.status, "review");
+  assert.equal(body.policy.version, 1);
+  assert.equal(body.paymentStarted, false);
+  assert.ok(!JSON.stringify(body).includes("client_secret"));
+});
+
 test("an environment flag cannot bypass missing Stripe tax registration or failed verification", async () => {
   const saved = Object.fromEntries(["COMMERCE_TAX_POLICY_CONFIRMED", "COMMERCE_STRIPE_API_KEY", "COMMERCE_STRIPE_WEBHOOK_SECRET"].map(key => [key,process.env[key]]));
   Object.assign(process.env,{COMMERCE_TAX_POLICY_CONFIRMED:"true",COMMERCE_STRIPE_API_KEY:"sk_test_fixture",COMMERCE_STRIPE_WEBHOOK_SECRET:"whsec_fixture"});

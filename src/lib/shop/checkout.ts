@@ -10,9 +10,12 @@ export const checkoutPickupContactSchema = checkoutAddressSchema.pick({ name: tr
 export type CheckoutPickupContact = z.infer<typeof checkoutPickupContactSchema>;
 export const checkoutPickupOfferSchema = z.object({ id: commerceId("so"), locationId: commerceId("sloc"), name: z.string().min(1).max(300), address: z.object({ address_1: z.string().min(1).max(200), address_2: z.string().nullable(), city: z.string().min(1).max(100), province: z.literal("ca"), postal_code: z.string().regex(/^\d{5}(?:-\d{4})?$/), country_code: z.literal("us") }) }).strict();
 export const checkoutInputSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("delivery"), address: checkoutAddressSchema }).strict(),
   z.object({ kind: z.literal("address"), address: checkoutAddressSchema }).strict(),
   z.object({ kind: z.literal("pickup"), contact: checkoutPickupContactSchema }).strict(),
+  z.object({ kind: z.literal("pickup-review"), contact: checkoutPickupContactSchema }).strict(),
   z.object({ kind: z.literal("shipping"), optionId: commerceId("so") }).strict(),
+  z.object({ kind: z.literal("shipping-review"), optionId: commerceId("so") }).strict(),
   z.object({ kind: z.literal("quote") }).strict(),
   z.object({ kind: z.literal("payment"), fingerprint: z.string().regex(/^[a-f0-9]{64}$/), policyVersion: z.number().int().min(1).max(1_000_000), agreed: z.literal(true) }).strict(),
   z.object({ kind: z.literal("complete") }).strict(),

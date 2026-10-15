@@ -38,6 +38,33 @@ describe("owned checkout commands", () => {
     for (const value of [{ kind: "payment", policyVersion: 1, agreed: true, fingerprint, total: 0.01 }, { kind: "complete", cartId: "cart_other" }, { kind: "address", address: { ...address, email: "attacker@example.com" } }, { kind: "address", address: { ...address, countryCode: "CN" } }]) expect(await changeShopCheckoutAction(value)).toEqual({ status: "invalid" });
     expect(mocks.context).not.toHaveBeenCalled();
   });
+  it("saves the address, selects the sole eligible delivery and quotes automatically before returning a review", async () => {
+    expect(await changeShopCheckoutAction({ kind: "delivery", address })).toMatchObject({ status: "review", taxQuote: { ready: true } });
+    const writes = mocks.request.mock.calls.filter(call => call[2]?.method === "POST");
+    expect(writes.map(call => call[0].split("?")[0])).toEqual([
+      "/store/snowforce/checkout/cart_fixture/edit", "/store/carts/cart_fixture", "/store/snowforce/checkout/cart_fixture/edit", "/store/carts/cart_fixture/shipping-methods", "/store/snowforce/checkout/cart_fixture/quote",
+    ]);
+    expect(mocks.request.mock.calls.filter(([path]) => path === "/store/snowforce/checkout/cart_fixture")).toHaveLength(1);
+    expect(mocks.region).toHaveBeenCalledTimes(1);
+  });
+  it("automatically quotes pickup or a valid delivery selection without starting a payment", async () => {
+    expect(await changeShopCheckoutAction({ kind: "pickup-review", contact: { name: address.name, phone: address.phone, appointmentConfirmed: true } })).toMatchObject({ status: "review" });
+    expect(await changeShopCheckoutAction({ kind: "shipping-review", optionId: "so_fixture" })).toMatchObject({ status: "review" });
+    expect(await changeShopCheckoutAction({ kind: "shipping-review", optionId: "so_foreign" })).toEqual({ status: "rejected" });
+    expect(mocks.request.mock.calls.filter(([, , options]) => options?.body?.kind === "prepare")).toHaveLength(0);
+  });
+  it("never chooses between multiple delivery options or quotes after a rejected edit", async () => {
+    const request = mocks.request.getMockImplementation()!;
+    mocks.request.mockImplementation(async (path, schema, options) => path.endsWith("/shipping-options")
+      ? schema.parse({ shipping_options: ["so_fixture", "so_other"].map(id => ({ id, name: id, calculated_price: { currency_code: "usd", calculated_amount: 9.95 } })) })
+      : request(path, schema, options));
+    expect(await changeShopCheckoutAction({ kind: "delivery", address })).toMatchObject({ status: "review", options: [{ id: "so_fixture" }, { id: "so_other" }] });
+    expect(mocks.request.mock.calls.some(([path]) => path.endsWith("/quote") || path.includes("/shipping-methods"))).toBe(false);
+    mocks.request.mockClear();
+    mocks.request.mockImplementation(async (path, schema, options) => { if (path.endsWith("/edit")) throw new CommerceRejectedError(); return request(path, schema, options); });
+    expect(await changeShopCheckoutAction({ kind: "delivery", address })).toEqual({ status: "rejected" });
+    expect(mocks.request.mock.calls.some(([path]) => path.endsWith("/quote") || path.startsWith("/store/snowforce/checkout/") && !path.endsWith("/edit"))).toBe(false);
+  });
   it("saves only the contact and appointment confirmation for a configured pickup point", async () => {
     const contact = { name: "Fixture Rider", phone: "5551234567", appointmentConfirmed: true };
     const input = { kind: "pickup", contact };
@@ -85,6 +112,8 @@ describe("owned checkout commands", () => {
     expect(mutations[0][2].body).toEqual({});
     expect(mutations[1][2].body).toEqual({ email: "verified@example.com", shipping_address: nativeCheckoutAddress(address), billing_address: nativeCheckoutAddress(address) });
     expect(mutations).toHaveLength(2);
+    expect(mocks.region).toHaveBeenCalledTimes(1);
+    expect(mocks.request.mock.calls.filter(([path]) => path.endsWith("/shipping-options"))).toHaveLength(1);
   });
   it("saves the first address when Medusa omits an unlinked shipping address", async () => {
     const unfilledCart = { ...fixtureCart, shipping_methods: [] };

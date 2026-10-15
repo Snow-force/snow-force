@@ -4,6 +4,8 @@ import type { CartResult } from "@/lib/shop/commerce-cart";
 import { LanguageProvider } from "@/lib/language";
 
 const actions = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), promotion: vi.fn() }));
+const route = vi.hoisted(() => ({ pathname: "/shop" }));
+vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 vi.mock("@/lib/shop/cart-actions", () => ({ getShopCartAction: actions.get, changeShopCartAction: actions.change, applyShopPromotionAction: actions.promotion }));
 
 import { CartContents, ShopProvider, useShopCart } from "./shop-provider";
@@ -27,11 +29,25 @@ const view = () => render(<LanguageProvider initialLang="en"><ShopProvider><Cart
 
 beforeEach(() => {
   vi.resetAllMocks();
+  route.pathname = "/shop";
   actions.get.mockResolvedValue({ status: "ready", cart: null });
   actions.change.mockResolvedValue({ status: "ready", cart: null });
 });
 
 describe("cart request loading", () => {
+  it("keeps merchandise prices consistent when returning from a cart with quoted tax", async () => {
+    actions.get.mockResolvedValue({ status: "ready", cart: { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 39, total: 42.02 }], subtotal: 39, total: 42.02, taxTotal: 3.02, shippingTotal: 0, discountTotal: 0 } });
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    await screen.findByText("Test hat");
+    expect(screen.getAllByText("$39.00")).toHaveLength(3);
+    expect(screen.queryByText("$42.02")).not.toBeInTheDocument();
+  });
+  it("lets checkout supply its owned cart without a duplicate queued Server Action", async () => {
+    route.pathname = "/shop/checkout";
+    view();
+    expect(screen.getByRole("region", { name: "Cart probe" })).toHaveAttribute("aria-busy", "false");
+    expect(actions.get).not.toHaveBeenCalled();
+  });
   it.each([
     ["en", "Shopping is temporarily paused. You can browse gear; please check back later to purchase."],
     ["zh", "商城暂未开放购买。你可以继续浏览装备，请稍后再来选购。"],

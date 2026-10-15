@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), validation: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), sync: vi.fn(), validation: vi.fn() }));
 vi.mock("@/lib/shop/checkout-actions", () => ({ getShopCheckoutAction: mocks.get, changeShopCheckoutAction: mocks.change }));
-vi.mock("./shop-provider", () => ({ useShopCart: () => ({ reload: mocks.reload }) }));
+vi.mock("./shop-provider", () => ({ useShopCart: () => ({ reload: mocks.reload, syncCheckout: mocks.sync }) }));
 vi.mock("next/dynamic", () => ({ default: () => ({ validate, onBusyChange }: { validate: () => Promise<boolean>; onBusyChange: (busy: boolean) => void }) => <div>Secure Stripe form<button onClick={() => void validate().then(mocks.validation)}>Validate payment review</button><button onClick={() => onBusyChange(true)}>Start confirmation</button><button onClick={() => onBusyChange(false)}>Finish confirmation</button></div> }));
 import { CheckoutView } from "./checkout-view";
 import { LanguageProvider } from "@/lib/language";
@@ -28,50 +28,73 @@ const review: CheckoutReview = { status: "review", fingerprint: "a".repeat(64), 
 beforeEach(() => { vi.resetAllMocks(); mocks.get.mockResolvedValue(review); mocks.change.mockResolvedValue(review); mocks.reload.mockResolvedValue(undefined); });
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
 describe("checkout interface", () => {
-  it("requires an appointment confirmation, saves only contact details and refreshes the pickup tax quote", async () => {
+  it("keeps compact help and policy links on the focused checkout surface", async () => {
+    view();
+    const help = await screen.findByRole("navigation", { name: "Checkout help and policies" });
+    expect(help).toHaveTextContent("Shipping & returns");
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy-policy");
+  });
+  it("announces an automatic save and blocks repeated writes until it finishes", async () => {
+    let finish!: (value: CheckoutReview) => void;
+    mocks.change.mockReturnValue(new Promise<CheckoutReview>(resolve => { finish = resolve; }));
+    view();
+    fireEvent.change(await screen.findByLabelText("Recipient name"), { target: { value: "Updated Rider" } });
+    await waitFor(() => expect(mocks.change).toHaveBeenCalledTimes(1), { timeout: 2000 });
+    expect(screen.getByText(/Saving your checkout details/)).toHaveAttribute("role", "status");
+    expect(screen.getByLabelText("Recipient name")).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Save address/ })).not.toBeInTheDocument();
+    await act(async () => { finish({ ...review, address: { ...review.address!, name: "Updated Rider" } }); });
+    expect(screen.getByLabelText("Recipient name")).toBeEnabled();
+    expect(screen.queryByText(/Saving your checkout details/)).not.toBeInTheDocument();
+  });
+  it("requires an appointment confirmation before automatically saving pickup and calculating tax", async () => {
     const pickupOffer = { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture Irvine warehouse", address: { address_1: "1 Fixture Plaza", address_2: null, city: "Irvine", province: "ca" as const, postal_code: "92614", country_code: "us" as const } };
-    const pickupReview = { ...review, pickupOffer, pickupSelected: true, selectedOptionId: pickupOffer.id, options: [], address: { ...review.address!, address1: "1 Fixture Plaza", city: "Irvine", postalCode: "92614" }, fingerprint: "b".repeat(64), taxQuote: null, cart: { ...review.cart, shippingTotal: 0, total: 79.95 } };
     mocks.get.mockResolvedValue({ ...review, pickupOffer });
-    mocks.change.mockResolvedValue(pickupReview);
+    mocks.change.mockResolvedValue({ ...review, pickupOffer, pickupSelected: true, selectedOptionId: pickupOffer.id, options: [], address: { ...review.address!, address1: "1 Fixture Plaza", city: "Irvine", postalCode: "92614" } });
     view();
     fireEvent.click(await screen.findByRole("radio", { name: "Appointment pickup · Free" }));
     expect(screen.queryByLabelText("Street address")).not.toBeInTheDocument();
-    expect(screen.getByText("Fixture Irvine warehouse")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save free pickup" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+    expect(mocks.change).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("checkbox", { name: "I have contacted SnowForce and confirmed my pickup appointment at this location." }));
-    fireEvent.click(screen.getByRole("button", { name: "Save free pickup" }));
-    await waitFor(() => expect(mocks.change).toHaveBeenCalledWith({ kind: "pickup", contact: { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true } }));
-    expect(await screen.findByText("Free pickup saved. Collect your order at your confirmed appointment; customer service will confirm it is ready.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Calculate tax & review total" })).toBeEnabled();
+    await waitFor(() => expect(mocks.change).toHaveBeenCalledWith({ kind: "pickup-review", contact: { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true } }), { timeout: 2000 });
+    await screen.findByText("Free pickup saved. Collect your order at your confirmed appointment; customer service will confirm it is ready.");
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
     fireEvent.click(screen.getByRole("radio", { name: "Delivery" }));
     expect(screen.getByLabelText("Street address")).toHaveValue("");
-    expect(screen.getByRole("button", { name: "Calculate tax & review total" })).toBeDisabled();
+    expect(screen.queryByText(/Delivery is unavailable/)).not.toBeInTheDocument();
+    expect(screen.queryByText("$89.90 USD")).not.toBeInTheDocument();
+    expect(screen.getByText("Available delivery and tax appear automatically after your address is complete.")).toBeVisible();
+    expect(screen.getByText("Recalculating after your details are complete")).toBeVisible();
   });
   it("locks the pickup contact and receiving mode after a payment starts", async () => {
     mocks.get.mockResolvedValue({ ...review, paymentStarted: true, policyAccepted: true, pickupSelected: true, pickupOffer: { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture point", address: { address_1: "Test plaza", address_2: null, city: "Irvine", province: "ca", postal_code: "92614", country_code: "us" } } });
     view();
     expect(await screen.findByRole("radio", { name: "Appointment pickup · Free" })).toBeDisabled();
     expect(screen.getByLabelText("Pickup name")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Save free pickup" })).toBeDisabled();
+    expect(mocks.change).not.toHaveBeenCalled();
   });
-  it("allows address and delivery first, then calculates the quote and requires fresh policy agreement", async () => {
+  it("automatically calculates a saved delivery total and then requires fresh policy agreement", async () => {
     mocks.get.mockResolvedValue({ ...review, taxQuote: null });
     view();
-    const calculate = await screen.findByRole("button", { name: "Calculate tax & review total" });
-    expect(calculate).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Save address & get delivery options" })).toBeEnabled();
-    expect(screen.getByRole("checkbox")).toBeDisabled();
-    expect(screen.getByText("Calculated after tax")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
-    fireEvent.click(calculate);
-    await screen.findByRole("button", { name: "Refresh tax & total" });
-    expect(mocks.change).toHaveBeenCalledWith({ kind: "quote" });
+    expect(await screen.findByRole("checkbox")).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Calculate tax/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(mocks.change).toHaveBeenCalledWith({ kind: "quote" }), { timeout: 2000 });
+    await waitFor(() => expect(screen.getByRole("checkbox")).toBeEnabled());
     expect(screen.getByText("$89.90 USD")).toBeInTheDocument();
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     fireEvent.click(screen.getByRole("checkbox"));
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeEnabled();
+  });
+  it("can retry automatic tax after a failed request and an explicit refresh", async () => {
+    mocks.get.mockResolvedValue({ ...review, taxQuote: null });
+    mocks.change.mockResolvedValueOnce({ status: "unavailable" }).mockResolvedValue(review);
+    view();
+    await waitFor(() => expect(screen.getByRole("alert")).toBeVisible(), { timeout: 2200 });
+    expect(mocks.change).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    await waitFor(() => expect(mocks.change).toHaveBeenCalledTimes(2), { timeout: 2200 });
+    await waitFor(() => expect(screen.getByRole("checkbox")).toBeEnabled());
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
   });
   it("requires a refresh for expired quotes and displays government fees separately in USD", async () => {
     mocks.get.mockResolvedValue({ ...review, taxQuote: { ...review.taxQuote!, totalCents: 9018, fees: [{ state: "CO", amountCents: 28 }], ready: false } });
@@ -81,11 +104,11 @@ describe("checkout interface", () => {
     expect(screen.getByText("$0.28")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "确认金额并继续付款" })).toBeDisabled();
     expect(screen.getByRole("checkbox")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "更新税费与金额" })).toBeEnabled();
+    expect(screen.getByText(/填写完整地址后会自动计算/)).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "AK" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "HI" })).not.toBeInTheDocument();
   });
-  it("disables a quote when its local expiry arrives without sending an automatic mutation", async () => {
+  it("disables an expired quote before an automatic refresh can run", async () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date("2026-10-02T12:00:00Z"));
@@ -97,7 +120,7 @@ describe("checkout interface", () => {
       await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
       expect(screen.getByRole("checkbox")).toBeDisabled();
       expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
-      expect(screen.getByText("Your previous quote needs to be refreshed before payment.")).toBeInTheDocument();
+      expect(screen.getByText(/Complete your address to calculate shipping and tax automatically/)).toBeInTheDocument();
       expect(mocks.change).not.toHaveBeenCalled();
     } finally { vi.useRealTimers(); }
   });
@@ -105,7 +128,7 @@ describe("checkout interface", () => {
     view(); fireEvent.click(await screen.findByRole("checkbox"));
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeEnabled();
     mocks.change.mockResolvedValueOnce({ status: "unavailable" });
-    fireEvent.click(screen.getByRole("button", { name: "Refresh tax & total" }));
+    fireEvent.change(screen.getByLabelText("Recipient name"), { target: { value: "Changed Rider" } });
     await screen.findByRole("alert");
     expect(screen.getByRole("checkbox")).toBeDisabled();
     expect(screen.getByRole("checkbox")).not.toBeChecked();
@@ -118,11 +141,12 @@ describe("checkout interface", () => {
     mocks.get.mockReturnValue(new Promise<CheckoutReview>((resolve) => { resolveCheckout = resolve; }));
     view();
 
-    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Loading checkout");
     await act(async () => { resolveCheckout(review); });
 
-    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
+    expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "false");
+    expect(mocks.sync).toHaveBeenCalledWith(review.cart);
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
   });
@@ -138,14 +162,14 @@ describe("checkout interface", () => {
 
     page.rerender(<LanguageProvider initialLang="en"><CheckoutView completing /></LanguageProvider>);
 
-    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "true");
     expect(screen.queryByText("Order summary")).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue("Unsubmitted address")).not.toBeInTheDocument();
     expect(mocks.change).toHaveBeenCalledWith({ kind: "complete" });
     await act(async () => { resolveCompletion({ status: "complete", order: { id: "order_return", number: "1002", total: 89.9 } }); });
 
     expect(screen.getByText("Order received")).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
+    expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "false");
     expect(mocks.reload).toHaveBeenCalledOnce();
   });
 
@@ -157,8 +181,8 @@ describe("checkout interface", () => {
     view("zh"); await screen.findByText("订单核对");
     expect(screen.getByText("$89.90 USD")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("收件人姓名"), { target: { value: "New Rider" } });
-    fireEvent.submit(screen.getByRole("button", { name: "保存地址并查询配送" }).closest("form")!);
-    await waitFor(() => expect(mocks.change).toHaveBeenCalledWith({ kind: "address", address: { ...review.address, name: "New Rider" } }));
+    fireEvent.submit(screen.getByLabelText("收件人姓名").closest("form")!);
+    await waitFor(() => expect(mocks.change).toHaveBeenCalledWith({ kind: "delivery", address: { ...review.address, name: "New Rider" } }));
   });
   it("starts payment from the reviewed fingerprint and renders Stripe only after setup", async () => {
     mocks.change.mockResolvedValue({ status: "payment", clientSecret: "pi_fixture_secret_fixture", publishableKey: "pk_test_fixture", total: 89.9 });
@@ -182,7 +206,11 @@ describe("checkout interface", () => {
   it.each(["en", "zh"] as const)("shows the complete accepted-version policy in %s", async (lang) => {
     view(lang);
     const summary = await screen.findByText(lang === "en" ? /Read shipping, returns and refunds/ : /查看配送、退换货及退款条款/);
+    expect(summary.closest("details")).not.toHaveAttribute("open");
     fireEvent.click(summary);
+    const terms = screen.getByRole("region", { name: lang === "en" ? "Full policy terms" : "完整政策条款" });
+    expect(terms).toHaveClass("max-h-80", "overflow-y-auto");
+    expect(terms).toHaveAttribute("tabindex", "0");
     for (const paragraph of Object.values(policy.content.copy)) expect(screen.getByText(paragraph[lang])).toBeVisible();
     expect(screen.getByText(/Fixture Gear LLC/)).toBeVisible();
     expect(screen.getByRole("link", { name: policy.content.customer_service_email })).toHaveAttribute("href", "mailto:support@example.test");
@@ -217,19 +245,19 @@ describe("checkout interface", () => {
     fireEvent.click(await screen.findByRole("checkbox"));
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeEnabled();
     mocks.change.mockResolvedValue(updated);
-    fireEvent.submit(screen.getByRole("button", { name: "Save address & get delivery options" }).closest("form")!);
+    fireEvent.submit(screen.getByLabelText("Recipient name").closest("form")!);
     await waitFor(() => expect(screen.getByRole("checkbox")).not.toBeChecked());
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
     mocks.change.mockResolvedValue(review);
-    fireEvent.submit(screen.getByRole("button", { name: "Save address & get delivery options" }).closest("form")!);
+    fireEvent.submit(screen.getByLabelText("Recipient name").closest("form")!);
     await waitFor(() => expect(mocks.change).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false"));
+    await waitFor(() => expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "false"));
     expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
   it("requires fresh consent after an address save even if the returned amounts are identical", async () => {
     view(); fireEvent.click(await screen.findByRole("checkbox"));
-    fireEvent.submit(screen.getByRole("button", { name: "Save address & get delivery options" }).closest("form")!);
-    await waitFor(() => expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false"));
+    fireEvent.submit(screen.getByLabelText("Recipient name").closest("form")!);
+    await waitFor(() => expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "false"));
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
   });
@@ -291,7 +319,7 @@ describe("checkout interface", () => {
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.change(screen.getByLabelText("Street address"), { target: { value: "Updated test street" } });
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
-    expect(screen.getByText("Save your delivery or pickup details before paying.")).toBeInTheDocument();
+    expect(screen.getByText("Shipping and tax will update when your details are complete.")).toBeInTheDocument();
     expect(mocks.change).not.toHaveBeenCalled();
   });
   it("prevents payment while tax or delivery configuration is missing", async () => {
@@ -332,7 +360,7 @@ describe("checkout interface", () => {
     fireEvent.click(screen.getByRole("button", { name: "Check payment status" }));
     expect(mocks.change).toHaveBeenLastCalledWith({ kind: "recover" });
     expect(screen.queryByText("Secure Stripe form")).not.toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("region", { name: "Checkout" })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("button", { name: "Check payment status" })).toBeDisabled();
     await act(async () => { release({ ...review, paymentCheck: "unlocked" }); });
     expect(screen.getByText(/The previous payment was canceled/)).toHaveAttribute("role", "status");

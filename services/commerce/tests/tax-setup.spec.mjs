@@ -7,6 +7,18 @@ const setup = require("../src/lib/tax-setup.ts");
 const scope = value => ({ resolve: (key, options) => { assert.equal(key,setup.taxSetupReaderRegistration); assert.equal(options.allowUnregistered,true); return value; } });
 const auth = { actor_type: "user", actor_id: "user_fixture" };
 
+test("independent Stripe setup reads start together and all remain required", async () => {
+  const api = reader(), started = [], releases = [];
+  for (const key of ["account", "settings", "registrations"]) {
+    const original = api[key];
+    api[key] = async (...args) => { started.push(key); await new Promise(resolve => releases.push(resolve)); return original(...args); };
+  }
+  const result = setup.readStripeTaxSetup(api, () => now);
+  assert.deepEqual(started, ["account", "settings", "registrations"]);
+  releases.forEach(release => release());
+  assert.equal((await result).api_ready, true);
+});
+
 test("tax setup uses only GET resources and validates cursor and protected credentials", async () => {
   const calls = [], client = { accounts: { retrieveCurrent: async () => { calls.push("account"); return {}; } }, tax: {
     settings: { retrieve: async () => { calls.push("settings"); return {}; } }, registrations: { list: async input => { calls.push(input); return {}; }, create: () => assert.fail("no writes") } } };

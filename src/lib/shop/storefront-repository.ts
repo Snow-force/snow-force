@@ -63,3 +63,25 @@ export async function loadStorefrontCatalog(request: CommerceRequest) {
   return { products, regionId, navigation };
 }
 export const getStorefrontCatalog = cache(async () => loadStorefrontCatalog(commerceClient()));
+
+/** Cart writes need one current variant, not categories, collections and every SKU. */
+export async function loadPurchasableVariant(request: CommerceRequest, variantId: string) {
+  const id = commerceId("variant").parse(variantId), regionId = await getUsCommerceRegion(request);
+  if (!regionId) return { regionId: null, variant: null };
+  const params = new URLSearchParams({ "variants[id]": id, limit: "2", region_id: regionId, country_code: "us", fields: "id,handle,title,status,*variants,+variants.inventory_quantity,+variants.calculated_price" });
+  const page = await request(`/store/products?${params}`, productsSchema);
+  if (page.count > 1 || page.products.length > 1) throw new CommerceUnavailableError();
+  const variant = page.products.flatMap(product => mapStoreProduct(product)?.variants ?? []).find(item => item.id === id) ?? null;
+  return { regionId, variant };
+}
+
+/** Header navigation never needs regional price calculations or inventory joins. */
+export async function loadStorefrontNavigation(request: CommerceRequest) {
+  const [navigation, products] = await Promise.all([
+    loadStoreNavigation(request),
+    readPages(request, "/store/products", "id,status,metadata", z.object({ products: z.array(z.object({ id: commerceId("prod"), status: z.string(), metadata: z.record(z.unknown()).nullable().optional() })), count: z.number().int().nonnegative() }), page => page.products),
+  ]);
+  navigation.brands = [...new Set(products.filter(product => product.status === "published").flatMap(product => typeof product.metadata?.snowforce_brand === "string" && product.metadata.snowforce_brand.trim() ? [product.metadata.snowforce_brand.trim().slice(0, 80)] : []))].sort((a, b) => a.localeCompare(b));
+  return navigation;
+}
+export const getStorefrontNavigation = cache(async () => loadStorefrontNavigation(commerceClient()));

@@ -7,7 +7,7 @@ import { CART_COOKIE_MAX_AGE, CART_COOKIE_NAME, signCartCookie } from "./cart-co
 import { cartSnapshot, type CartResult } from "./commerce-cart";
 import { getCartContext as cartContext } from "./cart-context";
 import { commerceId } from "./storefront";
-import { getUsCommerceRegion, loadStorefrontCatalog } from "./storefront-repository";
+import { getUsCommerceRegion, loadPurchasableVariant } from "./storefront-repository";
 
 const changeSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("add"), variantId: commerceId("variant"), quantity: z.number().int().min(1).max(99) }).strict(),
@@ -46,9 +46,9 @@ export async function changeShopCartAction(input: unknown): Promise<CartResult> 
     const change = parsed.data;
     let cart = cartId ? await repository.get(cartId) : null;
     if (change.kind === "add") {
-      const catalog = await loadStorefrontCatalog(customer.request);
+      const catalog = await loadPurchasableVariant(customer.request, change.variantId);
       if (!catalog.regionId) return { status: "not-configured" };
-      const variant = catalog.products.flatMap((product) => product.variants).find((item) => item.id === change.variantId);
+      const variant = catalog.variant;
       if (!variant?.available || (variant.availableQuantity !== null && variant.availableQuantity < change.quantity)) return { status: "rejected" };
       if (!cart) {
         cart = await repository.create(catalog.regionId);

@@ -23,7 +23,7 @@ export function assertCartOwner(cart: NativeCart, customerId: string) {
   if (cart.completed_at) throw new CommerceRejectedError();
 }
 export function cartSnapshot(cart: NativeCart): CommerceCart {
-  return { items: cart.items.map((item) => ({ id: item.id, name: item.product_title ?? item.title, variant: item.variant_title ?? "", slug: item.product_handle && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.product_handle) ? item.product_handle : null, image: safeProductImage(item.thumbnail) ?? "/shop/product-placeholder.svg", quantity: item.quantity, unitPrice: item.unit_price, total: item.total })), total: cart.total, subtotal: cart.subtotal, taxTotal: cart.tax_total, shippingTotal: cart.shipping_total, discountTotal: cart.discount_total, promotionCodes: (cart.promotions ?? []).map(promotion => promotion.code) };
+  return { items: cart.items.map((item) => ({ id: item.id, name: item.product_title ?? item.title, variant: item.variant_title ?? "", slug: item.product_handle && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.product_handle) ? item.product_handle : null, image: safeProductImage(item.thumbnail) ?? "/shop/product-placeholder.svg", quantity: item.quantity, unitPrice: item.unit_price, total: item.total })), total: cart.total, subtotal: cart.items.reduce((cents, item) => cents + Math.round(item.unit_price * 100) * item.quantity, 0) / 100, taxTotal: cart.tax_total, shippingTotal: cart.shipping_total, discountTotal: cart.discount_total, promotionCodes: (cart.promotions ?? []).map(promotion => promotion.code) };
 }
 export function createCartRepository(request: CommerceRequest, customer: { customerId: string; token: string }) {
   const options = { token: customer.token };

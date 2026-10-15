@@ -51,3 +51,22 @@ The comparison normalizes the reference crop to the browser capture dimensions a
 ## Final result
 
 passed
+
+## Checkout and cart follow-up — 2026-10-15
+
+Reference: operator-supplied Backcountry cart and checkout screenshots. Implemented in the existing SnowForce frontend; the comparison concerns the product-list/summary separation, address/delivery/payment hierarchy and compact policy presentation, without introducing unsupported payment methods or changing SnowForce branding.
+
+Browser evidence retained in the operator workspace:
+
+- `output/incidents/2026-10-15-checkout-final-desktop.png`: English desktop at 1,280 px; address card and separate sticky order summary.
+- `output/incidents/2026-10-15-checkout-final-policy.png`: full policy opens inside a 320 px scrolling region rather than stretching the checkout. Explicit agreement remains unchecked and payment stays disabled.
+- `output/incidents/2026-10-15-checkout-final-mobile-zh.png`: Chinese mobile; summary precedes address, then receiving and payment cards, followed by compact help links. No horizontal overflow.
+- `output/incidents/2026-10-15-cart-final-desktop.png`: separated merchandise list and order summary; the quoted USD39 item remains USD39 before shipping and tax when returning from checkout.
+
+Actual flow checks: complete address automatically updates shipping and tax; appointment pickup requires explicit appointment confirmation; dirty address hides the old total and does not report unavailable shipping before validation. The native server returns authoritative prices, tax and ownership. Automatic updates never accept policies or initiate payment. One main landmark remains; labelled inputs, native radio/select/checkbox controls and the keyboard-focusable policy region retain accessible names. Browser console error/warning checks were empty.
+
+Visual repairs found during QA: removed redundant shop navigation and the long site footer from checkout; replaced save/calculate steps with automatic status feedback; corrected stale receiving-mode amounts and merchandise totals including native shipping/tax. Placeholder merchandise art and synthetic fixture policy/contact text are deliberate sandbox content, not production asset acceptance.
+
+Validation: frontend 1,050 tests in 169 files, coverage and production build passed; backend 651 tests, focused payment/tax/pickup/shipping coverage, typecheck and production build passed. The local build still reports an existing dynamic `.data` tracing warning because isolated Postgres fixtures reside in the ignored workspace; tracing exclusions and Docker source allowlists exclude these runtime fixtures. This is not evidence that the new production container is deployed.
+
+Checkout visual result: passed for the inspected desktop/mobile states. Formal deployment and production performance comparison remain separate pending checks; no real customer charge was made.
