@@ -11,7 +11,8 @@
 | 生产数据恢复 | 加密只读备份已恢复到本机隔离 Postgres，以应用角色核对 169 张表、2,686 行，逐表数量及数据摘要全部一致。AES-256-GCM 加密、Windows DPAPI CurrentUser 保护密钥。本机恢复数据库已清理，加密备份保留。证据：`output/incidents/2026-10-14-commerce-production-recovery.json`。 |
 | Redis 重启恢复 | 首次原地重启发现临时 TLS 目录已存在会使旧脚本退出，已恢复服务并修复脚本。源码 `45d852a` 已推送 main；部署 `e970f8ae-cb8d-4fe3-b723-1c33c6b20b17` 再次原地重启通过，原持久卷 AOF 载入、TLS 就绪、后台 health 200。重启前资金/税务队列与持久工作流均为 0，未验非空资金队列的中途恢复。 |
 | 质量检查 | 前台 1,032 项、后台 649 项完整测试通过，两端生产构建及后台类型检查通过；前台覆盖率与 Redis 实际脚本启动回归检查通过。GitHub Quality Gate run `38695966973` success。 |
-| 正式收款 | 独立正式 goods webhook 已 enabled。sales、税务确认 true、受保护退款执行 true 三项变量已暂存且可审核。连接器两次返回“用户未批准”，没有应用开关；已打开 Railway 的 3 changes to apply，等待经营者直接点击 Deploy Changes。部署及正式结账读回通过前，仍不得称为正式收款已开启。 |
+| 正式收款 | 已开放。后台部署 `318bbbff-341e-4dda-aeee-3a384873d3a7` SUCCESS，源码 `080508e`；sales、税务确认 true、受保护退款执行 true 已应用，环境没有待发布变更。正式浏览器已显示配送、免费预约自提及政策 5；后台读回正式账户 Tax active、checkout_ready=true。网站实际公钥为 live，摘要与此前同账户密钥配对验证一致。 |
+| 正式计税及回调接入 | 实际应用计税组件使用正式 restricted key 成功创建 Irvine 临时报价：商品 49,900 美分、税 3,867 美分、总额 53,767 美分，未创建付款或税务交易。Stripe 将此前未付款、已取消且不关联 Medusa 会话的真实事件重发到 goods 回调，HTTP 200；只读 Redis stream 确认任务 591 已 completed、队列 drained，两名业务订阅者没有失败重试。该检查不代替真实正式扣款验收。 |
 
 恢复边界：只包含 commerce schema，未包含 Supabase Auth、public schema 或对象存储；未新增自动异地备份。恢复密钥依赖本机 Windows 用户配置。Redis AOF/RDB 使用现有持久卷，并非独立备份；平台仍报告主机 `vm.overcommit_memory` 提示，应用不能修改 Railway 宿主机设置。实际付款、捕获及退款验收使用独立 Stripe Sandbox，本次没有替用户进行正式扣款。
 

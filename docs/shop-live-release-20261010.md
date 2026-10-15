@@ -10,7 +10,13 @@
 
 前台 1,032 项、后台 649 项完整测试、前台覆盖率、后台启动回归检查、独立类型检查及两端构建通过，GitHub run `38695966973` success。应用业务源码仍为 `30ff27a`，本次只修改 Redis 启动脚本及回归测试。
 
-正式部署最后三项变量已暂存：`COMMERCE_OPERATING_MODE=sales`、`COMMERCE_TAX_POLICY_CONFIRMED=true`、`COMMERCE_REFUND_EXECUTION_ENABLED=true`。经营者已在聊天批准，但 Railway 连接器确认流程连续返回“用户未批准”，没有应用变更。已在 Railway 展示 3 changes to apply，请经营者直接点击 Deploy Changes；实际部署成功并读回正式结账状态后再记录收款已开启。
+正式付款已开放：经营者确认发布后，Railway 已应用 `COMMERCE_OPERATING_MODE=sales`、`COMMERCE_TAX_POLICY_CONFIRMED=true`、`COMMERCE_REFUND_EXECUTION_ENABLED=true`，后台部署 `318bbbff-341e-4dda-aeee-3a384873d3a7`（源码 `080508e`）SUCCESS。后台应用业务代码与 `30ff27a` 相同；网站部署仍为 `299021b6-fde0-4fcd-aa1f-cbe01e42cb09`，Redis 为 `e970f8ae-cb8d-4fe3-b723-1c33c6b20b17`。三个服务在线，环境没有待发布变更。
+
+正式会员浏览器已从原购物车打开结账，显示配送、免费预约自提、政策版本 5；后台实际 Stripe Tax 核对为 live、CA active、经营者确认已记录、付款运行开关已开启。Railway 网站实际公开公钥摘要与此前同账户配对验证一致。真实购物车数量已完成 1→2→1，两次原生更新 HTTP 200，最终仍为一件 US$499，可售库存仍为 15。
+
+使用实际应用 `createStripeTaxQuoteWriter` 与正式 restricted key 成功创建 Irvine 临时报价，商品 49,900 美分、配送 0、税 3,867 美分、总额 53,767 美分。此为临时报价，无客户订单、付款或 Tax Transaction；不将其表述为原生购物车报价或正式成交。证据：`output/incidents/2026-10-15-live-tax-creation-preflight.json`。
+
+正式 goods webhook 为 enabled。已通过 Stripe CLI 重发此前正式密钥配对探测中未付款且已取消的真实 Stripe 事件；事件无 Medusa 支付会话，回调 HTTP 200，后台记录两名业务订阅者处理。正式容器只读 Redis stream 确认任务 591 已 completed，随后队列 drained，无失败重试；因此核对了真实 Stripe 投递、异步签名处理和外部非 Medusa 事件安全忽略。正式库订单、付款和成交税账仍为 0。本次没有正式扣款；真实授权、捕获、发货/领取和退款/税务冲销的资金验收使用独立 Sandbox，保持其范围边界。
 
 ## 2026-10-14 购物车修复与预约自提验收
 
