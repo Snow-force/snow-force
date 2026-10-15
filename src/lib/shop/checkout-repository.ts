@@ -14,14 +14,17 @@ export function createCheckoutRepository(request: CommerceRequest, customer: { c
   const path = `/store/carts/${id}`;
   const options = { token: customer.token };
   const cartResponse = z.object({ cart: checkoutNativeCartSchema });
+  function owned(cart: z.output<typeof checkoutNativeCartSchema>) {
+    if (cart.id !== id || cart.customer?.id !== customer.customerId) throw new CommerceAuthorizationError();
+    return cart;
+  }
   async function read() {
     const { cart } = await request(`${path}?fields=${CHECKOUT_FIELDS}`, cartResponse, options);
-    if (cart.customer?.id !== customer.customerId) throw new CommerceAuthorizationError();
-    return cart;
+    return owned(cart);
   }
   return {
     read,
-    async status() { const result = await request(`/store/snowforce/checkout/${id}`, statusResponseSchema, options); if (result.status === "review" && result.cart.customer?.id !== customer.customerId) throw new CommerceAuthorizationError(); return result; },
+    async status() { const result = await request(`/store/snowforce/checkout/${id}`, statusResponseSchema, options); if (result.status === "review") owned(result.cart); return result; },
     async shippingOptions() {
       const schema = z.object({ shipping_options: z.array(z.object({ id: commerceId("so"), name: z.string(), calculated_price: z.object({ currency_code: z.literal("usd"), calculated_amount: usdAmount }).nullable() })) });
       const result = await request(`/store/snowforce/checkout/${id}/shipping-options`, schema, options);
@@ -30,12 +33,14 @@ export function createCheckoutRepository(request: CommerceRequest, customer: { c
     async address(address: CheckoutAddress) {
       const shipping = nativeCheckoutAddress(address);
       await prepareCartEdit(request, customer.token, id);
-      await request(`${path}?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { email: customer.email, shipping_address: shipping, billing_address: shipping } });
+      const { cart } = await request(`${path}?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { email: customer.email, shipping_address: shipping, billing_address: shipping } });
+      return owned(cart);
     },
     async shipping(optionId: string) {
       const option_id = commerceId("so").parse(optionId);
       await prepareCartEdit(request, customer.token, id);
-      await request(`${path}/shipping-methods?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { option_id } });
+      const { cart } = await request(`${path}/shipping-methods?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { option_id } });
+      return owned(cart);
     },
     async pickup(contact: CheckoutPickupContact) {
       return request(`/store/snowforce/checkout/${id}/pickup`, z.object({ status: z.literal("pickup-saved") }).strict(), { ...options, method: "POST", body: checkoutPickupContactSchema.parse(contact) });
