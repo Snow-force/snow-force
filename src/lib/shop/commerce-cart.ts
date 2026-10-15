@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { CommerceAuthorizationError, CommerceCheckoutLockedError, CommerceNotFoundError, CommerceRejectedError, type CommerceRequest } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceCheckoutLockedError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError, type CommerceRequest } from "./commerce-client";
 import { commerceId, safeProductImage, usdAmount } from "./storefront";
 import { checkoutRecoverySchema } from "./checkout";
 
@@ -21,13 +21,17 @@ export async function prepareCartEdit(request: CommerceRequest, token: string, c
   try { await edit(); }
   catch (error) {
     if (!(error instanceof CommerceCheckoutLockedError)) throw error;
-    // The existing owned recovery boundary reads Stripe; it never cancels,
-    // confirms, captures or refunds. It retires only provider-confirmed canceled
-    // sessions under native locks, keeping all historical payment evidence.
-    const recovered = await request(`/store/snowforce/checkout/${id}`, checkoutRecoverySchema, { token, method: "POST", body: { kind: "recover" } });
+    // Recovery reads Stripe and retires only verified canceled sessions. It
+    // cannot cancel, confirm, capture or refund any payment.
+    const recovered = await request(`/store/snowforce/checkout/${id}`, checkoutRecoverySchema, { token, method: "POST", body: { kind: "recover" } }).catch((recoveryError: unknown) => {
+      // Authorized or completed native payment evidence can reject recovery.
+      // Preserve the original checkout diagnosis rather than blaming inventory.
+      if (recoveryError instanceof CommerceRejectedError && !(recoveryError instanceof CommerceSalesDisabledError)) throw error;
+      throw recoveryError;
+    });
     if (recovered.status !== "recovered" || !recovered.unlocked) throw error;
-    // Recovery alone is NOT edit authorization. Recheck the original edit fence
-    // once so new payments, pending tax operations and concurrent edits still win.
+    // Recovery is NOT edit authorization: a new payment or unresolved quote
+    // must still block the one fresh edit check before any item mutation.
     await edit();
   }
 }
