@@ -1,5 +1,17 @@
 # 正式收款发布进度
 
+## 2026-10-15 已批准的正式配置与恢复验收
+
+经营者已确认临时许可 2026-10-07 至 2027-01-04，并批准政策草稿 revision 4 发布。生产读回正式政策版本 5、经营税务 active revision 6，绑定正式 Stripe 账户、Irvine 仓库和政策 5；CA 仍为唯一登记州。独立正式 goods webhook 已启用。
+
+生产 commerce 加密备份恢复已通过：169 张表、2,686 行，以应用角色逐表核对数量和数据摘要。本机恢复数据库已清理，加密备份保留在经营者明确授权的 OneDrive 项目目录，密钥由 Windows DPAPI CurrentUser 保护。范围不含 Auth、public schema 或对象存储，未建立自动异地备份。
+
+已获授权的 Redis 原地重启暴露旧脚本的临时目录重复创建错误，先用现有镜像恢复服务，再修改启动脚本为幂等创建并限制目录权限。源码 `45d852a` 已提交、推送并部署到 Redis；再次原地重启成功载入原卷 AOF 并恢复 TLS，后台 health 200。测试前没有未完成的资金/税务队列或持久工作流，未宣称验收非空交易任务的中途恢复。证据：`output/incidents/2026-10-15-redis-restart-recovery.json`。
+
+前台 1,032 项、后台 649 项完整测试、前台覆盖率、后台启动回归检查、独立类型检查及两端构建通过，GitHub run `38695966973` success。应用业务源码仍为 `30ff27a`，本次只修改 Redis 启动脚本及回归测试。
+
+正式部署最后三项变量已暂存：`COMMERCE_OPERATING_MODE=sales`、`COMMERCE_TAX_POLICY_CONFIRMED=true`、`COMMERCE_REFUND_EXECUTION_ENABLED=true`。经营者已在聊天批准，但 Railway 连接器确认流程连续返回“用户未批准”，没有应用变更。已在 Railway 展示 3 changes to apply，请经营者直接点击 Deploy Changes；实际部署成功并读回正式结账状态后再记录收款已开启。
+
 ## 2026-10-14 购物车修复与预约自提验收
 
 购物车故障已在正式环境修复。HTTP 200 是 Next.js Server Action 的传输状态；原先隐藏的 Medusa 错误是 management 模式禁止销售操作，随后还发现原生新购物车的空地址字段与校验不兼容。这些问题已分别修复并部署，未通过调整真实库存或商品售价绕过。正式雪板仍为 US$499，库存 15、预留 0；正式结账开关尚未开启。
