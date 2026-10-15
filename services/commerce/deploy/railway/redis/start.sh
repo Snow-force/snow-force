@@ -15,7 +15,10 @@ case "$REDIS_PASSWORD" in
   *[!a-f0-9]*) printf '%s\n' 'Redis password must be hexadecimal.' >&2; exit 1 ;;
 esac
 
-mkdir /tmp/snowforce-redis-tls
+# Railway restarts retain the container's temporary directory. Recreate the
+# runtime files without failing when the protected directory already exists.
+mkdir -p /tmp/snowforce-redis-tls
+chmod 700 /tmp/snowforce-redis-tls
 printf '%s\n' "$REDIS_TLS_CERT" > /tmp/snowforce-redis-tls/server.pem
 printf '%s\n' "$REDIS_TLS_KEY" > /tmp/snowforce-redis-tls/server-key.pem
 printf '%s\n' "$REDIS_CA_CERT" > /tmp/snowforce-redis-tls/ca.pem
