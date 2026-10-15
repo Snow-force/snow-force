@@ -13,12 +13,19 @@ export class CommerceNotFoundError extends Error {
 export class CommerceRejectedError extends Error {
   constructor() { super("The requested commerce change was rejected."); this.name = "CommerceRejectedError"; }
 }
+export class CommerceCheckoutLockedError extends CommerceRejectedError {
+  constructor() { super(); this.name = "CommerceCheckoutLockedError"; this.message = "Review the existing checkout before changing this cart."; }
+}
 export class CommerceSalesDisabledError extends CommerceRejectedError {
   constructor() { super(); this.name = "CommerceSalesDisabledError"; this.message = "Shopping is temporarily paused."; }
 }
 const salesDisabledResponse = z.object({
   type: z.literal("not_allowed"),
   message: z.literal("The shop is open for administration only. Sales and payment operations are disabled."),
+});
+const checkoutLockedResponse = z.object({
+  type: z.literal("conflict"),
+  message: z.literal("Check the current quote and payment before changing this cart."),
 });
 export type CommerceConfig = { backendUrl: string; publishableKey: string };
 export type CommerceRequest = <Schema extends z.ZodTypeAny>(path: string, response: Schema, options?: { method?: "GET" | "POST" | "DELETE"; body?: unknown; token?: string }) => Promise<z.output<Schema>>;
@@ -51,6 +58,9 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
         console.warn("[shop.commerce] sales-disabled", { method: options.method ?? "GET", path: decoded, httpStatus: response.status });
         throw new CommerceSalesDisabledError();
       }
+      // This exact edit boundary can reject payment sessions OR quote evidence.
+      // Do not label unrelated inventory, pricing or validation errors as locks.
+      if (response.status === 409 && options.method === "POST" && /^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+\/edit$/.test(decoded) && checkoutLockedResponse.safeParse(body).success) throw new CommerceCheckoutLockedError();
       throw new CommerceRejectedError();
     }
     if (!response.ok) throw new CommerceUnavailableError();

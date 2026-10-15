@@ -9,6 +9,7 @@ import { categoryHref, type StoreCategory } from "@/lib/shop/navigation";
 import { useShopCart } from "./shop-provider";
 import { ProductCard } from "./product-card";
 import { ProductPhoto } from "./product-photo";
+import { LoadingSpinner } from "./loading-status";
 
 export function ProductDetail({ product, related, categories = [] }: { product: StoreProduct; related: StoreProduct[]; categories?: StoreCategory[] }) {
   const { lang } = useLanguage();
@@ -32,12 +33,12 @@ export function ProductDetail({ product, related, categories = [] }: { product: 
     <div className="mt-6 grid items-start gap-7 lg:grid-cols-[1.05fr_1fr] lg:gap-12"><ProductPhoto product={product} /><div className="lg:sticky lg:top-40">
       <p className="shop-eyebrow">{product.brand}</p><h1 className="mt-4 text-[28px] font-semibold leading-tight tracking-tight sm:text-[36px]">{product.name[lang]}</h1><p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-[#666]">{product.description[lang]}</p>
       <div className="mt-5 rounded-xl bg-[#f5f5f7] p-5"><p className="text-[30px] font-semibold leading-none">{price === null ? text("Currently unavailable", "暂不可售") : formatStorePrice(price, lang)}</p>{variant?.originalPrice !== null && variant?.originalPrice !== undefined && price !== null && variant.originalPrice > price && <p className="mt-3 text-sm text-[#777] line-through">{formatStorePrice(variant.originalPrice, lang)}</p>}<p className="mt-3 text-xs text-[#666]">USD{!variant && product.variants.length > 1 ? text(" · from", " · 起") : ""}</p></div>
-      <form id="product-options" onSubmit={submit} className="mt-6 scroll-mt-40 space-y-5">
+      <form id="product-options" onSubmit={submit} aria-busy={busy} className="mt-6 scroll-mt-40 space-y-5">
         {product.options.map((option) => <fieldset key={option.id}><legend className="mb-3 text-sm font-semibold">{option.title[lang]}</legend><div className="flex flex-wrap gap-2">{option.values.map(({ value, label }) => <label key={value} className={`shop-option ${choices[option.id] === value ? "shop-option-selected" : ""}`}><input type="radio" name={option.id} className="sr-only" checked={choices[option.id] === value} onChange={() => { setChoices((previous) => ({ ...previous, [option.id]: value })); setQuantity(1); setError(""); }} /><span>{label[lang]}</span></label>)}</div></fieldset>)}
         <div className="flex flex-wrap items-center justify-between gap-4"><span className="text-sm font-semibold">{text("Quantity", "数量")}</span><div className="flex items-center gap-5"><button type="button" className="shop-icon-button" aria-label={text("Decrease quantity", "减少数量")} disabled={quantity <= 1 || busy} onClick={() => setQuantity((value) => value - 1)}><Minus size={15} /></button><span>{quantity}</span><button type="button" className="shop-icon-button" aria-label={text("Increase quantity", "增加数量")} disabled={quantity >= maxQuantity || busy} onClick={() => setQuantity((value) => value + 1)}><Plus size={15} /></button></div></div>
         <p role="status" className="text-sm text-[#666]">{variant ? variant.available ? text("Available to order", "可加入购物车") : text("This option is currently out of stock", "该规格目前缺货") : text("Select your options to check availability", "请选择规格，查看供货情况")}</p>
         {variant?.sku && <p className="text-xs text-[#777]">SKU: {variant.sku}</p>}
-        <button type="submit" className="btn-primary w-full gap-3" disabled={busy || !product.available || (variant !== null && !variant.available)}><ShoppingBag size={18} />{busy ? text("Updating cart…", "购物车更新中…") : text("Add to cart", "加入购物车")}</button>
+        <button type="submit" className="btn-primary w-full gap-3" disabled={busy || !product.available || (variant !== null && !variant.available)}>{busy ? <LoadingSpinner /> : <ShoppingBag size={18} />}{busy ? text("Updating cart…", "购物车更新中…") : text("Add to cart", "加入购物车")}</button>
         {error && <p role="alert" className="text-sm text-[#a12727]">{error}</p>}
       </form>
       <p className="mt-4 text-xs leading-relaxed text-[#777]">{text("Availability is checked again when adding and at checkout.", "加入购物车和结账时将重新核验库存与价格。")}</p>
