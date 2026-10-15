@@ -9,7 +9,7 @@ vi.mock("@/lib/members/actions", () => ({ confirmMemberPendingRegistrationAction
 vi.mock("@/lib/payments/actions", () => ({ createCheckoutSessionAction: vi.fn() }));
 vi.mock("@/lib/shop/after-sales-actions",()=>({getAfterSalesAction:vi.fn(),submitAfterSalesAction:vi.fn(),updateAfterSalesAction:vi.fn()}));
 import { saveShippingAddressAction, deleteShippingAddressAction } from "@/lib/shop/member-actions";
-import { MemberOrdersView } from "./member-orders-view";
+import { MemberOrdersView, OrderStatusBadge } from "./member-orders-view";
 import { MemberOrderDetail } from "./member-order-detail";
 import { MemberAddressesView } from "./member-addresses-view";
 import { MemberDashboard } from "./member-dashboard";
@@ -22,6 +22,26 @@ const wrap = (child: React.ReactNode, lang: "zh" | "en" = "zh") => render(<Langu
 const orders = { state: "ready" as const, orders: previewOrders, count: 3, page: 1, hasMore: false };
 
 describe("member order experience", () => {
+  it("shows a pickup point and collection progress for appointment orders", () => {
+    const order = { ...previewOrders[0], status: "processing" as const, fulfillmentStatus: "fulfilled" as const, shippingAddress: { ...previewOrders[0].shippingAddress!, pickup: true } };
+    wrap(<MemberOrderDetail profile={previewProfile} order={order} />, "en");
+    expect(screen.getByRole("heading", { name: "Pickup location" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pickup by appointment" })).toBeInTheDocument();
+    expect(screen.getByText("Ready for pickup", { selector: "ol p" }).closest("li")).toHaveAttribute("aria-current", "step");
+    expect(screen.getByText("Ready for pickup", { selector: "span" })).toBeInTheDocument();
+    expect(screen.getByText("Collected")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Shipments" })).not.toBeInTheDocument();
+  });
+  it.each(["zh", "en"] as const)("distinguishes collection, partial pickup and closed orders in %s", (lang) => {
+    const order = { ...previewOrders[0], shippingAddress: { ...previewOrders[0].shippingAddress!, pickup: true } };
+    const view = wrap(<OrderStatusBadge order={{ ...order, status: "delivered", fulfillmentStatus: "delivered" }} />, lang);
+    expect(screen.getByText(lang === "zh" ? "已领取" : "Collected")).toBeInTheDocument(); view.unmount();
+    const partial = wrap(<OrderStatusBadge order={{ ...order, status: "processing", fulfillmentStatus: "partially_fulfilled" }} />, lang);
+    expect(screen.getByText(lang === "zh" ? "部分商品可自提" : "Partially ready for pickup")).toBeInTheDocument(); partial.unmount();
+    wrap(<OrderStatusBadge order={{ ...order, status: "refunded", fulfillmentStatus: "delivered" }} />, lang);
+    expect(screen.getByText(lang === "zh" ? "已退款" : "Refunded")).toBeInTheDocument();
+    expect(screen.queryByText(lang === "zh" ? "已领取" : "Collected")).not.toBeInTheDocument();
+  });
   it.each(["zh", "en"] as const)("uses one bilingual navigation for orders and existing account pages: %s", (lang) => {
     wrap(<MemberOrdersView profile={previewProfile} result={orders} filter="all" />, lang);
     const nav = screen.getByRole("navigation", { name: lang === "zh" ? "会员中心导航" : "Member navigation" });

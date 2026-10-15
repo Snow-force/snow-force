@@ -1,5 +1,6 @@
 import { BigNumber, MathBN } from "@medusajs/framework/utils";
 import { z } from "zod";
+import { orderPickupSelected } from "./local-pickup";
 
 const amount = z.union([z.instanceof(BigNumber), z.number().finite(), z.string().regex(/^-?\d+(?:\.\d+)?$/)])
   .transform((value) => MathBN.convert(value)).refine((value) => MathBN.gte(value, 0) && MathBN.lte(value, 20_000_000));
@@ -10,6 +11,8 @@ const text = z.string().max(300);
 export const nativePaymentStatuses = ["not_paid", "awaiting", "authorized", "partially_authorized", "captured", "partially_captured", "partially_refunded", "refunded", "canceled", "requires_action"] as const;
 export const nativeFulfillmentStatuses = ["not_fulfilled", "partially_fulfilled", "fulfilled", "partially_shipped", "shipped", "partially_delivered", "delivered", "canceled"] as const;
 const nativeOrder = z.object({
+  region_id: z.string().nullable().optional(), metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  shipping_methods: z.array(z.object({ shipping_option_id: z.string(), amount: amount.transform(value => MathBN.convert(value).toNumber()) })).optional(),
   id: z.string().regex(/^order_[A-Za-z0-9]+$/), customer_id: z.string().nullable(), version: z.coerce.number().int().positive(),
   display_id: z.union([z.number().int(), text]), custom_display_id: text.nullish(), status: z.enum(["pending", "completed", "draft", "archived", "canceled", "requires_action"]), currency_code: z.literal("usd"),
   payment_status: z.enum(nativePaymentStatuses), fulfillment_status: z.enum(nativeFulfillmentStatuses),
@@ -20,7 +23,7 @@ const nativeOrder = z.object({
     thumbnail: z.string().max(2000).nullish(), quantity: z.coerce.number().int().positive().max(10_000), unit_price: amount, subtotal: amount,
     detail: z.object({ return_received_quantity: z.coerce.number().int().nonnegative().default(0), return_dismissed_quantity: z.coerce.number().int().nonnegative().default(0) }).nullish(),
   })).min(1).max(100),
-  shipping_address: z.object({ first_name: text.nullish(), last_name: text.nullish(), address_1: text, address_2: text.nullish(), city: text, province: text, postal_code: text, country_code: z.literal("us") }).nullable(),
+  shipping_address: z.object({ first_name: text.nullish(), last_name: text.nullish(), address_1: text, address_2: text.nullish(), city: text, province: text, postal_code: text, country_code: z.literal("us"), phone: text.nullish() }).nullable(),
   fulfillments: z.array(z.object({
     id: text.min(1), canceled_at: date.nullable(), shipped_at: date.nullable(), delivered_at: date.nullable(),
     items: z.array(z.object({ line_item_id: text.nullable() })),
@@ -29,7 +32,7 @@ const nativeOrder = z.object({
   })).max(50),
 });
 
-export const orderSnapshotFields = ["id", "customer_id", "version", "status", "display_id", "custom_display_id", "currency_code", "item_subtotal", "shipping_subtotal", "tax_total", "discount_subtotal", "credit_line_total", "total", "created_at", "updated_at", "items.*", "items.detail.*", "shipping_address.*", "fulfillments.*", "fulfillments.items.*", "fulfillments.labels.*"];
+export const orderSnapshotFields = ["region_id", "metadata", "shipping_methods.shipping_option_id", "shipping_methods.amount","id", "customer_id", "version", "status", "display_id", "custom_display_id", "currency_code", "item_subtotal", "shipping_subtotal", "tax_total", "discount_subtotal", "credit_line_total", "total", "created_at", "updated_at", "items.*", "items.detail.*", "shipping_address.*", "fulfillments.*", "fulfillments.items.*", "fulfillments.labels.*"];
 const cents = (value: Parameters<typeof MathBN.mult>[0]) => Math.round(MathBN.mult(value, 100).toNumber());
 function https(value: string) { try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password ? url.href : null; } catch { return null; } }
 
@@ -54,6 +57,7 @@ export function orderSnapshot(input: unknown, userId: string) {
   const status = order.status === "canceled" ? "cancelled" : order.payment_status === "refunded" ? "refunded" : order.fulfillment_status === "delivered" ? "delivered" : ["shipped", "partially_shipped", "partially_delivered"].includes(order.fulfillment_status) ? "shipped" : ["authorized", "captured", "partially_refunded"].includes(order.payment_status) ? "processing" : "pending";
   const ids = new Set(order.items.map((item) => item.id));
   const address = order.shipping_address;
+  const pickup = orderPickupSelected({ ...order, shipping_address: address ? { first_name: address.first_name ?? "", last_name: address.last_name ?? null, address_1: address.address_1, address_2: address.address_2 ?? null, city: address.city, province: address.province, postal_code: address.postal_code, country_code: address.country_code, phone: address.phone ?? "" } : null }, shipping);
   return {
     id: order.id, user_id: userId, order_number: order.custom_display_id || String(order.display_id), status, currency: "usd" as const,
     subtotal_cents: subtotal, shipping_cents: shipping, tax_cents: tax, discount_cents: discount, credit_cents: credit, rounding_cents: rounding, total_cents: total,
@@ -64,7 +68,7 @@ export function orderSnapshot(input: unknown, userId: string) {
       const common = { carrier, status: fulfillment.delivered_at ? "delivered" : fulfillment.shipped_at ? "shipped" : "preparing", shippedAt: fulfillment.shipped_at, deliveredAt: fulfillment.delivered_at, itemIds: [...new Set(fulfillment.items.flatMap((item) => item.line_item_id && ids.has(item.line_item_id) ? [item.line_item_id] : []))] };
       return fulfillment.labels.length ? fulfillment.labels.map((label) => ({ ...common, id: label.id, trackingNumber: label.tracking_number, trackingUrl: https(label.tracking_url) })) : [{ ...common, id: fulfillment.id, trackingNumber: "", trackingUrl: null }];
     }),
-    shipping_address: address ? { name: [address.first_name, address.last_name].filter(Boolean).join(" "), address1: address.address_1, address2: address.address_2 ?? "", city: address.city, state: address.province.toUpperCase(), postalCode: address.postal_code, countryCode: "US" as const } : null,
+    shipping_address: address ? { ...(pickup ? { pickup: true } : {}), name: [address.first_name, address.last_name].filter(Boolean).join(" "), address1: address.address_1, address2: address.address_2 ?? "", city: address.city, state: address.province.toUpperCase(), postalCode: address.postal_code, countryCode: "US" as const } : null,
     created_at: order.created_at, updated_at: order.updated_at,
   };
 }

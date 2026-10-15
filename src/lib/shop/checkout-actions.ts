@@ -30,9 +30,9 @@ async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>)
   const raw = cart.shipping_address;
   const parsed = checkoutAddressSchema.safeParse(raw ? { name: [raw.first_name, raw.last_name].filter(Boolean).join(" "), phone: raw.phone ?? "", address1: raw.address_1 ?? "", address2: raw.address_2 ?? "", city: raw.city ?? "", state: raw.province ?? "", postalCode: raw.postal_code ?? "", countryCode: raw.country_code?.toUpperCase() } : null);
   const publishableKey = process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY ?? "";
-  const options = parsed.success ? await repository.shippingOptions() : [];
+  const options = parsed.success && !status.pickupSelected ? await repository.shippingOptions() : [];
   const selected = cart.shipping_methods.length === 1 ? cart.shipping_methods[0] : null;
-  const selectedOptionId = selected && options.some((option) => option.id === selected.shipping_option_id && Math.round(option.price * 100) === Math.round(selected.amount * 100)) ? selected.shipping_option_id : null;
+  const selectedOptionId = selected && ((status.pickupSelected && status.pickupOffer?.id === selected.shipping_option_id && selected.amount === 0) || options.some((option) => option.id === selected.shipping_option_id && Math.round(option.price * 100) === Math.round(selected.amount * 100))) ? selected.shipping_option_id : null;
   return { ...status, configured: status.configured && /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publishableKey), cart: cartSnapshot(cart), address: parsed.success ? parsed.data : null, options, selectedOptionId };
 }
 export async function getShopCheckoutAction(): Promise<CheckoutResult> {
@@ -76,6 +76,9 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
     if (change.kind === "address") {
       if (current.paymentStarted) return { status: "rejected" };
       await repository.address(change.address);
+    } else if (change.kind === "pickup") {
+      if (current.paymentStarted || !current.pickupOffer) return { status: "rejected" };
+      await repository.pickup(change.contact);
     } else if (change.kind === "shipping") {
       if (current.paymentStarted || !current.address || !current.options.some((option) => option.id === change.optionId)) return { status: "rejected" };
       await repository.shipping(change.optionId);

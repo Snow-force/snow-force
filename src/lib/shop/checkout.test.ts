@@ -17,7 +17,7 @@ const policy: ShopPublishedPolicy = {
     },
   },
 };
-const review = { status: "review", fingerprint, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null };
+const review = { status: "review", fingerprint, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null, pickupOffer: null, pickupSelected: false };
 
 describe("checkout policy consent contract", () => {
   it("accepts only reconciled exact cents and a minimal authenticated quote command", () => {

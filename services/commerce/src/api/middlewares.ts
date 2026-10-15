@@ -44,6 +44,9 @@ export default defineMiddlewares({ routes: [{
   matcher: "/store/snowforce/checkout/:id/shipping-options", methods: ["GET"],
   middlewares: [authenticate("customer", ["bearer"]), requireOwnedCart],
 }, {
+  matcher: "/store/snowforce/checkout/:id/pickup", methods: ["POST"],
+  middlewares: [authenticate("customer", ["bearer"])],
+}, {
   matcher: "/store/snowforce/orders/:id", methods: ["GET"],
   middlewares: [authenticate("customer", ["bearer"])],
 }, {

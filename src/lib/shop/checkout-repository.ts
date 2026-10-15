@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { nativeCartSchema, CART_FIELDS, prepareCartEdit } from "./commerce-cart";
 import { CommerceAuthorizationError, type CommerceRequest } from "./commerce-client";
-import { checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, nativeCheckoutAddress, type CheckoutAddress } from "./checkout";
+import { checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutPickupContactSchema, nativeCheckoutAddress, type CheckoutAddress, type CheckoutPickupContact } from "./checkout";
 import { commerceId, usdAmount } from "./storefront";
 
 const nativeAddress = z.object({ first_name: z.string().nullable(), last_name: z.string().nullable(), address_1: z.string().nullable(), address_2: z.string().nullable(), city: z.string().nullable(), province: z.string().nullable(), postal_code: z.string().nullable(), country_code: z.string().nullable(), phone: z.string().nullable() });
@@ -36,6 +36,9 @@ export function createCheckoutRepository(request: CommerceRequest, customer: { c
       const option_id = commerceId("so").parse(optionId);
       await prepareCartEdit(request, customer.token, id);
       await request(`${path}/shipping-methods?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { option_id } });
+    },
+    async pickup(contact: CheckoutPickupContact) {
+      return request(`/store/snowforce/checkout/${id}/pickup`, z.object({ status: z.literal("pickup-saved") }).strict(), { ...options, method: "POST", body: checkoutPickupContactSchema.parse(contact) });
     },
     async quote() { return request(`/store/snowforce/checkout/${id}/quote`, checkoutQuoteResponseSchema, { ...options, method: "POST", body: {} }); },
     async payment(fingerprint: string, policyVersion: number) { return request(`/store/snowforce/checkout/${id}`, checkoutStatusSchema, { ...options, method: "POST", body: { kind: "prepare", fingerprint, policyVersion, agreed: true } }); },

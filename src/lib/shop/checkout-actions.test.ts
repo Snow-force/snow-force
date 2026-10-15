@@ -7,7 +7,7 @@ vi.mock("./order-sync", () => ({ syncOwnedMemberOrder: mocks.syncOrder }));
 import { getShopCheckoutAction, changeShopCheckoutAction } from "./checkout-actions";
 import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { fixtureCart } from "./shop.fixtures";
-import { nativeCheckoutAddress, type CheckoutAddress, type CheckoutTaxQuote } from "./checkout";
+import { nativeCheckoutAddress, type CheckoutAddress, type CheckoutTaxQuote, type CheckoutReview } from "./checkout";
 import { shopPublishedPolicySchema } from "./policies";
 const policy = shopPublishedPolicySchema.parse({ schema_version: 1, version: 1, effective_at: "2026-01-01T00:00:00.000Z", content: {
   seller_name: "Fixture seller", customer_service_email: "support@example.test",
@@ -18,7 +18,7 @@ const address: CheckoutAddress = { name: "Fixture Rider", phone: "5551234567", a
 const taxQuote: CheckoutTaxQuote = { totalCents: 8990, grossCents: 7995, discountCents: 0, merchandiseCents: 7995, shippingCents: 995, salesTaxCents: 0, fees: [], expiresAt: 2000000000, ready: true };
 const fingerprint = "a".repeat(64);
 const nativeCart = { ...fixtureCart, total: 89.9, shipping_total: 9.95, shipping_address: nativeCheckoutAddress(address), shipping_methods: [{ shipping_option_id: "so_fixture", name: "US standard", amount: 9.95 }] };
-let review: { status: "review"; cart: typeof nativeCart; fingerprint: string; paymentStarted: boolean; configured: boolean; policy: typeof policy | null; policyAccepted: boolean; taxQuote: CheckoutTaxQuote | null };
+let review: { status: "review"; cart: typeof nativeCart; fingerprint: string; paymentStarted: boolean; configured: boolean; policy: typeof policy | null; policyAccepted: boolean; taxQuote: CheckoutTaxQuote | null; pickupOffer?: CheckoutReview["pickupOffer"]; pickupSelected?: boolean };
 describe("owned checkout commands", () => {
   beforeEach(() => {
     vi.resetAllMocks(); vi.stubEnv("NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY", "pk_test_fixture");
@@ -27,6 +27,7 @@ describe("owned checkout commands", () => {
     mocks.context.mockResolvedValue({ customer: { customerId: "cus_fixture", email: "verified@example.com", token: "trusted-token", request: mocks.request }, cartId: "cart_fixture" });
     mocks.request.mockImplementation(async (path, schema, options) => {
       if (path.endsWith("/edit")) return schema.parse({ status: "editable", quote_removed: true, review_required: true });
+      if (path.endsWith("/pickup")) return schema.parse({ status: "pickup-saved" });
       if (path.endsWith("/quote")) { review.taxQuote = taxQuote; const { ready: _ready, ...amounts } = taxQuote; return schema.parse({ status: "quoted", reused: false, taxQuote: amounts }); }
       if (path.endsWith("/shipping-options")) return schema.parse({ shipping_options: [{ id: "so_fixture", name: "US standard", calculated_price: { currency_code: "usd", calculated_amount: 9.95 } }] });
       if (path.startsWith("/store/snowforce/checkout/")) return schema.parse(options?.method === "POST" ? options.body.kind === "recover" ? { status: "recovered", unlocked: false } : options.body.kind === "complete" ? { status: "complete", order: { id: "order_fixture", number: "1001", total: 89.9 } } : { status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd" } : review);
@@ -36,6 +37,26 @@ describe("owned checkout commands", () => {
   it("rejects client amounts, email, cart identity and invalid addresses before authentication", async () => {
     for (const value of [{ kind: "payment", policyVersion: 1, agreed: true, fingerprint, total: 0.01 }, { kind: "complete", cartId: "cart_other" }, { kind: "address", address: { ...address, email: "attacker@example.com" } }, { kind: "address", address: { ...address, countryCode: "CN" } }]) expect(await changeShopCheckoutAction(value)).toEqual({ status: "invalid" });
     expect(mocks.context).not.toHaveBeenCalled();
+  });
+  it("saves only the contact and appointment confirmation for a configured pickup point", async () => {
+    const contact = { name: "Fixture Rider", phone: "5551234567", appointmentConfirmed: true };
+    const input = { kind: "pickup", contact };
+    expect(await changeShopCheckoutAction(input)).toEqual({ status: "rejected" });
+    review.pickupOffer = { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture warehouse", address: { address_1: "1 Test Plaza", address_2: null, city: "Irvine", province: "ca", postal_code: "92614", country_code: "us" } };
+    expect(await changeShopCheckoutAction(input)).toMatchObject({ status: "review" });
+    expect(mocks.request).toHaveBeenCalledWith("/store/snowforce/checkout/cart_fixture/pickup", expect.anything(), { token: "trusted-token", method: "POST", body: contact });
+    for (const changed of [{ ...input, contact: { ...contact, appointmentConfirmed: false } }, { ...input, contact: { ...contact, address1: "Customer home" } }, { ...input, price: 0 }]) expect(await changeShopCheckoutAction(changed)).toEqual({ status: "invalid" });
+    review.paymentStarted = true;
+    expect(await changeShopCheckoutAction(input)).toEqual({ status: "rejected" });
+  });
+  it("recognizes a verified zero-cost pickup without querying delivery alternatives", async () => {
+    review.pickupOffer = { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture warehouse", address: { address_1: "1 Test Plaza", address_2: null, city: "Irvine", province: "ca", postal_code: "92614", country_code: "us" } };
+    review.pickupSelected = true;
+    review.cart = { ...nativeCart, shipping_methods: [{ shipping_option_id: "so_pickup", name: "Appointment pickup", amount: 0 }] };
+    expect(await getShopCheckoutAction()).toMatchObject({ status: "review", selectedOptionId: "so_pickup", options: [] });
+    expect(mocks.request.mock.calls.some(([path]) => path.endsWith("/shipping-options"))).toBe(false);
+    review.cart.shipping_methods[0].amount = 1;
+    expect(await getShopCheckoutAction()).toMatchObject({ status: "review", selectedOptionId: null });
   });
   it("handles empty or unverified accounts without creating payment", async () => {
     mocks.context.mockResolvedValue({ customer: {}, cartId: null });

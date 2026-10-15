@@ -1,12 +1,12 @@
 import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils";
 import type { CalculateShippingOptionPriceDTO } from "@medusajs/framework/types";
 import { z } from "zod";
-import { calculatedShippingCents, shippingPolicySchema, snowforceShippingCode } from "../../lib/shipping-policy";
+import { calculatedShippingCents, shippingPolicySchema, snowforceShippingCode, snowforcePickupCode } from "../../lib/shipping-policy";
 
-const optionSchema = z.object({ id: z.literal(snowforceShippingCode), snowforce_option_id: z.string().regex(/^so_[a-zA-Z0-9]+$/).optional() });
+const optionSchema = z.object({ id: z.enum([snowforceShippingCode, snowforcePickupCode]), snowforce_option_id: z.string().regex(/^so_[a-zA-Z0-9]+$/).optional() });
 export default class SnowforceFulfillment extends AbstractFulfillmentProviderService {
   static identifier = "snowforce_us";
-  async getFulfillmentOptions() { return [{ id: snowforceShippingCode }]; }
+  async getFulfillmentOptions() { return [{ id: snowforceShippingCode }, { id: snowforcePickupCode }]; }
   async validateOption(data: Record<string, unknown>) { return optionSchema.safeParse(data).success; }
   async canCalculate() { return true; }
   async validateFulfillmentData(_optionData: Record<string, unknown>, _data: Record<string, unknown>) { return {}; }
@@ -15,6 +15,7 @@ export default class SnowforceFulfillment extends AbstractFulfillmentProviderSer
     const quotes = z.record(z.string(), z.object({ policy: shippingPolicySchema, item_cents: z.number().int().nonnegative() })).parse(context.snowforce_shipping_quotes);
     const quote = quotes[option.snowforce_option_id];
     if (!quote) throw new Error("Shipping pricing is unavailable. Review the database policy.");
+    if (option.id === snowforcePickupCode && quote.policy.fee_cents !== 0) throw new Error("Pickup must be free.");
     return { calculated_amount: calculatedShippingCents(quote.policy, quote.item_cents) / 100, is_calculated_price_tax_inclusive: false };
   }
   // Self fulfillment uses native Admin tracking, without purchasing labels or contacting carriers.

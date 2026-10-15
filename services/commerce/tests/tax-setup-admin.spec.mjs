@@ -9,7 +9,7 @@ globalThis.getComputedStyle=dom.window.getComputedStyle;globalThis.IS_REACT_ACT_
 Object.defineProperty(globalThis,"navigator",{value:dom.window.navigator,configurable:true});require("ts-node/register/transpile-only");
 const React=require("react"),{createRoot}=require("react-dom/client"),setup=require("../src/lib/tax-setup.ts"),Page=require("../src/admin/routes/snowforce-tax-setup/page.tsx").default;
 const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json"}});
-const payload=async()=>({snapshot:await setup.readStripeTaxSetup(setupReaderFixture(),()=>setupTime),policy_confirmed:false,integration_ready:false,checkout_ready:false});
+const payload=async()=>({snapshot:await setup.readStripeTaxSetup(setupReaderFixture(),()=>setupTime),policy_confirmed:false,integration_ready:true,checkout_ready:false});
 async function mount(t,handler) {
   const calls=[],previous=globalThis.fetch;globalThis.fetch=async(url,options)=>{calls.push({url,options});return handler(calls.length);};
   const container=document.createElement("div");document.body.append(container);const root=createRoot(container);
@@ -20,9 +20,18 @@ async function mount(t,handler) {
 test("admin tax setup shows actual mode and registrations without offering activation or writes",async t=>{
   const app=await mount(t,async()=>response(await payload()));
   assert.ok(app.container.textContent.includes("Sandbox"));assert.ok(app.container.textContent.includes("taxreg_fixture"));assert.ok(app.container.textContent.includes("checkout remains unavailable"));assert.ok(app.container.textContent.includes("confirmation pending"));
+  assert.ok(app.container.textContent.includes("refund reversals are integrated"));assert.ok(!app.container.textContent.includes("still being connected"));
   assert.equal(app.container.querySelectorAll("input,select,textarea").length,0);assert.equal(app.calls[0].url,"/admin/snowforce/tax/setup");assert.equal(app.calls[0].options.cache,"no-store");assert.equal(app.calls[0].options.credentials,"include");
   assert.deepEqual([...app.container.querySelectorAll("a")].map(link=>link.href),["https://dashboard.stripe.com/settings/tax","https://dashboard.stripe.com/tax/locations"]);
   await app.reload();assert.equal(app.calls.length,2);assert.ok(app.calls.every(call=>!call.options.method&&!call.options.body));
+});
+
+test("open runtime gates still explain the independent per-order checks",async t=>{
+  const value={...await payload(),policy_confirmed:true,checkout_ready:true};
+  const app=await mount(t,async()=>response(value));
+  assert.ok(app.container.textContent.includes("Payment runtime gates are open"));
+  assert.ok(app.container.textContent.includes("each order still requires policy, item, address and quote checks"));
+  assert.ok(!app.container.textContent.includes("checkout remains unavailable"));
 });
 test("failed refresh discards the previous ready snapshot and a retry can recover",async t=>{
   const app=await mount(t,async count=>count===2?response({},503):response(await payload()));

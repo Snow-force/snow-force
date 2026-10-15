@@ -27,7 +27,7 @@ function MemberAfterSalesFlow({orderId,initial}:{orderId:string;initial:AfterSal
   const inputClass="mt-2 min-h-11 w-full rounded-lg border border-[#dce2d9] bg-white px-3 text-sm";
   return <section aria-label={t({en:"Returns and exchanges",zh:"退货与换货"})} className="rounded-[18px] border border-[#dce2d9] bg-white p-5 sm:p-7">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{t({en:"Returns and exchanges",zh:"退货与换货"})}</h2><button type="button" disabled={busy} onClick={refresh} className="min-h-10 text-sm text-[#0066cc] disabled:opacity-50">{t({en:"Refresh",zh:"刷新进度"})}</button></div>
-    <p className="mt-3 text-sm leading-6 text-[#687163]">{t({en:"Choose delivered items and tell us what happened. Wait for approval and return instructions before sending your gear back.",zh:"请选择已送达的商品并说明原因。收到审核结果和退回指引后，再寄回装备。"})}</p>
+    <p className="mt-3 text-sm leading-6 text-[#687163]">{t({en:"Choose items you have received and tell us what happened. Wait for approval and return instructions before sending your gear back.",zh:"请选择已收到的商品并说明原因。收到审核结果和退回指引后，再寄回装备。"})}</p>
     {data&&<MemberPurchaseTerms purchase={data.purchase??null} />}
     <div role="status" className="mt-3 text-sm leading-6">{notice==="saved"?t({en:"Request updated.",zh:"申请进度已更新。"}):notice==="invalid"?t({en:"Select an item and enter a description of 5–2,000 characters.",zh:"请至少选择一件商品，并填写 5–2,000 字的原因说明。"}):notice==="signed-out"?t({en:"Sign in with your verified SnowForce account to continue.",zh:"请登录已验证的 SnowForce 账号后继续。"}):notice==="rejected"?t({en:"This request or its available quantities changed. Refresh before retrying.",zh:"申请状态或可退数量已变化，请先刷新再重试。"}):notice==="unavailable"?t({en:"Unable to load or update requests. Refresh to check the latest status before retrying.",zh:"暂时无法读取或更新申请，请刷新确认最新进度后重试。"}):null}</div>
     {data?.requests.map((request)=><article key={request.id} className="mt-5 border-t border-[#edf0e9] pt-5">
@@ -46,6 +46,6 @@ function MemberAfterSalesFlow({orderId,initial}:{orderId:string;initial:AfterSal
       <label className="block text-sm">{t({en:"Description / preferred exchange size or color",zh:"原因说明 / 希望更换的尺码或颜色"})}<textarea name="description" required minLength={5} maxLength={2000} rows={4} className={`${inputClass} py-3`}/></label>
       <button className="min-h-11 rounded-lg bg-[#1d3430] px-5 text-sm font-semibold text-white disabled:opacity-50">{busy?t({en:"Submitting…",zh:"提交中…"}):t({en:"Submit for review",zh:"提交审核"})}</button>
     </fieldset></form>}
-    {data&&!active&&!data.eligibleItems.length&&<p className="mt-4 text-sm text-[#687163]">{t({en:"There are currently no delivered items available for a new request.",zh:"当前没有可提交新申请的已送达商品。"})}</p>}
+    {data&&!active&&!data.eligibleItems.length&&<p className="mt-4 text-sm text-[#687163]">{t({en:"There are currently no received items available for a new request.",zh:"当前没有可提交新申请的已收货商品。"})}</p>}
   </section>;
 }

@@ -1,6 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Button, Container, Heading, Input, Label, Select, Text } from "@medusajs/ui";
 import { useEffect, useState } from "react";
+import type { PickupOffer } from "../../../lib/local-pickup";
 
 type Option = { id: string; policy: { fee_cents: number; free_threshold_cents: number } };
 export default function SnowforceShippingPage() {
@@ -37,6 +38,40 @@ export default function SnowforceShippingPage() {
       <Button disabled={status === "saving"} onClick={save}>{status === "saving" ? "保存中 / Saving…" : "保存 / Save"}</Button>
     </>}
     <div role="status">{status === "saved" && "已保存 / Saved"}{status === "error" && "无法读取或保存，请重试 / Unable to load or save. Please retry."}{status === "invalid" && "请输入最多两位小数的美元金额 / Enter a dollar amount with at most two decimal places."}</div>
+    <PickupSettings />
   </Container>;
 }
 export const config = defineRouteConfig({ label: "SnowForce shipping" });
+
+function PickupSettings() {
+  const [offer, setOffer] = useState<PickupOffer | null>(null);
+  const [state, setState] = useState("loading");
+  const [reviewed, setReviewed] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    fetch("/admin/snowforce/shipping/pickup", { credentials: "include" }).then(async response => {
+      if (!response.ok) throw new Error("Pickup settings unavailable");
+      return response.json() as Promise<{ pickupOffer: PickupOffer | null }>;
+    }).then(data => { if (mounted) { setOffer(data.pickupOffer); setState("ready"); } }).catch(() => { if (mounted) setState("error"); });
+    return () => { mounted = false; };
+  }, []);
+  async function enable() {
+    if (!reviewed || state !== "ready") return;
+    setState("saving");
+    try {
+      const response = await fetch("/admin/snowforce/shipping/pickup", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm_review: true }) });
+      if (!response.ok) throw new Error("Pickup setup needs review");
+      const data: { pickupOffer: PickupOffer } = await response.json();
+      setOffer(data.pickupOffer); setState("ready");
+    } catch { setState("error"); }
+  }
+  return <div className="space-y-4 border-t pt-6">
+    <Heading level="h2">免费预约自提 / Free appointment pickup</Heading>
+    <Text>顾客先联系客服预约，再在网站选择自提、确认预约并付款。自提费为 US$0；税费按已配置的加州自提地点计算。 / Customers contact support first, confirm their appointment at checkout and pay online. Pickup is free; tax uses the configured California pickup location.</Text>
+    {state === "loading" ? <Text>加载中 / Loading…</Text> : state === "error" ? <Text role="alert">自提设置需要核对，请重新载入并检查仓库、销售渠道及配送模板。 / Reload and review the warehouse, sales channel and shipping profile.</Text> : offer ? <div role="status"><Text>已启用 / Enabled · {offer.name}</Text><Text>{offer.address.address_1}, {offer.address.address_2} · {offer.address.city}, CA {offer.address.postal_code}</Text></div> : <>
+      <Text>启用前，请在原生库存地点页面核对默认仓库地址，并确认该地点接受预约自提。 / Before enabling, check the default warehouse address in Stock Locations and confirm appointment pickup is available there.</Text>
+      <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={reviewed} disabled={state === "saving"} onChange={event => setReviewed(event.target.checked)} /><span>我已核对当前默认仓库可供预约自提。 / I reviewed the default warehouse for appointment pickup.</span></label>
+      <Button disabled={!reviewed || state !== "ready"} onClick={enable}>{state === "saving" ? "配置中 / Configuring…" : "启用免费预约自提 / Enable free appointment pickup"}</Button>
+    </>}
+  </div>;
+}

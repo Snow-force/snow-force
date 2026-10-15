@@ -15,6 +15,7 @@ describe("member purchase policy and calendar deadlines",()=>{
    render(<LanguageProvider initialLang={lang}><MemberPurchaseTerms purchase={purchase()}/></LanguageProvider>);
    expect(screen.getByText(lang==="en"?/Policy version 3/:/政策版本 3/)).toBeInTheDocument();
    expect(screen.getByText(lang==="en"?/45 calendar days/:/45 个日历日/)).toBeInTheDocument();
+   expect(screen.getByText(lang==="en"?/after delivery or collection/:/送达或自提领取后/)).toBeInTheDocument();
    expect(screen.getByText(/Oct 20, 2026|2026年10月20日/)).toBeInTheDocument();
    fireEvent.click(screen.getByText(lang==="en"?"Read the policy accepted for this purchase":"查看购买时的完整政策"));
    expect(screen.getByRole("link",{name:"purchase@example.test"})).toHaveAttribute("href","mailto:purchase@example.test");

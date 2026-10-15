@@ -5,6 +5,13 @@ import type { CommerceRequest } from "./commerce-client";
 
 const customer = { customerId: "cus_fixture", token: "trusted-token", email: "verified@example.test" };
 describe("checkout payment-state recovery transport", () => {
+  it("sends a validated pickup contact without client location, amount or cart overrides", async () => {
+    const calls: unknown[] = [];
+    const request: CommerceRequest = async (path, schema, options) => { calls.push({ path, options }); return schema.parse({ status: "pickup-saved" }); };
+    const contact = { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true as const };
+    expect(await createCheckoutRepository(request, customer, "cart_fixture").pickup(contact)).toEqual({ status: "pickup-saved" });
+    expect(calls).toEqual([{ path: "/store/snowforce/checkout/cart_fixture/pickup", options: { token: "trusted-token", method: "POST", body: contact } }]);
+  });
   it("posts only the recovery command for the server-owned cart and bearer session", async () => {
     const requests: { path: string; options: unknown }[] = [];
     const request: CommerceRequest = async (path, schema, options) => {

@@ -28,6 +28,34 @@ const review: CheckoutReview = { status: "review", fingerprint: "a".repeat(64), 
 beforeEach(() => { vi.resetAllMocks(); mocks.get.mockResolvedValue(review); mocks.change.mockResolvedValue(review); mocks.reload.mockResolvedValue(undefined); });
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
 describe("checkout interface", () => {
+  it("requires an appointment confirmation, saves only contact details and refreshes the pickup tax quote", async () => {
+    const pickupOffer = { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture Irvine warehouse", address: { address_1: "1 Fixture Plaza", address_2: null, city: "Irvine", province: "ca" as const, postal_code: "92614", country_code: "us" as const } };
+    const pickupReview = { ...review, pickupOffer, pickupSelected: true, selectedOptionId: pickupOffer.id, options: [], address: { ...review.address!, address1: "1 Fixture Plaza", city: "Irvine", postalCode: "92614" }, fingerprint: "b".repeat(64), taxQuote: null, cart: { ...review.cart, shippingTotal: 0, total: 79.95 } };
+    mocks.get.mockResolvedValue({ ...review, pickupOffer });
+    mocks.change.mockResolvedValue(pickupReview);
+    view();
+    fireEvent.click(await screen.findByRole("radio", { name: "Appointment pickup · Free" }));
+    expect(screen.queryByLabelText("Street address")).not.toBeInTheDocument();
+    expect(screen.getByText("Fixture Irvine warehouse")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save free pickup" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "I have contacted SnowForce and confirmed my pickup appointment at this location." }));
+    fireEvent.click(screen.getByRole("button", { name: "Save free pickup" }));
+    await waitFor(() => expect(mocks.change).toHaveBeenCalledWith({ kind: "pickup", contact: { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true } }));
+    expect(await screen.findByText("Free pickup saved. Collect your order at your confirmed appointment; customer service will confirm it is ready.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Calculate tax & review total" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("radio", { name: "Delivery" }));
+    expect(screen.getByLabelText("Street address")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Calculate tax & review total" })).toBeDisabled();
+  });
+  it("locks the pickup contact and receiving mode after a payment starts", async () => {
+    mocks.get.mockResolvedValue({ ...review, paymentStarted: true, policyAccepted: true, pickupSelected: true, pickupOffer: { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture point", address: { address_1: "Test plaza", address_2: null, city: "Irvine", province: "ca", postal_code: "92614", country_code: "us" } } });
+    view();
+    expect(await screen.findByRole("radio", { name: "Appointment pickup · Free" })).toBeDisabled();
+    expect(screen.getByLabelText("Pickup name")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save free pickup" })).toBeDisabled();
+  });
   it("allows address and delivery first, then calculates the quote and requires fresh policy agreement", async () => {
     mocks.get.mockResolvedValue({ ...review, taxQuote: null });
     view();
@@ -263,7 +291,7 @@ describe("checkout interface", () => {
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.change(screen.getByLabelText("Street address"), { target: { value: "Updated test street" } });
     expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
-    expect(screen.getByText("Save your updated address before paying.")).toBeInTheDocument();
+    expect(screen.getByText("Save your delivery or pickup details before paying.")).toBeInTheDocument();
     expect(mocks.change).not.toHaveBeenCalled();
   });
   it("prevents payment while tax or delivery configuration is missing", async () => {

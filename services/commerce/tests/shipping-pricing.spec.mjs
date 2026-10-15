@@ -19,7 +19,7 @@ test("actual Medusa taxed/discounted line totals use USD 99.99/100.00 merchandis
 });
 test("the calculated provider reads current database values and ignores submitted client prices", async () => {
   let saved = policy;
-  const container = { resolve: () => ({ graph: async ({ entity }) => ({ data: entity === "cart" ? [{ id: "cart_fixture", currency_code: "usd", item_total: 108.24, item_tax_total: 8.25 }] : [{ id: "so_fixture", prices: shippingPriceRecords(saved).map(({ rules, ...record }) => ({ ...record, price_rules: rules })) }] }) }) };
+  const container = { resolve: () => ({ graph: async ({ entity }) => ({ data: entity === "cart" ? [{ id: "cart_fixture", currency_code: "usd", item_total: 108.24, item_tax_total: 8.25 }] : [{ id: "so_fixture", type: { code: "snowforce-us-standard" }, prices: shippingPriceRecords(saved).map(({ rules, ...record }) => ({ ...record, price_rules: rules })) }] }) }) };
   const service = new Service(); const option = { id: "snowforce-us-standard", snowforce_option_id: "so_fixture" };
   const calculate = async () => service.calculatePrice(option, { amount: 0, policy: { fee_cents: 0 } }, { snowforce_shipping_quotes: await readShippingQuotes("cart_fixture", container) });
   assert.deepEqual(await calculate(), { calculated_amount: 9.95, is_calculated_price_tax_inclusive: false });
@@ -31,7 +31,7 @@ test("the calculated provider reads current database values and ignores submitte
   await assert.rejects(() => service.calculatePrice({ ...option, snowforce_option_id: "so_missing" }, {}, { snowforce_shipping_quotes: {} }));
   assert.equal(await service.validateOption({ id: "invalid" }), false);
   assert.equal(await service.validateOption(option), true); assert.equal(await service.canCalculate(), true);
-  assert.deepEqual(await service.getFulfillmentOptions(), [{ id: "snowforce-us-standard" }]);
+  assert.deepEqual(await service.getFulfillmentOptions(), [{ id: "snowforce-us-standard" }, { id: "snowforce-local-pickup" }]);
   assert.deepEqual(await service.validateFulfillmentData(option, { amount: 0 }), {});
   assert.deepEqual(await service.createFulfillment(), { data: {}, labels: [] });
   assert.deepEqual(await service.createReturnFulfillment(), { data: {}, labels: [] });

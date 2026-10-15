@@ -13,7 +13,12 @@ import { MemberAccountShell, previewMemberHref } from "./member-account-shell";
 export function OrderStatusBadge({ order }: { order: ShopMemberOrder }) {
   const { t } = useLanguage();
   const tone = order.status === "delivered" ? "bg-[#eaf2e9] text-[#365c37]" : order.status === "cancelled" || order.status === "refunded" ? "bg-[#f0f1ef] text-[#616665]" : "bg-[#edf4fb] text-[#0555a1]";
-  return <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${tone}`}>{t(orderStatusLabels[order.status])}</span>;
+  const pickup = order.shippingAddress?.pickup === true;
+  const label = pickup && order.status === "delivered" ? { en: "Collected", zh: "已领取" }
+    : pickup && order.status === "processing" && order.fulfillmentStatus === "fulfilled" ? { en: "Ready for pickup", zh: "可自提" }
+    : pickup && order.status === "processing" && order.fulfillmentStatus === "partially_fulfilled" ? { en: "Partially ready for pickup", zh: "部分商品可自提" }
+    : orderStatusLabels[order.status];
+  return <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${tone}`}>{t(label)}</span>;
 }
 
 export function OrderReadNotice() {

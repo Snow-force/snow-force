@@ -5,6 +5,7 @@ import { MedusaError } from "@medusajs/framework/utils";
 import Stripe from "stripe";
 import { z } from "zod";
 import { adminTaxSetupSchema, taxRegistrationId, taxSetupSnapshotSchema, type TaxSetupSnapshot } from "./tax-setup-contract";
+import { isManagementMode } from "./operating-mode";
 
 export type StripeTaxSetupReader = { livemode: boolean; account(): Promise<unknown>; settings(): Promise<unknown>; registrations(cursor?: string): Promise<unknown> };
 export const taxSetupReaderRegistration = "snowforce_tax_setup_reader";
@@ -96,7 +97,10 @@ export async function readStripeTaxSetup(reader: StripeTaxSetupReader, now = clo
 }
 export async function adminStripeTaxSetup(scope: MedusaContainer, auth: AuthContext | undefined) {
   if (auth?.actor_type !== "user" || !/^user_[A-Za-z0-9]+$/.test(auth.actor_id)) throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Sign in to the shop admin.");
-  return adminTaxSetupSchema.parse({ snapshot: await readStripeTaxSetup(readerFor(scope)), policy_confirmed: process.env.COMMERCE_TAX_POLICY_CONFIRMED === "true", integration_ready: false, checkout_ready: false });
+  const snapshot = await readStripeTaxSetup(readerFor(scope));
+  const policyConfirmed = process.env.COMMERCE_TAX_POLICY_CONFIRMED === "true";
+  return adminTaxSetupSchema.parse({ snapshot, policy_confirmed: policyConfirmed, integration_ready: true,
+    checkout_ready: snapshot.api_ready && policyConfirmed && !isManagementMode() });
 }
 export async function assertActiveStripeTaxSetup(scope: MedusaContainer, expectedFingerprint?: string) {
   const snapshot = await readStripeTaxSetup(readerFor(scope));

@@ -7,6 +7,12 @@ const require = createRequire(import.meta.url);
 require("ts-node/register/transpile-only");
 const { ContainerRegistrationKeys } = require("@medusajs/framework/utils");
 const policy = require("../src/lib/shop-policy.ts");
+test("the unpublished policy draft describes customer-arranged free website pickup", () => {
+  const draft = policy.initialShopPolicyState();
+  assert.equal(draft.published_version, null);
+  assert.match(draft.draft.content.copy.shipping.en, /contact customer service.*choose pickup and pay on the website/);
+  assert.match(draft.draft.content.copy.shipping.zh, /先联系客服.*网站选择自提并付款/);
+});
 const routes = require("../src/api/admin/snowforce/policies/route.ts");
 const publicRoute = require("../src/api/store/snowforce/policies/route.ts");
 const key = "11111111-1111-4111-8111-111111111111";

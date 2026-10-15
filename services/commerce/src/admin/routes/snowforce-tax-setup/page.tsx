@@ -45,9 +45,10 @@ export default function SnowforceTaxSetupPage() {
         <Text>有效配送政府费用州 / Active retail-fee states: {result.snapshot.collecting_retail_fee_states.join(", ") || "—"}</Text>
         {result.snapshot.settings.missing_fields.length > 0 && <Text>缺少设置 / Missing: {result.snapshot.settings.missing_fields.join(", ")}</Text>}
         {result.snapshot.blockers.map(blocker => <Text key={blocker}>{blockerCopy[blocker]}</Text>)}
-        {result.snapshot.api_ready && <Text>Stripe API 设置核对通过；实际计税和付款尚未开放。 / Stripe API setup passed; checkout remains unavailable.</Text>}
+        {result.snapshot.api_ready && <Text>Stripe API 设置核对通过。 / Stripe API setup passed.</Text>}
         <Text>{result.policy_confirmed ? "经营者税务确认已记录 / Operator tax confirmation recorded" : "经营者税务确认尚未完成 / Operator tax confirmation pending"}</Text>
-        <Text>报价、成交税账与退款冲销仍在接入，付款保持关闭。 / Quotes, sale tax records and refund reversals are still being connected.</Text>
+        <Text>报价、成交税账与退款冲销已接入。 / Quotes, sale tax records and refund reversals are integrated.</Text>
+        <Text>{result.checkout_ready ? "付款运行开关已开启；每笔订单仍须通过政策、商品、地址和报价核验。 / Payment runtime gates are open; each order still requires policy, item, address and quote checks." : "付款运行开关尚未全部开启，结账保持关闭。 / Payment runtime gates are closed; checkout remains unavailable."}</Text>
       </div>
       <div className="space-y-2"><Heading level="h2">登记记录 / Registration records</Heading>
         {result.snapshot.registrations.length === 0 ? <Text>当前环境没有登记记录 / No registrations in this environment</Text> : result.snapshot.registrations.map(registration => <div key={registration.id} className="border-t border-ui-border-base pt-2">

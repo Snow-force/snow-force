@@ -73,11 +73,14 @@ test("failed, mixed-mode, malformed or slow snapshots discard all results and re
   const malformed=reader();malformed.account=async()=>({id:"acct_other",object:"customer"});await assert.rejects(()=>setup.readStripeTaxSetup(malformed,()=>now));
   for (const delta of [-1,61]) {let reads=0; await assert.rejects(()=>setup.readStripeTaxSetup(reader(),()=>now+reads++*delta));}
 });
-test("admin authentication precedes any network call and API readiness never enables checkout", async () => {
+test("admin authentication precedes reads and reports runtime gates without enabling them", async () => {
   for (const actor of [undefined,{actor_type:"customer",actor_id:"user_fixture"},{actor_type:"user",actor_id:"cus_fixture"}]) await assert.rejects(()=>setup.adminStripeTaxSetup({resolve:()=>assert.fail("Authenticate first")},actor),/Sign in/);
-  const previous=process.env.COMMERCE_TAX_POLICY_CONFIRMED;
-  try {process.env.COMMERCE_TAX_POLICY_CONFIRMED="true";const result=await setup.adminStripeTaxSetup(scope(reader()),auth);assert.equal(result.snapshot.api_ready,true);assert.equal(result.policy_confirmed,true);assert.equal(result.checkout_ready,false);assert.equal(result.integration_ready,false);
-    process.env.COMMERCE_TAX_POLICY_CONFIRMED="false";assert.equal((await setup.adminStripeTaxSetup(scope(reader()),auth)).policy_confirmed,false);
+  const previous=process.env.COMMERCE_TAX_POLICY_CONFIRMED,previousMode=process.env.COMMERCE_OPERATING_MODE;
+  try {process.env.COMMERCE_TAX_POLICY_CONFIRMED="true";process.env.COMMERCE_OPERATING_MODE="management";const result=await setup.adminStripeTaxSetup(scope(reader()),auth);assert.equal(result.snapshot.api_ready,true);assert.equal(result.policy_confirmed,true);assert.equal(result.checkout_ready,false);assert.equal(result.integration_ready,true);
+    process.env.COMMERCE_OPERATING_MODE="sales";assert.equal((await setup.adminStripeTaxSetup(scope(reader()),auth)).checkout_ready,true);
+    process.env.COMMERCE_TAX_POLICY_CONFIRMED="false";const unconfirmed=await setup.adminStripeTaxSetup(scope(reader()),auth);assert.equal(unconfirmed.policy_confirmed,false);assert.equal(unconfirmed.checkout_ready,false);
+    process.env.COMMERCE_TAX_POLICY_CONFIRMED="true";assert.equal((await setup.adminStripeTaxSetup(scope(reader([])),auth)).checkout_ready,false);
+    assert.equal(process.env.COMMERCE_OPERATING_MODE,"sales");
     assert.equal((await setup.assertActiveStripeTaxSetup(scope(reader()))).account_id,"acct_fixture");
-  } finally {if(previous===undefined)delete process.env.COMMERCE_TAX_POLICY_CONFIRMED;else process.env.COMMERCE_TAX_POLICY_CONFIRMED=previous;}
+  } finally {if(previous===undefined)delete process.env.COMMERCE_TAX_POLICY_CONFIRMED;else process.env.COMMERCE_TAX_POLICY_CONFIRMED=previous;if(previousMode===undefined)delete process.env.COMMERCE_OPERATING_MODE;else process.env.COMMERCE_OPERATING_MODE=previousMode;}
 });

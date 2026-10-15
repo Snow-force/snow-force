@@ -33,6 +33,7 @@ export const shopShipmentSchema = z.object({
 });
 
 const orderAddress = z.object({
+  pickup: z.boolean().optional(),
   name: text,
   address1: text,
   address2: text,

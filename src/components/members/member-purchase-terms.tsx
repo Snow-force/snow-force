@@ -17,7 +17,7 @@ export function MemberPurchaseTerms({ purchase }: { purchase: AfterSalesPurchase
     <h3 className="font-semibold">{t({ en: "Your purchase terms", zh: "本次购买条款" })}</h3>
     {policy ? <>
       <p className="mt-2 text-[#687163]">{t({ en: `Policy version ${policy.version}, accepted for this order. Later policies do not replace these terms.`, zh: `本订单适用购买时的政策版本 ${policy.version}，后续政策不会替换这些条款。` })}</p>
-      <p className="mt-2">{t({ en: `Ordinary requests: ${policy.content.terms.return_window_days} calendar days after delivery.`, zh: `普通退换货申请：送达后 ${policy.content.terms.return_window_days} 个日历日内。` })} {t({ en: "Dates below use Pacific Time.", zh: "下方日期按美国太平洋时间计算。" })}</p>
+      <p className="mt-2">{t({ en: `Ordinary requests: ${policy.content.terms.return_window_days} calendar days after delivery or collection.`, zh: `普通退换货申请：送达或自提领取后 ${policy.content.terms.return_window_days} 个日历日内。` })} {t({ en: "Dates below use Pacific Time.", zh: "下方日期按美国太平洋时间计算。" })}</p>
       <details className="mt-4"><summary className="cursor-pointer font-medium text-[#0066cc]">{t({ en: "Read the policy accepted for this purchase", zh: "查看购买时的完整政策" })}</summary>
         <div className="mt-4 space-y-4"><p>{t({ en: "Seller", zh: "销售主体" })}: {policy.content.seller_name}</p><p>{t({ en: "Support contact at purchase", zh: "购买时的客服联系方式" })}: <a className="text-[#0066cc] underline" href={`mailto:${policy.content.customer_service_email}`}>{policy.content.customer_service_email}</a></p>
           {shopPolicySections.map(section => <div key={section}><h4 className="font-semibold">{t(headings[section])}</h4><p className="mt-1 whitespace-pre-wrap break-words text-[#687163]">{policy.content.copy[section][lang]}</p></div>)}

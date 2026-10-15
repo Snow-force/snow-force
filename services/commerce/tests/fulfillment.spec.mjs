@@ -24,7 +24,7 @@ test("ambiguous initialization stops instead of selecting or overwriting operato
 });
 const prices = [{ currency_code: "usd", amount: 9.95, price_rules: [] }, { currency_code: "usd", amount: 0, price_rules: [{ attribute: "item_total", operator: "gte", value: 100 }] }];
 const cart = (province) => ({ item_total: 79.95, item_tax_total: 0, shipping_address: { country_code: "us", province }, shipping_methods: [{ shipping_option_id: "so_fixture", amount: 9.95 }] });
-const scope = (zones, id = "so_fixture") => ({ resolve: () => ({ graph: async () => ({ data: [{ id, provider_id: "snowforce_us_snowforce", price_type: "calculated", prices, service_zone: { geo_zones: zones } }] }) }) });
+const scope = (zones, id = "so_fixture") => ({ resolve: () => ({ graph: async () => ({ data: [{ id, provider_id: "snowforce_us_snowforce", type: { code: "snowforce-us-standard" }, price_type: "calculated", prices, service_zone: { geo_zones: zones } }] }) }) });
 test("payment rejects stale or forged coverage for AK, HI, territories and foreign options", async () => {
   const zones = initialGeoZones(manifest);
   for (const state of ["ca", "CA", "dc", "ny"]) await assertCartShippingCoverage(cart(state), scope(zones));

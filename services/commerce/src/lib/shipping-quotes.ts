@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import { z } from "zod";
-import { discountedItemCents, readShippingPolicy, snowforceShippingCode } from "./shipping-policy";
+import { discountedItemCents, readShippingPolicy, snowforceShippingCode, snowforcePickupCode } from "./shipping-policy";
 import { checkoutFields } from "./checkout-policy";
 import { verifiedCartMerchandiseCents } from "./tax-cart-merchandise";
 
@@ -19,6 +19,10 @@ export async function readCartItemCents(cartId: string, container: MedusaContain
 export async function readShippingQuotes(cartId: string, container: MedusaContainer) {
   const itemCents = await readCartItemCents(cartId, container);
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
-  const { data } = await query.graph({ entity: "shipping_option", fields: ["id", "prices.*", "prices.price_rules.*"], filters: { type: { code: snowforceShippingCode } } });
-  return Object.fromEntries(z.array(z.object({ id: z.string(), prices: z.array(z.unknown()) })).parse(data).map((option) => [option.id, { policy: readShippingPolicy(option.prices), item_cents: itemCents }]));
+  const { data } = await query.graph({ entity: "shipping_option", fields: ["id", "type.code", "prices.*", "prices.price_rules.*"], filters: { type: { code: [snowforceShippingCode, snowforcePickupCode] } } });
+  return Object.fromEntries(z.array(z.object({ id: z.string(), type: z.object({ code: z.enum([snowforceShippingCode, snowforcePickupCode]) }), prices: z.array(z.unknown()) })).parse(data).map((option) => {
+    const policy = readShippingPolicy(option.prices);
+    if (option.type.code === snowforcePickupCode && policy.fee_cents !== 0) throw new Error("Pickup must be free.");
+    return [option.id, { policy, item_cents: itemCents }];
+  }));
 }

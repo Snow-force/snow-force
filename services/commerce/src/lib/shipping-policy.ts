@@ -8,6 +8,8 @@ export const shippingPolicySchema = z.object({
 export type ShippingPolicy = z.infer<typeof shippingPolicySchema>;
 export const initialShippingPolicy: ShippingPolicy = { fee_cents: 995, free_threshold_cents: 10_000 };
 export const snowforceShippingCode = "snowforce-us-standard";
+export const snowforcePickupCode = "snowforce-local-pickup";
+export const pickupShippingPolicy: ShippingPolicy = { fee_cents: 0, free_threshold_cents: 1 };
 export const snowforceShippingProviderId = "snowforce_us_snowforce";
 
 export function discountedItemCents(itemTotal: unknown, itemTaxTotal: unknown) {

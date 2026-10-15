@@ -21,6 +21,8 @@ export const taxSetupSnapshotSchema = z.object({
 }).strict();
 export type TaxSetupSnapshot = z.infer<typeof taxSetupSnapshotSchema>;
 export const adminTaxSetupSchema = z.object({ snapshot: taxSetupSnapshotSchema, policy_confirmed: z.boolean(),
-  // Deliberately false until quotes, order tax records and reversals are connected and verified.
-  integration_ready: z.literal(false), checkout_ready: z.literal(false),
-}).strict();
+  integration_ready: z.literal(true),
+  // Runtime gates only. Every checkout still verifies its policy, items, address and quote.
+  checkout_ready: z.boolean(),
+}).strict().refine(value => !value.checkout_ready || value.policy_confirmed && value.snapshot.api_ready,
+  { message: "Checkout runtime gates require verified tax setup and operator confirmation." });

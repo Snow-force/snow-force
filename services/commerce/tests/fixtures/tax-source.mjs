@@ -24,7 +24,7 @@ function fixture(cart = nativeCart()) {
   const metadata = { ...configuredMetadata(), snowforce_tax_classifications: { [product.id]: stateFixture(product) } };
   const f = { cart, metadata, product, warehouse: warehouseFixture(), date: new Date().toISOString(), privateReads: 0, graphCalls: [], providerCalls: 0, cartReads: 0, onCartRead: null, onAccount: null, failDb: false };
   f.region = { currency_code: "usd", countries: [{ iso_2: "us" }] };
-  f.option = { id: "so_fixture", provider_id: "snowforce_us_snowforce", price_type: "calculated", prices: shippingPriceRecords({ fee_cents: 995, free_threshold_cents: 10000 }).map(({ rules, ...row }) => ({ ...row, price_rules: rules })), service_zone: { geo_zones: taxQuoteInputSchema.shape.collecting_states.element.options.map(state => ({ type: "province", country_code: "us", province_code: state.toLowerCase() })) } };
+  f.option = { id: "so_fixture", provider_id: "snowforce_us_snowforce", type: { code: "snowforce-us-standard" }, price_type: "calculated", prices: shippingPriceRecords({ fee_cents: 995, free_threshold_cents: 10000 }).map(({ rules, ...row }) => ({ ...row, price_rules: rules })), service_zone: { geo_zones: taxQuoteInputSchema.shape.collecting_states.element.options.map(state => ({ type: "province", country_code: "us", province_code: state.toLowerCase() })) } };
   const graph = async request => {
     f.graphCalls.push(request);
     if (request.entity === "cart") { f.cartReads++; f.onCartRead?.(f.cartReads); return { data: [structuredClone(f.cart)] }; }

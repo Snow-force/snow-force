@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url);
 require("ts-node/register/transpile-only");
 const { BigNumber, FulfillmentWorkflowEvents, OrderWorkflowEvents, PaymentEvents } = require("@medusajs/framework/utils");
 const { orderSnapshot } = require("../src/lib/order-snapshot.ts");
+const { pickupAddress, sealPickupConfirmation, pickupConfirmationKey } = require("../src/lib/local-pickup.ts");
 const { orderMemberId, publishOrderSnapshot } = require("../src/lib/order-sync.ts");
 const { eventOrderIds, config } = require("../src/subscribers/member-order-sync.ts");
 const { GET } = require("../src/api/store/snowforce/orders/[id]/route.ts");
@@ -21,6 +22,19 @@ test("maps native BigNumber totals and credit lines without leaking payment prov
   assert.equal(order.total_cents, 9350); assert.equal(order.credit_cents, 500); assert.equal(order.discount_cents, 1000);
   assert.equal(order.user_id, owner); assert.equal(order.status, "processing"); assert.equal(order.shipping_address.state, "CA");
   assert.ok(!JSON.stringify(order).includes("must-not-leak"));
+});
+test("projects the signed pickup location into the existing address JSON without exposing its receipt", () => {
+  process.env.JWT_SECRET = "fixture-order-pickup-signing-secret-at-least-32-characters";
+  const offer = { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture point", address: { address_1: "1 Fixture Plaza", address_2: null, city: "Irvine", province: "ca", postal_code: "92614", country_code: "us" } };
+  const contact = { name: "Fixture Rider", phone: "5551234567", appointmentConfirmed: true };
+  const cart = { id: "cart_fixture", customer_id: "cus_fixture", region_id: "reg_fixture" };
+  const receipt = sealPickupConfirmation(cart, offer, contact);
+  const order = { ...native(), region_id: cart.region_id, metadata: { [pickupConfirmationKey]: receipt }, shipping_methods: [{ shipping_option_id: offer.id, amount: 0 }], shipping_address: pickupAddress(offer, contact) };
+  const snapshot = orderSnapshot(order, owner);
+  assert.equal(snapshot.shipping_address.pickup, true);
+  assert.equal(snapshot.shipping_address.address1, "1 Fixture Plaza");
+  assert.ok(!JSON.stringify(snapshot).includes(receipt.signature));
+  assert.throws(() => orderSnapshot({ ...order, shipping_address: { ...order.shipping_address, address_1: "Customer home" } }, owner));
 });
 test("allocates fractional item cents exactly and records native aggregate rounding", () => {
   const original = native();

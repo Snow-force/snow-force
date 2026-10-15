@@ -13,6 +13,7 @@ import { assertActiveStripeTaxSetup } from "../../../../../lib/tax-setup";
 import { assertPersistedCartTaxQuote, readHistoricalNativeTaxQuote } from "../../../../../lib/tax-quote-ledger";
 import { readReviewedTaxConfiguration } from "../../../../../lib/tax-configuration";
 import { publicCartTaxQuote } from "../../../../../lib/tax-quote-refresh";
+import { readPickupOffer, verifyPickupConfirmation } from "../../../../../lib/local-pickup";
 
 async function ownedCart(req: AuthenticatedMedusaRequest) {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
@@ -42,8 +43,10 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   // proves their native amounts; the public quote presents them separately.
   const goods = historical ? safeCart.items.filter(item => historical.quote.lines.some(line => line.id === item.id)) : safeCart.items;
   const taxQuote = historical ? { ...publicCartTaxQuote(historical.quote), ready: quoteReady } : null;
+  const pickupOffer = await readPickupOffer(req.scope).catch(() => null);
+  const pickupSelected = !!pickupOffer && (() => { try { verifyPickupConfirmation(cart, pickupOffer); return true; } catch { return false; } })();
   // Quote and display amounts come from one read. Provider secrets never enter the review response.
-  res.json({ status: "review", cart: { ...safeCart, items: goods, customer: { id: customerId } }, ...policyReview, taxQuote, paymentStarted: paymentStarted(cart), configured: taxSetupReady && !!policyReview.policy && policySigningConfigured() && !!process.env.COMMERCE_STRIPE_API_KEY && !!process.env.COMMERCE_STRIPE_WEBHOOK_SECRET });
+  res.json({ status: "review", cart: { ...safeCart, items: goods, customer: { id: customerId } }, ...policyReview, taxQuote, pickupOffer, pickupSelected, paymentStarted: paymentStarted(cart), configured: taxSetupReady && !!policyReview.policy && policySigningConfigured() && !!process.env.COMMERCE_STRIPE_API_KEY && !!process.env.COMMERCE_STRIPE_WEBHOOK_SECRET });
 }
 const input = z.discriminatedUnion("kind", [z.object({ kind: z.literal("prepare"), fingerprint: z.string().regex(/^[a-f0-9]{64}$/), policyVersion: z.number().int().positive(), agreed: z.literal(true) }).strict(), z.object({ kind: z.literal("complete") }).strict(), z.object({ kind: z.literal("recover") }).strict()]);
 function assertCheckoutLease(...signals: (AbortSignal | undefined)[]) {
