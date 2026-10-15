@@ -69,4 +69,6 @@ Visual repairs found during QA: removed redundant shop navigation and the long s
 
 Validation: frontend 1,050 tests in 169 files, coverage and production build passed; backend 651 tests, focused payment/tax/pickup/shipping coverage, typecheck and production build passed. The local build still reports an existing dynamic `.data` tracing warning because isolated Postgres fixtures reside in the ignored workspace; tracing exclusions and Docker source allowlists exclude these runtime fixtures. This is not evidence that the new production container is deployed.
 
-Checkout visual result: passed for the inspected desktop/mobile states. Formal deployment and production performance comparison remain separate pending checks; no real customer charge was made.
+Production follow-up: website source `bfa2c7b` is live in deployment `e51f77e7-2d98-44d2-b1c9-a4b62050c2c8`, with GitHub Quality Gate `38805071018` successful. `output/incidents/2026-10-15-checkout-production-desktop.png` confirms the real ski image, USD499/155 cm and actual published policy version 5 in the authenticated production checkout. Production cart/address were not modified. The synthetic auth fixture was removed and sessions revoked; local servers/database are stopped.
+
+Checkout visual result: passed for the inspected desktop/mobile states and production desktop entry. Backend source/region deployment and production automatic-tax performance remain pending checks; no real customer charge was made.
