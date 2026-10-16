@@ -186,6 +186,20 @@ test("review returns quote and cart from one read without payment secrets or ema
   assert.ok(!JSON.stringify(value).includes("client_secret") && !JSON.stringify(value).includes("fixture@example.com"));
   await assert.rejects(() => GET(checkoutRequest({ ...cart(), customer_id: "cus_other" }), { json: () => assert.fail("must not expose foreign quote") }));
 });
+test("pending cancellation freezes review, preparation and completion without provider calls", async () => {
+  const value = cart(); value.payment_collection.payment_sessions[0].metadata = { snowforce_cart_cancellation: { phase: "reserved" } };
+  let response;
+  await GET(checkoutRequest(value), { json: body => { response = body; } });
+  assert.deepEqual(response, { status: "processing" });
+  const handler = createCheckoutPost({ createCollection: async () => assert.fail("No new collection"), createSession: async () => assert.fail("No new payment") });
+  for (const body of [preparation(value), { kind: "complete" }]) {
+    await handler(checkoutRequest(value, body), { json: body => { response = body; } });
+    assert.deepEqual(response, { status: "processing" });
+  }
+  let recovered = false;
+  await createCheckoutPost(undefined, async () => { recovered = true; return { unlocked: false }; })(checkoutRequest(value, { kind: "recover" }), { json: body => { response = body; } });
+  assert.equal(recovered, true); assert.deepEqual(response, { status: "recovered", unlocked: false });
+});
 test("native payment and completion endpoints reject addresses outside current database coverage", async () => {
   const previous = process.env.COMMERCE_TAX_POLICY_CONFIRMED;
   process.env.COMMERCE_TAX_POLICY_CONFIRMED = "true";

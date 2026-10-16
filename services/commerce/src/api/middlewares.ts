@@ -38,6 +38,9 @@ export default defineMiddlewares({ routes: [{
   matcher: "/store/snowforce/checkout/:id/edit", methods: ["POST"],
   middlewares: [authenticate("customer", ["bearer"])],
 }, {
+  matcher: "/store/snowforce/checkout/:id/cancel", methods: ["GET", "POST"],
+  middlewares: [authenticate("customer", ["bearer"])],
+}, {
   matcher: "/store/snowforce/checkout/:id/quote", methods: ["POST"],
   middlewares: [authenticate("customer", ["bearer"])],
 }, {

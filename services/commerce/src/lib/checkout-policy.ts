@@ -28,7 +28,7 @@ export const checkoutCartSchema = z.object({
   shipping_methods: z.array(z.object({ id: z.string(), shipping_option_id: z.string(), name: z.string(), amount })),
   items: z.array(z.object({ id: z.string(), variant_id: z.string().nullable(), product_handle: z.string().nullable(), product_title: z.string().nullable(), title: z.string(), variant_title: z.string().nullable(), thumbnail: z.string().nullable(), quantity: z.number().int().positive(), unit_price: amount, total: amount })),
   // Native graph reads omit an unlinked collection on a newly created cart.
-  payment_collection: z.object({ id: z.string(), amount, currency_code: z.string(), payment_sessions: z.array(z.object({ id: z.string(), provider_id: z.string(), amount, currency_code: z.string(), status: z.string(), data: z.record(z.string(), z.unknown()).nullable() })) }).nullable().default(null),
+  payment_collection: z.object({ id: z.string(), amount, currency_code: z.string(), payment_sessions: z.array(z.object({ id: z.string(), provider_id: z.string(), amount, currency_code: z.string(), status: z.string(), data: z.record(z.string(), z.unknown()).nullable(), metadata: z.record(z.string(), z.unknown()).nullish() })) }).nullable().default(null),
 });
 export type CheckoutCart = z.infer<typeof checkoutCartSchema>;
 const shippingPricingFields = ["item_total", "item_tax_total"];
