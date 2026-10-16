@@ -3,7 +3,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {auth,nativeCart,fixture,read} from "./fixtures/tax-source.mjs";
 const require=createRequire(import.meta.url);require("ts-node/register/transpile-only");
-const {decorateCartTotals}=require("@medusajs/utils");
+const {decorateCartTotals,MathBN}=require("@medusajs/utils");
 const {normalizeCartTaxMoney}=require("../src/lib/tax-money-normalization.ts");
 const {readCartTaxMoneySource}=require("../src/lib/tax-quote-source.ts");
 const {POST}=require("../src/api/store/snowforce/checkout/[id]/normalize/route.ts");
@@ -29,12 +29,12 @@ function normalizationFixture(cart=nativeCart(100,0.005,0)){
       }
       if(sql.startsWith("update commerce.cart_line_item_adjustment")){
         const [cents,json,id,itemId,original]=values,line=f.cart.items.find(row=>row.id===itemId),adjustment=line?.adjustments.find(row=>row.id===id);
-        if(!adjustment||String(adjustment.amount)!==original)return {rows:[]};
+        if(!adjustment||!MathBN.eq(adjustment.amount,original))return {rows:[]};
         adjustment.amount=cents/100;f.rawAmounts.set(id,JSON.parse(json));recalculate();return {rows:[{id}]};
       }
       if(sql.startsWith("update commerce.cart_shipping_method")){
         const [cents,json,id,cartId,original]=values,row=f.cart.shipping_methods.find(row=>row.id===id);
-        if(!row||f.cart.id!==cartId||String(row.amount)!==original)return {rows:[]};
+        if(!row||f.cart.id!==cartId||!MathBN.eq(row.amount,original))return {rows:[]};
         row.amount=cents/100;f.rawAmounts.set(id,JSON.parse(json));recalculate();return {rows:[{id}]};
       }
       if(sql.startsWith("update commerce.cart set updated_at")){assert.equal(values[0],f.cart.id);assert.equal(values[1],f.cart.customer_id);return {rows:[{id:f.cart.id}]};}
