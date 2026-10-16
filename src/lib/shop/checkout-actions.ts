@@ -24,7 +24,7 @@ async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>,
   const { repository, customer } = session;
   const statusRead = repository.status();
   // Both endpoints independently check ownership. Only overlap these fresh reads
-  // after a delivery preparation; never reuse a previous address's alternatives.
+  // after delivery has been checked; never reuse a previous address's alternatives.
   // Observe optional failures immediately, even if completion or pickup makes
   // this read unnecessary. No data or promises are shared across requests.
   const prefetched = includeOptions && prefetchDeliveryOptions && process.env.SHOP_CHECKOUT_OPTIMIZED_READS === "true"
@@ -127,6 +127,6 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
       if (payment.totalCents !== current.taxQuote.totalCents) return { status: "rejected" };
       return { status: "payment", clientSecret: payment.clientSecret, publishableKey: process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY ?? "", total: payment.totalCents / 100 };
     }
-    return await review(session);
+    return await review(session, true, change.kind === "quote" && !current.pickupSelected);
   } catch (error) { return failed(error); }
 }

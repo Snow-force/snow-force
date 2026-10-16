@@ -101,6 +101,36 @@ describe("checkout latency optimizations", () => {
     } finally { gate.resolve(); }
     expect(await operation).toMatchObject({ status: "review" });
   });
+  it.each([true, false])("refreshes a delivery quote with final-read overlap controlled by the flag (%s)", async enabled => {
+    vi.stubEnv("SHOP_CHECKOUT_OPTIMIZED_READS", String(enabled));
+    const gate = deferred(), original = mocks.request.getMockImplementation()!;
+    let statusReads = 0;
+    mocks.request.mockImplementation(async (path, schema, options) => {
+      if (path === "/store/snowforce/checkout/cart_fixture" && ++statusReads === 2) await gate.promise;
+      return original(path, schema, options);
+    });
+    const operation = changeShopCheckoutAction({ kind: "quote" });
+    try {
+      await vi.waitFor(() => expect(statusReads).toBe(2));
+      if (enabled) await vi.waitFor(() => expect(mocks.request.mock.calls.filter(([path]) => path.endsWith("/shipping-options"))).toHaveLength(2));
+      else expect(mocks.request.mock.calls.filter(([path]) => path.endsWith("/shipping-options"))).toHaveLength(1);
+      expect(writes()).toEqual(["/store/snowforce/checkout/cart_fixture/quote"]);
+    } finally { gate.resolve(); }
+    expect(await operation).toMatchObject({ status: "review", selectedOptionId: "so_fixture", taxQuote: { ready: true } });
+    expect(mocks.request.mock.calls.filter(([path]) => path.endsWith("/shipping-options"))).toHaveLength(2);
+  });
+  it("renews a pickup quote without fetching delivery alternatives", async () => {
+    const original = mocks.request.getMockImplementation()!;
+    const pickupQuote = { ...quote, totalCents: 7995, shippingCents: 0 };
+    mocks.request.mockImplementation(async (path, schema, options) => {
+      if (path.endsWith("/quote")) return schema.parse({ status: "quoted", reused: false, taxQuote: pickupQuote });
+      if (path === "/store/snowforce/checkout/cart_fixture") return schema.parse({ ...review, cart: { ...cart, total: 79.95, shipping_total: 0, shipping_methods: [{ shipping_option_id: "so_pickup", name: "Pickup", amount: 0 }] }, pickupSelected: true, pickupOffer: { id: "so_pickup", locationId: "sloc_fixture", name: "Warehouse", address: { address_1: "1 Test Plaza", address_2: null, city: "Irvine", province: "ca", postal_code: "92614", country_code: "us" } }, taxQuote: { ...pickupQuote, ready: true } });
+      return original(path, schema, options);
+    });
+    expect(await changeShopCheckoutAction({ kind: "quote" })).toMatchObject({ status: "review", selectedOptionId: "so_pickup", taxQuote: { shippingCents: 0, ready: true } });
+    expect(mocks.request.mock.calls.some(([path]) => path.endsWith("/shipping-options"))).toBe(false);
+    expect(writes()).toEqual(["/store/snowforce/checkout/cart_fixture/quote"]);
+  });
   it("does not let an optional alternatives failure hide an already completed order", async () => {
     const original = mocks.request.getMockImplementation()!;
     let alternatives = 0;
