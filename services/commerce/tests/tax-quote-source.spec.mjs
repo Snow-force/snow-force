@@ -21,7 +21,7 @@ test("independent source checks overlap at both read fences without starting Str
     await entered;
     try{
       assert.ok(f.privateReads>0,"product review reads overlap the region check");
-      assert.ok(fence===1?f.graphCalls.some(call=>call.entity==="shipping_option"):f.graphCalls.filter(call=>call.entity==="shipping_option").length===2);
+      assert.equal(f.shippingSnapshotReads,fence);
       assert.equal(f.providerCalls,fence===1?0:3);
     }finally{release();}
     assert.equal((await pending).input.customer_id,auth.actor_id);
