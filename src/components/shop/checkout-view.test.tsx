@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), sync: vi.fn(), validation: vi.fn(), preview: vi.fn(), cancel: vi.fn() }));
 vi.mock("@/lib/shop/cart-actions", () => ({ previewShopPaymentCancellationAction: mocks.preview, cancelUnpaidCartPaymentAction: mocks.cancel }));
 vi.mock("@/lib/shop/checkout-actions", () => ({ getShopCheckoutAction: mocks.get, changeShopCheckoutAction: mocks.change }));
@@ -32,7 +32,73 @@ beforeEach(() => {
   Object.defineProperty(HTMLDialogElement.prototype, "close", { configurable: true, value: function(this: HTMLDialogElement) { this.removeAttribute("open"); } });
 });
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
+afterEach(() => vi.useRealTimers());
 describe("checkout interface", () => {
+  it("serializes address saves, keeps typing responsive and saves only the newest queued draft", async () => {
+    vi.useFakeTimers();
+    const initial = { ...review, detailsVersion: "a".repeat(64) };
+    mocks.get.mockResolvedValue(initial);
+    let first!: (value: CheckoutReview) => void;
+    let second!: (value: CheckoutReview) => void;
+    mocks.change.mockReturnValueOnce(new Promise<CheckoutReview>(resolve => { first = resolve; })).mockReturnValueOnce(new Promise<CheckoutReview>(resolve => { second = resolve; }));
+    await act(async () => { view(); }); const name = screen.getByLabelText("Recipient name");
+    fireEvent.change(name, { target: { value: "First draft" } });
+    await act(async () => { vi.advanceTimersByTime(900); }); expect(mocks.change).toHaveBeenCalledTimes(1);
+    expect(name).toBeEnabled();
+    fireEvent.change(name, { target: { value: "Intermediate draft" } });
+    fireEvent.change(name, { target: { value: "Newest draft" } });
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+    expect(mocks.change).toHaveBeenCalledTimes(1);
+    await act(async () => { first({ ...initial, detailsVersion: "b".repeat(64), address: { ...review.address!, name: "First draft" } }); });
+    expect(name).toHaveValue("Newest draft");
+    await act(async () => { vi.advanceTimersByTime(900); }); expect(mocks.change).toHaveBeenCalledTimes(2);
+    expect(mocks.change).toHaveBeenLastCalledWith({ kind: "delivery", address: { ...review.address!, name: "Newest draft" }, version: "b".repeat(64) });
+    await act(async () => { second({ ...initial, detailsVersion: "c".repeat(64), address: { ...review.address!, name: "Newest draft" } }); });
+    expect(name).toHaveValue("Newest draft");
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    expect(screen.queryByText(/Saving your checkout details/)).not.toBeInTheDocument();
+  });
+  it("preserves an incomplete newest draft without silently retrying or restoring a payable quote", async () => {
+    vi.useFakeTimers();
+    const initial = { ...review, detailsVersion: "a".repeat(64) }; mocks.get.mockResolvedValue(initial);
+    let finish!: (value: CheckoutReview) => void;
+    mocks.change.mockReturnValue(new Promise<CheckoutReview>(resolve => { finish = resolve; }));
+    await act(async () => { view(); }); const street = screen.getByLabelText("Street address");
+    fireEvent.change(street, { target: { value: "First valid street" } });
+    await act(async () => { vi.advanceTimersByTime(900); }); expect(mocks.change).toHaveBeenCalledTimes(1);
+    fireEvent.change(street, { target: { value: "" } });
+    await act(async () => { finish({ ...initial, address: { ...review.address!, address1: "First valid street" }, detailsVersion: "b".repeat(64) }); });
+    expect(street).toHaveValue(""); expect(screen.getByRole("checkbox")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+    expect(mocks.change).toHaveBeenCalledTimes(1);
+  });
+  it("stops automatic retries on another tab's revision conflict and keeps the local draft", async () => {
+    vi.useFakeTimers();
+    mocks.get.mockResolvedValue({ ...review, detailsVersion: "a".repeat(64) });
+    mocks.change.mockResolvedValue({ status: "stale-details" });
+    await act(async () => { view(); }); const name = screen.getByLabelText("Recipient name"); fireEvent.change(name, { target: { value: "My local draft" } });
+    await act(async () => { vi.advanceTimersByTime(900); });
+    expect(screen.getByRole("button", { name: "Keep my details & retry" })).toBeEnabled();
+    expect(name).toHaveValue("My local draft"); expect(mocks.change).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Use latest saved details" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+  });
+  it("queues the newest pickup choice behind a delivery save without restoring the old receiving mode", async () => {
+    vi.useFakeTimers();
+    const pickupOffer = { id: "so_pickup", locationId: "sloc_fixture", name: "Fixture warehouse", address: { address_1: "1 Fixture Plaza", address_2: null, city: "Irvine", province: "ca" as const, postal_code: "92614", country_code: "us" as const } };
+    const initial = { ...review, detailsVersion: "a".repeat(64), pickupOffer }; mocks.get.mockResolvedValue(initial);
+    let first!: (value: CheckoutReview) => void;
+    mocks.change.mockReturnValueOnce(new Promise<CheckoutReview>(resolve => { first = resolve; })).mockResolvedValue({ ...initial, detailsVersion: "c".repeat(64), pickupSelected: true, address: { ...review.address!, name: "Newest Rider", address1: "1 Fixture Plaza" } });
+    await act(async () => { view(); }); fireEvent.change(screen.getByLabelText("Recipient name"), { target: { value: "Newest Rider" } });
+    await act(async () => { vi.advanceTimersByTime(900); }); expect(mocks.change).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("radio", { name: "Appointment pickup · Free" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "I have contacted SnowForce and confirmed my pickup appointment at this location." }));
+    await act(async () => { first({ ...initial, detailsVersion: "b".repeat(64), address: { ...review.address!, name: "Newest Rider" } }); });
+    expect(screen.getByRole("radio", { name: "Appointment pickup · Free" })).toBeChecked();
+    await act(async () => { vi.advanceTimersByTime(900); }); expect(mocks.change).toHaveBeenCalledTimes(2);
+    expect(mocks.change).toHaveBeenLastCalledWith({ kind: "pickup-review", contact: { name: "Newest Rider", phone: "5551234567", appointmentConfirmed: true }, version: "b".repeat(64) });
+    expect(screen.getByLabelText("Pickup name")).toHaveValue("Newest Rider");
+  });
   it("discards the old payment form before cancellation and preserves a pending retry", async () => {
     mocks.get.mockResolvedValue({ ...review, paymentStarted: true, policyAccepted: true });
     mocks.change.mockResolvedValue({ status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd" });

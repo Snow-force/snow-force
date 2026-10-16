@@ -17,9 +17,18 @@ const policy: ShopPublishedPolicy = {
     },
   },
 };
-const review = { status: "review", fingerprint, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null, pickupOffer: null, pickupSelected: false };
+const review = { status: "review", fingerprint, detailsVersion: null, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null, pickupOffer: null, pickupSelected: false };
 
 describe("checkout policy consent contract", () => {
+  it("enables receiving revisions only when the server supplies a valid digest", () => {
+    const { detailsVersion: _version, ...legacy } = review;
+    expect(checkoutStatusSchema.parse(legacy)).toHaveProperty("detailsVersion", null);
+    expect(checkoutStatusSchema.parse({ ...review, detailsVersion: fingerprint })).toHaveProperty("detailsVersion", fingerprint);
+    expect(checkoutStatusSchema.safeParse({ ...review, detailsVersion: "invalid" }).success).toBe(false);
+    const contact = { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true };
+    expect(checkoutInputSchema.parse({ kind: "pickup-review", contact, version: fingerprint })).toHaveProperty("version", fingerprint);
+    expect(checkoutInputSchema.safeParse({ kind: "pickup-review", contact, version: "invalid" }).success).toBe(false);
+  });
   it("automatic review commands accept only address/contact or an option ID, never payable amounts or consent", () => {
     const contact = { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true };
     expect(checkoutInputSchema.parse({ kind: "pickup-review", contact })).toEqual({ kind: "pickup-review", contact });

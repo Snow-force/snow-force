@@ -10,10 +10,10 @@ export const checkoutPickupContactSchema = checkoutAddressSchema.pick({ name: tr
 export type CheckoutPickupContact = z.infer<typeof checkoutPickupContactSchema>;
 export const checkoutPickupOfferSchema = z.object({ id: commerceId("so"), locationId: commerceId("sloc"), name: z.string().min(1).max(300), address: z.object({ address_1: z.string().min(1).max(200), address_2: z.string().nullable(), city: z.string().min(1).max(100), province: z.literal("ca"), postal_code: z.string().regex(/^\d{5}(?:-\d{4})?$/), country_code: z.literal("us") }) }).strict();
 export const checkoutInputSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("delivery"), address: checkoutAddressSchema }).strict(),
+  z.object({ kind: z.literal("delivery"), address: checkoutAddressSchema, version: z.string().regex(/^[a-f0-9]{64}$/).optional() }).strict(),
   z.object({ kind: z.literal("address"), address: checkoutAddressSchema }).strict(),
   z.object({ kind: z.literal("pickup"), contact: checkoutPickupContactSchema }).strict(),
-  z.object({ kind: z.literal("pickup-review"), contact: checkoutPickupContactSchema }).strict(),
+  z.object({ kind: z.literal("pickup-review"), contact: checkoutPickupContactSchema, version: z.string().regex(/^[a-f0-9]{64}$/).optional() }).strict(),
   z.object({ kind: z.literal("shipping"), optionId: commerceId("so") }).strict(),
   z.object({ kind: z.literal("shipping-review"), optionId: commerceId("so") }).strict(),
   z.object({ kind: z.literal("quote") }).strict(),
@@ -32,7 +32,7 @@ export const checkoutTaxQuoteSchema = publicTaxAmounts.extend({ ready: z.boolean
 export type CheckoutTaxQuote = z.infer<typeof checkoutTaxQuoteSchema>;
 export const checkoutQuoteResponseSchema = z.object({ status: z.literal("quoted"), reused: z.boolean(), taxQuote: publicTaxAmounts.refine(amountsReconcile, "Quote amounts must reconcile.") }).strict();
 export const checkoutStatusSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("review"), fingerprint: z.string().regex(/^[a-f0-9]{64}$/), paymentStarted: z.boolean(), configured: z.boolean(), policy: shopPublishedPolicySchema.nullable(), policyAccepted: z.boolean(), taxQuote: checkoutTaxQuoteSchema.nullable(), pickupOffer: checkoutPickupOfferSchema.nullable().default(null), pickupSelected: z.boolean().default(false) }),
+  z.object({ status: z.literal("review"), fingerprint: z.string().regex(/^[a-f0-9]{64}$/), detailsVersion: z.string().regex(/^[a-f0-9]{64}$/).nullable().default(null), paymentStarted: z.boolean(), configured: z.boolean(), policy: shopPublishedPolicySchema.nullable(), policyAccepted: z.boolean(), taxQuote: checkoutTaxQuoteSchema.nullable(), pickupOffer: checkoutPickupOfferSchema.nullable().default(null), pickupSelected: z.boolean().default(false) }),
   z.object({ status: z.literal("complete"), order: z.object({ id: commerceId("order"), number: z.string().min(1), total: usdAmount }) }),
   z.object({ status: z.literal("payment"), clientSecret: z.string().regex(/^pi_[a-zA-Z0-9]+_secret_[a-zA-Z0-9]+$/), totalCents: z.number().int().positive().max(99_999_999), currency: z.literal("usd") }),
   z.object({ status: z.literal("processing") }),
@@ -42,8 +42,8 @@ export const checkoutRecoverySchema = z.union([
   z.object({ status: z.literal("recovered"), unlocked: z.boolean() }).strict(),
 ]);
 export type CheckoutShippingOption = { id: string; name: string; price: number };
-export type CheckoutReview = { status: "review"; cart: CommerceCart; address: CheckoutAddress | null; options: CheckoutShippingOption[]; selectedOptionId: string | null; fingerprint: string; paymentStarted: boolean; configured: boolean; policy: ShopPublishedPolicy | null; policyAccepted: boolean; taxQuote: CheckoutTaxQuote | null; pickupOffer?: z.infer<typeof checkoutPickupOfferSchema> | null; pickupSelected?: boolean; paymentCheck?: "unlocked" | "active" };
-export type CheckoutResult = CheckoutReview | { status: "payment"; clientSecret: string; publishableKey: string; total: number } | { status: "complete"; order: { id: string; number: string; total: number } } | { status: "empty" | "signed-out" | "unavailable" | "not-configured" | "rejected" | "invalid" | "processing" };
+export type CheckoutReview = { status: "review"; cart: CommerceCart; address: CheckoutAddress | null; options: CheckoutShippingOption[]; selectedOptionId: string | null; fingerprint: string; detailsVersion?: string | null; paymentStarted: boolean; configured: boolean; policy: ShopPublishedPolicy | null; policyAccepted: boolean; taxQuote: CheckoutTaxQuote | null; pickupOffer?: z.infer<typeof checkoutPickupOfferSchema> | null; pickupSelected?: boolean; paymentCheck?: "unlocked" | "active" };
+export type CheckoutResult = CheckoutReview | { status: "payment"; clientSecret: string; publishableKey: string; total: number } | { status: "complete"; order: { id: string; number: string; total: number } } | { status: "empty" | "signed-out" | "unavailable" | "not-configured" | "rejected" | "invalid" | "processing" | "stale-details" };
 
 export function nativeCheckoutAddress(address: CheckoutAddress) {
   const parsed = checkoutAddressSchema.parse(address);

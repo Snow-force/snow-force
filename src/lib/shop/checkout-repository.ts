@@ -30,8 +30,12 @@ export function createCheckoutRepository(request: CommerceRequest, customer: { c
       const result = await request(`/store/snowforce/checkout/${id}/shipping-options`, schema, options);
       return result.shipping_options.flatMap((option) => option.calculated_price ? [{ id: option.id, name: option.name, price: option.calculated_price.calculated_amount }] : []);
     },
-    async address(address: CheckoutAddress) {
+    async address(address: CheckoutAddress, version?: string) {
       const shipping = nativeCheckoutAddress(address);
+      if (version !== undefined) {
+        await request(`/store/snowforce/checkout/${id}/details`, z.object({ status: z.literal("details-saved") }).strict(), { ...options, method: "POST", body: { kind: "delivery", version: z.string().regex(/^[a-f0-9]{64}$/).parse(version), address: shipping } });
+        return read();
+      }
       await prepareCartEdit(request, customer.token, id);
       const { cart } = await request(`${path}?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { email: customer.email, shipping_address: shipping, billing_address: shipping } });
       return owned(cart);
@@ -42,7 +46,8 @@ export function createCheckoutRepository(request: CommerceRequest, customer: { c
       const { cart } = await request(`${path}/shipping-methods?fields=${CHECKOUT_FIELDS}`, cartResponse, { ...options, method: "POST", body: { option_id } });
       return owned(cart);
     },
-    async pickup(contact: CheckoutPickupContact) {
+    async pickup(contact: CheckoutPickupContact, version?: string) {
+      if (version !== undefined) return request(`/store/snowforce/checkout/${id}/details`, z.object({ status: z.literal("details-saved") }).strict(), { ...options, method: "POST", body: { kind: "pickup", version: z.string().regex(/^[a-f0-9]{64}$/).parse(version), contact: checkoutPickupContactSchema.parse(contact) } });
       return request(`/store/snowforce/checkout/${id}/pickup`, z.object({ status: z.literal("pickup-saved") }).strict(), { ...options, method: "POST", body: checkoutPickupContactSchema.parse(contact) });
     },
     async quote() { return request(`/store/snowforce/checkout/${id}/quote`, checkoutQuoteResponseSchema, { ...options, method: "POST", body: {} }); },

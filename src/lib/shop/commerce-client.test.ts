@@ -1,10 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { z } from "zod";
-import { createCommerceClient, linkCommerceCustomer, CommerceAuthorizationError, CommerceUnavailableError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
+import { createCommerceClient, linkCommerceCustomer, CommerceAuthorizationError, CommerceDetailsChangedError, CommerceUnavailableError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 
 const config = { backendUrl: "https://commerce.snow-force.com", publishableKey: "pk_fixture" };
 describe("commerce transport", () => {
+  it("recognizes receiving revision conflicts only on the exact authenticated write boundary", async () => {
+    const fetcher = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ type: "conflict", code: "checkout_details_changed" }), { status: 409 }));
+    const request = createCommerceClient(config, fetcher);
+    await expect(request("/store/snowforce/checkout/cart_fixture/details", z.unknown(), { method: "POST", token: "fixture" })).rejects.toBeInstanceOf(CommerceDetailsChangedError);
+    for (const path of ["/store/carts/cart_fixture", "/store/snowforce/checkout/cart_fixture/details?readonly=1"]) {
+      const error = await request(path, z.unknown()).catch((error: unknown) => error);
+      expect(error).toBeInstanceOf(CommerceRejectedError); expect(error).not.toBeInstanceOf(CommerceDetailsChangedError);
+    }
+  });
   beforeEach(() => vi.restoreAllMocks());
   it("keeps authenticated data uncached and credentials on the configured backend", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "fixture" })));
@@ -22,7 +31,7 @@ describe("commerce transport", () => {
   it("waits for bounded native checkout writes while keeping reads and unrelated requests short", async () => {
     const timeout = vi.spyOn(AbortSignal, "timeout");
     const request = createCommerceClient(config, vi.fn().mockImplementation(async () => new Response("{}")));
-    for (const path of ["/store/snowforce/checkout/cart_fixture/cancel", "/store/snowforce/checkout/cart_fixture/pickup", "/store/snowforce/checkout/cart_fixture/quote", "/store/snowforce/checkout/cart_fixture/edit", "/store/snowforce/checkout/cart_fixture", "/store/carts/cart_fixture?fields=id", "/store/carts/cart_fixture/shipping-methods", "/store/carts", "/store/carts/cart_fixture/line-items", "/store/carts/cart_fixture/line-items/cali_fixture"]) {
+    for (const path of ["/store/snowforce/checkout/cart_fixture/details", "/store/snowforce/checkout/cart_fixture/cancel", "/store/snowforce/checkout/cart_fixture/pickup", "/store/snowforce/checkout/cart_fixture/quote", "/store/snowforce/checkout/cart_fixture/edit", "/store/snowforce/checkout/cart_fixture", "/store/carts/cart_fixture?fields=id", "/store/carts/cart_fixture/shipping-methods", "/store/carts", "/store/carts/cart_fixture/line-items", "/store/carts/cart_fixture/line-items/cali_fixture"]) {
       await request(path, z.object({}), { method: "POST", body: {} });
       expect(timeout).toHaveBeenLastCalledWith(60_000);
     }
