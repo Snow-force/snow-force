@@ -8,13 +8,14 @@ import { readTaxCartSql } from "./tax-cart-sql";
 import { assertNativeTaxQuoteAmounts, governmentFeeMetadataKey } from "./tax-quote-money";
 import { readRecordedCartTaxQuote, taxQuoteNativeAmountFields, taxQuoteReceiptKey, type TaxQuoteConnection } from "./tax-quote-ledger";
 import { policyAcceptanceKey } from "./policy-consent";
+import { checkoutDetailsVersion, detailsVersionSchema } from "./checkout-details-version";
 
 const conflict = () => new MedusaError(MedusaError.Types.CONFLICT, "Check the current quote and payment before changing this cart.");
 const lease = (signals: readonly (AbortSignal | undefined)[]) => { if(signals.some(signal=>signal?.aborted)) throw conflict(); };
 
 /** Clear only proven native quote taxes/fees on an unpaid cart. Historical
  * quote/application/payment evidence is immutable and is never deleted. */
-export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthContext | undefined, rawId: unknown, signals: readonly (AbortSignal | undefined)[] = []) {
+export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthContext | undefined, rawId: unknown, signals: readonly (AbortSignal | undefined)[] = [], expectedDetailsVersion?: string) {
   if(auth?.actor_type!=="customer"||!/^cus_[A-Za-z0-9]+$/.test(auth.actor_id))throw new MedusaError(MedusaError.Types.UNAUTHORIZED,"Sign in through SnowForce.");
   const id=z.string().regex(/^cart_[A-Za-z0-9]+$/).safeParse(rawId);
   if(!id.success)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Invalid cart.");
@@ -28,6 +29,7 @@ export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthCon
       z.array(z.object({id:z.literal(id.data),customer_id:z.literal(auth.actor_id),completed_at:z.null(),payment_collection:z.object({payment_sessions:z.array(z.unknown()).length(0)}).nullable().default(null)})).length(1).parse(owners);
       const {data}=await query.graph({entity:"cart",fields:[...checkoutFields,...taxQuoteNativeAmountFields],filters:{id:id.data}});
       const initial=checkoutCartSchema.parse(z.array(z.unknown()).length(1).parse(data)[0]);
+      if(expectedDetailsVersion!==undefined && checkoutDetailsVersion(initial)!==detailsVersionSchema.parse(expectedDetailsVersion))throw conflict();
       if(initial.customer_id!==auth.actor_id||initial.id!==id.data||initial.completed_at||initial.payment_collection?.payment_sessions.length)throw conflict();
       const db=scope.resolve<TaxQuoteConnection>(ContainerRegistrationKeys.PG_CONNECTION);
       return db.transaction(async tx=>{
