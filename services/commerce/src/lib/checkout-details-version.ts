@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
 import { z } from "zod";
-import { checkoutCartSchema, checkoutFields, type CheckoutCart } from "./checkout-policy";
+import { checkoutCartSchema, type CheckoutCart } from "./checkout-policy";
+import { OwnedTaxCartSnapshotMissingError, readOwnedTaxCartSnapshot } from "./tax-cart-sql";
 
 export const detailsVersionRegistration = "snowforce_checkout_details_version";
 export const detailsVersionSchema = z.string().regex(/^[a-f0-9]{64}$/);
@@ -16,8 +17,13 @@ export async function assertVersionedDetailsEdit(id: string, scope: MedusaContai
   const raw = scope.resolve<unknown>(detailsVersionRegistration, { allowUnregistered: true });
   if (raw === undefined) return;
   const expected = guardSchema.parse(raw);
-  const { data } = await scope.resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "cart", fields: checkoutFields, filters: { id } });
-  const cart = checkoutCartSchema.parse(z.array(z.unknown()).length(1).parse(data)[0]);
+  // Preserve the complete native cart validation under its lease, with one
+  // current owner-bound snapshot rather than repeated graph round trips.
+  const snapshot = await readOwnedTaxCartSnapshot(scope.resolve(ContainerRegistrationKeys.PG_CONNECTION), id, expected.customerId).catch(error => {
+    if (error instanceof OwnedTaxCartSnapshotMissingError) throw new MedusaError(MedusaError.Types.CONFLICT, "Receiving details changed. Refresh checkout before saving.");
+    throw error;
+  });
+  const cart = checkoutCartSchema.parse(snapshot);
   if (expected.cartId !== id || cart.customer_id !== expected.customerId || checkoutDetailsVersion(cart) !== expected.version)
     throw new MedusaError(MedusaError.Types.CONFLICT, "Receiving details changed. Refresh checkout before saving.");
 }

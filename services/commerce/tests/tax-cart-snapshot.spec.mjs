@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {PGlite} from '@electric-sql/pglite';
 import {nativeCart} from './fixtures/tax-source.mjs';
 const require=createRequire(import.meta.url);require('ts-node/register/transpile-only');
-const {readOwnedTaxCartSnapshot}=require('../src/lib/tax-cart-sql.ts');
+const {readOwnedTaxCartSnapshot,OwnedTaxCartSnapshotMissingError}=require('../src/lib/tax-cart-sql.ts');
 const {checkoutCartSchema,checkoutFingerprint,paymentStarted}=require('../src/lib/checkout-policy.ts');
 
 test('snapshot identifiers are validated before resolving any database data',async()=>{
@@ -42,7 +42,7 @@ test('real PostgreSQL snapshot preserves native money, filters ownership and del
     const snapshot=await readOwnedTaxCartSnapshot(db,cart.id,'cus_fixture');
     assert.equal(queries.length,1);assert.equal(checkoutFingerprint(checkoutCartSchema.parse(snapshot)),checkoutFingerprint(checkoutCartSchema.parse(cart)));
     assert.equal(snapshot.items[0].adjustments[0].amount,10.005);
-    await assert.rejects(()=>readOwnedTaxCartSnapshot(db,cart.id,'cus_other'));
+    await assert.rejects(()=>readOwnedTaxCartSnapshot(db,cart.id,'cus_other'),OwnedTaxCartSnapshotMissingError);
     await pg.exec(`insert into commerce.payment_collection values('paycol_fixture',110,'usd','{"client_secret":"collection-must-not-leak"}',null);
       insert into commerce.cart_payment_collection values('cart_fixture','paycol_fixture',null);
       insert into commerce.payment_session values('payses_fixture','paycol_fixture','pp_stripe_stripe',110,'usd','pending','{"client_secret":"provider-must-not-leak"}','{"secret":"metadata-must-not-leak"}',null);`);

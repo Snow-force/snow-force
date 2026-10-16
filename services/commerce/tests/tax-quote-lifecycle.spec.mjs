@@ -91,13 +91,23 @@ test("payment/order/funds, forged proof, orphan fees, credits and ambiguous requ
     if(kind==="session")f.cart.payment_collection={payment_sessions:[{id:"payses_fixture"}]};
     if(kind==="order")f.guard={has_order:true};if(kind==="funds")f.guard={has_collection_funds:true};if(kind==="payment")f.guard={has_payment:true};
     if(kind==="signature")f.cart.metadata.snowforce_tax_quote.signature="f".repeat(64);
-    if(kind==="amount")f.cart.total+=1;if(kind==="orphan")delete f.cart.metadata.snowforce_tax_quote;
+    // Change an authoritative native amount, not a derived aggregate that the
+    // installed totals engine correctly recalculates from lines and taxes.
+    if(kind==="amount")f.cart.items[0].unit_price+=1;if(kind==="orphan")delete f.cart.metadata.snowforce_tax_quote;
     if(kind==="pending")f.operations.set("pending_fixture",{id:"pending_fixture",state:"pending"});
     if(kind==="credits")f.cart.credit_lines=[{id:"cacl_fixture",amount:1}];
     if(kind==="default-address")f.cart.shipping_address={country_code:"us",first_name:null,last_name:null,address_1:null,address_2:null,city:null,province:null,postal_code:null,phone:null};
     const before=structuredClone(f.cart),writes=f.writes.length;await assert.rejects(()=>withdraw(f));
     assert.deepEqual(f.cart,before);assert.equal(f.writes.length,writes);
   }
+});
+
+test("withdrawal recomputes stale aggregates while still validating the signed native tax source",async()=>{
+  const f=await applicationFixture();await f.apply();const nativeItem=structuredClone(f.cart.items[0]);
+  f.cart.total+=1;f.cart.subtotal+=1;
+  const result=await withdraw(f);assert.equal(result.status,'editable');
+  assert.equal(f.cart.items[0].unit_price,nativeItem.unit_price);assert.equal(f.cart.items[0].quantity,nativeItem.quantity);
+  assert.equal(f.cart.total,109.94);assert.equal(f.cart.tax_total,0);assert.equal(f.cart.metadata?.snowforce_tax_quote,undefined);
 });
 
 test("ownership, identity races and lease expiry cannot remove a quote",async()=>{
