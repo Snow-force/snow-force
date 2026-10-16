@@ -4,7 +4,7 @@ import type { MedusaContainer } from "@medusajs/framework/types";
 import { BigNumber, ContainerRegistrationKeys, MathBN, MedusaError } from "@medusajs/framework/utils";
 import { z } from "zod";
 import { assertCheckoutReady, assertUsCheckoutRegion, checkoutCartSchema, checkoutFields, checkoutFingerprint, paymentStarted } from "./checkout-policy";
-import { readCartShippingPolicy } from "./shipping-coverage";
+import { readCartShippingPolicySnapshot as readCartShippingPolicy } from "./shipping-coverage";
 import { calculatedShippingCents } from "./shipping-policy";
 import { assertCartProductTaxClassifications } from "./tax-classification";
 import { assertQuotedTaxConfiguration, readReviewedTaxConfiguration } from "./tax-configuration";
