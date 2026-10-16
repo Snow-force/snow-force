@@ -14,6 +14,7 @@ import { assertPersistedCartTaxQuote, readHistoricalNativeTaxQuote } from "../..
 import { readReviewedTaxConfiguration } from "../../../../../lib/tax-configuration";
 import { publicCartTaxQuote } from "../../../../../lib/tax-quote-refresh";
 import { readPickupOffer, verifyPickupConfirmation } from "../../../../../lib/local-pickup";
+import { paymentCancellationPending } from "../../../../../lib/payment-cancellation";
 
 async function ownedCart(req: AuthenticatedMedusaRequest) {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
@@ -32,6 +33,7 @@ async function completedOrder(req: AuthenticatedMedusaRequest) {
 export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
   const cart = await ownedCart(req);
   if (cart.completed_at) return res.json({ status: "complete", order: await completedOrder(req) });
+  if (paymentCancellationPending(cart)) return res.json({ status: "processing" });
   const { payment_collection: _payment, customer_id: customerId, email: _email, metadata: _metadata, ...safeCart } = cart;
   const [policyReview, classificationsReady, historical, pickupOffer] = await Promise.all([
     checkoutPolicyReview(cart, req.scope),
@@ -85,6 +87,7 @@ export function createCheckoutPost(flows: PaymentFlows = nativePaymentFlows, rec
           return { status: "recovered", unlocked: !paymentStarted(cart) };
         }, { timeout: 15, expire: 120 });
       }
+      if (paymentCancellationPending(cart)) return { status: "processing" };
       assertCheckoutReady(cart, process.env.COMMERCE_TAX_POLICY_CONFIRMED === "true");
       const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
       const { data: regions } = await query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: cart.region_id } });
