@@ -38,7 +38,7 @@ export async function applicationFixture({state="CA",fee=0,itemTax=154,shippingT
     if(sql.startsWith("select id, metadata, clock_timestamp()"))return {rows:[{id:"store_fixture",metadata:structuredClone(f.metadata),database_now:f.date}]};
     if(sql.startsWith("select id,customer_id,currency_code,region_id"))return {rows:[{id:f.cart.id,customer_id:f.cart.customer_id,currency_code:f.cart.currency_code,region_id:f.cart.region_id,completed_at:f.cart.completed_at,shipping_address_id:"caaddr_fixture"}]};
     if(sql.startsWith("select\n    exists"))return {rows:[{has_order:false,has_session:false,has_payment:false,has_collection_funds:false,collection_count:f.cart.payment_collection?1:0,...f.guard}]};
-    if(sql.startsWith("select to_jsonb(c)"))return {rows:[{cart:structuredClone(f.cart)}]};
+    if(sql.startsWith("select to_jsonb(c)"))return values.length===2?db.raw(sql,values):{rows:[{cart:structuredClone(f.cart)}]};
     if(sql.startsWith("select quote_id from commerce.snowforce_tax_quote_applications"))return {rows:f.applications.has(values[0])?[{quote_id:values[0]}]:[]};
     if(sql.startsWith("select id from commerce.snowforce_tax_operations"))return {rows:[...f.operations.values()].filter(row=>row.state==="pending").map(row=>({id:row.id}))};
     if(sql.includes("from commerce.snowforce_tax_quotes q join")){

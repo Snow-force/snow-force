@@ -22,7 +22,7 @@ function nativeCart(price = 110, discount = 10.01, shipping = 9.95) {
 function fixture(cart = nativeCart()) {
   const product = productFixture();
   const metadata = { ...configuredMetadata(), snowforce_tax_classifications: { [product.id]: stateFixture(product) } };
-  const f = { cart, metadata, product, warehouse: warehouseFixture(), date: new Date().toISOString(), privateReads: 0, graphCalls: [], providerCalls: 0, cartReads: 0, onCartRead: null, onAccount: null, failDb: false };
+  const f = { cart, metadata, product, warehouse: warehouseFixture(), date: new Date().toISOString(), privateReads: 0, snapshotReads:0, graphCalls: [], providerCalls: 0, cartReads: 0, onCartRead: null, onAccount: null, failDb: false };
   f.region = { currency_code: "usd", countries: [{ iso_2: "us" }] };
   f.option = { id: "so_fixture", provider_id: "snowforce_us_snowforce", type: { code: "snowforce-us-standard" }, price_type: "calculated", prices: shippingPriceRecords({ fee_cents: 995, free_threshold_cents: 10000 }).map(({ rules, ...row }) => ({ ...row, price_rules: rules })), service_zone: { geo_zones: taxQuoteInputSchema.shape.collecting_states.element.options.map(state => ({ type: "province", country_code: "us", province_code: state.toLowerCase() })) } };
   const graph = async request => {
@@ -32,8 +32,18 @@ function fixture(cart = nativeCart()) {
     if (request.entity === "shipping_option") return { data: [structuredClone(f.option)] };
     assert.fail("Unexpected graph entity");
   };
-  const db = { raw: async sql => {
-    f.privateReads++; if (f.failDb) throw new Error("private-database-detail");
+  const db = { raw: async (sql, values=[]) => {
+    if (f.failDb) throw new Error("private-database-detail");
+    if(sql.startsWith("select to_jsonb(c)")){
+      f.snapshotReads++;
+      assert.equal(values.length,2,"source snapshots require the owner in the SQL predicate");
+      f.cartReads++;f.onCartRead?.(f.cartReads);
+      if(f.cart.id!==values[0]||f.cart.customer_id!==values[1])return {rows:[]};
+      const cart=structuredClone(f.cart);cart.credit_lines??=[];
+      if(cart.payment_collection)cart.payment_collection.payment_sessions=cart.payment_collection.payment_sessions.map(session=>({...session,data:null,metadata:null}));
+      return {rows:[{cart}]};
+    }
+    f.privateReads++;
     if (sql.includes("as settings")) return { rows: [{ id: "store_fixture", settings: f.metadata.snowforce_tax_classifications, database_now: f.date }] };
     if (sql.startsWith("select id,metadata,clock_timestamp()")) return { rows: [{ id: "store_fixture", metadata: structuredClone(f.metadata), database_now: f.date }] };
     if (sql.includes("from commerce.stock_location l left join")) return { rows: f.warehouse ? [structuredClone(f.warehouse)] : [] };

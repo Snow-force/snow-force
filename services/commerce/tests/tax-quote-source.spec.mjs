@@ -114,15 +114,14 @@ test("drafts, missing private approval and fake browser confirmations do not gen
     await assert.rejects(()=>read(f),/reviewed tax setup/);
   }
 });
-test("non-USD/non-US regions, excluded delivery states and fractional or inconsistent money fail before Stripe", async () => {
-  for (const kind of ["region","currency","state","price","discount","total","duplicate","shipping-discount","inclusive","custom","fee-marker"]) {
+test("non-USD/non-US regions, excluded delivery states and fractional or invalid native money fail before Stripe", async () => {
+  for (const kind of ["region","currency","state","price","discount","duplicate","shipping-discount","inclusive","custom","fee-marker"]) {
     const f=fixture();
     if(kind==="region")f.region.countries.push({iso_2:"ca"});
     if(kind==="currency")f.region.currency_code="cad";
     if(kind==="state")f.cart.shipping_address.province="ak";
     if(kind==="price")f.cart.items[0].unit_price=110.005;
     if(kind==="discount")f.cart.items[0].adjustments[0].amount=111;
-    if(kind==="total")f.cart.discount_subtotal=1;
     if(kind==="duplicate")f.cart.items.push(structuredClone(f.cart.items[0]));
     if(kind==="shipping-discount")f.cart.shipping_methods[0].adjustments=[{id:"casmadj_fixture",amount:1}];
     if(kind==="inclusive")f.cart.items[0].is_tax_inclusive=true;
@@ -130,6 +129,16 @@ test("non-USD/non-US regions, excluded delivery states and fractional or inconsi
     if(kind==="fee-marker")f.cart.items[0].metadata={[governmentFeeMetadataKey]:{amount_cents:0}};
     await assert.rejects(()=>read(f));assert.equal(f.providerCalls,0);
   }
+});
+
+test("stale denormalized totals cannot override the native snapshot's line and adjustment amounts",async()=>{
+  const f=fixture();f.cart.discount_subtotal=1;f.cart.item_total=1;f.cart.total=1;
+  const result=await read(f);
+  assert.equal(result.input.lines[0].unit_price_cents,11000);
+  assert.equal(result.input.lines[0].discount_cents,1001);
+  assert.equal(result.input.shipping.amount_cents,995);
+  assert.equal(result.cart.total,109.94);
+  assert.equal(f.snapshotReads,2,"both fresh native snapshots remain required");
 });
 test("native half-cent promotions cannot silently change merchandise or the free-shipping boundary", async () => {
   const f=fixture(nativeCart(100,0.005,0));
@@ -161,6 +170,7 @@ test("ownership, shape and payment are rechecked after the minimal owner lookup"
       if(kind==="graph")throw new Error("private-graph-detail");
     };
     await assert.rejects(()=>read(f),error=>!error.message.includes("private-"));
+    assert.equal(f.snapshotReads,1);
     assert.equal(f.privateReads,0);assert.equal(f.providerCalls,0);
   }
 });

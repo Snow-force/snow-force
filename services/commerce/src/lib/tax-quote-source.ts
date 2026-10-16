@@ -9,6 +9,7 @@ import { calculatedShippingCents } from "./shipping-policy";
 import { assertCartProductTaxClassifications } from "./tax-classification";
 import { assertQuotedTaxConfiguration, readReviewedTaxConfiguration } from "./tax-configuration";
 import { assertActiveStripeTaxSetup } from "./tax-setup";
+import { readOwnedTaxCartSnapshot } from "./tax-cart-sql";
 import { taxQuoteAddress, taxQuoteInputSchema, taxMoneyCents } from "./tax-quote-contract";
 import { exactTaxUsdCents, governmentFeeMetadataKey, nativeTaxUsdCents, normalizeTaxDiscounts, taxUsdAmount } from "./tax-quote-money";
 
@@ -41,6 +42,7 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
   if (auth?.actor_type !== "customer" || !/^cus_[A-Za-z0-9]+$/.test(auth.actor_id)) throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Sign in through SnowForce.");
   const parsedId = z.string().regex(/^cart_[A-Za-z0-9]+$/).safeParse(rawCartId);
   if (!parsedId.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid cart.");
+  const ownedCartId = parsedId.data;
   lease(signals);
   const query = scope.resolve(ContainerRegistrationKeys.QUERY);
   const { data: owners } = await query.graph({ entity: "cart", fields: taxQuoteOwnerFields, filters: { id: parsedId.data } }).catch(() => { throw interrupted(); });
@@ -48,10 +50,9 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
   const owner = z.object({ completed_at: z.unknown().nullable(), payment_collection: z.object({ payment_sessions: z.array(z.object({ id:z.string() })) }).nullable().default(null) }).safeParse(owners[0]);
   if (!owner.success || owner.data.completed_at || owner.data.payment_collection?.payment_sessions.length || process.env.COMMERCE_TAX_POLICY_CONFIRMED !== "true") throw interrupted();
   async function ownedSource() {
-    const { data } = await query.graph({ entity: "cart", fields: taxQuoteSourceFields, filters: { id: parsedId.data } }).catch(() => { throw interrupted(); });
-    if (data.length !== 1 || data[0]?.id !== parsedId.data || data[0]?.customer_id !== auth!.actor_id) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart not found.");
-    // Quoting only needs the presence of a session, never its PaymentIntent data or client secret.
-    const raw = data[0].payment_collection && Array.isArray(data[0].payment_collection.payment_sessions) ? { ...data[0], payment_collection: { ...data[0].payment_collection, payment_sessions: data[0].payment_collection.payment_sessions.map(session => ({ ...session, data: null })) } } : data[0];
+    // Keep both reads around external verification, but collect each native
+    // amount snapshot in one statement instead of many graph round trips.
+    const raw = await readOwnedTaxCartSnapshot(scope.resolve(ContainerRegistrationKeys.PG_CONNECTION), ownedCartId, auth!.actor_id).catch(() => { throw interrupted(); });
     const cart = checkoutCartSchema.safeParse(raw), source = sourceSchema.safeParse(raw);
     if (!cart.success || !source.success) throw interrupted();
     return { cart: cart.data, source: source.data };
