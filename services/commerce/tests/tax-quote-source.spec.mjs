@@ -9,6 +9,25 @@ const { taxQuoteInputSchema } = require("../src/lib/tax-quote-contract.ts");
 const { governmentFeeMetadataKey } = require("../src/lib/tax-quote-money.ts");
 import {auth,nativeCart,fixture,read} from "./fixtures/tax-source.mjs";
 
+test("independent source checks overlap at both read fences without starting Stripe before validation",async()=>{
+  for(const fence of [1,2]){
+    const f=fixture(),resolve=f.scope.resolve.bind(f.scope);let regionReads=0,release,started;
+    const gate=new Promise(done=>{release=done;}),entered=new Promise(done=>{started=done;});
+    f.scope={resolve:(key,...args)=>{const dependency=resolve(key,...args);return key!=="query"?dependency:{graph:async request=>{
+      if(request.entity==="region"&&++regionReads===fence){started();await gate;}
+      return dependency.graph(request);
+    }};}};
+    const pending=read(f);
+    await entered;
+    try{
+      assert.ok(f.privateReads>0,"product review reads overlap the region check");
+      assert.ok(fence===1?f.graphCalls.some(call=>call.entity==="shipping_option"):f.graphCalls.filter(call=>call.entity==="shipping_option").length===2);
+      assert.equal(f.providerCalls,fence===1?0:3);
+    }finally{release();}
+    assert.equal((await pending).input.customer_id,auth.actor_id);
+  }
+});
+
 test("reads an unpaid native graph cart without a payment collection", async () => {
   const f = fixture(); delete f.cart.payment_collection;
   const result = await read(f);

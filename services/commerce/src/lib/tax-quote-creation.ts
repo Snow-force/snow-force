@@ -1,6 +1,7 @@
 import type { AuthContext } from "@medusajs/framework/http";
-import type { ILockingModule, MedusaContainer } from "@medusajs/framework/types";
-import { MedusaError, Modules } from "@medusajs/framework/utils";
+import type { MedusaContainer } from "@medusajs/framework/types";
+import { MedusaError } from "@medusajs/framework/utils";
+import { withCheckoutCartLease } from "./checkout-cart-lease";
 import { z } from "zod";
 import { readCartTaxQuoteSource } from "./tax-quote-source";
 import { readRecordedTaxQuote, recordTaxQuote, reserveTaxQuote } from "./tax-quote-ledger";
@@ -24,9 +25,8 @@ export async function createCartTaxQuote(scope: MedusaContainer, auth: AuthConte
   if (!parsedId.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid cart.");
   try {
     lease(signals);
-    const locking = scope.resolve<ILockingModule>(Modules.LOCKING);
-    return await locking.execute(`snowforce-checkout:${parsedId.data}`, async outer => locking.execute(parsedId.data, async native => {
-      const leases = [...signals, outer, native]; lease(leases);
+    return await withCheckoutCartLease(scope, parsedId.data, async leases => {
+      lease(leases);
       const initial = await readCartTaxQuoteSource(scope, auth, parsedId.data, leases);
       const writer = scope.resolve<StripeTaxQuoteWriter | undefined>(taxQuoteWriterRegistration, { allowUnregistered: true }) ?? createStripeTaxQuoteWriter();
       z.object({ namespace: z.string().regex(/^[a-f0-9]{64}$/), livemode: z.literal(initial.input.livemode) }).parse(writer);
@@ -57,6 +57,6 @@ export async function createCartTaxQuote(scope: MedusaContainer, auth: AuthConte
       if (quote.binding_fingerprint !== taxQuoteBindingFingerprint(after.input) || after.input.tax_date >= quote.expires_at) throw conflict();
       lease(leases);
       return { quote_id: operation.id, quote, reused: operation.state === "ready", applied: false as const };
-    }, { timeout: 15, expire: 120 }), { timeout: 15, expire: 120 });
+    }, signals);
   } catch { throw conflict(); }
 }

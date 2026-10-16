@@ -63,10 +63,15 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     lease(signals);
     assertCheckoutReady(cart, process.env.COMMERCE_TAX_POLICY_CONFIRMED === "true");
     if (paymentStarted(cart) || source.items.some(item => item.metadata && Object.hasOwn(item.metadata,governmentFeeMetadataKey))) throw interrupted();
-    const { data: regions } = await query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: cart.region_id } });
+    // Independent read-only checks start together after ownership is established.
+    // All must finish before contacting Stripe or constructing a quote input.
+    const [{ data: regions }, shipping_policy, classifications] = await Promise.all([
+      query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: cart.region_id } }),
+      readCartShippingPolicy(cart, scope),
+      assertCartProductTaxClassifications(cart, scope),
+    ]);
     if (regions.length !== 1) throw interrupted();
     assertUsCheckoutRegion(regions[0]);
-    const shipping_policy = await readCartShippingPolicy(cart, scope);
     const discounts = normalizeTaxDiscounts(source.items);
     const merchandise = taxMoneyCents.parse(discounts.reduce((total,line) => total + line.net_cents, 0));
     const gross = taxMoneyCents.parse(discounts.reduce((total,line) => total + line.gross_cents, 0));
@@ -78,7 +83,6 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     if (!normalization && (nativeTaxUsdCents(source.discount_subtotal) !== discount || nativeTaxUsdCents(new BigNumber(MathBN.sub(cart.item_total, cart.item_tax_total))) !== merchandise || exactTaxUsdCents(source.shipping_methods[0].amount) !== shipping_cents)) throw interrupted();
     exactTaxUsdCents(source.shipping_methods[0].amount);
     // Gift cards, custom/fee lines, draft products and changed reviews are rejected by the native classification reader.
-    const classifications = await assertCartProductTaxClassifications(cart, scope);
     lease(signals);
     const setup = await assertActiveStripeTaxSetup(scope);
     const { active, database_now } = await readReviewedTaxConfiguration(scope, setup);
@@ -103,13 +107,16 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     lease(signals);
     const current = await ownedSource();
     if (paymentStarted(current.cart) || current.cart.completed_at || fingerprint(current.cart, current.source) !== source_fingerprint) throw interrupted();
-    const { data: currentRegions } = await query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: current.cart.region_id } });
+    const [{ data: currentRegions }, currentShipping, currentClassifications] = await Promise.all([
+      query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: current.cart.region_id } }),
+      readCartShippingPolicy(current.cart, scope),
+      assertCartProductTaxClassifications(current.cart, scope),
+      assertQuotedTaxConfiguration(scope, input, setup),
+    ]);
     if (currentRegions.length !== 1) throw interrupted();
     assertUsCheckoutRegion(currentRegions[0]);
-    if (!same(shipping_policy,await readCartShippingPolicy(current.cart, scope))) throw interrupted();
-    const currentClassifications = await assertCartProductTaxClassifications(current.cart, scope);
+    if (!same(shipping_policy,currentShipping)) throw interrupted();
     if (!same(classifications, currentClassifications)) throw interrupted();
-    await assertQuotedTaxConfiguration(scope, input, setup);
     lease(signals);
     return { cart: current.cart, source:current.source, input, source_fingerprint, discounts, setup, shipping_policy, configuration:active, classifications };
   } catch { throw new MedusaError(MedusaError.Types.CONFLICT, "Cart amounts, delivery or reviewed tax setup changed. Review before requesting a tax quote."); }

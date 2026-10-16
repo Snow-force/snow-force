@@ -1,6 +1,7 @@
 import type { AuthContext } from "@medusajs/framework/http";
-import type { ILockingModule, MedusaContainer } from "@medusajs/framework/types";
-import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils";
+import type { MedusaContainer } from "@medusajs/framework/types";
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
+import { withCheckoutCartLease } from "./checkout-cart-lease";
 import { z } from "zod";
 import { checkoutCartSchema, checkoutFields, checkoutFingerprint } from "./checkout-policy";
 import { lockUnpaidCartMoney } from "./tax-money-normalization";
@@ -21,9 +22,8 @@ export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthCon
   if(!id.success)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Invalid cart.");
   try {
     lease(signals);
-    const locking=scope.resolve<ILockingModule>(Modules.LOCKING);
-    return await locking.execute(`snowforce-checkout:${id.data}`,async outer=>locking.execute(id.data,async native=>{
-      const leases=[...signals,outer,native];lease(leases);
+    return await withCheckoutCartLease(scope,id.data,async leases=>{
+      lease(leases);
       const query=scope.resolve(ContainerRegistrationKeys.QUERY);
       const {data:owners}=await query.graph({entity:"cart",fields:["id","customer_id","completed_at","payment_collection.payment_sessions.id"],filters:{id:id.data}});
       z.array(z.object({id:z.literal(id.data),customer_id:z.literal(auth.actor_id),completed_at:z.null(),payment_collection:z.object({payment_sessions:z.array(z.unknown()).length(0)}).nullable().default(null)})).length(1).parse(owners);
@@ -88,6 +88,6 @@ export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthCon
         lease(leases);
         return {status:"editable" as const,quote_removed:true,review_required:true};
       });
-    },{timeout:15,expire:120}),{timeout:15,expire:120});
+    },signals);
   } catch { throw conflict(); }
 }

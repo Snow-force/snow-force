@@ -1,6 +1,7 @@
 import type { AuthContext } from "@medusajs/framework/http";
-import type { ILockingModule, MedusaContainer } from "@medusajs/framework/types";
-import { ContainerRegistrationKeys, MathBN, MedusaError, Modules } from "@medusajs/framework/utils";
+import type { MedusaContainer } from "@medusajs/framework/types";
+import { ContainerRegistrationKeys, MathBN, MedusaError } from "@medusajs/framework/utils";
+import { withCheckoutCartLease } from "./checkout-cart-lease";
 import { z } from "zod";
 import { readCartTaxMoneySource, taxQuoteSourceFields, assertTaxMoneySourceSnapshot } from "./tax-quote-source";
 import { taxQuoteReceiptKey, type TaxQuoteConnection } from "./tax-quote-ledger";
@@ -116,12 +117,11 @@ export async function normalizeCartTaxMoney(scope:MedusaContainer,auth:AuthConte
   if(!id.success)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Invalid cart.");
   try{
     lease(signals);
-    const locking=scope.resolve<ILockingModule>(Modules.LOCKING);
-    return await locking.execute(`snowforce-checkout:${id.data}`,async outer=>locking.execute(id.data,async native=>{
-      const leases=[...signals,outer,native];lease(leases);
+    return await withCheckoutCartLease(scope,id.data,async leases=>{
+      lease(leases);
       const source=await readCartTaxMoneySource(scope,auth,id.data,leases);
       lease(leases);
       return applyNormalization(source,scope,leases);
-    },{timeout:15,expire:120}),{timeout:15,expire:120});
+    },signals);
   }catch{throw conflict();}
 }
