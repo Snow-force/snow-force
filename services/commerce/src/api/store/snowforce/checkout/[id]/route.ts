@@ -15,6 +15,7 @@ import { readReviewedTaxConfiguration } from "../../../../../lib/tax-configurati
 import { publicCartTaxQuote } from "../../../../../lib/tax-quote-refresh";
 import { readPickupOffer, verifyPickupConfirmation } from "../../../../../lib/local-pickup";
 import { paymentCancellationPending } from "../../../../../lib/payment-cancellation";
+import { checkoutDetailsVersion } from "../../../../../lib/checkout-details-version";
 
 async function ownedCart(req: AuthenticatedMedusaRequest) {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
@@ -50,7 +51,7 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   const taxQuote = historical ? { ...publicCartTaxQuote(historical.quote), ready: quoteReady } : null;
   const pickupSelected = !!pickupOffer && (() => { try { verifyPickupConfirmation(cart, pickupOffer); return true; } catch { return false; } })();
   // Quote and display amounts come from one read. Provider secrets never enter the review response.
-  res.json({ status: "review", cart: { ...safeCart, items: goods, customer: { id: customerId } }, ...policyReview, taxQuote, pickupOffer, pickupSelected, paymentStarted: paymentStarted(cart), configured: taxSetupReady && !!policyReview.policy && policySigningConfigured() && !!process.env.COMMERCE_STRIPE_API_KEY && !!process.env.COMMERCE_STRIPE_WEBHOOK_SECRET });
+  res.json({ status: "review", cart: { ...safeCart, items: goods, customer: { id: customerId } }, ...policyReview, detailsVersion: checkoutDetailsVersion(cart), taxQuote, pickupOffer, pickupSelected, paymentStarted: paymentStarted(cart), configured: taxSetupReady && !!policyReview.policy && policySigningConfigured() && !!process.env.COMMERCE_STRIPE_API_KEY && !!process.env.COMMERCE_STRIPE_WEBHOOK_SECRET });
 }
 const input = z.discriminatedUnion("kind", [z.object({ kind: z.literal("prepare"), fingerprint: z.string().regex(/^[a-f0-9]{64}$/), policyVersion: z.number().int().positive(), agreed: z.literal(true) }).strict(), z.object({ kind: z.literal("complete") }).strict(), z.object({ kind: z.literal("recover") }).strict()]);
 function assertCheckoutLease(...signals: (AbortSignal | undefined)[]) {

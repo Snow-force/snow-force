@@ -10,6 +10,7 @@ import { assertActiveStripeTaxSetup } from "../../lib/tax-setup";
 import { assertPersistedCartTaxQuote, assertWorkflowTaxQuoteSnapshot } from "../../lib/tax-quote-ledger";
 import { assertSalesOperations } from "../../lib/operating-mode";
 import { reserveNewcomerRedemption } from "../../lib/newcomer-redemption";
+import { assertVersionedDetailsEdit } from "../../lib/checkout-details-version";
 
 // Also runs for webhook completion and native API calls, before order creation/payment authorization.
 export async function validateCheckoutCart(input: { id: string }, initialCart: unknown, container: MedusaContainer) {
@@ -42,7 +43,11 @@ export async function assertEditableCart(id: string, container: MedusaContainer)
   if (cart.completed_at || cart.payment_collection?.payment_sessions.length || (cart.metadata&&Object.hasOwn(cart.metadata,"snowforce_tax_quote"))) throw new MedusaError(MedusaError.Types.CONFLICT, "Check the existing quote and payment before changing this cart.");
 }
 // Native workflows hold the cart lock before these hooks. Rechecking here closes the read/mutate race in HTTP middleware.
-updateCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.id, container));
+updateCartWorkflow.hooks.validate(async ({ input }, { container }) => {
+  await assertEditableCart(input.id, container);
+  // Runs under the native cart lease, closing the version-check/write race.
+  await assertVersionedDetailsEdit(input.id, container);
+});
 updateCartPromotionsWorkflow.hooks.validate(async ({ input, cart }, { container }) => assertEditableCart(input.cart_id ?? cart.id, container));
 addToCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.cart_id, container));
 updateLineItemInCartWorkflow.hooks.validate(async ({ input }, { container }) => assertEditableCart(input.cart_id, container));
