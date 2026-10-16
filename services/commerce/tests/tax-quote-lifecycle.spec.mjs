@@ -49,6 +49,17 @@ test("fresh native graph carts without a collection can enter the quote lifecycl
 });
 const refresh=f=>withEnabled(()=>refreshCartTaxQuote(f.scope,auth,f.cart.id));
 
+test("one complete refresh retains a single native checkout lease pair across all fresh validations",async()=>{
+  const f=await applicationFixture();
+  const previousLocks=f.locks.length;
+  const result=await refresh(f);
+  assert.equal(result.status,"quoted");
+  assert.deepEqual(f.locks.slice(previousLocks).map(row=>row.key),["snowforce-tax-refresh:cart_fixture","snowforce-checkout:cart_fixture","cart_fixture"]);
+  assert.equal(f.requests.length,1);
+  assert.equal(f.applications.size,1);
+  assert.ok(f.cartReads>10,"fresh source checks are retained");
+});
+
 test("expired quotes can be withdrawn with tax disabled while private history and unrelated metadata remain",async()=>{
   const f=await applicationFixture({state:"CO",fee:28});await f.apply();f.clockShift=1000;
   f.cart.metadata.snowforce_shop_policy_acceptance={old:"preserve until withdrawal"};

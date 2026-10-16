@@ -1,6 +1,7 @@
 import type { AuthContext } from "@medusajs/framework/http";
-import type { ILockingModule, MedusaContainer } from "@medusajs/framework/types";
-import { ContainerRegistrationKeys, generateEntityId, MedusaError, Modules } from "@medusajs/framework/utils";
+import type { MedusaContainer } from "@medusajs/framework/types";
+import { ContainerRegistrationKeys, generateEntityId, MedusaError } from "@medusajs/framework/utils";
+import { withCheckoutCartLease } from "./checkout-cart-lease";
 import { z } from "zod";
 import { assertUsCheckoutRegion, checkoutCartSchema } from "./checkout-policy";
 import { lockUnpaidCartMoney } from "./tax-money-normalization";
@@ -28,9 +29,8 @@ export async function applyCartTaxQuote(scope: MedusaContainer, auth: AuthContex
   if (!id.success || !quoteId.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid cart or quote.");
   try {
     lease(signals);
-    return await scope.resolve<ILockingModule>(Modules.LOCKING).execute(`snowforce-checkout:${id.data}`, async outer =>
-      scope.resolve<ILockingModule>(Modules.LOCKING).execute(id.data, async native => {
-        const leases = [...signals, outer, native]; lease(leases);
+    return await withCheckoutCartLease(scope, id.data, async leases => {
+        lease(leases);
         const query = scope.resolve(ContainerRegistrationKeys.QUERY);
         const { data: owners } = await query.graph({ entity: "cart", fields: [...taxQuoteOwnerFields, "metadata"], filters: { id: id.data } });
         const owner = z.array(z.object({ id: z.literal(id.data), customer_id: z.literal(auth.actor_id), completed_at: z.null(),
@@ -121,6 +121,6 @@ export async function applyCartTaxQuote(scope: MedusaContainer, auth: AuthContex
           await clock(); lease(leases);
           return { quote_id: quoteId.data, applied: true as const, reused: false, amounts: quote.amounts };
         });
-      }, { timeout: 15, expire: 120 }), { timeout: 15, expire: 120 });
+      }, signals);
   } catch { throw conflict(); }
 }

@@ -10,6 +10,7 @@ import {normalizeCartTaxMoney} from "./tax-money-normalization";
 import {createCartTaxQuote} from "./tax-quote-creation";
 import {applyCartTaxQuote} from "./tax-quote-application";
 import type {TaxQuote} from "./tax-quote-money";
+import {withCheckoutCartLease} from "./checkout-cart-lease";
 
 export function publicCartTaxQuote(quote:TaxQuote){return {totalCents:quote.amounts.total_cents,grossCents:quote.amounts.gross_cents,discountCents:quote.amounts.discount_cents,merchandiseCents:quote.amounts.merchandise_cents,shippingCents:quote.amounts.shipping_cents,salesTaxCents:quote.amounts.sales_tax_cents,fees:quote.fees.map(fee=>({state:fee.state,amountCents:fee.amount_cents})),expiresAt:quote.expires_at};}
 const conflict=()=>new MedusaError(MedusaError.Types.CONFLICT,"Review the current cart before calculating tax. Existing evidence was preserved.");
@@ -22,10 +23,11 @@ export function createCartTaxRefresher(flow:TaxFlow=nativeFlow){
     const id=z.string().regex(/^cart_[A-Za-z0-9]+$/).safeParse(rawId);if(!id.success)throw new MedusaError(MedusaError.Types.INVALID_DATA,"Invalid cart.");
     try{
       lease(signals);
-      // Separate orchestration key: each component obtains its own checkout/native
-      // leases, avoiding reentrant deadlocks while serializing repeat quote clicks.
+      // Serialize repeat refreshes, then retain one checkout/native lease pair
+      // across all phases. Components reuse only this live async operation.
       return await scope.resolve<ILockingModule>(Modules.LOCKING).execute(`snowforce-tax-refresh:${id.data}`,async signal=>{
-        const leases=[...signals,signal];lease(leases);
+        return withCheckoutCartLease(scope,id.data,async leases=>{
+        lease(leases);
         const owned=async()=>{const {data}=await scope.resolve(ContainerRegistrationKeys.QUERY).graph({entity:"cart",fields:checkoutFields,filters:{id:id.data}});if(data.length!==1||data[0].customer_id!==auth.actor_id)throw conflict();const cart=checkoutCartSchema.parse(data[0]);if(cart.completed_at||cart.payment_collection?.payment_sessions.length)throw conflict();return cart;};
         const cart=await owned();lease(leases);
         if(cart.metadata&&Object.hasOwn(cart.metadata,taxQuoteReceiptKey)){
@@ -49,6 +51,7 @@ export function createCartTaxRefresher(flow:TaxFlow=nativeFlow){
         const after=await owned(),proof=await assertPersistedCartTaxQuote(after,scope,await assertActiveStripeTaxSetup(scope),"create_payment");
         if(proof.receipt.quote_id!==prepared.quote_id)throw conflict();lease(leases);
         return {status:"quoted" as const,reused:prepared.reused,taxQuote:publicCartTaxQuote(proof.quote)};
+        },[...signals,signal]);
       },{timeout:15,expire:120});
     }catch{throw conflict();}
   };

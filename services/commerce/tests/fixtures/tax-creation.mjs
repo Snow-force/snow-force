@@ -47,7 +47,8 @@ export function creationFixture() {
   };
   const setupAccount = f.setup.account;
   f.setup.account = async () => {assert.equal(f.depth,0,"provider setup must not run under SQL transactions"); return setupAccount();};
-  f.scope = {resolve:(key,options)=>key === "locking" ? {execute:async(key,callback,options)=>{f.locks.push({key,options});const controller=new AbortController();f.controllers.push(controller);return callback(controller.signal);}}
+  const locking={execute:async(key,callback,options)=>{f.locks.push({key,options});const controller=new AbortController();f.controllers.push(controller);return callback(controller.signal);}};
+  f.scope = {resolve:(key,options)=>key === "locking" ? locking
     : key === "__pg_connection__" ? db : key === "snowforce_tax_quote_writer" ? (assert.equal(options.allowUnregistered,true),f.writer) : base.resolve(key,options)};
   return f;
 }
