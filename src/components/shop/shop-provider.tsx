@@ -6,11 +6,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Minus, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { useLanguage } from "@/lib/language";
-import { applyShopPromotionAction, changeShopCartAction, getShopCartAction } from "@/lib/shop/cart-actions";
+import { applyShopPromotionAction, cancelUnpaidPaymentAndRemoveAction, changeShopCartAction, getShopCartAction } from "@/lib/shop/cart-actions";
 import type { CartResult, CommerceCart } from "@/lib/shop/commerce-cart";
 import { formatStorePrice } from "@/lib/shop/storefront";
 import { LoadingSpinner, LoadingStatus } from "./loading-status";
 import { CartCheckoutNotice } from "./cart-checkout-notice";
+import { CancelPaymentDialog, type CancelPaymentPrompt } from "./cancel-payment-dialog";
+import { PendingFeedback } from "./pending-feedback";
 
 type CartContext = { state: CartResult; busy: boolean; error: CartResult["status"] | null; open: () => void; syncCheckout: (cart: CommerceCart) => void; reload: () => Promise<void>; add: (variantId: string, quantity: number) => Promise<boolean>; update: (itemId: string, quantity: number) => Promise<boolean>; remove: (itemId: string) => Promise<boolean>; promotion: (code: string, remove?: boolean) => Promise<boolean> };
 const Context = createContext<CartContext | null>(null);
@@ -62,6 +64,7 @@ export function CartContents({ onContinue, presentation = "drawer" }: { onContin
         <button className="mt-4 min-h-11 text-sm text-[#0066cc] underline" disabled={working} onClick={() => void run({ kind: "refresh" }, reload)}>{working && pending?.kind === "refresh" && <LoadingSpinner className="mr-2" />}{text("Refresh cart", "刷新购物车")}</button>
       </aside></div>}
     <p role="status" className="mt-3 text-sm text-[#666]">{working && cart ? <LoadingStatus announce={false}>{pendingText}</LoadingStatus> : ""}</p>
+    {working && <PendingFeedback kind="cart" />}
   </div>;
 }
 
@@ -72,6 +75,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CartResult>({ status: "ready", cart: null });
   const [busy, setBusy] = useState(!checkoutEntry);
   const [error, setError] = useState<CartResult["status"] | null>(null);
+  const [cancelPrompt, setCancelPrompt] = useState<CancelPaymentPrompt | null>(null);
+  const [cancelUncertain, setCancelUncertain] = useState(false);
   const [opened, setOpened] = useState(false);
   const active = useRef(!checkoutEntry);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -81,10 +86,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     active.current = true; setBusy(true); setError(null);
     try {
       const next = await operation();
-      if (next.status === "ready" || next.status === "signed-out") setState(next);
-      else setError(next.status);
+      if (next.status === "ready" || next.status === "signed-out") { setState(next); setCancelPrompt(null); setCancelUncertain(false); }
+      else {
+        setError(next.status);
+        if (next.status === "checkout-locked" && next.itemId && next.cancellation?.status === "confirmation-required") {
+          setCancelPrompt({ itemId: next.itemId, token: next.cancellation.token, amountCents: next.cancellation.amountCents }); setCancelUncertain(false);
+        } else if (next.status === "checkout-locked" && next.cancellation?.status === "blocked") { setCancelPrompt(null); setCancelUncertain(false); }
+        else setCancelUncertain(true);
+      }
       return next.status === "ready";
-    } catch { setError("unavailable"); return false; }
+    } catch { setError("unavailable"); setCancelUncertain(true); return false; }
     finally { active.current = false; setBusy(false); }
   }, []);
   const reload = useCallback(async () => { await perform(getShopCartAction); }, [perform]);
@@ -114,8 +125,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, [opened]);
   const count = state.status === "ready" ? state.cart?.items.reduce((total, item) => total + item.quantity, 0) ?? 0 : 0;
   return <Context.Provider value={{ state, busy, error, reload, syncCheckout, open: () => setOpened(true), add: async (variantId, quantity) => { const done = await perform(() => changeShopCartAction({ kind: "add", variantId, quantity })); setOpened(true); return done; }, update: (itemId, quantity) => perform(() => changeShopCartAction({ kind: "update", itemId, quantity })), remove: (itemId) => perform(() => changeShopCartAction({ kind: "remove", itemId })), promotion: (code, remove = false) => perform(() => applyShopPromotionAction({ code, remove })) }}>
-    <div className="shop-shell"><div className="shop-local-nav"><div className="shop-container flex min-h-16 items-center justify-between gap-3 py-3"><Link href="/shop" className="text-base font-semibold tracking-tight sm:text-lg">{text("Gear shop", "装备商城")}<span className="ml-3 hidden text-xs font-normal tracking-widest text-[#777] sm:inline">SNOWFORCE</span></Link><div className="flex items-center gap-2 sm:gap-5"><Link href="/shop#catalog" className="hidden min-h-11 items-center gap-2 text-sm text-[#666] sm:flex"><Search size={17} />{text("Browse all gear", "浏览全部装备")}</Link><button className="shop-pill shop-bag-button" onClick={() => setOpened(true)}>{busy ? <LoadingSpinner /> : <ShoppingBag size={17} aria-hidden="true" />}{text("Cart", "购物车")}<span className="shop-count">{count}</span></button></div></div></div>{children}
+    <div className="shop-shell"><div className="shop-local-nav"><div className="shop-container flex min-h-16 items-center justify-between gap-3 py-3"><Link href="/shop" className="text-base font-semibold tracking-tight sm:text-lg">{text("Gear shop", "装备商城")}<span className="ml-3 hidden text-xs font-normal tracking-widest text-[#777] sm:inline">SNOWFORCE</span></Link><div className="flex items-center gap-2 sm:gap-5"><Link href="/shop#catalog" className="hidden min-h-11 items-center gap-2 text-sm text-[#666] sm:flex"><Search size={17} />{text("Browse all gear", "浏览全部装备")}</Link><button className="shop-pill shop-bag-button" onClick={() => setOpened(true)}>{busy ? <LoadingSpinner /> : <ShoppingBag size={17} aria-hidden="true" />}{text("Cart", "购物车")}<span className="shop-count">{count}</span></button></div></div></div>{busy && !opened && !cancelPrompt && pathname !== "/shop/cart" && !pathname?.startsWith("/shop/checkout") && <div className="shop-container"><PendingFeedback kind="cart" /></div>}{children}
       <dialog ref={dialog} className="shop-dialog" aria-labelledby="cart-title" onCancel={() => setOpened(false)} onClose={() => setOpened(false)} onClick={(event) => { if (event.target === event.currentTarget) setOpened(false); }}><div className="flex items-start justify-between gap-4 border-b border-[#e0e0e0] pb-5"><div><p className="shop-eyebrow">SNOWFORCE / GEAR</p><h2 id="cart-title" className="mt-2 text-2xl font-semibold">{text("Your gear cart", "你的购物车")}</h2></div><button autoFocus className="shop-icon-button" aria-label={text("Close cart", "关闭购物车")} onClick={() => setOpened(false)}><X size={22} /></button></div>{opened && <CartContents onContinue={() => setOpened(false)} />}</dialog>
+      <CancelPaymentDialog prompt={cancelPrompt} busy={busy} uncertain={cancelUncertain} dismiss={() => { setCancelPrompt(null); setCancelUncertain(false); }} confirm={async prompt => { if (prompt.itemId) await perform(() => cancelUnpaidPaymentAndRemoveAction({ itemId: prompt.itemId, token: prompt.token, confirmed: true })); }} />
     </div>
   </Context.Provider>;
 }

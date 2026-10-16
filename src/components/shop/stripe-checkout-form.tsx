@@ -6,6 +6,7 @@ import { loadStripe } from "@stripe/stripe-js/pure";
 import { useLanguage } from "@/lib/language";
 import { formatStorePrice } from "@/lib/shop/storefront";
 import { LoadingSpinner, LoadingStatus } from "./loading-status";
+import { PendingFeedback } from "./pending-feedback";
 
 type Props = { clientSecret: string; publishableKey: string; total: number; validate: () => Promise<boolean>; complete: () => Promise<void>; onBusyChange?: (busy: boolean) => void };
 function PaymentForm({ total, validate, complete, onBusyChange }: Omit<Props, "clientSecret" | "publishableKey">) {
@@ -41,6 +42,7 @@ function PaymentForm({ total, validate, complete, onBusyChange }: Omit<Props, "c
     finally { active.current = false; onBusyChange?.(false); setBusy(false); }
   }}>
     {loading && <LoadingStatus className="mb-4 rounded-lg bg-[#f5f5f7] p-4 text-sm">{text("Loading secure payment…", "正在加载安全付款表单…")}</LoadingStatus>}
+    {loading && <PendingFeedback kind="payment" />}
     <PaymentElement options={{ layout: "tabs" }} onReady={() => setElementState("ready")} onLoadError={() => setElementState("error")} />
     {elementState === "error" && <p role="alert" className="mt-4 text-sm text-red-700">{text("The secure payment form could not load. Check payment status before trying again.", "安全付款表单加载失败，请先检查付款状态后再重试。")}</p>}
     {busy && <LoadingStatus className="mt-4 text-sm text-[#666]">{pendingText}</LoadingStatus>}

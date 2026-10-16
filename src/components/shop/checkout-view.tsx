@@ -7,12 +7,15 @@ import Image from "next/image";
 import { LockKeyhole, MapPin, Truck } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import { changeShopCheckoutAction, getShopCheckoutAction } from "@/lib/shop/checkout-actions";
+import { cancelUnpaidCartPaymentAction, previewShopPaymentCancellationAction } from "@/lib/shop/cart-actions";
 import { checkoutAddressSchema, checkoutPickupContactSchema, type CheckoutResult, type CheckoutReview, type CheckoutAddress } from "@/lib/shop/checkout";
 import { usStates } from "@/lib/shop/shipping-addresses";
 import { formatStorePrice } from "@/lib/shop/storefront";
 import { shopPolicySections, type ShopPolicySection, type ShopPublishedPolicy } from "@/lib/shop/policies";
 import { useShopCart } from "./shop-provider";
 import { LoadingSpinner, LoadingStatus } from "./loading-status";
+import { CancelPaymentDialog, type CancelPaymentPrompt } from "./cancel-payment-dialog";
+import { PendingFeedback } from "./pending-feedback";
 
 const StripeCheckoutForm = dynamic(() => import("./stripe-checkout-form"), { ssr: false, loading: () => <LoadingStatus>Loading secure payment… / 正在加载付款…</LoadingStatus> });
 type PendingOperation = "loading" | "saving" | "payment" | "checking" | "completing";
@@ -64,6 +67,9 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
   const [error, setError] = useState<CheckoutResult["status"] | null>(null);
   const [acceptance, setAcceptance] = useState<{ fingerprint: string; policyVersion: number } | null>(null);
   const [quoteTime, setQuoteTime] = useState(() => Date.now());
+  const [cancelPrompt, setCancelPrompt] = useState<CancelPaymentPrompt | null>(null);
+  const [cancelUncertain, setCancelUncertain] = useState(false);
+  const [cancelNotice, setCancelNotice] = useState<"blocked" | "unavailable" | null>(null);
   const active = useRef(true);
   const stripeActive = useRef(false);
   const paymentGeneration = useRef(0);
@@ -127,6 +133,30 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     setResult({ status: "processing" });
     await perform(() => changeShopCheckoutAction({ kind: "recover" }), false, "checking");
   };
+  const previewCancellation = async () => {
+    if (active.current || stripeActive.current) return;
+    active.current = true; setBusy(true); setPending("checking"); setCancelNotice(null);
+    try {
+      const next = await previewShopPaymentCancellationAction();
+      if (next.status === "checkout-locked" && next.cancellation?.status === "confirmation-required") {
+        setCancelPrompt({ token: next.cancellation.token, amountCents: next.cancellation.amountCents }); setCancelUncertain(false);
+      } else setCancelNotice(next.status === "checkout-locked" && next.cancellation?.status === "blocked" ? "blocked" : "unavailable");
+    } catch { setCancelNotice("unavailable"); }
+    finally { active.current = false; setBusy(false); }
+  };
+  const confirmCancellation = async (prompt: CancelPaymentPrompt) => {
+    if (active.current || stripeActive.current) return;
+    // Discard the old Elements instance before cancellation starts. A pending
+    // outcome must never bring back its client secret or consent.
+    paymentGeneration.current += 1; setResult({ status: "processing" }); setAcceptance(null);
+    setCancelUncertain(true);
+    await perform(async () => {
+      const next = await cancelUnpaidCartPaymentAction({ token: prompt.token, confirmed: true });
+      if (next.status === "ready") { setCancelPrompt(null); setCancelUncertain(false); return getShopCheckoutAction(); }
+      if (next.status === "checkout-locked" && next.cancellation?.status === "blocked") { setCancelPrompt(null); setCancelNotice("blocked"); }
+      return { status: "processing" };
+    }, true, "checking");
+  };
   useEffect(() => {
     let current = true;
     // Stripe may append a client secret on return. Never use or retain it as proof of payment.
@@ -140,6 +170,10 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
   return <div className="shop-container checkout-main" role="region" aria-label={text("Checkout", "结账")} aria-busy={busy || stripeBusy}>
     <Link className="text-sm text-[#0066cc]" href="/shop/cart">← {text("Back to cart", "返回购物车")}</Link>
     <div className="checkout-heading"><div><p className="shop-eyebrow">SNOWFORCE / CHECKOUT</p><h1>{text("Checkout", "结账")}</h1></div><p><LockKeyhole size={15} aria-hidden="true" />{text("Secure checkout · USD", "安全结账 · 美元结算")}</p></div>
+    <CancelPaymentDialog prompt={cancelPrompt} busy={busy} uncertain={cancelUncertain} dismiss={() => { setCancelPrompt(null); if (cancelUncertain) void checkPayment(); }} confirm={confirmCancellation} />
+    {(busy || stripeBusy) && !cancelPrompt && <PendingFeedback kind={stripeBusy || ["payment", "checking", "completing"].includes(pending) ? "payment" : "checkout"} />}
+    {(result?.status === "payment" || result?.status === "processing" || review?.paymentStarted) && result?.status !== "complete" && <button type="button" className="mt-4 min-h-11 text-sm text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => void previewCancellation()}>{text("Cancel unfinished payment & edit checkout", "取消未完成付款并修改结账")}</button>}
+    {cancelNotice && <p role="alert" className="mt-3 text-sm">{cancelNotice === "blocked" ? text("This payment cannot be canceled here. Check its current payment or order status before making changes.", "这笔付款暂不能在此取消。请先核对付款或订单状态，再修改订单。") : text("Cancellation could not be verified. Check payment status and try again.", "暂时无法核实取消条件，请检查付款状态后重试。")}</p>}
     {busy && review && <p role="status" className="mt-5 rounded-lg bg-[#f0f7ff] p-4 text-sm"><LoadingSpinner className="mr-2" />{pendingText}</p>}
     {displayError && <div role="alert" className="mt-6 rounded-lg bg-[#f5f5f7] p-4 text-sm">{displayError === "not-configured" ? text("Delivery or payments are being prepared. Checkout isn't available yet.", "配送或付款服务正在准备中，暂时无法结账。") : displayError === "invalid" ? text("Check the address and shipping selection.", "请检查收货地址和配送选择。") : displayError === "rejected" ? text("Your checkout could not be verified. Refresh the details; check payment status before paying again.", "暂时无法核实结账信息。请刷新信息，再次付款前先检查付款状态。") : text("We couldn't load checkout. Please try again.", "暂时无法加载结账信息，请重试。")}<button className="ml-3 min-h-11 text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => { automaticAttempt.current = ""; void perform(getShopCheckoutAction); }}>{busy && pending === "loading" && <LoadingSpinner className="mr-2" />}{text("Refresh", "刷新")}</button></div>}
     {(displayError || result?.status === "processing" || result?.status === "payment" || (result?.status === "review" && review?.paymentStarted)) && <div className="mt-5"><button className="min-h-11 text-sm text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => void checkPayment()}>{busy && pending === "checking" && <LoadingSpinner className="mr-2" />}{text("Check payment status", "检查付款状态")}</button>{busy && !review && <p role="status" className="mt-2 text-sm"><LoadingSpinner className="mr-2" />{pendingText}</p>}</div>}
@@ -148,7 +182,7 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     {result?.status === "signed-out" && <div className="mt-8"><p>{text("Sign in with your SnowForce account to checkout.", "请使用 SnowForce 会员账号登录后结账。")}</p><Link className="btn-primary mt-5" href={`/member?next=${encodeURIComponent(completing ? "/shop/checkout/return" : "/shop/checkout")}`}>{text("Sign in", "会员登录")}</Link></div>}
     {result?.status === "empty" && <div className="mt-8"><p>{text("Your cart is empty.", "购物车还是空的。")}</p><Link className="btn-primary mt-5" href="/shop#catalog">{text("Browse gear", "挑选装备")}</Link></div>}
     {result?.status === "complete" && <section className="mt-10 max-w-xl rounded-2xl bg-[#f5f5f7] p-8"><h2 className="text-2xl font-semibold">{text("Order received", "订单已创建")}</h2><p className="mt-4">{text("Order", "订单号")} #{result.order.number}</p><p className="mt-2">{formatStorePrice(result.order.total, lang)} USD</p><p className="mt-4 text-sm leading-relaxed text-[#666]">{text("Your order is recorded. Payment capture and dispatch are managed by SnowForce; an order confirmation alone does not mean it has shipped.", "订单已记录，收款和发货由 SnowForce 后台处理。订单确认后可继续查看物流状态。")}</p><Link className="btn-primary mt-6" href="/member/orders">{text("My orders", "我的订单")}</Link></section>}
-    {result?.status === "processing" && <section className="mt-10 max-w-xl"><h2 className="text-2xl font-semibold">{!displayError && <LoadingSpinner className="mr-2" />}{text("Verifying your order", "正在核验订单")}</h2><p className="mt-3 text-sm leading-relaxed">{text("Payment or inventory verification is still pending. Check again before attempting another payment.", "付款或库存仍在核验，请先检查状态，再尝试付款。")}</p><button className="btn-primary mt-6 gap-2" disabled={busy} onClick={() => void perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing")}>{busy && pending === "completing" && <LoadingSpinner />}{text("Check order status", "检查订单状态")}</button></section>}
+    {result?.status === "processing" && <section className="mt-10 max-w-xl"><h2 className="text-2xl font-semibold">{busy && !displayError && <LoadingSpinner className="mr-2" />}{text("Order status needs checking", "订单状态待核验")}</h2><p className="mt-3 text-sm leading-relaxed">{text("Payment or inventory verification is still pending. Check again before attempting another payment.", "付款或库存仍在核验，请先检查状态，再尝试付款。")}</p><button className="btn-primary mt-6 gap-2" disabled={busy} onClick={() => void perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing")}>{busy && pending === "completing" && <LoadingSpinner />}{text("Check order status", "检查订单状态")}</button></section>}
     {review && (result?.status === "review" || result?.status === "payment") && <div className="checkout-grid">
       <div className="checkout-steps">
         {!review.configured && <p role="alert" className="rounded-lg bg-[#f5f5f7] p-4 text-sm">{text("Checkout is being prepared. Delivery, tax and payment configuration must be completed before you can pay.", "结账服务正在准备中，配送、税费和付款配置完成后才可付款。")}</p>}

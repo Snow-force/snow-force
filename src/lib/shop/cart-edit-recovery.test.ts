@@ -12,6 +12,14 @@ const editable = () => new Response(JSON.stringify({ status: "editable", quote_r
 const json = (value: unknown) => new Response(JSON.stringify(value));
 
 describe("cart editing after a checkout lock", () => {
+  it("uses the stable edit code even when the message changes, but rejects generic Medusa conflicts", async () => {
+    const body = { type: "conflict", code: "checkout_locked", message: "Review checkout" };
+    const request = createCommerceClient(config, vi.fn().mockImplementation(async () => Response.json(body, { status: 409 })));
+    await expect(request(edit, z.unknown(), { method: "POST", body: {} })).rejects.toBeInstanceOf(CommerceCheckoutLockedError);
+    await expect(request("/store/carts/cart_fixture/line-items", z.unknown(), { method: "POST", body: {} })).rejects.not.toBeInstanceOf(CommerceCheckoutLockedError);
+    const generic = createCommerceClient(config, vi.fn().mockImplementation(async () => Response.json({ type: "conflict", code: "invalid_state_error", message: "The request conflicted with another request. You may retry the request with the provided Idempotency-Key." }, { status: 409 })));
+    await expect(generic(edit, z.unknown(), { method: "POST", body: {} })).rejects.not.toBeInstanceOf(CommerceCheckoutLockedError);
+  });
   it("classifies only the exact owned edit conflict as a checkout lock", async () => {
     const request = createCommerceClient(config, vi.fn().mockImplementation(locked));
     await expect(request(edit, z.unknown(), { method: "POST", body: {} })).rejects.toBeInstanceOf(CommerceCheckoutLockedError);

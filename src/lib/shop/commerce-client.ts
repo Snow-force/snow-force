@@ -27,6 +27,7 @@ const checkoutLockedResponse = z.object({
   type: z.literal("conflict"),
   message: z.literal("Check the current quote and payment before changing this cart."),
 });
+const checkoutLockedCode = z.object({ type: z.literal("conflict"), code: z.literal("checkout_locked") });
 export type CommerceConfig = { backendUrl: string; publishableKey: string };
 export type CommerceRequest = <Schema extends z.ZodTypeAny>(path: string, response: Schema, options?: { method?: "GET" | "POST" | "DELETE"; body?: unknown; token?: string }) => Promise<z.output<Schema>>;
 
@@ -45,7 +46,7 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
       response = await fetcher(`${url.origin}${path}`, {
         // Native checkout updates may refresh pricing, promotions and shipping.
         // Do not abandon these writes while the backend is still committing.
-        method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(options.method && options.method !== "GET" && (/^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+(?:\/(?:pickup|quote|edit))?$/.test(decoded) || /^\/store\/carts(?:\/cart_[A-Za-z0-9]+(?:\/(?:shipping-methods|promotions|line-items(?:\/cali_[A-Za-z0-9]+)?))?)?$/.test(decoded)) ? 60_000 : 15_000),
+        method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(options.method && options.method !== "GET" && (/^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+(?:\/(?:pickup|quote|edit|cancel))?$/.test(decoded) || /^\/store\/carts(?:\/cart_[A-Za-z0-9]+(?:\/(?:shipping-methods|promotions|line-items(?:\/cali_[A-Za-z0-9]+)?))?)?$/.test(decoded)) ? 60_000 : 15_000),
         headers: { "Content-Type": "application/json", "x-publishable-api-key": config.publishableKey, ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
         ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
       });
@@ -60,7 +61,7 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
       }
       // This exact edit boundary can reject payment sessions OR quote evidence.
       // Do not label unrelated inventory, pricing or validation errors as locks.
-      if (response.status === 409 && options.method === "POST" && /^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+\/edit$/.test(decoded) && checkoutLockedResponse.safeParse(body).success) throw new CommerceCheckoutLockedError();
+      if (response.status === 409 && options.method === "POST" && /^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+\/edit$/.test(decoded) && (checkoutLockedCode.safeParse(body).success || checkoutLockedResponse.safeParse(body).success)) throw new CommerceCheckoutLockedError();
       throw new CommerceRejectedError();
     }
     if (!response.ok) throw new CommerceUnavailableError();

@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), sync: vi.fn(), validation: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), sync: vi.fn(), validation: vi.fn(), preview: vi.fn(), cancel: vi.fn() }));
+vi.mock("@/lib/shop/cart-actions", () => ({ previewShopPaymentCancellationAction: mocks.preview, cancelUnpaidCartPaymentAction: mocks.cancel }));
 vi.mock("@/lib/shop/checkout-actions", () => ({ getShopCheckoutAction: mocks.get, changeShopCheckoutAction: mocks.change }));
 vi.mock("./shop-provider", () => ({ useShopCart: () => ({ reload: mocks.reload, syncCheckout: mocks.sync }) }));
 vi.mock("next/dynamic", () => ({ default: () => ({ validate, onBusyChange }: { validate: () => Promise<boolean>; onBusyChange: (busy: boolean) => void }) => <div>Secure Stripe form<button onClick={() => void validate().then(mocks.validation)}>Validate payment review</button><button onClick={() => onBusyChange(true)}>Start confirmation</button><button onClick={() => onBusyChange(false)}>Finish confirmation</button></div> }));
@@ -25,9 +26,29 @@ const policy: ShopPublishedPolicy = {
   },
 };
 const review: CheckoutReview = { status: "review", fingerprint: "a".repeat(64), configured: true, paymentStarted: false, policy, policyAccepted: false, taxQuote: { totalCents: 8990, grossCents: 7995, discountCents: 0, merchandiseCents: 7995, shippingCents: 995, salesTaxCents: 0, fees: [], expiresAt: 2000000000, ready: true }, address: { name: "Test Rider", phone: "5551234567", address1: "Test street", address2: "", city: "Test city", state: "CA", postalCode: "90001", countryCode: "US" }, options: [{ id: "so_fixture", name: "US standard", price: 9.95 }], selectedOptionId: "so_fixture", cart: { items: [{ id: "cali_fixture", name: "Test jacket", variant: "M", image: "/shop/product-placeholder.svg", slug: "test-jacket", quantity: 1, unitPrice: 79.95, total: 79.95 }], subtotal: 79.95, shippingTotal: 9.95, taxTotal: 0, discountTotal: 0, total: 89.9 } };
-beforeEach(() => { vi.resetAllMocks(); mocks.get.mockResolvedValue(review); mocks.change.mockResolvedValue(review); mocks.reload.mockResolvedValue(undefined); });
+beforeEach(() => {
+  vi.resetAllMocks(); mocks.get.mockResolvedValue(review); mocks.change.mockResolvedValue(review); mocks.reload.mockResolvedValue(undefined);
+  Object.defineProperty(HTMLDialogElement.prototype, "showModal", { configurable: true, value: function(this: HTMLDialogElement) { this.setAttribute("open", ""); } });
+  Object.defineProperty(HTMLDialogElement.prototype, "close", { configurable: true, value: function(this: HTMLDialogElement) { this.removeAttribute("open"); } });
+});
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
 describe("checkout interface", () => {
+  it("discards the old payment form before cancellation and preserves a pending retry", async () => {
+    mocks.get.mockResolvedValue({ ...review, paymentStarted: true, policyAccepted: true });
+    mocks.change.mockResolvedValue({ status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd" });
+    mocks.preview.mockResolvedValue({ status: "checkout-locked", cancellation: { status: "confirmation-required", token: "a".repeat(64), amountCents: 8990, currency: "usd" } });
+    mocks.cancel.mockResolvedValueOnce({ status: "checkout-locked", cancellation: { status: "pending", code: "recovery-pending" } }).mockResolvedValue({ status: "ready", cart: review.cart });
+    view(); fireEvent.click(await screen.findByRole("button", { name: "Resume payment" }));
+    await screen.findByText("Secure Stripe form");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel unfinished payment & edit checkout" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel unpaid payment & edit" }));
+    await screen.findByRole("button", { name: "Check cancellation & retry" });
+    expect(screen.queryByText("Secure Stripe form")).not.toBeInTheDocument();
+    expect(mocks.cancel).toHaveBeenCalledExactlyOnceWith({ token: "a".repeat(64), confirmed: true });
+    mocks.get.mockResolvedValue(review); fireEvent.click(screen.getByRole("button", { name: "Check cancellation & retry" }));
+    await waitFor(() => { expect(screen.getByLabelText("Recipient name")).toBeEnabled(); expect(screen.queryByRole("dialog")).not.toBeInTheDocument(); });
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+  });
   it("keeps compact help and policy links on the focused checkout surface", async () => {
     view();
     const help = await screen.findByRole("navigation", { name: "Checkout help and policies" });
@@ -40,7 +61,7 @@ describe("checkout interface", () => {
     view();
     fireEvent.change(await screen.findByLabelText("Recipient name"), { target: { value: "Updated Rider" } });
     await waitFor(() => expect(mocks.change).toHaveBeenCalledTimes(1), { timeout: 2000 });
-    expect(screen.getByText(/Saving your checkout details/)).toHaveAttribute("role", "status");
+    expect(await screen.findByText(/Saving your checkout details/)).toHaveAttribute("role", "status");
     expect(screen.getByLabelText("Recipient name")).toBeDisabled();
     expect(screen.queryByRole("button", { name: /Save address/ })).not.toBeInTheDocument();
     await act(async () => { finish({ ...review, address: { ...review.address!, name: "Updated Rider" } }); });
@@ -345,7 +366,7 @@ describe("checkout interface", () => {
   });
   it("keeps pending payments pending and offers an authoritative status check", async () => {
     mocks.change.mockResolvedValue({ status: "processing" }); view("en", true);
-    expect(await screen.findByText("Verifying your order")).toBeInTheDocument();
+    expect(await screen.findByText("Order status needs checking")).toBeInTheDocument();
     expect(screen.queryByText("Order received")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Check order status" }));
     await waitFor(() => expect(mocks.change).toHaveBeenCalledTimes(2));

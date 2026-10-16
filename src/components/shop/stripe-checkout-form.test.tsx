@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 const mocks = vi.hoisted(() => ({ confirm: vi.fn(), submit: vi.fn(), load: vi.fn(), validate: vi.fn(), complete: vi.fn(), busy: vi.fn() }));
 vi.mock("@stripe/react-stripe-js", () => ({
@@ -11,6 +11,7 @@ vi.mock("@stripe/stripe-js/pure", () => ({ loadStripe: mocks.load }));
 import StripeCheckoutForm from "./stripe-checkout-form";
 import { LanguageProvider } from "@/lib/language";
 beforeEach(() => { vi.resetAllMocks(); mocks.load.mockResolvedValue({}); mocks.submit.mockResolvedValue({}); mocks.validate.mockResolvedValue(true); mocks.complete.mockResolvedValue(undefined); mocks.confirm.mockResolvedValue({ paymentIntent: { status: "requires_capture" } }); });
+afterEach(() => vi.useRealTimers());
 function view(ready = true) {
   const rendered = render(<LanguageProvider initialLang="en"><StripeCheckoutForm clientSecret="pi_fixture_secret_fixture" publishableKey="pk_test_fixture" total={89.9} validate={mocks.validate} complete={mocks.complete} onBusyChange={mocks.busy} /></LanguageProvider>);
   if (ready) fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
@@ -82,6 +83,17 @@ it("shows a spinner and forbids submission until the PaymentElement is ready", a
   fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
   expect(button).toBeEnabled();
   await waitFor(() => expect(screen.queryByText("Loading secure payment…")).not.toBeInTheDocument());
+});
+it("offers a read-only check when secure payment loading remains unresolved and removes it on readiness", async () => {
+  vi.useFakeTimers(); view(false);
+  await act(async () => { await Promise.resolve(); vi.advanceTimersByTime(8_000); });
+  expect(screen.getByText(/taking longer than usual/)).toBeVisible();
+  act(() => vi.advanceTimersByTime(22_000));
+  expect(screen.getByRole("link", { name: "Check orders in a new tab" })).toHaveAttribute("href", "/member/orders");
+  expect(mocks.submit).not.toHaveBeenCalled(); expect(mocks.confirm).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
+  expect(screen.queryByRole("link", { name: "Check orders in a new tab" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeEnabled();
 });
 it("replaces a failed element loader with an actionable error, not an infinite spinner", async () => {
   const { container } = view(false);
