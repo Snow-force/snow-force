@@ -1,7 +1,8 @@
 import "server-only";
 import { z } from "zod";
-import { CommerceAuthorizationError, CommerceNotFoundError, CommerceRejectedError, type CommerceRequest } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceCheckoutLockedError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError, type CommerceRequest } from "./commerce-client";
 import { commerceId, safeProductImage, usdAmount } from "./storefront";
+import { checkoutRecoverySchema } from "./checkout";
 
 export const nativeCartSchema = z.object({
   id: commerceId("cart"), currency_code: z.literal("usd"), customer: z.object({ id: commerceId("cus") }).nullable(), region_id: commerceId("reg").nullable(), completed_at: z.string().nullable(),
@@ -11,12 +12,28 @@ export const nativeCartSchema = z.object({
 });
 export type NativeCart = z.infer<typeof nativeCartSchema>;
 export type CommerceCart = { items: { id: string; name: string; variant: string; slug: string | null; image: string; quantity: number; unitPrice: number; total: number }[]; total: number; subtotal: number; taxTotal: number; shippingTotal: number; discountTotal: number; promotionCodes?: string[] };
-export type CartResult = { status: "ready"; cart: CommerceCart | null } | { status: "signed-out" | "unavailable" | "not-configured" | "sales-disabled" | "rejected" | "invalid" };
+export type CartResult = { status: "ready"; cart: CommerceCart | null } | { status: "signed-out" | "unavailable" | "not-configured" | "sales-disabled" | "rejected" | "invalid" | "checkout-locked" };
 const responseSchema = z.object({ cart: nativeCartSchema });
 export const CART_FIELDS = "id,currency_code,customer.id,region_id,completed_at,total,subtotal,tax_total,shipping_total,discount_total,promotions.code,items.id,items.variant_id,items.product_handle,items.product_title,items.title,items.variant_title,items.thumbnail,items.quantity,items.unit_price,items.total";
 export async function prepareCartEdit(request: CommerceRequest, token: string, cartId: string) {
   const id = commerceId("cart").parse(cartId);
-  await request(`/store/snowforce/checkout/${id}/edit`, z.object({ status: z.literal("editable"), quote_removed: z.boolean(), review_required: z.literal(true) }).strict(), { token, method: "POST", body: {} });
+  const edit = () => request(`/store/snowforce/checkout/${id}/edit`, z.object({ status: z.literal("editable"), quote_removed: z.boolean(), review_required: z.literal(true) }).strict(), { token, method: "POST", body: {} });
+  try { await edit(); }
+  catch (error) {
+    if (!(error instanceof CommerceCheckoutLockedError)) throw error;
+    // Recovery reads Stripe and retires only verified canceled sessions. It
+    // cannot cancel, confirm, capture or refund any payment.
+    const recovered = await request(`/store/snowforce/checkout/${id}`, checkoutRecoverySchema, { token, method: "POST", body: { kind: "recover" } }).catch((recoveryError: unknown) => {
+      // Authorized or completed native payment evidence can reject recovery.
+      // Preserve the original checkout diagnosis rather than blaming inventory.
+      if (recoveryError instanceof CommerceRejectedError && !(recoveryError instanceof CommerceSalesDisabledError)) throw error;
+      throw recoveryError;
+    });
+    if (recovered.status !== "recovered" || !recovered.unlocked) throw error;
+    // Recovery is NOT edit authorization: a new payment or unresolved quote
+    // must still block the one fresh edit check before any item mutation.
+    await edit();
+  }
 }
 export function assertCartOwner(cart: NativeCart, customerId: string) {
   if (cart.customer?.id !== customerId) throw new CommerceAuthorizationError();

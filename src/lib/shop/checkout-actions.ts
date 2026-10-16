@@ -19,9 +19,17 @@ function failed(error: unknown): CheckoutResult {
   if (error instanceof CommerceRejectedError) return { status: "rejected" };
   return { status: "unavailable" };
 }
-async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>, includeOptions = true): Promise<CheckoutResult> {
+async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>, includeOptions = true, prefetchDeliveryOptions = false): Promise<CheckoutResult> {
   const { repository, customer } = session;
-  const status = await repository.status();
+  const statusRead = repository.status();
+  // Both endpoints independently check ownership. Only overlap these fresh reads
+  // after a delivery preparation; never reuse a previous address's alternatives.
+  // Observe optional failures immediately, even if completion or pickup makes
+  // this read unnecessary. No data or promises are shared across requests.
+  const prefetched = includeOptions && prefetchDeliveryOptions && process.env.SHOP_CHECKOUT_OPTIMIZED_READS === "true"
+    ? repository.shippingOptions().then(options => ({ ok: true as const, options }), (error: unknown) => ({ ok: false as const, error }))
+    : null;
+  const status = await statusRead;
   if (status.status === "complete") { await syncOwnedMemberOrder(customer, status.order.id); return status; }
   if (status.status !== "review") return { status: "processing" };
   const cart = status.cart;
@@ -31,9 +39,10 @@ async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>,
   const raw = cart.shipping_address;
   const parsed = checkoutAddressSchema.safeParse(raw ? { name: [raw.first_name, raw.last_name].filter(Boolean).join(" "), phone: raw.phone ?? "", address1: raw.address_1 ?? "", address2: raw.address_2 ?? "", city: raw.city ?? "", state: raw.province ?? "", postalCode: raw.postal_code ?? "", countryCode: raw.country_code?.toUpperCase() } : null);
   const publishableKey = process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY ?? "";
-  // Address and pickup mutations need the current payment/configuration fences,
-  // but alternatives for the old address cannot authorize the new selection.
-  const options = includeOptions && parsed.success && !status.pickupSelected ? await repository.shippingOptions() : [];
+  const needsOptions = includeOptions && parsed.success && !status.pickupSelected;
+  const fetched = needsOptions && prefetched ? await prefetched : null;
+  if (fetched && !fetched.ok) throw fetched.error;
+  const options = needsOptions ? fetched?.ok ? fetched.options : await repository.shippingOptions() : [];
   const selected = cart.shipping_methods.length === 1 ? cart.shipping_methods[0] : null;
   const selectedOptionId = selected && ((status.pickupSelected && status.pickupOffer?.id === selected.shipping_option_id && selected.amount === 0) || options.some((option) => option.id === selected.shipping_option_id && Math.round(option.price * 100) === Math.round(selected.amount * 100))) ? selected.shipping_option_id : null;
   return { ...status, configured: status.configured && /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publishableKey), cart: cartSnapshot(cart), address: parsed.success ? parsed.data : null, options, selectedOptionId };
@@ -58,8 +67,6 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
         return recovered;
       }
       const refreshed = await review(session);
-      // Another browser can start a payment after the recovery lock is released.
-      // Describe the fresh review, never claim that this newer payment was canceled.
       return refreshed.status === "review" ? { ...refreshed, paymentCheck: recovered.unlocked && !refreshed.paymentStarted ? "unlocked" : "active" } : refreshed;
     }
     if (change.kind === "complete") {
@@ -74,21 +81,28 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
       return completed;
     }
     if (change.kind === "delivery" || change.kind === "pickup-review" || change.kind === "shipping-review") {
-      // Preparatory writes are authorized by their owned backend boundaries.
-      // Tax/payment readiness is verified when quoting and again before payment;
-      // fetching Stripe account settings before every address edit adds no fence.
       if (cart.region_id !== await session.region()) return { status: "not-configured" };
       if (change.kind === "pickup-review") {
         await repository.pickup(change.contact);
         await repository.quote();
       } else {
-        if (change.kind === "delivery") await repository.address(change.address);
+        const updated = change.kind === "delivery" ? await repository.address(change.address) : cart;
         const options = await repository.shippingOptions();
         const selected = change.kind === "shipping-review" ? options.find(option => option.id === change.optionId) : options.length === 1 ? options[0] : null;
         if (change.kind === "shipping-review" && !selected) return { status: "rejected" };
-        if (selected) { await repository.shipping(selected.id); await repository.quote(); }
+        if (selected) {
+          const retained = updated.shipping_methods.length === 1 ? updated.shipping_methods[0] : null;
+          // The address workflow already returns a fresh, owned native cart.
+          // Avoid clearing it and running the shipping workflow again when its
+          // one retained method still matches the newly calculated alternatives.
+          // Quoting below is NEVER skipped: its native locks recheck address,
+          // delivery, tax, money, payment state and ownership before committing.
+          const reuse = process.env.SHOP_CHECKOUT_OPTIMIZED_READS === "true" && retained?.shipping_option_id === selected.id && Math.round(retained.amount * 100) === Math.round(selected.price * 100);
+          if (!reuse) await repository.shipping(selected.id);
+          await repository.quote();
+        }
       }
-      return await review(session);
+      return await review(session, true, change.kind !== "pickup-review");
     }
     const current = await review(session, !["address", "pickup"].includes(change.kind));
     if (current.status !== "review") return current;
