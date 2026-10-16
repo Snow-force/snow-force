@@ -3,6 +3,7 @@ import { z } from "zod";
 import { CommerceAuthorizationError, CommerceCheckoutLockedError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError, type CommerceRequest } from "./commerce-client";
 import { commerceId, safeProductImage, usdAmount } from "./storefront";
 import { checkoutRecoverySchema } from "./checkout";
+import { cartCancellationSchema, type CartCancellation } from "./cancellation";
 
 export const nativeCartSchema = z.object({
   id: commerceId("cart"), currency_code: z.literal("usd"), customer: z.object({ id: commerceId("cus") }).nullable(), region_id: commerceId("reg").nullable(), completed_at: z.string().nullable(),
@@ -12,7 +13,7 @@ export const nativeCartSchema = z.object({
 });
 export type NativeCart = z.infer<typeof nativeCartSchema>;
 export type CommerceCart = { items: { id: string; name: string; variant: string; slug: string | null; image: string; quantity: number; unitPrice: number; total: number }[]; total: number; subtotal: number; taxTotal: number; shippingTotal: number; discountTotal: number; promotionCodes?: string[] };
-export type CartResult = { status: "ready"; cart: CommerceCart | null } | { status: "signed-out" | "unavailable" | "not-configured" | "sales-disabled" | "rejected" | "invalid" | "checkout-locked" };
+export type CartResult = { status: "ready"; cart: CommerceCart | null } | { status: "checkout-locked"; cancellation?: CartCancellation; itemId?: string } | { status: "signed-out" | "unavailable" | "not-configured" | "sales-disabled" | "rejected" | "invalid" };
 const responseSchema = z.object({ cart: nativeCartSchema });
 export const CART_FIELDS = "id,currency_code,customer.id,region_id,completed_at,total,subtotal,tax_total,shipping_total,discount_total,promotions.code,items.id,items.variant_id,items.product_handle,items.product_title,items.title,items.variant_title,items.thumbnail,items.quantity,items.unit_price,items.total";
 export async function prepareCartEdit(request: CommerceRequest, token: string, cartId: string) {
@@ -47,6 +48,11 @@ export function createCartRepository(request: CommerceRequest, customer: { custo
   const path = (cartId: string, suffix = "") => `/store/carts/${commerceId("cart").parse(cartId)}${suffix}?fields=${CART_FIELDS}`;
   const checked = (cart: NativeCart) => { assertCartOwner(cart, customer.customerId); return cart; };
   return {
+    async cancellation(cartId: string) { return request(`/store/snowforce/checkout/${commerceId("cart").parse(cartId)}/cancel`, cartCancellationSchema, options); },
+    async cancelPayment(cartId: string, token: string) {
+      const confirmation = z.string().regex(/^[a-f0-9]{64}$/).parse(token);
+      return request(`/store/snowforce/checkout/${commerceId("cart").parse(cartId)}/cancel`, cartCancellationSchema, { ...options, method: "POST", body: { token: confirmation, confirmed: true } });
+    },
     async promotion(cartId: string, code: string, remove = false) {
       const parsed = z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/).parse(code);
       const target = path(cartId, "/promotions");

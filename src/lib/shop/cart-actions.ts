@@ -42,8 +42,10 @@ export async function getShopCartAction(): Promise<CartResult> {
 export async function changeShopCartAction(input: unknown): Promise<CartResult> {
   const parsed = changeSchema.safeParse(input);
   if (!parsed.success) return { status: "invalid" };
+  let session: Awaited<ReturnType<typeof cartContext>> | undefined;
   try {
-    const { repository, customer, secret, cartId } = await cartContext();
+    session = await cartContext();
+    const { repository, customer, secret, cartId } = session;
     const change = parsed.data;
     let cart = cartId ? await repository.get(cartId) : null;
     if (change.kind === "add") {
@@ -64,5 +66,56 @@ export async function changeShopCartAction(input: unknown): Promise<CartResult> 
       cart = change.kind === "update" ? await repository.update(cart.id, change.itemId, change.quantity) : await repository.remove(cart.id, change.itemId);
     }
     return { status: "ready", cart: cartSnapshot(cart) };
+  } catch (error) {
+    if (error instanceof CommerceCheckoutLockedError && parsed.data.kind === "remove" && session?.cartId) {
+      try { return { status: "checkout-locked", cancellation: await session.repository.cancellation(session.cartId), itemId: parsed.data.itemId }; }
+      catch (previewError) { return previewError instanceof CommerceAuthorizationError ? failed(previewError) : failed(error); }
+    }
+    return failed(error);
+  }
+}
+
+const cancelRemovalSchema = z.object({ itemId: commerceId("cali"), token: z.string().regex(/^[a-f0-9]{64}$/), confirmed: z.literal(true) }).strict();
+const cancelPaymentSchema = cancelRemovalSchema.omit({ itemId: true });
+export async function previewShopPaymentCancellationAction(): Promise<CartResult> {
+  try {
+    const { repository, cartId } = await cartContext();
+    if (!cartId || !await repository.get(cartId)) return { status: "invalid" };
+    return { status: "checkout-locked", cancellation: await repository.cancellation(cartId) };
+  } catch (error) { return failed(error); }
+}
+export async function cancelUnpaidCartPaymentAction(input: unknown): Promise<CartResult> {
+  const parsed = cancelPaymentSchema.safeParse(input);
+  if (!parsed.success) return { status: "invalid" };
+  try {
+    const { repository, customer, cartId } = await cartContext();
+    if (!cartId) return { status: "invalid" };
+    const cart = await repository.get(cartId);
+    if (!cart) return { status: "invalid" };
+    const regionId = await getUsCommerceRegion(customer.request);
+    if (!regionId || cart.region_id !== regionId) return { status: "not-configured" };
+    const cancellation = await repository.cancelPayment(cartId, parsed.data.token);
+    if (cancellation.status !== "editable") return { status: "checkout-locked", cancellation };
+    const fresh = await repository.get(cartId);
+    return { status: "ready", cart: fresh ? cartSnapshot(fresh) : null };
+  } catch (error) { return failed(error); }
+}
+export async function cancelUnpaidPaymentAndRemoveAction(input: unknown): Promise<CartResult> {
+  const parsed = cancelRemovalSchema.safeParse(input);
+  if (!parsed.success) return { status: "invalid" };
+  try {
+    const { repository, customer, cartId } = await cartContext();
+    if (!cartId) return { status: "invalid" };
+    const cart = await repository.get(cartId);
+    if (!cart) return { status: "invalid" };
+    // A retried, completed deletion is a read, never a second cancellation.
+    if (!cart.items.some(item => item.id === parsed.data.itemId)) return { status: "ready", cart: cartSnapshot(cart) };
+    const regionId = await getUsCommerceRegion(customer.request);
+    if (!regionId || cart.region_id !== regionId) return { status: "not-configured" };
+    const canceled = await repository.cancelPayment(cartId, parsed.data.token);
+    if (canceled.status !== "editable") return { status: "checkout-locked", cancellation: canceled, itemId: parsed.data.itemId };
+    // Cancellation is not mutation authorization. The native edit fence runs
+    // again inside remove, protecting a concurrent replacement checkout.
+    return { status: "ready", cart: cartSnapshot(await repository.remove(cartId, parsed.data.itemId)) };
   } catch (error) { return failed(error); }
 }

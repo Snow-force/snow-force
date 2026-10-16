@@ -22,7 +22,7 @@ describe("commerce transport", () => {
   it("waits for bounded native checkout writes while keeping reads and unrelated requests short", async () => {
     const timeout = vi.spyOn(AbortSignal, "timeout");
     const request = createCommerceClient(config, vi.fn().mockImplementation(async () => new Response("{}")));
-    for (const path of ["/store/snowforce/checkout/cart_fixture/pickup", "/store/snowforce/checkout/cart_fixture/quote", "/store/snowforce/checkout/cart_fixture/edit", "/store/snowforce/checkout/cart_fixture", "/store/carts/cart_fixture?fields=id", "/store/carts/cart_fixture/shipping-methods", "/store/carts", "/store/carts/cart_fixture/line-items", "/store/carts/cart_fixture/line-items/cali_fixture"]) {
+    for (const path of ["/store/snowforce/checkout/cart_fixture/cancel", "/store/snowforce/checkout/cart_fixture/pickup", "/store/snowforce/checkout/cart_fixture/quote", "/store/snowforce/checkout/cart_fixture/edit", "/store/snowforce/checkout/cart_fixture", "/store/carts/cart_fixture?fields=id", "/store/carts/cart_fixture/shipping-methods", "/store/carts", "/store/carts/cart_fixture/line-items", "/store/carts/cart_fixture/line-items/cali_fixture"]) {
       await request(path, z.object({}), { method: "POST", body: {} });
       expect(timeout).toHaveBeenLastCalledWith(60_000);
     }
