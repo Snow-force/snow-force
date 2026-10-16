@@ -19,6 +19,9 @@ export class CommerceCheckoutLockedError extends CommerceRejectedError {
 export class CommerceSalesDisabledError extends CommerceRejectedError {
   constructor() { super(); this.name = "CommerceSalesDisabledError"; this.message = "Shopping is temporarily paused."; }
 }
+export class CommerceDetailsChangedError extends CommerceRejectedError {
+  constructor() { super(); this.name = "CommerceDetailsChangedError"; }
+}
 const salesDisabledResponse = z.object({
   type: z.literal("not_allowed"),
   message: z.literal("The shop is open for administration only. Sales and payment operations are disabled."),
@@ -46,7 +49,7 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
       response = await fetcher(`${url.origin}${path}`, {
         // Native checkout updates may refresh pricing, promotions and shipping.
         // Do not abandon these writes while the backend is still committing.
-        method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(options.method && options.method !== "GET" && (/^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+(?:\/(?:pickup|quote|edit|cancel))?$/.test(decoded) || /^\/store\/carts(?:\/cart_[A-Za-z0-9]+(?:\/(?:shipping-methods|promotions|line-items(?:\/cali_[A-Za-z0-9]+)?))?)?$/.test(decoded)) ? 60_000 : 15_000),
+        method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(options.method && options.method !== "GET" && (/^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+(?:\/(?:pickup|quote|edit|cancel|details))?$/.test(decoded) || /^\/store\/carts(?:\/cart_[A-Za-z0-9]+(?:\/(?:shipping-methods|promotions|line-items(?:\/cali_[A-Za-z0-9]+)?))?)?$/.test(decoded)) ? 60_000 : 15_000),
         headers: { "Content-Type": "application/json", "x-publishable-api-key": config.publishableKey, ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
         ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
       });
@@ -55,6 +58,7 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
     if (response.status === 404) throw new CommerceNotFoundError();
     if ([400, 409, 422].includes(response.status)) {
       const body: unknown = await response.json().catch(() => null);
+      if (response.status === 409 && options.method === "POST" && /^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+\/details$/.test(decoded) && z.object({ type: z.literal("conflict"), code: z.literal("checkout_details_changed") }).safeParse(body).success) throw new CommerceDetailsChangedError();
       if (response.status === 400 && salesDisabledResponse.safeParse(body).success) {
         console.warn("[shop.commerce] sales-disabled", { method: options.method ?? "GET", path: decoded, httpStatus: response.status });
         throw new CommerceSalesDisabledError();

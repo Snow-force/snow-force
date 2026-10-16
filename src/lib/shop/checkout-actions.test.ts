@@ -5,7 +5,7 @@ vi.mock("./cart-context", () => ({ getCartContext: mocks.context }));
 vi.mock("./storefront-repository", () => ({ getUsCommerceRegion: mocks.region }));
 vi.mock("./order-sync", () => ({ syncOwnedMemberOrder: mocks.syncOrder }));
 import { getShopCheckoutAction, changeShopCheckoutAction } from "./checkout-actions";
-import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceDetailsChangedError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { fixtureCart } from "./shop.fixtures";
 import { nativeCheckoutAddress, type CheckoutAddress, type CheckoutTaxQuote, type CheckoutReview } from "./checkout";
 import { shopPublishedPolicySchema } from "./policies";
@@ -28,6 +28,7 @@ describe("owned checkout commands", () => {
     mocks.request.mockImplementation(async (path, schema, options) => {
       if (path.endsWith("/edit")) return schema.parse({ status: "editable", quote_removed: true, review_required: true });
       if (path.endsWith("/pickup")) return schema.parse({ status: "pickup-saved" });
+      if (path.endsWith("/details")) return schema.parse({ status: "details-saved" });
       if (path.endsWith("/quote")) { review.taxQuote = taxQuote; const { ready: _ready, ...amounts } = taxQuote; return schema.parse({ status: "quoted", reused: false, taxQuote: amounts }); }
       if (path.endsWith("/shipping-options")) return schema.parse({ shipping_options: [{ id: "so_fixture", name: "US standard", calculated_price: { currency_code: "usd", calculated_amount: 9.95 } }] });
       if (path.startsWith("/store/snowforce/checkout/")) return schema.parse(options?.method === "POST" ? options.body.kind === "recover" ? { status: "recovered", unlocked: false } : options.body.kind === "complete" ? { status: "complete", order: { id: "order_fixture", number: "1001", total: 89.9 } } : { status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd" } : review);
@@ -37,6 +38,19 @@ describe("owned checkout commands", () => {
   it("rejects client amounts, email, cart identity and invalid addresses before authentication", async () => {
     for (const value of [{ kind: "payment", policyVersion: 1, agreed: true, fingerprint, total: 0.01 }, { kind: "complete", cartId: "cart_other" }, { kind: "address", address: { ...address, email: "attacker@example.com" } }, { kind: "address", address: { ...address, countryCode: "CN" } }]) expect(await changeShopCheckoutAction(value)).toEqual({ status: "invalid" });
     expect(mocks.context).not.toHaveBeenCalled();
+  });
+  it("routes revision-aware drafts through the native version fence without a legacy address write", async () => {
+    expect(await changeShopCheckoutAction({ kind: "delivery", address, version: fingerprint })).toHaveProperty("status", "review");
+    const calls = mocks.request.mock.calls;
+    expect(calls.find(([path]) => path.endsWith("/details"))?.[2]).toMatchObject({ method: "POST", body: { kind: "delivery", version: fingerprint, address: nativeCheckoutAddress(address) } });
+    expect(calls.some(([path, , options]) => path.startsWith("/store/carts/cart_fixture?") && options?.method === "POST")).toBe(false);
+    mocks.request.mockRejectedValueOnce(new CommerceDetailsChangedError());
+    expect(await changeShopCheckoutAction({ kind: "delivery", address, version: fingerprint })).toEqual({ status: "stale-details" });
+  });
+  it("sends versioned pickup contact through the same receiving-details fence", async () => {
+    const contact = { name: "Test Rider", phone: "5551234567", appointmentConfirmed: true };
+    expect(await changeShopCheckoutAction({ kind: "pickup-review", contact, version: fingerprint })).toHaveProperty("status", "review");
+    expect(mocks.request.mock.calls.find(([path]) => path.endsWith("/details"))?.[2]).toMatchObject({ body: { kind: "pickup", contact, version: fingerprint } });
   });
   it("saves the address, selects the sole eligible delivery and quotes automatically before returning a review", async () => {
     expect(await changeShopCheckoutAction({ kind: "delivery", address })).toMatchObject({ status: "review", taxQuote: { ready: true } });

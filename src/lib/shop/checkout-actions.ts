@@ -1,7 +1,7 @@
 "use server";
 
 import { getCartContext } from "./cart-context";
-import { CommerceAuthorizationError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceDetailsChangedError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { cartSnapshot } from "./commerce-cart";
 import { createCheckoutRepository } from "./checkout-repository";
 import { checkoutAddressSchema, checkoutInputSchema, type CheckoutResult } from "./checkout";
@@ -16,6 +16,7 @@ async function context() {
 function failed(error: unknown): CheckoutResult {
   if (error instanceof CommerceAuthorizationError) return { status: "signed-out" };
   if (error instanceof CommerceSalesDisabledError) return { status: "not-configured" };
+  if (error instanceof CommerceDetailsChangedError) return { status: "stale-details" };
   if (error instanceof CommerceRejectedError) return { status: "rejected" };
   return { status: "unavailable" };
 }
@@ -83,10 +84,10 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
     if (change.kind === "delivery" || change.kind === "pickup-review" || change.kind === "shipping-review") {
       if (cart.region_id !== await session.region()) return { status: "not-configured" };
       if (change.kind === "pickup-review") {
-        await repository.pickup(change.contact);
+        await repository.pickup(change.contact, change.version);
         await repository.quote();
       } else {
-        const updated = change.kind === "delivery" ? await repository.address(change.address) : cart;
+        const updated = change.kind === "delivery" ? await repository.address(change.address, change.version) : cart;
         const options = await repository.shippingOptions();
         const selected = change.kind === "shipping-review" ? options.find(option => option.id === change.optionId) : options.length === 1 ? options[0] : null;
         if (change.kind === "shipping-review" && !selected) return { status: "rejected" };
