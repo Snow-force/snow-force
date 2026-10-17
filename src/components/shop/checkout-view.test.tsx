@@ -34,6 +34,53 @@ beforeEach(() => {
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
 afterEach(() => vi.useRealTimers());
 describe("checkout interface", () => {
+  it("does not save or recalculate an address when only server-trimmed whitespace changes", async () => {
+    vi.useFakeTimers();
+    await act(async () => { view(); });
+    for (const [label, value] of [["Recipient name", " Test Rider "], ["Street address", " Test street "], ["Apartment, suite (optional)", "   "], ["City", " Test city "], ["ZIP code", " 90001 "]]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(mocks.change).not.toHaveBeenCalled();
+    expect(screen.getByText("Shipping and tax included. Your total is up to date.")).toBeVisible();
+    expect(screen.getByRole("checkbox")).toBeEnabled();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    expect(screen.getByLabelText("Street address")).toHaveValue(" Test street ");
+  });
+  it("keeps an equivalent newest draft after an in-flight save without queuing a second tax calculation", async () => {
+    vi.useFakeTimers();
+    const initial = { ...review, detailsVersion: "a".repeat(64) }; mocks.get.mockResolvedValue(initial);
+    let finish!: (value: CheckoutReview) => void;
+    mocks.change.mockReturnValue(new Promise<CheckoutReview>(resolve => { finish = resolve; }));
+    await act(async () => { view(); });
+    const street = screen.getByLabelText("Street address");
+    fireEvent.change(street, { target: { value: "New street" } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+    expect(mocks.change).toHaveBeenCalledTimes(1);
+    fireEvent.change(street, { target: { value: " New street " } });
+    await act(async () => { finish({ ...initial, address: { ...review.address!, address1: "New street" }, detailsVersion: "b".repeat(64) }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(street).toHaveValue(" New street ");
+    expect(mocks.change).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Shipping and tax included. Your total is up to date.")).toBeVisible();
+  });
+  it("keeps invalid whitespace-only required fields unpayable without submitting them", async () => {
+    vi.useFakeTimers();
+    await act(async () => { view(); });
+    fireEvent.change(screen.getByLabelText("Recipient name"), { target: { value: "   " } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(mocks.change).not.toHaveBeenCalled();
+    expect(screen.getByRole("checkbox")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
+  });
+  it("still refreshes an expired quote for an equivalent whitespace-edited address", async () => {
+    vi.useFakeTimers();
+    mocks.get.mockResolvedValue({ ...review, taxQuote: { ...review.taxQuote!, ready: false } });
+    await act(async () => { view(); });
+    fireEvent.change(screen.getByLabelText("Apartment, suite (optional)"), { target: { value: "  " } });
+    expect(screen.getByRole("checkbox")).toBeDisabled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+    expect(mocks.change).toHaveBeenCalledExactlyOnceWith({ kind: "quote" });
+    expect(screen.getByText("Shipping and tax included. Your total is up to date.")).toBeVisible();
+  });
   it("serializes address saves, keeps typing responsive and saves only the newest queued draft", async () => {
     vi.useFakeTimers();
     const initial = { ...review, detailsVersion: "a".repeat(64) };
