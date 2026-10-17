@@ -8,7 +8,7 @@ import { LockKeyhole, MapPin, Truck } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import { changeShopCheckoutAction, getShopCheckoutAction } from "@/lib/shop/checkout-actions";
 import { cancelUnpaidCartPaymentAction, previewShopPaymentCancellationAction } from "@/lib/shop/cart-actions";
-import { checkoutAddressSchema, checkoutPickupContactSchema, type CheckoutResult, type CheckoutReview, type CheckoutAddress } from "@/lib/shop/checkout";
+import { checkoutAddressDraftKey, checkoutAddressSchema, checkoutPickupContactSchema, type CheckoutResult, type CheckoutReview, type CheckoutAddress } from "@/lib/shop/checkout";
 import { usStates } from "@/lib/shop/shipping-addresses";
 import { formatStorePrice } from "@/lib/shop/storefront";
 import { shopPolicySections, type ShopPolicySection, type ShopPublishedPolicy } from "@/lib/shop/policies";
@@ -84,7 +84,8 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     : pending === "checking" ? text("Checking payment status…", "正在检查付款状态…")
     : pending === "completing" ? text("Verifying your order…", "正在核验订单…")
     : text("Checking checkout…", "正在检查结账信息…");
-  const addressDirty = !!review && ((deliveryMode === "pickup") !== !!review.pickupSelected || JSON.stringify(address) !== JSON.stringify(review.address ?? blank) || (deliveryMode === "pickup" && !appointmentConfirmed));
+  const addressKey = checkoutAddressDraftKey(address);
+  const addressDirty = !!review && ((deliveryMode === "pickup") !== !!review.pickupSelected || addressKey !== checkoutAddressDraftKey(review.address ?? blank) || (deliveryMode === "pickup" && !appointmentConfirmed));
   const policyPreviouslyAccepted = !!review?.policy && review.paymentStarted && review.policyAccepted;
   const policyAgreed = !!review?.policy && (policyPreviouslyAccepted || (acceptance !== null && acceptance.fingerprint === review.fingerprint && acceptance.policyVersion === review.policy.version));
   const quoteReady = !addressDirty && !!review?.taxQuote?.ready && (review.paymentStarted || quoteTime < review.taxQuote.expiresAt * 1000);
@@ -122,14 +123,14 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     const needsQuote = !addressDirty && !!review.selectedOptionId && !quoteReady;
     if (!needsDetails && !needsQuote) return;
     const version = review.detailsVersion ? { version: review.detailsVersion } : {};
-    const key = JSON.stringify({ deliveryMode, address, appointmentConfirmed, version, details: needsDetails, expires: review.taxQuote?.expiresAt ?? null });
+    const key = JSON.stringify({ deliveryMode, address: addressKey, appointmentConfirmed, version, details: needsDetails, expires: review.taxQuote?.expiresAt ?? null });
     if (automaticAttempt.current === key) return;
     const timer = window.setTimeout(() => {
       automaticAttempt.current = key;
       void perform(() => changeShopCheckoutAction(needsDetails ? deliveryMode === "pickup" ? { kind: "pickup-review", contact, ...version } : { kind: "delivery", address, ...version } : { kind: "quote" }), true);
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [review, busy, error, result?.status, deliveryMode, address, appointmentConfirmed, addressDirty, quoteReady, perform]);
+  }, [review, busy, error, result?.status, deliveryMode, address, addressKey, appointmentConfirmed, addressDirty, quoteReady, perform]);
   const checkPayment = async () => {
     if (active.current || stripeActive.current) return;
     paymentGeneration.current += 1;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkoutInputSchema, checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutTaxQuoteSchema } from "./checkout";
+import { checkoutAddressDraftKey, checkoutInputSchema, checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutTaxQuoteSchema, type CheckoutAddress } from "./checkout";
 import type { ShopPublishedPolicy } from "./policies";
 
 const fingerprint = "a".repeat(64);
@@ -20,6 +20,13 @@ const policy: ShopPublishedPolicy = {
 const review = { status: "review", fingerprint, detailsVersion: null, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null, pickupOffer: null, pickupSelected: false };
 
 describe("checkout policy consent contract", () => {
+  it("compares drafts with the same trimming and state normalization as server address validation", () => {
+    const saved: CheckoutAddress = { name: "Test Rider", phone: "5551234567", address1: "Test street", address2: "", city: "Test city", state: "CA", postalCode: "90001", countryCode: "US" };
+    const padded = { ...saved, name: " Test Rider ", phone: " 5551234567 ", address1: " Test street ", address2: "  ", city: " Test city ", state: " ca ", postalCode: " 90001 " };
+    expect(checkoutAddressDraftKey(padded)).toBe(checkoutAddressDraftKey(saved));
+    expect(checkoutAddressDraftKey({ countryCode: "US", postalCode: "90001", state: "CA", city: "Test city", address2: "", address1: "Test street", phone: "5551234567", name: "Test Rider" })).toBe(checkoutAddressDraftKey(saved));
+    for (const changes of [{ name: "New Rider" }, { address1: "Different street" }, { address2: "Unit 2" }, { city: "New city" }, { postalCode: "90001-1234" }, { name: "   " }, { phone: "invalid" }, { state: "ZZ" }, { postalCode: "invalid" }]) expect(checkoutAddressDraftKey({ ...saved, ...changes })).not.toBe(checkoutAddressDraftKey(saved));
+  });
   it("enables receiving revisions only when the server supplies a valid digest", () => {
     const { detailsVersion: _version, ...legacy } = review;
     expect(checkoutStatusSchema.parse(legacy)).toHaveProperty("detailsVersion", null);

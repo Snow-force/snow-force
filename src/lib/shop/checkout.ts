@@ -6,6 +6,11 @@ import { shopPublishedPolicySchema, type ShopPublishedPolicy } from "./policies"
 
 export const checkoutAddressSchema = shippingAddressInputSchema.omit({ id: true, isDefault: true }).strict();
 export type CheckoutAddress = z.infer<typeof checkoutAddressSchema>;
+/** Client draft comparison only. This is not a payable quote fingerprint. */
+export function checkoutAddressDraftKey(address: CheckoutAddress) {
+  const parsed = checkoutAddressSchema.safeParse(address);
+  return JSON.stringify(parsed.success ? parsed.data : address);
+}
 export const checkoutPickupContactSchema = checkoutAddressSchema.pick({ name: true, phone: true }).extend({ appointmentConfirmed: z.literal(true) }).strict();
 export type CheckoutPickupContact = z.infer<typeof checkoutPickupContactSchema>;
 export const checkoutPickupOfferSchema = z.object({ id: commerceId("so"), locationId: commerceId("sloc"), name: z.string().min(1).max(300), address: z.object({ address_1: z.string().min(1).max(200), address_2: z.string().nullable(), city: z.string().min(1).max(100), province: z.literal("ca"), postal_code: z.string().regex(/^\d{5}(?:-\d{4})?$/), country_code: z.literal("us") }) }).strict();
