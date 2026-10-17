@@ -22,6 +22,7 @@ let review: { status: "review"; cart: typeof nativeCart; fingerprint: string; pa
 describe("owned checkout commands", () => {
   beforeEach(() => {
     vi.resetAllMocks(); vi.stubEnv("NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY", "pk_test_fixture");
+    vi.stubEnv("SHOP_CHECKOUT_DRAFTS","false");
     review = { status: "review", cart: nativeCart, fingerprint, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote };
     mocks.region.mockResolvedValue("reg_us");
     mocks.context.mockResolvedValue({ customer: { customerId: "cus_fixture", email: "verified@example.com", token: "trusted-token", request: mocks.request }, cartId: "cart_fixture" });
@@ -34,6 +35,29 @@ describe("owned checkout commands", () => {
       if (path.startsWith("/store/snowforce/checkout/")) return schema.parse(options?.method === "POST" ? options.body.kind === "recover" ? { status: "recovered", unlocked: false } : options.body.kind === "complete" ? { status: "complete", order: { id: "order_fixture", number: "1001", total: 89.9 } } : { status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd" } : review);
       return schema.parse({ cart: nativeCart });
     });
+  });
+  const draftToken="draft1."+"a".repeat(20)+"."+"b".repeat(20)+"."+"c".repeat(20);
+  it("requests an owned preview without a native read/write or payment preparation",async()=>{
+    vi.stubEnv("SHOP_CHECKOUT_DRAFTS","true");mocks.request.mockImplementation(async(path,schema,options)=>{
+      expect(path).toBe("/store/snowforce/checkout/cart_fixture/preview");expect(options).toMatchObject({method:"POST",token:"trusted-token",body:{kind:"delivery",version:fingerprint,address:nativeCheckoutAddress(address)}});
+      return schema.parse({status:"preview",cart:nativeCart,token:draftToken,fingerprint,version:fingerprint,taxQuote:{...taxQuote,ready:false},options:[{id:"so_fixture",name:"US standard",price:9.95}],selectedOptionId:"so_fixture",address:nativeCheckoutAddress(address),pickupSelected:false,policy});
+    });
+    expect(await changeShopCheckoutAction({kind:"preview",draft:{kind:"delivery",version:fingerprint,address}})).toMatchObject({status:"preview",address,taxQuote:{ready:false}});expect(mocks.request).toHaveBeenCalledTimes(1);expect(mocks.region).not.toHaveBeenCalled();
+  });
+  it("commits the protected quote once and enters the existing guarded payment path",async()=>{
+    vi.stubEnv("SHOP_CHECKOUT_DRAFTS","true");const original=mocks.request.getMockImplementation()!;
+    mocks.request.mockImplementation(async(path,schema,options)=>path.endsWith("/draft-commit")?schema.parse({review,shipping_options:[{id:"so_fixture",name:"US standard",calculated_price:{calculated_amount:9.95}}],expected:{totalCents:8990,policyVersion:1}}):original(path,schema,options));
+    expect(await changeShopCheckoutAction({kind:"draft-payment",token:draftToken,policyVersion:1,agreed:true})).toMatchObject({status:"payment",total:89.9,review:{status:"review",paymentStarted:true,policyAccepted:true}});
+    expect(mocks.request.mock.calls.map(([path])=>path)).toEqual(["/store/snowforce/checkout/cart_fixture/draft-commit","/store/snowforce/checkout/cart_fixture"]);
+    expect(mocks.request.mock.calls[1][2]).toMatchObject({method:"POST",body:{kind:"prepare",fingerprint,policyVersion:1,agreed:true}});
+  });
+  it.each([{totalCents:8991,policyVersion:1},{totalCents:8990,policyVersion:2}])("never prepares payment for a mismatched committed estimate %o",async(expected)=>{
+    vi.stubEnv("SHOP_CHECKOUT_DRAFTS","true");mocks.request.mockImplementation(async(_path,schema)=>schema.parse({review,shipping_options:[{id:"so_fixture",name:"US standard",calculated_price:{calculated_amount:9.95}}],expected}));
+    expect(await changeShopCheckoutAction({kind:"draft-payment",token:draftToken,policyVersion:1,agreed:true})).toEqual({status:"rejected"});expect(mocks.request).toHaveBeenCalledTimes(1);
+  });
+  it("keeps draft endpoints disabled until the web feature switch is explicitly on",async()=>{
+    expect(await changeShopCheckoutAction({kind:"preview",draft:{kind:"delivery",version:fingerprint,address}})).toEqual({status:"not-configured"});expect(mocks.request).not.toHaveBeenCalled();
+    expect(await changeShopCheckoutAction({kind:"draft-payment",token:draftToken,policyVersion:1,agreed:false})).toEqual({status:"invalid"});
   });
   it("rejects client amounts, email, cart identity and invalid addresses before authentication", async () => {
     for (const value of [{ kind: "payment", policyVersion: 1, agreed: true, fingerprint, total: 0.01 }, { kind: "complete", cartId: "cart_other" }, { kind: "address", address: { ...address, email: "attacker@example.com" } }, { kind: "address", address: { ...address, countryCode: "CN" } }]) expect(await changeShopCheckoutAction(value)).toEqual({ status: "invalid" });

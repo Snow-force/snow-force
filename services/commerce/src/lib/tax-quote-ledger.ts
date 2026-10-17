@@ -5,7 +5,7 @@ import { z } from "zod";
 import { checkoutCartSchema, checkoutFields, checkoutFingerprint, type CheckoutCart } from "./checkout-policy";
 import { taxFingerprint } from "./tax-classification-contract";
 import { taxQuoteInputSchema } from "./tax-quote-contract";
-import { assertNativeTaxQuoteAmounts, buildStripeTaxQuoteRequest, exactTaxUsdCents, normalizeStripeTaxQuote, taxQuoteBindingFingerprint, type TaxQuote } from "./tax-quote-money";
+import { assertNativeTaxQuoteAmounts, buildStripeTaxQuoteRequest, exactTaxUsdCents, normalizeStripeTaxQuote, taxQuoteBindingFingerprint, taxQuoteRebindFingerprint, type TaxQuote } from "./tax-quote-money";
 import type { TaxSetupSnapshot } from "./tax-setup-contract";
 import { assertCartProductTaxClassifications } from "./tax-classification";
 import { assertQuotedTaxConfiguration } from "./tax-configuration";
@@ -62,7 +62,7 @@ function checkedOperation(raw: unknown) {
 }
 const operationFields = "id,input,setup_fingerprint,namespace,binding_fingerprint,request_fingerprint,request,state,floor(extract(epoch from clock_timestamp()))::bigint as database_now";
 /** Persist the exact request before any future provider POST. Retrying returns the same operation/key. */
-export async function reserveTaxQuote(scope: MedusaContainer, rawInput: unknown, rawContext: unknown) {
+export async function reserveTaxQuote(scope: MedusaContainer, rawInput: unknown, rawContext: unknown, recordedPreviewId?: string) {
   const input = taxQuoteInputSchema.parse(rawInput), context = contextSchema.parse(rawContext);
   const binding = taxQuoteBindingFingerprint(input), request = buildStripeTaxQuoteRequest(input), requestFingerprint = requestHash(input);
   return dbFor(scope).transaction(async db => {
@@ -89,11 +89,28 @@ export async function reserveTaxQuote(scope: MedusaContainer, rawInput: unknown,
     }
     const { rows: clocks } = await db.raw("select floor(extract(epoch from clock_timestamp()))::bigint as database_now");
     const now = z.array(z.object({ database_now: epoch })).length(1).parse(clocks)[0].database_now;
-    if (input.tax_date > now || now - input.tax_date > 10) throw fail();
+    if (recordedPreviewId !== undefined) {
+      // Only an immutable, unapplied result with the exact same provider request
+      // can carry its original tax_date across draft -> native-cart binding.
+      // No new provider call is permitted through this exception.
+      const preview = await db.raw(`select input,calculation,snapshot,setup_fingerprint,namespace,state
+        from commerce.snowforce_checkout_quote_drafts where id=? and cart_id=? and customer_id=?`,
+        [z.uuid().parse(recordedPreviewId),input.cart_id,input.customer_id]);
+      const prior = z.array(z.object({input:taxQuoteInputSchema,calculation:z.unknown(),snapshot:z.unknown(),setup_fingerprint:taxFingerprint,namespace:taxFingerprint,state:z.literal("ready")})).length(1).parse(preview.rows)[0];
+      const quote = normalizeStripeTaxQuote(prior.input,prior.calculation,now);
+      if (prior.setup_fingerprint!==context.setup_fingerprint || prior.namespace!==context.namespace ||
+        prior.input.cart_id!==input.cart_id || prior.input.customer_id!==input.customer_id ||
+        prior.input.tax_date!==input.tax_date || requestHash(prior.input)!==requestFingerprint || taxQuoteRebindFingerprint(prior.input)!==taxQuoteRebindFingerprint(input) ||
+        hash(prior.snapshot)!==hash(quote) || now+60>=quote.expires_at) throw fail();
+    } else if (input.tax_date > now || now - input.tax_date > 10) throw fail();
     const id = randomUUID();
     const inserted = await db.raw(`insert into commerce.snowforce_tax_operations (id,cart_id,customer_id,input,setup_fingerprint,namespace,binding_fingerprint,request_fingerprint,request)
       values (?,?,?,?::jsonb,?,?,?, ?,?::jsonb) returning ${operationFields}`, [id, input.cart_id, input.customer_id, JSON.stringify(input), context.setup_fingerprint, context.namespace, binding, requestFingerprint, JSON.stringify(request)]);
-    return checkedOperation(z.array(z.unknown()).length(1).parse(inserted.rows)[0]);
+    const operation=checkedOperation(z.array(z.unknown()).length(1).parse(inserted.rows)[0]);
+    // Only the reservation made by this call can receive its preview result.
+    // Older pending operations must resume their original provider key, and a
+    // completed operation must retain its original immutable calculation.
+    return recordedPreviewId===undefined?operation:{...operation,importedPreview:true as const};
   });
 }
 

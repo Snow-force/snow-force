@@ -1,7 +1,7 @@
 "use server";
 
 import { getCartContext } from "./cart-context";
-import { CommerceAuthorizationError, CommerceDetailsChangedError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
+import { CommerceAuthorizationError, CommerceDetailsChangedError, CommerceEstimateUnavailableError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { cartSnapshot } from "./commerce-cart";
 import { createCheckoutRepository } from "./checkout-repository";
 import { checkoutAddressSchema, checkoutInputSchema, type CheckoutResult } from "./checkout";
@@ -17,12 +17,13 @@ function failed(error: unknown): CheckoutResult {
   if (error instanceof CommerceAuthorizationError) return { status: "signed-out" };
   if (error instanceof CommerceSalesDisabledError) return { status: "not-configured" };
   if (error instanceof CommerceDetailsChangedError) return { status: "stale-details" };
+  if(error instanceof CommerceEstimateUnavailableError)return {status:"estimate-unavailable"};
   if (error instanceof CommerceRejectedError) return { status: "rejected" };
   return { status: "unavailable" };
 }
-async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>, includeOptions = true, prefetchDeliveryOptions = false): Promise<CheckoutResult> {
+async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>, includeOptions = true, prefetchDeliveryOptions = false, supplied?:Awaited<ReturnType<NonNullable<Awaited<ReturnType<typeof context>>>["repository"]["commitDraft"]>>): Promise<CheckoutResult> {
   const { repository, customer } = session;
-  const statusRead = repository.status();
+  const statusRead = supplied ? Promise.resolve(supplied.review) : repository.status();
   // Both endpoints independently check ownership. Only overlap these fresh reads
   // after delivery has been checked; never reuse a previous address's alternatives.
   // Observe optional failures immediately, even if completion or pickup makes
@@ -43,10 +44,10 @@ async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>,
   const needsOptions = includeOptions && parsed.success && !status.pickupSelected;
   const fetched = needsOptions && prefetched ? await prefetched : null;
   if (fetched && !fetched.ok) throw fetched.error;
-  const options = needsOptions ? fetched?.ok ? fetched.options : await repository.shippingOptions() : [];
+  const options = needsOptions ? supplied ? supplied.options : fetched?.ok ? fetched.options : await repository.shippingOptions() : [];
   const selected = cart.shipping_methods.length === 1 ? cart.shipping_methods[0] : null;
   const selectedOptionId = selected && ((status.pickupSelected && status.pickupOffer?.id === selected.shipping_option_id && selected.amount === 0) || options.some((option) => option.id === selected.shipping_option_id && Math.round(option.price * 100) === Math.round(selected.amount * 100))) ? selected.shipping_option_id : null;
-  return { ...status, configured: status.configured && /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publishableKey), cart: cartSnapshot(cart), address: parsed.success ? parsed.data : null, options, selectedOptionId };
+  return { ...status, ...(process.env.SHOP_CHECKOUT_DRAFTS==="true"?{draftsEnabled:true}:{}), configured: status.configured && /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publishableKey), cart: cartSnapshot(cart), address: parsed.success ? parsed.data : null, options, selectedOptionId };
 }
 export async function getShopCheckoutAction(): Promise<CheckoutResult> {
   try { const session = await context(); return session ? await review(session) : { status: "empty" }; }
@@ -60,6 +61,17 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
     const session = await context();
     if (!session) return { status: "empty" };
     const { repository } = session;
+    if(change.kind==="preview"||change.kind==="draft-payment"){
+      if(process.env.SHOP_CHECKOUT_DRAFTS!=="true")return {status:"not-configured"};
+      if(change.kind==="preview")return await repository.preview(change.draft);
+      const committed=await repository.commitDraft(change.token),current=await review(session,true,false,committed);
+      if(current.status!=="review")return current;
+      if(!current.configured||current.paymentStarted||!current.address||!current.selectedOptionId||!current.taxQuote?.ready||current.policy?.version!==change.policyVersion||committed.expected.policyVersion!==change.policyVersion||current.taxQuote.totalCents!==committed.expected.totalCents||Math.round(current.cart.total*100)!==committed.expected.totalCents)return {status:"rejected"};
+      const payment=await repository.payment(current.fingerprint,change.policyVersion);
+      if(payment.status!=="payment")return payment.status==="review"?{status:"rejected"}:payment;
+      if(payment.totalCents!==committed.expected.totalCents)return {status:"rejected"};
+      return {status:"payment",clientSecret:payment.clientSecret,publishableKey:process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY??"",total:payment.totalCents/100,review:{...current,paymentStarted:true,policyAccepted:true}};
+    }
     const cart = await repository.read(); // Owner check before every mutation, including completion.
     if (change.kind === "recover") {
       const recovered = await repository.recover();

@@ -7,7 +7,7 @@ vi.mock("./shop-provider", () => ({ useShopCart: () => ({ reload: mocks.reload, 
 vi.mock("next/dynamic", () => ({ default: () => ({ validate, onBusyChange }: { validate: () => Promise<boolean>; onBusyChange: (busy: boolean) => void }) => <div>Secure Stripe form<button onClick={() => void validate().then(mocks.validation)}>Validate payment review</button><button onClick={() => onBusyChange(true)}>Start confirmation</button><button onClick={() => onBusyChange(false)}>Finish confirmation</button></div> }));
 import { CheckoutView } from "./checkout-view";
 import { LanguageProvider } from "@/lib/language";
-import type { CheckoutReview } from "@/lib/shop/checkout";
+import type { CheckoutPreview, CheckoutReview } from "@/lib/shop/checkout";
 import type { ShopPublishedPolicy } from "@/lib/shop/policies";
 const policy: ShopPublishedPolicy = {
   schema_version: 1, version: 3, effective_at: "2026-10-01T12:00:00.000Z",
@@ -34,6 +34,51 @@ beforeEach(() => {
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
 afterEach(() => vi.useRealTimers());
 describe("checkout interface", () => {
+  const previewResult = (name="Draft Rider",expiresAt=2000000000):CheckoutPreview => ({status:"preview",cart:review.cart,token:"draft1."+"a".repeat(20)+"."+"b".repeat(20)+"."+"c".repeat(20),fingerprint:"d".repeat(64),version:"a".repeat(64),taxQuote:{...review.taxQuote!,ready:false,expiresAt},options:review.options,selectedOptionId:review.selectedOptionId!,address:{...review.address!,name},pickupSelected:false,policy});
+  it("uses an unapplied estimate for edited details and only prepares payment after explicit agreement",async()=>{
+    vi.useFakeTimers();const initial={...review,draftsEnabled:true,detailsVersion:"a".repeat(64)};mocks.get.mockResolvedValue(initial);
+    const estimate=previewResult();mocks.change.mockResolvedValueOnce(estimate).mockResolvedValue({status:"payment",clientSecret:"pi_fixture_secret_fixture",publishableKey:"pk_test_fixture",total:89.9,review:{...initial,address:estimate.address,paymentStarted:true,policyAccepted:true}});
+    await act(async()=>{view();});fireEvent.change(screen.getByLabelText("Recipient name"),{target:{value:"Draft Rider"}});
+    await act(async()=>{await vi.advanceTimersByTimeAsync(900);});
+    expect(mocks.change).toHaveBeenCalledExactlyOnceWith({kind:"preview",draft:{kind:"delivery",version:"a".repeat(64),address:estimate.address}});
+    expect(screen.getByText("Estimated total")).toBeVisible();expect(screen.getByText("Shipping and tax estimated. Availability and the exact total are checked before payment.")).toBeVisible();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();expect(screen.getByRole("button",{name:"Review & continue to payment"})).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox"));await act(async()=>{fireEvent.click(screen.getByRole("button",{name:"Review & continue to payment"}));});
+    expect(mocks.change).toHaveBeenLastCalledWith({kind:"draft-payment",token:estimate.token,policyVersion:policy.version,agreed:true});expect(screen.getByText("Secure Stripe form")).toBeVisible();expect(screen.queryByText("Estimated total")).not.toBeInTheDocument();
+  });
+  it("ignores an older estimate, keeps typing enabled and requests only the latest queued draft",async()=>{
+    vi.useFakeTimers();mocks.get.mockResolvedValue({...review,draftsEnabled:true,detailsVersion:"a".repeat(64)});
+    let finish!:(value:CheckoutPreview)=>void;mocks.change.mockReturnValueOnce(new Promise<CheckoutPreview>(resolve=>{finish=resolve;})).mockResolvedValue(previewResult("Newest Rider"));
+    await act(async()=>{view();});const name=screen.getByLabelText("Recipient name");fireEvent.change(name,{target:{value:"First Rider"}});await act(async()=>{await vi.advanceTimersByTimeAsync(900);});expect(name).toBeEnabled();
+    fireEvent.change(name,{target:{value:"Intermediate Rider"}});fireEvent.change(name,{target:{value:"Newest Rider"}});await act(async()=>{finish(previewResult("First Rider"));});
+    expect(name).toHaveValue("Newest Rider");expect(screen.queryByText("Estimated total")).not.toBeInTheDocument();
+    await act(async()=>{await vi.advanceTimersByTimeAsync(900);});expect(mocks.change).toHaveBeenCalledTimes(2);expect(mocks.change).toHaveBeenLastCalledWith({kind:"preview",draft:{kind:"delivery",version:"a".repeat(64),address:{...review.address!,name:"Newest Rider"}}});expect(screen.getByText("Estimated total")).toBeVisible();
+  });
+  it("accepts an equivalent newest preview draft without another request or replacing raw typing",async()=>{
+    vi.useFakeTimers();mocks.get.mockResolvedValue({...review,draftsEnabled:true,detailsVersion:"a".repeat(64)});let finish!:(value:CheckoutPreview)=>void;mocks.change.mockReturnValue(new Promise<CheckoutPreview>(resolve=>{finish=resolve;}));
+    await act(async()=>{view();});const name=screen.getByLabelText("Recipient name");fireEvent.change(name,{target:{value:"Draft Rider"}});await act(async()=>{await vi.advanceTimersByTimeAsync(900);});fireEvent.change(name,{target:{value:" Draft   Rider "}});await act(async()=>{finish(previewResult());});await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});
+    expect(name).toHaveValue(" Draft   Rider ");expect(mocks.change).toHaveBeenCalledTimes(1);expect(screen.getByRole("checkbox")).toBeEnabled();
+  });
+  it("refreshes an estimate before expiry without making the native cart payable",async()=>{
+    vi.useFakeTimers();mocks.get.mockResolvedValue({...review,draftsEnabled:true,detailsVersion:"a".repeat(64)});const expiry=Math.floor(Date.now()/1000)+62;mocks.change.mockResolvedValueOnce(previewResult("Draft Rider",expiry)).mockResolvedValue(previewResult());
+    await act(async()=>{view();});fireEvent.change(screen.getByLabelText("Recipient name"),{target:{value:"Draft Rider"}});await act(async()=>{await vi.advanceTimersByTimeAsync(900);});fireEvent.click(screen.getByRole("checkbox"));
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1500);});expect(screen.getByRole("checkbox")).toBeDisabled();await act(async()=>{await vi.advanceTimersByTimeAsync(1000);});expect(mocks.change).toHaveBeenCalledTimes(2);expect(mocks.change.mock.calls.every(([command])=>command.kind==="preview")).toBe(true);expect(screen.getByRole("checkbox")).not.toBeChecked();
+  });
+  it("blocks an invalid latest address while retaining a completed old estimate",async()=>{
+    vi.useFakeTimers();mocks.get.mockResolvedValue({...review,draftsEnabled:true,detailsVersion:"a".repeat(64)});mocks.change.mockResolvedValue(previewResult());await act(async()=>{view();});fireEvent.change(screen.getByLabelText("Recipient name"),{target:{value:"Draft Rider"}});await act(async()=>{await vi.advanceTimersByTimeAsync(900);});fireEvent.change(screen.getByLabelText("Street address"),{target:{value:"   "}});await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});expect(mocks.change).toHaveBeenCalledTimes(1);expect(screen.getByRole("checkbox")).toBeDisabled();expect(screen.getByRole("button",{name:"Review & continue to payment"})).toBeDisabled();
+  });
+  it("previews pickup after appointment confirmation without comparing hidden delivery fields",async()=>{
+    vi.useFakeTimers();const pickupOffer={id:"so_pickup",locationId:"sloc_fixture",name:"Fixture warehouse",address:{address_1:"1 Fixture Plaza",address_2:null,city:"Irvine",province:"ca" as const,postal_code:"92614",country_code:"us" as const}};
+    mocks.get.mockResolvedValue({...review,draftsEnabled:true,detailsVersion:"a".repeat(64),pickupOffer});
+    mocks.change.mockResolvedValue({...previewResult("Test Rider"),pickupSelected:true,selectedOptionId:pickupOffer.id,options:[],address:{...review.address!,address1:"1 Fixture Plaza",city:"Irvine",postalCode:"92614"},taxQuote:{...review.taxQuote!,ready:false,totalCents:7995,shippingCents:0}});
+    await act(async()=>{view();});fireEvent.click(screen.getByRole("radio",{name:"Appointment pickup · Free"}));await act(async()=>{await vi.advanceTimersByTimeAsync(1000);});expect(mocks.change).not.toHaveBeenCalled();expect(screen.getByText("Confirm pickup details")).toBeVisible();expect(screen.getByText(/Confirm your pickup contact and appointment to calculate tax/)).toBeVisible();expect(screen.queryByText("Complete your address")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox",{name:"I have contacted SnowForce and confirmed my pickup appointment at this location."}));await act(async()=>{await vi.advanceTimersByTimeAsync(900);});await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});
+    expect(mocks.change).toHaveBeenCalledExactlyOnceWith({kind:"preview",draft:{kind:"pickup",version:"a".repeat(64),contact:{name:"Test Rider",phone:"5551234567",appointmentConfirmed:true}}});expect(screen.getByRole("checkbox",{name:/I have read and agree/})).toBeEnabled();expect(screen.getByText("Estimated total")).toBeVisible();
+  });
+  it("keeps a failed estimate distinct from a revision conflict and retries after a new edit",async()=>{
+    vi.useFakeTimers();mocks.get.mockResolvedValue({...review,draftsEnabled:true,detailsVersion:"a".repeat(64)});mocks.change.mockResolvedValueOnce({status:"estimate-unavailable"}).mockResolvedValue(previewResult("Newest Rider"));await act(async()=>{view();});const name=screen.getByLabelText("Recipient name");fireEvent.change(name,{target:{value:"Draft Rider"}});await act(async()=>{await vi.advanceTimersByTimeAsync(900);});expect(screen.getByRole("alert")).toHaveTextContent("We couldn’t verify a shipping and tax estimate.");expect(screen.queryByRole("button",{name:"Keep my details & retry"})).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Review & continue to payment"})).toBeDisabled();
+    fireEvent.change(name,{target:{value:"Newest Rider"}});await act(async()=>{await vi.advanceTimersByTimeAsync(900);});expect(mocks.change).toHaveBeenCalledTimes(2);expect(screen.getByText("Estimated total")).toBeVisible();
+  });
   it("does not save or recalculate an address when only server-trimmed whitespace changes", async () => {
     vi.useFakeTimers();
     await act(async () => { view(); });
@@ -238,7 +283,7 @@ describe("checkout interface", () => {
     expect(screen.getByText("$0.28")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "确认金额并继续付款" })).toBeDisabled();
     expect(screen.getByRole("checkbox")).toBeDisabled();
-    expect(screen.getByText(/填写完整地址后会自动计算/)).toBeInTheDocument();
+    expect(screen.getByText(/正在更新运费与税费预估/)).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "AK" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "HI" })).not.toBeInTheDocument();
   });
@@ -254,7 +299,7 @@ describe("checkout interface", () => {
       await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
       expect(screen.getByRole("checkbox")).toBeDisabled();
       expect(screen.getByRole("button", { name: "Review & continue to payment" })).toBeDisabled();
-      expect(screen.getByText(/Complete your address to calculate shipping and tax automatically/)).toBeInTheDocument();
+      expect(screen.getByText(/Your shipping and tax estimate is updating/)).toBeInTheDocument();
       expect(mocks.change).not.toHaveBeenCalled();
     } finally { vi.useRealTimers(); }
   });

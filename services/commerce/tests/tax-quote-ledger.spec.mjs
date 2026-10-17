@@ -35,6 +35,28 @@ test("private request is reserved once and retry keeps original date, body and p
   f.state.now+=10;const second=await service.reserveTaxQuote(f.scope,{...f.input,tax_date:f.input.tax_date+10},context);
   assert.equal(second.id,first.id);assert.equal(second.input.tax_date,first.input.tax_date);assert.deepEqual(second.request,first.request);assert.equal(f.state.inserts,1);
 });
+
+test("only immutable draft evidence permits importing an older exact calculation date",async()=>{
+  const f=databaseFixture(),calculation=quoteCalculation(f.input),quote=require("../src/lib/tax-quote-money.ts").normalizeStripeTaxQuote(f.input,calculation,f.input.tax_date),previewId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  f.state.now+=120;
+  const input={...f.input,cart_fingerprint:"b".repeat(64),shipping:{...f.input.shipping,id:"casm_persisted"}};
+  await assert.rejects(service.reserveTaxQuote(f.scope,input,context));assert.equal(f.state.inserts,0);
+  const row={input:f.input,calculation,snapshot:quote,...context,state:"ready"};
+  const scope={resolve:key=>{assert.equal(key,"__pg_connection__");return {transaction:work=>f.db.transaction(tx=>work({raw:async(sql,values)=>sql.includes("from commerce.snowforce_checkout_quote_drafts")?{rows:values[0]===previewId?[structuredClone(row)]:[]}:tx.raw(sql,values)}))};}};
+  const operation=await service.reserveTaxQuote(scope,input,context,previewId);assert.equal(operation.input.tax_date,f.input.tax_date);assert.equal(f.state.inserts,1);assert.equal(operation.input.shipping.id,"casm_persisted");assert.equal(operation.importedPreview,true);
+  const retry=await service.reserveTaxQuote(scope,input,context,previewId);assert.equal(retry.id,operation.id);assert.ok(!("importedPreview" in retry),"an existing pending operation must resume its original provider identity");
+  await service.recordTaxQuote(scope,operation.id,calculation,context);
+  const completed=await service.reserveTaxQuote(scope,input,context,previewId);assert.equal(completed.id,operation.id);assert.ok(!("importedPreview" in completed),"an existing completed calculation must remain immutable");
+});
+
+test("import refuses fabricated, expired or semantically changed preview evidence before reserving native work",async()=>{
+  for(const kind of ["missing","setup","namespace","snapshot","variant","net-discount","expired"]){
+    const f=databaseFixture(),calculation=quoteCalculation(f.input),quote=require("../src/lib/tax-quote-money.ts").normalizeStripeTaxQuote(f.input,calculation,f.input.tax_date),row={input:structuredClone(f.input),calculation,snapshot:structuredClone(quote),...context,state:"ready"},input=structuredClone(f.input);f.state.now+=120;
+    if(kind==="setup")row.setup_fingerprint="b".repeat(64);if(kind==="namespace")row.namespace="b".repeat(64);if(kind==="snapshot")row.snapshot.amounts.total_cents++;if(kind==="variant")input.lines[0].variant_id="variant_other";if(kind==="net-discount"){input.lines[0].unit_price_cents++;input.lines[0].discount_cents++;}if(kind==="expired")f.state.now=f.input.tax_date+850;
+    const scope={resolve:()=>({transaction:work=>f.db.transaction(tx=>work({raw:async(sql,values)=>sql.includes("from commerce.snowforce_checkout_quote_drafts")?{rows:kind==="missing"?[]:[row]}:tx.raw(sql,values)}))})};
+    await assert.rejects(service.reserveTaxQuote(scope,input,context,"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"));assert.equal(f.state.inserts,0,kind);
+  }
+});
 const reordered=value=>Array.isArray(value)?value.map(reordered):value!==null&&typeof value==="object"?Object.fromEntries(Object.entries(value).reverse().map(([key,entry])=>[key,reordered(entry)])):value;
 test("PostgreSQL JSONB object-key order cannot change request, immutable snapshot or receipt identity",async()=>{
   const f=databaseFixture(),op=await service.reserveTaxQuote(f.scope,f.input,context);f.operation.request=reordered(f.operation.request);

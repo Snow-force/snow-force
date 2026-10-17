@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkoutAddressDraftKey, checkoutInputSchema, checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutTaxQuoteSchema, type CheckoutAddress } from "./checkout";
+import { checkoutAddressDraftKey, checkoutPreviewAddressKey, checkoutDraftInputSchema, checkoutInputSchema, checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutTaxQuoteSchema, type CheckoutAddress } from "./checkout";
 import type { ShopPublishedPolicy } from "./policies";
 
 const fingerprint = "a".repeat(64);
@@ -20,6 +20,14 @@ const policy: ShopPublishedPolicy = {
 const review = { status: "review", fingerprint, detailsVersion: null, paymentStarted: false, configured: true, policy, policyAccepted: false, taxQuote: null, pickupOffer: null, pickupSelected: false };
 
 describe("checkout policy consent contract", () => {
+  it("uses the server address projection for preview equivalence and only contact fields for pickup",()=>{
+    const address:CheckoutAddress={name:"Test Rider",phone:"5551234567",address1:"Test street",address2:"",city:"Test city",state:"CA",postalCode:"90001",countryCode:"US"};
+    expect(checkoutPreviewAddressKey({...address,name:" Test   Rider "})).toBe(checkoutPreviewAddressKey(address));
+    expect(checkoutPreviewAddressKey({...address,address1:"",postalCode:""},true)).toBe(checkoutPreviewAddressKey(address,true));
+    expect(checkoutPreviewAddressKey({...address,name:" "},true)).not.toBe(checkoutPreviewAddressKey(address,true));
+    expect(checkoutPreviewAddressKey({...address,address1:" "})).not.toBe(checkoutPreviewAddressKey(address));
+    expect(checkoutDraftInputSchema.safeParse({kind:"delivery",version:fingerprint,address,totalCents:1}).success).toBe(false);
+  });
   it("compares drafts with the same trimming and state normalization as server address validation", () => {
     const saved: CheckoutAddress = { name: "Test Rider", phone: "5551234567", address1: "Test street", address2: "", city: "Test city", state: "CA", postalCode: "90001", countryCode: "US" };
     const padded = { ...saved, name: " Test Rider ", phone: " 5551234567 ", address1: " Test street ", address2: "  ", city: " Test city ", state: " ca ", postalCode: " 90001 " };

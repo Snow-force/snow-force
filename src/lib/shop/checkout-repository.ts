@@ -1,8 +1,8 @@
 import "server-only";
 import { z } from "zod";
-import { nativeCartSchema, CART_FIELDS, prepareCartEdit } from "./commerce-cart";
+import { nativeCartSchema, CART_FIELDS, prepareCartEdit, cartSnapshot } from "./commerce-cart";
 import { CommerceAuthorizationError, type CommerceRequest } from "./commerce-client";
-import { checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutPickupContactSchema, nativeCheckoutAddress, type CheckoutAddress, type CheckoutPickupContact } from "./checkout";
+import { checkoutRecoverySchema, checkoutStatusSchema, checkoutQuoteResponseSchema, checkoutPickupContactSchema, checkoutPreviewSchema, checkoutDraftInputSchema, checkoutAddressSchema, nativeCheckoutAddress, type CheckoutAddress, type CheckoutPickupContact } from "./checkout";
 import { commerceId, usdAmount } from "./storefront";
 
 const nativeAddress = z.object({ first_name: z.string().nullable(), last_name: z.string().nullable(), address_1: z.string().nullable(), address_2: z.string().nullable(), city: z.string().nullable(), province: z.string().nullable(), postal_code: z.string().nullable(), country_code: z.string().nullable(), phone: z.string().nullable() });
@@ -24,6 +24,15 @@ export function createCheckoutRepository(request: CommerceRequest, customer: { c
   }
   return {
     read,
+    async preview(raw:z.infer<typeof checkoutDraftInputSchema>){
+      const draft=checkoutDraftInputSchema.parse(raw);
+      const schema=checkoutPreviewSchema.omit({address:true,cart:true}).extend({address:nativeAddress,cart:checkoutNativeCartSchema}).transform(value=>({...value,cart:cartSnapshot(owned(value.cart)),address:checkoutAddressSchema.parse({name:[value.address.first_name,value.address.last_name].filter(Boolean).join(" "),phone:value.address.phone??"",address1:value.address.address_1??"",address2:value.address.address_2??"",city:value.address.city??"",state:value.address.province?.toUpperCase(),postalCode:value.address.postal_code??"",countryCode:value.address.country_code?.toUpperCase()})}));
+      return request(`/store/snowforce/checkout/${id}/preview`,schema,{...options,method:"POST",body:draft.kind==="delivery"?{...draft,address:nativeCheckoutAddress(draft.address)}:draft});
+    },
+    async commitDraft(token:string){
+      const schema=z.object({review:statusResponseSchema,shipping_options:z.array(z.object({id:commerceId("so"),name:z.string(),calculated_price:z.object({calculated_amount:usdAmount})})),expected:z.object({totalCents:z.number().int().positive(),policyVersion:z.number().int().positive()})}).transform(result=>{if(result.review.status==="review")owned(result.review.cart);return {...result,options:result.shipping_options.map(option=>({id:option.id,name:option.name,price:option.calculated_price.calculated_amount}))};});
+      return request(`/store/snowforce/checkout/${id}/draft-commit`,schema,{...options,method:"POST",body:{token}});
+    },
     async status() { const result = await request(`/store/snowforce/checkout/${id}`, statusResponseSchema, options); if (result.status === "review") owned(result.cart); return result; },
     async shippingOptions() {
       const schema = z.object({ shipping_options: z.array(z.object({ id: commerceId("so"), name: z.string(), calculated_price: z.object({ currency_code: z.literal("usd"), calculated_amount: usdAmount }).nullable() })) });
