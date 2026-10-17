@@ -4,7 +4,8 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 import { asValue } from "@medusajs/framework/awilix";
 import { addShippingMethodToCartWorkflow, updateCartWorkflow } from "@medusajs/medusa/core-flows";
 import { z } from "zod";
-import { checkoutCartSchema, checkoutFields, paymentStarted, type CheckoutCart } from "../../../../../../lib/checkout-policy";
+import { checkoutCartSchema, paymentStarted, type CheckoutCart } from "../../../../../../lib/checkout-policy";
+import { OwnedTaxCartSnapshotMissingError, readOwnedTaxCartSnapshot } from "../../../../../../lib/tax-cart-sql";
 import { checkoutDetailsVersion, detailsVersionRegistration, detailsVersionSchema } from "../../../../../../lib/checkout-details-version";
 import { pickupAddress, pickupConfirmationKey, pickupContactSchema, readPickupOffer, sealPickupConfirmation } from "../../../../../../lib/local-pickup";
 import { withdrawCartTaxQuote } from "../../../../../../lib/tax-quote-withdrawal";
@@ -37,9 +38,13 @@ export function createDetailsPost(flows: Flows = nativeFlows, withdraw = withdra
     if (!parsed.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Provide complete receiving details and the current revision.");
     if (req.auth_context?.actor_type !== "customer" || !/^cus_[A-Za-z0-9]+$/.test(req.auth_context.actor_id)) throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Sign in through SnowForce.");
     async function owned() {
-      const { data } = await req.scope.resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "cart", fields: checkoutFields, filters: { id: req.params.id } });
+      const { data } = await req.scope.resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "cart", fields: ["id", "customer_id"], filters: { id: req.params.id } });
       if (data.length !== 1 || data[0].customer_id !== req.auth_context.actor_id) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart not found.");
-      const cart = checkoutCartSchema.parse(data[0]);
+      const snapshot = await readOwnedTaxCartSnapshot(req.scope.resolve(ContainerRegistrationKeys.PG_CONNECTION),req.params.id,req.auth_context.actor_id).catch(error => {
+        if (error instanceof OwnedTaxCartSnapshotMissingError) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart not found.");
+        throw error;
+      });
+      const cart = checkoutCartSchema.parse(snapshot);
       if (cart.completed_at || paymentStarted(cart)) throw conflict();
       return cart;
     }

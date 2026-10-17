@@ -3,11 +3,11 @@ import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
 import { withCheckoutCartLease } from "./checkout-cart-lease";
 import { z } from "zod";
-import { checkoutCartSchema, checkoutFields, checkoutFingerprint } from "./checkout-policy";
+import { checkoutCartSchema, checkoutFingerprint } from "./checkout-policy";
 import { lockUnpaidCartMoney } from "./tax-money-normalization";
-import { readTaxCartSql } from "./tax-cart-sql";
+import { readOwnedTaxCartSnapshot, readTaxCartSql } from "./tax-cart-sql";
 import { assertNativeTaxQuoteAmounts, governmentFeeMetadataKey } from "./tax-quote-money";
-import { readRecordedCartTaxQuote, taxQuoteNativeAmountFields, taxQuoteReceiptKey, type TaxQuoteConnection } from "./tax-quote-ledger";
+import { readRecordedCartTaxQuote, taxQuoteReceiptKey, type TaxQuoteConnection } from "./tax-quote-ledger";
 import { policyAcceptanceKey } from "./policy-consent";
 import { checkoutDetailsVersion, detailsVersionSchema } from "./checkout-details-version";
 
@@ -27,11 +27,10 @@ export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthCon
       const query=scope.resolve(ContainerRegistrationKeys.QUERY);
       const {data:owners}=await query.graph({entity:"cart",fields:["id","customer_id","completed_at","payment_collection.payment_sessions.id"],filters:{id:id.data}});
       z.array(z.object({id:z.literal(id.data),customer_id:z.literal(auth.actor_id),completed_at:z.null(),payment_collection:z.object({payment_sessions:z.array(z.unknown()).length(0)}).nullable().default(null)})).length(1).parse(owners);
-      const {data}=await query.graph({entity:"cart",fields:[...checkoutFields,...taxQuoteNativeAmountFields],filters:{id:id.data}});
-      const initial=checkoutCartSchema.parse(z.array(z.unknown()).length(1).parse(data)[0]);
+      const db=scope.resolve<TaxQuoteConnection>(ContainerRegistrationKeys.PG_CONNECTION);
+      const initial=checkoutCartSchema.parse(await readOwnedTaxCartSnapshot(db,id.data,auth.actor_id));
       if(expectedDetailsVersion!==undefined && checkoutDetailsVersion(initial)!==detailsVersionSchema.parse(expectedDetailsVersion))throw conflict();
       if(initial.customer_id!==auth.actor_id||initial.id!==id.data||initial.completed_at||initial.payment_collection?.payment_sessions.length)throw conflict();
-      const db=scope.resolve<TaxQuoteConnection>(ContainerRegistrationKeys.PG_CONNECTION);
       return db.transaction(async tx=>{
         await tx.raw("set local lock_timeout='5s'");
         await lockUnpaidCartMoney(tx,{cart:initial});

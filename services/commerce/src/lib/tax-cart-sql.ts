@@ -5,6 +5,9 @@ import { taxUsdAmount } from "./tax-quote-money";
 
 const adjustment = z.object({ amount: taxUsdAmount }).passthrough();
 const taxes = z.array(z.object({ rate: taxUsdAmount }).passthrough());
+export class OwnedTaxCartSnapshotMissingError extends Error {
+  constructor() { super("Cart snapshot unavailable."); this.name = "OwnedTaxCartSnapshotMissingError"; }
+}
 const sqlCart = z.object({
   currency_code: z.literal("usd"), credit_lines: z.array(z.object({ amount: taxUsdAmount })).length(0),
   items: z.array(z.object({ unit_price: taxUsdAmount, quantity: z.number().int().positive(), adjustments: z.array(adjustment), tax_lines: taxes }).passthrough()),
@@ -34,6 +37,7 @@ async function readCartSnapshot(db: TaxQuoteConnection, cartId: string, customer
     'credit_lines',coalesce((select jsonb_agg(to_jsonb(l) order by l.id) from commerce.credit_line l where l.cart_id=c.id and l.deleted_at is null),'[]'::jsonb),
     'payment_collection',(select ${collection} from commerce.payment_collection p join commerce.cart_payment_collection l on l.payment_collection_id=p.id where l.cart_id=c.id and l.deleted_at is null and p.deleted_at is null)
   ) as cart from commerce.cart c where c.id=? and c.deleted_at is null${customerId === undefined ? "" : " and c.customer_id=?"}`, customerId === undefined ? [cartId] : [cartId, customerId]);
+  if (customerId !== undefined && Array.isArray(result.rows) && result.rows.length === 0) throw new OwnedTaxCartSnapshotMissingError();
   const row = z.array(z.object({ cart: sqlCart })).length(1).parse(result.rows)[0];
   if (customerId !== undefined) z.object({ id: z.literal(cartId), customer_id: z.literal(customerId) }).parse(row.cart);
   // Exactly the amount engine used by installed CartModule.retrieveCart, with the same raw properties.
