@@ -12,6 +12,7 @@ import { assertActiveStripeTaxSetup } from "./tax-setup";
 import { readOwnedTaxCartSnapshot } from "./tax-cart-sql";
 import { taxQuoteAddress, taxQuoteInputSchema, taxMoneyCents } from "./tax-quote-contract";
 import { exactTaxUsdCents, governmentFeeMetadataKey, nativeTaxUsdCents, normalizeTaxDiscounts, taxUsdAmount } from "./tax-quote-money";
+import { timeCheckoutPhase } from "./checkout-timing";
 
 export const taxQuoteOwnerFields = ["id", "customer_id", "completed_at", "payment_collection.payment_sessions.id"];
 export const taxQuoteSourceFields = [...checkoutFields.filter(field => field !== "payment_collection.payment_sessions.*"), "payment_collection.payment_sessions.id", "payment_collection.payment_sessions.provider_id", "payment_collection.payment_sessions.amount", "payment_collection.payment_sessions.currency_code", "payment_collection.payment_sessions.status", "item_subtotal", "discount_subtotal", "credit_lines.id", "items.adjustments.id", "items.adjustments.amount", "items.adjustments.is_tax_inclusive", "items.is_tax_inclusive", "items.is_custom_price", "items.metadata", "shipping_methods.adjustments.id", "shipping_methods.adjustments.amount", "shipping_methods.adjustments.is_tax_inclusive", "shipping_methods.is_tax_inclusive"];
@@ -45,7 +46,7 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
   const ownedCartId = parsedId.data;
   lease(signals);
   const query = scope.resolve(ContainerRegistrationKeys.QUERY);
-  const { data: owners } = await query.graph({ entity: "cart", fields: taxQuoteOwnerFields, filters: { id: parsedId.data } }).catch(() => { throw interrupted(); });
+  const { data: owners } = await timeCheckoutPhase("source.owner",()=>query.graph({ entity: "cart", fields: taxQuoteOwnerFields, filters: { id: parsedId.data } })).catch(() => { throw interrupted(); });
   if (owners.length !== 1 || owners[0]?.id !== parsedId.data || owners[0]?.customer_id !== auth.actor_id) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart not found.");
   const owner = z.object({ completed_at: z.unknown().nullable(), payment_collection: z.object({ payment_sessions: z.array(z.object({ id:z.string() })) }).nullable().default(null) }).safeParse(owners[0]);
   if (!owner.success || owner.data.completed_at || owner.data.payment_collection?.payment_sessions.length || process.env.COMMERCE_TAX_POLICY_CONFIRMED !== "true") throw interrupted();
@@ -58,7 +59,7 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     return { cart: cart.data, source: source.data };
   }
   // Read ownership before consulting policy, merchant data, products or Stripe.
-  const initial = await ownedSource();
+  const initial = await timeCheckoutPhase("source.cart.initial",ownedSource);
   try {
     const { cart, source } = initial;
     lease(signals);
@@ -67,9 +68,9 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     // Independent read-only checks start together after ownership is established.
     // All must finish before contacting Stripe or constructing a quote input.
     const [{ data: regions }, shipping_policy, classifications] = await Promise.all([
-      query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: cart.region_id } }),
-      readCartShippingPolicy(cart, scope),
-      assertCartProductTaxClassifications(cart, scope),
+      timeCheckoutPhase("source.region.initial",()=>query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: cart.region_id } })),
+      timeCheckoutPhase("source.shipping.initial",()=>readCartShippingPolicy(cart, scope)),
+      timeCheckoutPhase("source.classification.initial",()=>assertCartProductTaxClassifications(cart, scope)),
     ]);
     if (regions.length !== 1) throw interrupted();
     assertUsCheckoutRegion(regions[0]);
@@ -85,8 +86,8 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     exactTaxUsdCents(source.shipping_methods[0].amount);
     // Gift cards, custom/fee lines, draft products and changed reviews are rejected by the native classification reader.
     lease(signals);
-    const setup = await assertActiveStripeTaxSetup(scope);
-    const { active, database_now } = await readReviewedTaxConfiguration(scope, setup);
+    const setup = await timeCheckoutPhase("source.setup",()=>assertActiveStripeTaxSetup(scope));
+    const { active, database_now } = await timeCheckoutPhase("source.config.initial",()=>readReviewedTaxConfiguration(scope, setup));
     if (database_now - setup.observed_at > 60 || setup.observed_at > database_now + 3) throw interrupted();
     const address = cart.shipping_address!;
     const input = taxQuoteInputSchema.parse({
@@ -106,13 +107,13 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     const source_fingerprint = fingerprint(cart, source);
     // Native edits can occur while Stripe GETs are in flight. Re-read every mutable source before returning.
     lease(signals);
-    const current = await ownedSource();
+    const current = await timeCheckoutPhase("source.cart.final",ownedSource);
     if (paymentStarted(current.cart) || current.cart.completed_at || fingerprint(current.cart, current.source) !== source_fingerprint) throw interrupted();
     const [{ data: currentRegions }, currentShipping, currentClassifications] = await Promise.all([
-      query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: current.cart.region_id } }),
-      readCartShippingPolicy(current.cart, scope),
-      assertCartProductTaxClassifications(current.cart, scope),
-      assertQuotedTaxConfiguration(scope, input, setup),
+      timeCheckoutPhase("source.region.final",()=>query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: current.cart.region_id } })),
+      timeCheckoutPhase("source.shipping.final",()=>readCartShippingPolicy(current.cart, scope)),
+      timeCheckoutPhase("source.classification.final",()=>assertCartProductTaxClassifications(current.cart, scope)),
+      timeCheckoutPhase("source.config.final",()=>assertQuotedTaxConfiguration(scope, input, setup)),
     ]);
     if (currentRegions.length !== 1) throw interrupted();
     assertUsCheckoutRegion(currentRegions[0]);

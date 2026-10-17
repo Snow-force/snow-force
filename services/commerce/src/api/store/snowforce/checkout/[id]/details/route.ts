@@ -9,6 +9,7 @@ import { OwnedTaxCartSnapshotMissingError, readOwnedTaxCartSnapshot } from "../.
 import { checkoutDetailsVersion, detailsVersionRegistration, detailsVersionSchema } from "../../../../../../lib/checkout-details-version";
 import { pickupAddress, pickupConfirmationKey, pickupContactSchema, readPickupOffer, sealPickupConfirmation } from "../../../../../../lib/local-pickup";
 import { withdrawCartTaxQuote } from "../../../../../../lib/tax-quote-withdrawal";
+import { timeCheckoutPhase, withCheckoutTiming } from "../../../../../../lib/checkout-timing";
 
 const address = z.object({ first_name: z.string().trim().min(1).max(100), last_name: z.string().max(100), phone: z.string().trim().min(1).max(30),
   address_1: z.string().trim().min(1).max(200), address_2: z.string().max(200), city: z.string().trim().min(1).max(100),
@@ -37,6 +38,7 @@ export function createDetailsPost(flows: Flows = nativeFlows, withdraw = withdra
     const parsed = inputSchema.safeParse(req.body);
     if (!parsed.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Provide complete receiving details and the current revision.");
     if (req.auth_context?.actor_type !== "customer" || !/^cus_[A-Za-z0-9]+$/.test(req.auth_context.actor_id)) throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Sign in through SnowForce.");
+    return withCheckoutTiming("checkout.details", async () => {
     async function owned() {
       const { data } = await req.scope.resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "cart", fields: ["id", "customer_id"], filters: { id: req.params.id } });
       if (data.length !== 1 || data[0].customer_id !== req.auth_context.actor_id) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart not found.");
@@ -48,20 +50,20 @@ export function createDetailsPost(flows: Flows = nativeFlows, withdraw = withdra
       if (cart.completed_at || paymentStarted(cart)) throw conflict();
       return cart;
     }
-    await owned();
+    await timeCheckoutPhase("details.owner.initial",owned);
     try {
       const locking = req.scope.resolve<ILockingModule>(Modules.LOCKING);
       await locking.execute(`snowforce-details:${req.params.id}`, async serial => {
         if (serial?.aborted) throw conflict();
         // Version validation and quote withdrawal share the checkout/native leases.
-        await withdraw(req.scope, req.auth_context, req.params.id, [serial], parsed.data.version);
+        await timeCheckoutPhase("details.withdraw",()=>withdraw(req.scope, req.auth_context, req.params.id, [serial], parsed.data.version));
         await locking.execute(`snowforce-checkout:${req.params.id}`, async checkout => {
-          const cart = await owned();
+          const cart = await timeCheckoutPhase("details.owner.final",owned);
           if (serial?.aborted || checkout?.aborted || checkoutDetailsVersion(cart) !== parsed.data.version) throw conflict();
           // This request-scoped value is checked again by the native workflow
           // validate hook after it acquires cart.id. Browser metadata cannot set it.
           req.scope.register({ [detailsVersionRegistration]: asValue({ cartId: cart.id, customerId: req.auth_context.actor_id, version: parsed.data.version }) });
-          await flows.save(req.scope, cart, parsed.data);
+          await timeCheckoutPhase("details.native-save",()=>flows.save(req.scope, cart, parsed.data));
           if (serial?.aborted || checkout?.aborted) throw conflict();
         }, { timeout: 15, expire: 120 });
       }, { timeout: 15, expire: 120 });
@@ -71,6 +73,7 @@ export function createDetailsPost(flows: Flows = nativeFlows, withdraw = withdra
         return res.status(409).json({ type: "conflict", code: "checkout_details_changed", message: "Refresh receiving details before saving again." });
       throw error;
     }
+    });
   };
 }
 export const POST = createDetailsPost();
