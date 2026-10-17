@@ -13,6 +13,7 @@ import { readOwnedTaxCartSnapshot } from "./tax-cart-sql";
 import { taxQuoteAddress, taxQuoteInputSchema, taxMoneyCents } from "./tax-quote-contract";
 import { exactTaxUsdCents, governmentFeeMetadataKey, nativeTaxUsdCents, normalizeTaxDiscounts, taxUsdAmount } from "./tax-quote-money";
 import { timeCheckoutPhase } from "./checkout-timing";
+import { CheckoutDraftChangedError } from "./checkout-draft-contract";
 
 export const taxQuoteOwnerFields = ["id", "customer_id", "completed_at", "payment_collection.payment_sessions.id"];
 export const taxQuoteSourceFields = [...checkoutFields.filter(field => field !== "payment_collection.payment_sessions.*"), "payment_collection.payment_sessions.id", "payment_collection.payment_sessions.provider_id", "payment_collection.payment_sessions.amount", "payment_collection.payment_sessions.currency_code", "payment_collection.payment_sessions.status", "item_subtotal", "discount_subtotal", "credit_lines.id", "items.adjustments.id", "items.adjustments.amount", "items.adjustments.is_tax_inclusive", "items.is_tax_inclusive", "items.is_custom_price", "items.metadata", "shipping_methods.adjustments.id", "shipping_methods.adjustments.amount", "shipping_methods.adjustments.is_tax_inclusive", "shipping_methods.is_tax_inclusive"];
@@ -39,7 +40,8 @@ function fingerprint(cart: z.infer<typeof checkoutCartSchema>, source: z.infer<t
 }
 
 /** Server-only source: ownership precedes private reads; browser money and confirmation flags are never inputs. */
-async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undefined, rawCartId: unknown, signals: readonly (AbortSignal | undefined)[], normalization: boolean) {
+type PreviewProjection = { project(raw: unknown): unknown; verifiedFeeIds: readonly string[] };
+async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undefined, rawCartId: unknown, signals: readonly (AbortSignal | undefined)[], normalization: boolean, preview?: PreviewProjection) {
   if (auth?.actor_type !== "customer" || !/^cus_[A-Za-z0-9]+$/.test(auth.actor_id)) throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Sign in through SnowForce.");
   const parsedId = z.string().regex(/^cart_[A-Za-z0-9]+$/).safeParse(rawCartId);
   if (!parsedId.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid cart.");
@@ -54,7 +56,8 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     // Keep both reads around external verification, but collect each native
     // amount snapshot in one statement instead of many graph round trips.
     const raw = await readOwnedTaxCartSnapshot(scope.resolve(ContainerRegistrationKeys.PG_CONNECTION), ownedCartId, auth!.actor_id).catch(() => { throw interrupted(); });
-    const cart = checkoutCartSchema.safeParse(raw), source = sourceSchema.safeParse(raw);
+    const value = preview ? preview.project(raw) : raw;
+    const cart = checkoutCartSchema.safeParse(value), source = sourceSchema.safeParse(value);
     if (!cart.success || !source.success) throw interrupted();
     return { cart: cart.data, source: source.data };
   }
@@ -70,7 +73,7 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     const [{ data: regions }, shipping_policy, classifications] = await Promise.all([
       timeCheckoutPhase("source.region.initial",()=>query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: cart.region_id } })),
       timeCheckoutPhase("source.shipping.initial",()=>readCartShippingPolicy(cart, scope)),
-      timeCheckoutPhase("source.classification.initial",()=>assertCartProductTaxClassifications(cart, scope)),
+      timeCheckoutPhase("source.classification.initial",()=>assertCartProductTaxClassifications(cart, scope, preview?.verifiedFeeIds)),
     ]);
     if (regions.length !== 1) throw interrupted();
     assertUsCheckoutRegion(regions[0]);
@@ -112,7 +115,7 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     const [{ data: currentRegions }, currentShipping, currentClassifications] = await Promise.all([
       timeCheckoutPhase("source.region.final",()=>query.graph({ entity: "region", fields: ["currency_code", "countries.iso_2"], filters: { id: current.cart.region_id } })),
       timeCheckoutPhase("source.shipping.final",()=>readCartShippingPolicy(current.cart, scope)),
-      timeCheckoutPhase("source.classification.final",()=>assertCartProductTaxClassifications(current.cart, scope)),
+      timeCheckoutPhase("source.classification.final",()=>assertCartProductTaxClassifications(current.cart, scope, preview?.verifiedFeeIds)),
       timeCheckoutPhase("source.config.final",()=>assertQuotedTaxConfiguration(scope, input, setup)),
     ]);
     if (currentRegions.length !== 1) throw interrupted();
@@ -121,11 +124,18 @@ async function readQuoteSource(scope: MedusaContainer, auth: AuthContext | undef
     if (!same(classifications, currentClassifications)) throw interrupted();
     lease(signals);
     return { cart: current.cart, source:current.source, input, source_fingerprint, discounts, setup, shipping_policy, configuration:active, classifications };
-  } catch { throw new MedusaError(MedusaError.Types.CONFLICT, "Cart amounts, delivery or reviewed tax setup changed. Review before requesting a tax quote."); }
+  } catch(error) { if(preview&&error instanceof CheckoutDraftChangedError)throw error;throw new MedusaError(MedusaError.Types.CONFLICT, "Cart amounts, delivery or reviewed tax setup changed. Review before requesting a tax quote."); }
 }
 
 export async function readCartTaxQuoteSource(scope: MedusaContainer, auth: AuthContext | undefined, rawCartId: unknown, signals: readonly (AbortSignal | undefined)[] = []) {
   return readQuoteSource(scope,auth,rawCartId,signals,false);
+}
+
+/** A server-constructed projection for an estimate only. It cannot be applied or paid.
+ * Both real owner-bound snapshots still run; the projector must reject baseline changes.
+ */
+export async function readCartTaxPreviewSource(scope: MedusaContainer, auth: AuthContext | undefined, cartId: string, preview: PreviewProjection) {
+  return readQuoteSource(scope, auth, cartId, [], false, preview);
 }
 
 /** A normalization plan only. Re-read the strict source after committing; never quote this provisional cart. */

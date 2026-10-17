@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { LockKeyhole, MapPin, Truck } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import { changeShopCheckoutAction, getShopCheckoutAction } from "@/lib/shop/checkout-actions";
 import { cancelUnpaidCartPaymentAction, previewShopPaymentCancellationAction } from "@/lib/shop/cart-actions";
-import { checkoutAddressDraftKey, checkoutAddressSchema, checkoutPickupContactSchema, type CheckoutResult, type CheckoutReview, type CheckoutAddress } from "@/lib/shop/checkout";
+import { checkoutAddressDraftKey, checkoutPreviewAddressKey, checkoutAddressSchema, checkoutPickupContactSchema, type CheckoutResult, type CheckoutReview, type CheckoutAddress, type CheckoutPreview } from "@/lib/shop/checkout";
 import { usStates } from "@/lib/shop/shipping-addresses";
 import { formatStorePrice } from "@/lib/shop/storefront";
 import { shopPolicySections, type ShopPolicySection, type ShopPublishedPolicy } from "@/lib/shop/policies";
@@ -18,7 +18,7 @@ import { CancelPaymentDialog, type CancelPaymentPrompt } from "./cancel-payment-
 import { PendingFeedback } from "./pending-feedback";
 
 const StripeCheckoutForm = dynamic(() => import("./stripe-checkout-form"), { ssr: false, loading: () => <LoadingStatus>Loading secure payment… / 正在加载付款…</LoadingStatus> });
-type PendingOperation = "loading" | "saving" | "payment" | "checking" | "completing";
+type PendingOperation = "loading" | "saving" | "estimating" | "payment" | "checking" | "completing";
 const blank: CheckoutAddress = { name: "", phone: "", address1: "", address2: "", city: "", state: "", postalCode: "", countryCode: "US" };
 const policySectionTitles: Record<ShopPolicySection, { en: string; zh: string }> = {
   shipping: { en: "Shipping", zh: "配送" },
@@ -57,7 +57,9 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
   const { lang } = useLanguage();
   const { reload: reloadCart, syncCheckout } = useShopCart();
   const [result, setResult] = useState<CheckoutResult | null>(null);
-  const [review, setReview] = useState<CheckoutReview | null>(null);
+  const [savedReview, setReview] = useState<CheckoutReview | null>(null);
+  const [preview, setPreview] = useState<CheckoutPreview | null>(null);
+  const review = useMemo(() => savedReview && preview ? {...savedReview,cart:preview.cart,address:preview.address,options:preview.options,selectedOptionId:preview.selectedOptionId,pickupSelected:preview.pickupSelected,policy:preview.policy,fingerprint:preview.fingerprint,taxQuote:preview.taxQuote} : savedReview, [savedReview,preview]);
   const [address, setAddress] = useState<CheckoutAddress>(blank);
   const [deliveryMode, setDeliveryMode] = useState<"delivery" | "pickup">("delivery");
   const [appointmentConfirmed, setAppointmentConfirmed] = useState(false);
@@ -75,47 +77,60 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
   const paymentGeneration = useRef(0);
   const automaticAttempt = useRef("");
   const draftRevision = useRef(0);
-  const markDraftChanged = () => { draftRevision.current += 1; setAcceptance(null); };
+  const latestPreviewDraft = useRef("");
+  const markDraftChanged = () => { draftRevision.current += 1; setAcceptance(null); setError(previous => previous === "estimate-unavailable" ? null : previous); };
   const currentPaymentGeneration = paymentGeneration.current;
   const paymentBusyChanged = useCallback((pending: boolean) => { stripeActive.current = pending; setStripeBusy(pending); }, []);
   const text = (en: string, zh: string) => lang === "zh" ? zh : en;
-  const pendingText = pending === "saving" ? text("Saving your checkout details… This may take a few moments.", "正在保存并核对结账信息，请稍候…")
+  const pendingText = pending === "estimating" ? text("Calculating your shipping and tax estimate…", "正在计算运费与税费预估…")
+    : pending === "saving" ? text("Saving your checkout details… This may take a few moments.", "正在保存并核对结账信息，请稍候…")
     : pending === "payment" ? text("Preparing secure payment…", "正在准备安全付款…")
     : pending === "checking" ? text("Checking payment status…", "正在检查付款状态…")
     : pending === "completing" ? text("Verifying your order…", "正在核验订单…")
     : text("Checking checkout…", "正在检查结账信息…");
-  const addressKey = checkoutAddressDraftKey(address);
-  const addressDirty = !!review && ((deliveryMode === "pickup") !== !!review.pickupSelected || addressKey !== checkoutAddressDraftKey(review.address ?? blank) || (deliveryMode === "pickup" && !appointmentConfirmed));
+  const addressKey = review?.draftsEnabled ? checkoutPreviewAddressKey(address,deliveryMode === "pickup") : checkoutAddressDraftKey(address);
+  useEffect(() => { latestPreviewDraft.current = JSON.stringify({deliveryMode,addressKey,appointmentConfirmed}); }, [deliveryMode,addressKey,appointmentConfirmed]);
+  const addressDirty = !!review && ((deliveryMode === "pickup") !== !!review.pickupSelected || addressKey !== (review.draftsEnabled ? checkoutPreviewAddressKey(review.address ?? blank,deliveryMode === "pickup") : checkoutAddressDraftKey(review.address ?? blank)) || (deliveryMode === "pickup" && !appointmentConfirmed));
   const policyPreviouslyAccepted = !!review?.policy && review.paymentStarted && review.policyAccepted;
+  const receivingComplete = deliveryMode === "pickup" ? checkoutPickupContactSchema.safeParse({name:address.name,phone:address.phone,appointmentConfirmed}).success : checkoutAddressSchema.safeParse(address).success;
   const policyAgreed = !!review?.policy && (policyPreviouslyAccepted || (acceptance !== null && acceptance.fingerprint === review.fingerprint && acceptance.policyVersion === review.policy.version));
-  const quoteReady = !addressDirty && !!review?.taxQuote?.ready && (review.paymentStarted || quoteTime < review.taxQuote.expiresAt * 1000);
+  const quoteReady = !addressDirty && !!review?.taxQuote && (preview ? !error && !savedReview?.paymentStarted && preview.version === savedReview?.detailsVersion && quoteTime + 60_000 < preview.taxQuote.expiresAt * 1000 : review.taxQuote.ready && (review.paymentStarted || quoteTime < review.taxQuote.expiresAt * 1000));
   useEffect(() => {
     if (!review?.taxQuote || review.paymentStarted) return;
-    const timeout = window.setTimeout(() => setQuoteTime(Date.now()), Math.max(0, Math.min(2_147_483_647, review.taxQuote.expiresAt * 1000 - Date.now())));
+    const timeout = window.setTimeout(() => setQuoteTime(Date.now()), Math.max(0, Math.min(2_147_483_647, review.taxQuote.expiresAt * 1000 - (preview ? 60_000 : 0) - Date.now())));
     return () => window.clearTimeout(timeout);
-  }, [review?.taxQuote, review?.paymentStarted]);
+  }, [review?.taxQuote, review?.paymentStarted, preview]);
   const apply = useCallback((next: CheckoutResult, preserveDetails = false) => {
     paymentGeneration.current += 1;
-    if (["invalid", "rejected", "unavailable", "not-configured", "stale-details"].includes(next.status)) { setError(next.status); if (!review) setResult(next); return; }
+    if (next.status === "preview") { setPreview(next); setError(null); return; }
+    if (["invalid", "rejected", "unavailable", "not-configured", "stale-details", "estimate-unavailable"].includes(next.status)) { setError(next.status); if (!review) setResult(next); return; }
     setResult(next); setError(null);
     if (next.status === "review") {
-      syncCheckout(next.cart); setReview(next);
+      setPreview(null); syncCheckout(next.cart); setReview(next);
       if (!preserveDetails) { setAddress(next.address ?? blank); setDeliveryMode(next.pickupSelected ? "pickup" : "delivery"); setAppointmentConfirmed(!!next.pickupSelected); }
       setAcceptance((previous) => next.paymentCheck !== "unlocked" && next.policy && previous !== null && previous.fingerprint === next.fingerprint && previous.policyVersion === next.policy.version ? previous : null);
     }
+    if (next.status === "payment" && next.review) { setPreview(null); setReview(next.review); syncCheckout(next.review.cart); }
     if (next.status === "complete") void reloadCart();
   }, [reloadCart, review, syncCheckout]);
   const perform = useCallback(async (operation: () => Promise<CheckoutResult>, invalidateQuote = false, phase: PendingOperation = invalidateQuote ? "saving" : "loading", keepDraft = false) => {
     if (active.current) return;
     const startedRevision = draftRevision.current;
+    const startedPreview = latestPreviewDraft.current;
     active.current = true; setPending(phase); setBusy(true); setError(null);
     if (invalidateQuote) {
       setAcceptance(null);
       setReview(previous => previous ? { ...previous, taxQuote: previous.taxQuote ? { ...previous.taxQuote, ready: false } : null } : null);
     }
-    try { apply(await operation(), keepDraft || phase === "saving" && startedRevision !== draftRevision.current); } catch { setError("unavailable"); }
+    try { const next = await operation(); if (phase !== "estimating" || startedPreview === latestPreviewDraft.current) apply(next, keepDraft || phase === "saving" && startedRevision !== draftRevision.current); } catch { if (phase !== "estimating" || startedPreview === latestPreviewDraft.current) setError("unavailable"); }
     finally { active.current = false; setBusy(false); }
   }, [apply]);
+  const receivingChange = useCallback((optionId?: string) => {
+    const contact = {name:address.name,phone:address.phone,appointmentConfirmed};
+    if (savedReview?.draftsEnabled && savedReview.detailsVersion) return {kind:"preview",draft:deliveryMode === "pickup" ? {kind:"pickup",version:savedReview.detailsVersion,contact} : {kind:"delivery",version:savedReview.detailsVersion,address,...(optionId?{optionId}:{})}};
+    const version = savedReview?.detailsVersion ? {version:savedReview.detailsVersion} : {};
+    return deliveryMode === "pickup" ? {kind:"pickup-review",contact,...version} : {kind:"delivery",address,...version};
+  }, [savedReview,deliveryMode,address,appointmentConfirmed]);
   useEffect(() => {
     if (!review || busy || review.paymentStarted || !review.configured || error || result?.status !== "review") return;
     const contact = { name: address.name, phone: address.phone, appointmentConfirmed };
@@ -127,10 +142,10 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     if (automaticAttempt.current === key) return;
     const timer = window.setTimeout(() => {
       automaticAttempt.current = key;
-      void perform(() => changeShopCheckoutAction(needsDetails ? deliveryMode === "pickup" ? { kind: "pickup-review", contact, ...version } : { kind: "delivery", address, ...version } : { kind: "quote" }), true);
+      void perform(() => changeShopCheckoutAction(review.draftsEnabled || needsDetails ? receivingChange() : {kind:"quote"}), true, review.draftsEnabled ? "estimating" : "saving");
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [review, busy, error, result?.status, deliveryMode, address, addressKey, appointmentConfirmed, addressDirty, quoteReady, perform]);
+  }, [review, busy, error, result?.status, deliveryMode, address, addressKey, appointmentConfirmed, addressDirty, quoteReady, perform, receivingChange]);
   const checkPayment = async () => {
     if (active.current || stripeActive.current) return;
     paymentGeneration.current += 1;
@@ -171,9 +186,8 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     void operation.then((next) => { if (current) { setResult(next); if (next.status === "review") { syncCheckout(next.cart); setReview(next); setAddress(next.address ?? blank); setDeliveryMode(next.pickupSelected ? "pickup" : "delivery"); setAppointmentConfirmed(!!next.pickupSelected); } if (next.status === "complete") void reloadCart(); } }).catch(() => { if (current) setError("unavailable"); }).finally(() => { if (current) { active.current = false; setBusy(false); } });
     return () => { current = false; paymentGeneration.current += 1; };
   }, [completing, reloadCart, syncCheckout]);
-  const displayError = error ?? (result && ["invalid", "rejected", "unavailable", "not-configured", "stale-details"].includes(result.status) ? result.status : null);
-  const draftVersion = review?.detailsVersion ? { version: review.detailsVersion } : {};
-  const detailsLocked = (busy && !(pending === "saving" && review?.detailsVersion)) || !!review?.paymentStarted || !review?.configured || stripeBusy;
+  const displayError = error ?? (result && ["invalid", "rejected", "unavailable", "not-configured", "stale-details", "estimate-unavailable"].includes(result.status) ? result.status : null);
+  const detailsLocked = (busy && pending !== "estimating" && !(pending === "saving" && review?.detailsVersion)) || !!review?.paymentStarted || !review?.configured || stripeBusy;
   const field = (name: keyof Omit<CheckoutAddress, "countryCode" | "state">, en: string, zh: string, autoComplete: string, maxLength: number, optional = false) => <label className="flex flex-col gap-2 text-sm font-medium">{text(en, zh)}<input className="min-h-12 rounded-lg border border-[#d2d2d7] bg-white px-3 font-normal" name={name} value={address[name]} required={!optional} maxLength={maxLength} autoComplete={autoComplete} disabled={detailsLocked} onChange={(event) => { markDraftChanged(); setAddress((previous) => ({ ...previous, [name]: event.target.value })); }} /></label>;
   return <div className="shop-container checkout-main" role="region" aria-label={text("Checkout", "结账")} aria-busy={busy || stripeBusy}>
     <Link className="text-sm text-[#0066cc]" href="/shop/cart">← {text("Back to cart", "返回购物车")}</Link>
@@ -183,7 +197,7 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     {(result?.status === "payment" || result?.status === "processing" || review?.paymentStarted) && result?.status !== "complete" && <button type="button" className="mt-4 min-h-11 text-sm text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => void previewCancellation()}>{text("Cancel unfinished payment & edit checkout", "取消未完成付款并修改结账")}</button>}
     {cancelNotice && <p role="alert" className="mt-3 text-sm">{cancelNotice === "blocked" ? text("This payment cannot be canceled here. Check its current payment or order status before making changes.", "这笔付款暂不能在此取消。请先核对付款或订单状态，再修改订单。") : text("Cancellation could not be verified. Check payment status and try again.", "暂时无法核实取消条件，请检查付款状态后重试。")}</p>}
     {busy && review && <p role="status" className="mt-5 rounded-lg bg-[#f0f7ff] p-4 text-sm"><LoadingSpinner className="mr-2" />{pendingText}</p>}
-    {displayError && <div role="alert" className="mt-6 rounded-lg bg-[#f5f5f7] p-4 text-sm">{displayError === "stale-details" ? text("Receiving details changed in another tab. Your draft is kept; review the saved details before trying again.", "其他页面已修改收货信息。当前草稿已保留，请先核对最新保存的信息，再决定是否重试。") : displayError === "not-configured" ? text("Delivery or payments are being prepared. Checkout isn't available yet.", "配送或付款服务正在准备中，暂时无法结账。") : displayError === "invalid" ? text("Check the address and shipping selection.", "请检查收货地址和配送选择。") : displayError === "rejected" ? text("Your checkout could not be verified. Refresh the details; check payment status before paying again.", "暂时无法核实结账信息。请刷新信息，再次付款前先检查付款状态。") : text("We couldn't load checkout. Please try again.", "暂时无法加载结账信息，请重试。")}<button className="ml-3 min-h-11 text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => { automaticAttempt.current = ""; void perform(getShopCheckoutAction); }}>{busy && pending === "loading" && <LoadingSpinner className="mr-2" />}{displayError === "stale-details" ? text("Use latest saved details", "使用最新保存的信息") : text("Refresh", "刷新")}</button>{displayError === "stale-details" && <button className="ml-3 min-h-11 text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => { automaticAttempt.current = ""; void perform(getShopCheckoutAction, false, "loading", true); }}>{text("Keep my details & retry", "保留当前草稿并重试")}</button>}</div>}
+    {displayError && <div role="alert" className="mt-6 rounded-lg bg-[#f5f5f7] p-4 text-sm">{displayError === "stale-details" ? text("Checkout details or the estimate changed. Your draft is kept; review the saved details before trying again.", "结账信息或报价已变化。当前草稿已保留，请先核对最新保存的信息，再决定是否重试。") : displayError === "estimate-unavailable" ? text("We couldn’t verify a shipping and tax estimate. Your draft is kept; check the address or retry.", "暂时无法核实运费与税费预估。草稿已保留，请检查地址或重试。") : displayError === "not-configured" ? text("Delivery or payments are being prepared. Checkout isn't available yet.", "配送或付款服务正在准备中，暂时无法结账。") : displayError === "invalid" ? text("Check the address and shipping selection.", "请检查收货地址和配送选择。") : displayError === "rejected" ? text("Your checkout could not be verified. Refresh the details; check payment status before paying again.", "暂时无法核实结账信息。请刷新信息，再次付款前先检查付款状态。") : text("We couldn't load checkout. Please try again.", "暂时无法加载结账信息，请重试。")}<button className="ml-3 min-h-11 text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => { automaticAttempt.current = ""; void perform(getShopCheckoutAction); }}>{busy && pending === "loading" && <LoadingSpinner className="mr-2" />}{displayError === "stale-details" ? text("Use latest saved details", "使用最新保存的信息") : text("Refresh", "刷新")}</button>{displayError === "stale-details" && <button className="ml-3 min-h-11 text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => { automaticAttempt.current = ""; void perform(getShopCheckoutAction, false, "loading", true); }}>{text("Keep my details & retry", "保留当前草稿并重试")}</button>}</div>}
     {(displayError || result?.status === "processing" || result?.status === "payment" || (result?.status === "review" && review?.paymentStarted)) && <div className="mt-5"><button className="min-h-11 text-sm text-[#0066cc] underline" disabled={busy || stripeBusy} onClick={() => void checkPayment()}>{busy && pending === "checking" && <LoadingSpinner className="mr-2" />}{text("Check payment status", "检查付款状态")}</button>{busy && !review && <p role="status" className="mt-2 text-sm"><LoadingSpinner className="mr-2" />{pendingText}</p>}</div>}
     {result?.status === "review" && review?.paymentCheck && <p role="status" className="mt-4 text-sm leading-relaxed">{review.paymentCheck === "unlocked" ? text("The previous payment was canceled. Review your checkout and agree to the current policy before starting a new payment.", "之前的付款已取消。请重新核对结账信息并同意当前政策，再开始新的付款。") : text("Your original payment is still active. Continue that payment or check order status if it is processing.", "原付款仍有效，请继续原付款；如正在处理，请检查订单状态。")}</p>}
     {!result && !displayError && <p role="status" className="mt-8"><LoadingSpinner className="mr-2" />{completing ? text("Verifying your order…", "正在核验订单…") : text("Loading checkout…", "正在加载结账信息…")}</p>}
@@ -202,16 +216,16 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
           {deliveryMode === "pickup" && review.pickupOffer ? <>
             <p className="mt-3 text-sm leading-relaxed">{text("Contact customer service to confirm your pickup appointment before paying, then confirm it below. Tax is calculated at this pickup location.", "请先联系客服确认自提预约，再勾选下方预约确认。税费按以下自提地点自动计算。")} {review.policy && <a className="text-[#0066cc] underline" href={`mailto:${review.policy.content.customer_service_email}`}>{review.policy.content.customer_service_email}</a>}</p>
             <address className="mt-4 rounded-lg bg-[#f5f5f7] p-4 text-sm not-italic leading-relaxed"><p className="font-medium">{review.pickupOffer.name}</p><p>{review.pickupOffer.address.address_1}</p>{review.pickupOffer.address.address_2 && <p>{review.pickupOffer.address.address_2}</p>}<p>{review.pickupOffer.address.city}, CA {review.pickupOffer.address.postal_code}</p></address>
-            <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); if (!appointmentConfirmed) return; void perform(() => changeShopCheckoutAction({ kind: "pickup-review", contact: { name: address.name, phone: address.phone, appointmentConfirmed: true }, ...draftVersion }), true); }}>
+            <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); if (!appointmentConfirmed) return; void perform(() => changeShopCheckoutAction(receivingChange()), true, review.draftsEnabled ? "estimating" : "saving"); }}>
               {field("name", "Pickup name", "自提人姓名", "name", 100)}{field("phone", "Phone", "联系电话", "tel", 30)}
               <label className="flex min-h-12 items-start gap-3 text-sm leading-relaxed sm:col-span-2"><input type="checkbox" className="mt-1 h-4 w-4" required checked={appointmentConfirmed} disabled={detailsLocked} onChange={event => { markDraftChanged(); setAppointmentConfirmed(event.target.checked); }} /><span>{text("I have contacted SnowForce and confirmed my pickup appointment at this location.", "我已联系 SnowForce，并确认在此地点自提的预约。")}</span></label>
               <p className="checkout-help sm:col-span-2">{text("Your pickup details and tax update automatically after you confirm the appointment.", "确认预约后，自提信息与税费会自动更新。")}</p>
             </form>
-          </> : <><p className="checkout-help">{text("United States · Shipping and tax update automatically when your address is complete.", "美国配送 · 地址填写完整后自动更新运费和税费。")}</p><form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); if (checkoutAddressSchema.safeParse(address).success) void perform(() => changeShopCheckoutAction({ kind: "delivery", address, ...draftVersion }), true); }}>
+          </> : <><p className="checkout-help">{text("United States · Shipping and tax update automatically when your address is complete.", "美国配送 · 地址填写完整后自动更新运费和税费。")}</p><form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); if (checkoutAddressSchema.safeParse(address).success) void perform(() => changeShopCheckoutAction(receivingChange()), true, review.draftsEnabled ? "estimating" : "saving"); }}>
           {field("name", "Recipient name", "收件人姓名", "shipping name", 100)}{field("phone", "Phone", "联系电话", "shipping tel", 30)}<div className="sm:col-span-2">{field("address1", "Street address", "街道地址", "shipping address-line1", 200)}</div><div className="sm:col-span-2">{field("address2", "Apartment, suite (optional)", "公寓、房间号（选填）", "shipping address-line2", 200, true)}</div>{field("city", "City", "城市", "shipping address-level2", 100)}<label className="flex flex-col gap-2 text-sm font-medium">{text("State", "州")}<select name="state" required autoComplete="shipping address-level1" className="min-h-12 rounded-lg border border-[#d2d2d7] bg-white px-3" value={address.state} disabled={detailsLocked} onChange={(event) => { markDraftChanged(); setAddress((previous) => ({ ...previous, state: event.target.value })); }}><option value="">{text("Select state", "选择州")}</option>{usStates.filter(state => state !== "AK" && state !== "HI").map((state) => <option key={state} value={state}>{state}</option>)}</select></label>{field("postalCode", "ZIP code", "邮政编码", "shipping postal-code", 10)}
-        </form></>}{addressDirty && <p role="status" className="mt-3 text-sm text-[#666]">{text("Shipping and tax will update when your details are complete.", "信息填写完整后将自动更新运费和税费。")}</p>}</section><section className="checkout-card"><h2 className="checkout-section-title"><Truck size={18} aria-hidden="true" />{text("Shipping options", "配送方式")}</h2>{busy && pending === "saving" && <LoadingStatus announce={false} className="mt-3 text-sm text-[#666]">{text("Updating shipping and tax…", "正在更新配送与税费…")}</LoadingStatus>}{deliveryMode === "pickup" ? <p className="mt-3 text-sm">{review.pickupSelected && !addressDirty ? text("Free pickup saved. Collect your order at your confirmed appointment; customer service will confirm it is ready.", "免费自提已保存。请按预约时间到店，客服会确认订单可领取。") : text("Confirm your appointment above to update free pickup and tax.", "请在上方确认预约，以自动更新免费自提与税费。")}</p> : addressDirty || !review.address ? <p className="mt-3 text-sm text-[#666]">{text("Available delivery and tax appear automatically after your address is complete.", "地址填写完整后，将自动显示可用配送与税费。")}</p> : !review.options.length ? <p role="alert" className="mt-3 text-sm">{text("Delivery is unavailable for this address or cart. Contact SnowForce for assistance.", "当前地址或商品组合暂无法配送，请联系 SnowForce。")}</p> : <fieldset className="mt-4 space-y-3" disabled={busy || review.paymentStarted || !review.configured || addressDirty}><legend className="sr-only">{text("Choose delivery", "选择配送")}</legend>{review.options.map((option) => <label key={option.id} className="flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border border-[#d2d2d7] px-4"><input type="radio" name="shipping" value={option.id} checked={review.selectedOptionId === option.id} onChange={() => void perform(() => changeShopCheckoutAction({ kind: "shipping-review", optionId: option.id }), true)} /><span className="flex-1 text-sm">{option.name}</span><span className="text-sm font-medium">{option.price === 0 ? text("Free", "免运费") : formatStorePrice(option.price, lang)}</span></label>)}</fieldset>}</section><section className="checkout-card">
+        </form></>}{addressDirty && <p role="status" className="mt-3 text-sm text-[#666]">{text("Shipping and tax will update when your details are complete.", "信息填写完整后将自动更新运费和税费。")}</p>}</section><section className="checkout-card"><h2 className="checkout-section-title"><Truck size={18} aria-hidden="true" />{text("Shipping options", "配送方式")}</h2>{busy && pending === "saving" && <LoadingStatus announce={false} className="mt-3 text-sm text-[#666]">{text("Updating shipping and tax…", "正在更新配送与税费…")}</LoadingStatus>}{deliveryMode === "pickup" ? <p className="mt-3 text-sm">{review.pickupSelected && !addressDirty ? preview ? text("Free pickup selected. Details are saved when you continue to payment.", "已选择免费自提，继续付款时保存这些信息。") : text("Free pickup saved. Collect your order at your confirmed appointment; customer service will confirm it is ready.", "免费自提已保存。请按预约时间到店，客服会确认订单可领取。") : text("Confirm your appointment above to update free pickup and tax.", "请在上方确认预约，以自动更新免费自提与税费。")}</p> : addressDirty || !review.address ? <p className="mt-3 text-sm text-[#666]">{text("Available delivery and tax appear automatically after your address is complete.", "地址填写完整后，将自动显示可用配送与税费。")}</p> : !review.options.length ? <p role="alert" className="mt-3 text-sm">{text("Delivery is unavailable for this address or cart. Contact SnowForce for assistance.", "当前地址或商品组合暂无法配送，请联系 SnowForce。")}</p> : <fieldset className="mt-4 space-y-3" disabled={busy || review.paymentStarted || !review.configured || addressDirty}><legend className="sr-only">{text("Choose delivery", "选择配送")}</legend>{review.options.map((option) => <label key={option.id} className="flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border border-[#d2d2d7] px-4"><input type="radio" name="shipping" value={option.id} checked={review.selectedOptionId === option.id} onChange={() => { markDraftChanged(); void perform(() => changeShopCheckoutAction(review.draftsEnabled ? receivingChange(option.id) : { kind: "shipping-review", optionId: option.id }), true, review.draftsEnabled ? "estimating" : "saving"); }} /><span className="flex-1 text-sm">{option.name}</span><span className="text-sm font-medium">{option.price === 0 ? text("Free", "免运费") : formatStorePrice(option.price, lang)}</span></label>)}</fieldset>}</section><section className="checkout-card">
           <h2 className="checkout-section-title"><LockKeyhole size={18} aria-hidden="true" />{text("Payment", "付款")}</h2>
-          {!quoteReady && <p className="checkout-help" role="status">{text("Complete your address to calculate shipping and tax automatically. Payment becomes available once your total is ready.", "填写完整地址后会自动计算运费与税费，合计确认后即可继续付款。")}</p>}
+          {!quoteReady && <p className="checkout-help" role="status">{receivingComplete ? text("Your shipping and tax estimate is updating. Payment becomes available once your total is ready.", "正在更新运费与税费预估，合计确认后即可继续付款。") : deliveryMode === "pickup" ? text("Confirm your pickup contact and appointment to calculate tax. Payment becomes available once your total is ready.", "请确认自提联系人与预约，税费与合计确认后即可继续付款。") : text("Complete your address to calculate shipping and tax automatically. Payment becomes available once your total is ready.", "填写完整地址后会自动计算运费与税费，合计确认后即可继续付款。")}</p>}
           {review.policy ? <>
             <p className="mt-3 text-sm leading-relaxed text-[#666]">{text(`Return requests within ${review.policy.content.terms.return_window_days} days of delivery or pickup; item conditions apply. Review the policy before agreeing.`, `配送送达或自提后 ${review.policy.content.terms.return_window_days} 天内可申请退换货，须符合商品条件。确认前可查看完整政策。`)}</p>
             <CheckoutPolicyTerms policy={review.policy} lang={lang} />
@@ -229,7 +243,7 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
           <button className="btn-primary mt-5 w-full gap-2" disabled={busy || !review.configured || !quoteReady || !review.address || !review.selectedOptionId || addressDirty || !policyAgreed || (review.paymentStarted && !review.policyAccepted)} onClick={() => {
             const policy = review.policy;
             if (!policy || !policyAgreed) return;
-            void perform(() => changeShopCheckoutAction({ kind: "payment", fingerprint: review.fingerprint, policyVersion: policy.version, agreed: true }), false, "payment");
+            void perform(() => changeShopCheckoutAction(preview ? {kind:"draft-payment",token:preview.token,policyVersion:policy.version,agreed:true} : { kind: "payment", fingerprint: review.fingerprint, policyVersion: policy.version, agreed: true }), false, "payment");
           }}>{busy && pending === "payment" && <LoadingSpinner />}{review.paymentStarted ? text("Resume payment", "继续付款") : text("Review & continue to payment", "确认金额并继续付款")}</button>
         </section></>}
         {result.status === "payment" && <section className="checkout-card">{review.policy && <CheckoutPolicyTerms policy={review.policy} lang={lang} />}<h2 className="mb-6 mt-6 text-xl font-semibold">{text("Secure payment", "安全付款")}</h2><StripeCheckoutForm {...result} onBusyChange={paymentBusyChanged} validate={async () => { if (currentPaymentGeneration !== paymentGeneration.current) return false; const current = await getShopCheckoutAction(); if (currentPaymentGeneration !== paymentGeneration.current) return false; if (current.status !== "review" || current.fingerprint !== review.fingerprint || !current.configured || !current.taxQuote?.ready || current.taxQuote.totalCents !== Math.round(result.total * 100)) { apply(current); return false; } return true; }} complete={async () => { if (currentPaymentGeneration === paymentGeneration.current) await perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing"); }} /></section>}
@@ -240,14 +254,14 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
         <dl className="mt-5 space-y-3 text-sm">
           <div className="flex justify-between"><dt>{text("Subtotal", "商品小计")}</dt><dd>{formatStorePrice(review.taxQuote ? review.taxQuote.grossCents / 100 : review.cart.subtotal, lang)}</dd></div>
           {(review.taxQuote ? review.taxQuote.discountCents > 0 : review.cart.discountTotal > 0) && <div className="flex justify-between"><dt>{text("Discount", "优惠")}</dt><dd>−{formatStorePrice(review.taxQuote ? review.taxQuote.discountCents / 100 : review.cart.discountTotal, lang)}</dd></div>}
-          <div className="flex justify-between"><dt>{text(deliveryMode === "pickup" ? "Pickup" : "Delivery", deliveryMode === "pickup" ? "自提费" : "运费")}</dt><dd>{addressDirty ? text("Recalculating after your details are complete", "信息完整后重新计算") : review.selectedOptionId ? formatStorePrice(review.taxQuote ? review.taxQuote.shippingCents / 100 : review.cart.shippingTotal, lang) : text("Select delivery", "请选择配送")}</dd></div>
+          <div className="flex justify-between"><dt>{text(deliveryMode === "pickup" ? "Pickup" : "Delivery", deliveryMode === "pickup" ? "自提费" : "运费")}</dt><dd>{addressDirty ? receivingComplete ? text("Updating…", "更新中…") : deliveryMode === "pickup" ? text("Confirm appointment", "请确认预约") : text("Recalculating after your details are complete", "信息完整后重新计算") : review.selectedOptionId ? formatStorePrice(review.taxQuote ? review.taxQuote.shippingCents / 100 : review.cart.shippingTotal, lang) : text("Select delivery", "请选择配送")}</dd></div>
           <div className="flex justify-between"><dt>{text("Sales tax", "消费税")}</dt><dd>{!addressDirty && review.taxQuote ? formatStorePrice(review.taxQuote.salesTaxCents / 100, lang) : busy ? <LoadingStatus announce={false}>{text("Updating…", "更新中…")}</LoadingStatus> : text("Calculated from your address", "填写地址后计算")}</dd></div>
           {!addressDirty && review.taxQuote?.fees.map(fee => <div className="flex justify-between gap-4" key={fee.state}><dt>{text(fee.state + " retail delivery fee", fee.state + " 政府配送费")}</dt><dd>{formatStorePrice(fee.amountCents / 100, lang)}</dd></div>)}
-          <div className="flex justify-between border-t border-[#d2d2d7] pt-4 text-base font-semibold"><dt>{text("Total", "合计")}</dt><dd>{!addressDirty && review.taxQuote ? formatStorePrice(review.taxQuote.totalCents / 100, lang) + " USD" : text("Complete your address", "请填写完整地址")}</dd></div>
+          <div className="flex justify-between border-t border-[#d2d2d7] pt-4 text-base font-semibold"><dt>{preview ? text("Estimated total", "预估合计") : text("Total", "合计")}</dt><dd>{!addressDirty && review.taxQuote ? formatStorePrice(review.taxQuote.totalCents / 100, lang) + " USD" : receivingComplete ? text("Updating…", "更新中…") : deliveryMode === "pickup" ? text("Confirm pickup details", "请确认自提信息") : text("Complete your address", "请填写完整地址")}</dd></div>
         </dl>
         {busy && <p className="checkout-help mt-4"><LoadingSpinner className="mr-2" />{pending === "saving" ? text("Updating shipping, tax and total…", "正在更新运费、税费与合计…") : pendingText}</p>}
-        {!busy && quoteReady && <p role="status" className="checkout-total-ready">{text("Shipping and tax included. Your total is up to date.", "已包含运费与税费，合计已更新。")}</p>}
-        {displayError && displayError !== "stale-details" && !review.paymentStarted && <button className="checkout-retry" disabled={busy} onClick={() => { automaticAttempt.current = ""; void perform(() => changeShopCheckoutAction(deliveryMode === "pickup" ? { kind: "pickup-review", contact: { name: address.name, phone: address.phone, appointmentConfirmed }, ...draftVersion } : { kind: "delivery", address, ...draftVersion }), true); }}>{busy && pending === "saving" && <LoadingSpinner className="mr-2" />}{text("Retry shipping & tax", "重新计算运费与税费")}</button>}
+        {!busy && quoteReady && <p role="status" className="checkout-total-ready">{preview ? text("Shipping and tax estimated. Availability and the exact total are checked before payment.", "运费与税费已预估，付款前会再次核实库存和准确合计。") : text("Shipping and tax included. Your total is up to date.", "已包含运费与税费，合计已更新。")}</p>}
+        {displayError && displayError !== "stale-details" && !review.paymentStarted && <button className="checkout-retry" disabled={busy} onClick={() => { automaticAttempt.current = ""; void perform(() => changeShopCheckoutAction(receivingChange()), true, review.draftsEnabled ? "estimating" : "saving"); }}>{busy && pending === "saving" && <LoadingSpinner className="mr-2" />}{text("Retry shipping & tax", "重新计算运费与税费")}</button>}
         <Link className="checkout-edit-cart" href="/shop/cart">{text("Edit cart", "编辑购物车")}</Link>
       </aside>
     </div>}

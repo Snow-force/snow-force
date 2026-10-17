@@ -1,10 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { z } from "zod";
-import { createCommerceClient, linkCommerceCustomer, CommerceAuthorizationError, CommerceDetailsChangedError, CommerceUnavailableError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
+import { createCommerceClient, linkCommerceCustomer, CommerceAuthorizationError, CommerceDetailsChangedError, CommerceEstimateUnavailableError, CommerceUnavailableError, CommerceNotFoundError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 
 const config = { backendUrl: "https://commerce.snow-force.com", publishableKey: "pk_fixture" };
 describe("commerce transport", () => {
+  it("preserves revision conflicts on preview and final draft submission",async()=>{
+    for(const path of ["preview","draft-commit"]){const request=createCommerceClient(config,vi.fn().mockResolvedValue(new Response(JSON.stringify({type:"conflict",code:"checkout_details_changed"}),{status:409})));await expect(request(`/store/snowforce/checkout/cart_fixture/${path}`,z.unknown(),{method:"POST",token:"fixture"})).rejects.toBeInstanceOf(CommerceDetailsChangedError);}
+  });
+  it("does not mislabel an estimate failure as a revision conflict",async()=>{
+    const request=createCommerceClient(config,vi.fn().mockResolvedValue(new Response(JSON.stringify({type:"conflict",code:"checkout_estimate_unavailable"}),{status:409})));
+    const error=await request("/store/snowforce/checkout/cart_fixture/preview",z.unknown(),{method:"POST"}).catch((reason:unknown)=>reason);expect(error).toBeInstanceOf(CommerceEstimateUnavailableError);expect(error).not.toBeInstanceOf(CommerceDetailsChangedError);
+  });
   it("recognizes receiving revision conflicts only on the exact authenticated write boundary", async () => {
     const fetcher = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ type: "conflict", code: "checkout_details_changed" }), { status: 409 }));
     const request = createCommerceClient(config, fetcher);

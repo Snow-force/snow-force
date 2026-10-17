@@ -41,6 +41,11 @@ export function normalizeTaxDiscounts(raw:unknown) {
 }
 function canonicalInput(raw:unknown) { const input=taxQuoteInputSchema.parse(raw);return {...input,lines:input.lines.sort((a,b)=>order(a.id,b.id)),collecting_states:input.collecting_states.sort(),collecting_retail_fee_states:input.collecting_retail_fee_states.sort()}; }
 export function taxQuoteBindingFingerprint(raw:unknown) {const {tax_date:_date,...input}=canonicalInput(raw);return hash(input);}
+/** Only native cart totals/fingerprint and the persisted shipping-row ID may
+ * change when an unapplied draft is committed. Merchandise identity, original
+ * price/discount, reviews, destination and configuration remain identical.
+ */
+export function taxQuoteRebindFingerprint(raw:unknown){const {tax_date:_date,cart_fingerprint:_cart,...input}=canonicalInput(raw);return hash({...input,shipping:{...input.shipping,id:undefined}});}
 export function buildStripeTaxQuoteRequest(raw:unknown):Stripe.Tax.CalculationCreateParams {
   const input=canonicalInput(raw);
   return {currency:"usd",tax_date:input.tax_date,customer_details:{address:input.shipping_address,address_source:"shipping",taxability_override:"none"},ship_from_details:{address:input.ship_from_address},
