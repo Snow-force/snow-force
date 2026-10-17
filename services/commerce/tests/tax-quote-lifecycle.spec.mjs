@@ -60,6 +60,27 @@ test("one complete refresh retains a single native checkout lease pair across al
   assert.ok(f.cartReads>10,"fresh source checks are retained");
 });
 
+test("enabled phase timing preserves the complete financial refresh and emits only fixed diagnostic fields",async(t)=>{
+  const f=await applicationFixture(),events=[],previous=process.env.COMMERCE_CHECKOUT_TIMING;
+  t.after(()=>{if(previous===undefined)delete process.env.COMMERCE_CHECKOUT_TIMING;else process.env.COMMERCE_CHECKOUT_TIMING=previous;});
+  t.mock.method(console,"info",value=>events.push(JSON.parse(value)));
+  process.env.COMMERCE_CHECKOUT_TIMING="true";
+  const previousLocks=f.locks.length,result=await refresh(f);
+  assert.equal(result.status,"quoted");
+  assert.deepEqual(f.locks.slice(previousLocks).map(row=>row.key),["snowforce-tax-refresh:cart_fixture","snowforce-checkout:cart_fixture","cart_fixture"]);
+  assert.equal(f.requests.length,1);assert.equal(f.applications.size,1);
+  assert.ok(f.cartReads>10,"all fresh source checks remain enabled with timing");
+  for(const phase of ["tax.refresh","tax.create","tax.apply","tax.proof.final","source.cart.initial","source.cart.final"])assert.ok(events.some(event=>event.phase===phase),phase);
+  assert.equal(new Set(events.map(event=>event.operationId)).size,1);
+  const keys=["durationMs","event","operationId","outcome","phase","sequence","startedAt"];
+  for(const event of events){
+    assert.deepEqual(Object.keys(event).sort(),keys);
+    assert.equal(event.event,"snowforce.checkout_timing");assert.equal(event.outcome,"returned");
+    assert.ok(Number.isFinite(event.durationMs)&&event.durationMs>=0);
+  }
+  assert.ok(!JSON.stringify(events).includes("cart_fixture"));
+});
+
 test("expired quotes can be withdrawn with tax disabled while private history and unrelated metadata remain",async()=>{
   const f=await applicationFixture({state:"CO",fee:28});await f.apply();f.clockShift=1000;
   f.cart.metadata.snowforce_shop_policy_acceptance={old:"preserve until withdrawal"};
