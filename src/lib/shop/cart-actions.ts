@@ -1,5 +1,6 @@
 "use server";
 
+import { withShopTiming, timeShopPhase, setShopTimingScenario } from "./performance-server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { CommerceAuthorizationError, CommerceCheckoutLockedError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
@@ -39,28 +40,34 @@ export async function getShopCartAction(): Promise<CartResult> {
   try { const { repository, cartId } = await cartContext(); const cart = cartId ? await repository.get(cartId) : null; return { status: "ready", cart: cart ? cartSnapshot(cart) : null }; }
   catch (error) { return failed(error); }
 }
-export async function changeShopCartAction(input: unknown): Promise<CartResult> {
+export async function changeShopCartAction(input: unknown, diagnostic?: unknown): Promise<CartResult> {
+  const kind = changeSchema.safeParse(input);
+  const operation = kind.success ? `cart.${kind.data.kind}` as const : "cart.add";
+  return withShopTiming(operation, diagnostic, () => changeCart(input));
+}
+async function changeCart(input: unknown): Promise<CartResult> {
   const parsed = changeSchema.safeParse(input);
   if (!parsed.success) return { status: "invalid" };
   let session: Awaited<ReturnType<typeof cartContext>> | undefined;
   try {
-    session = await cartContext();
+    session = await timeShopPhase("auth", cartContext);
     const { repository, customer, secret, cartId } = session;
     const change = parsed.data;
     // Start independent cart and selected-variant reads together. Every native
     // ownership, edit, stock and payment fence still runs before the mutation.
-    const [initialCart, catalog] = await Promise.all([
+    const [initialCart, catalog] = await timeShopPhase("read_validate", () => Promise.all([
       cartId ? repository.get(cartId) : Promise.resolve(null),
       change.kind === "add" ? loadPurchasableVariant(customer.request, change.variantId) : Promise.resolve(null),
-    ]);
+    ]));
     let cart = initialCart;
+    setShopTimingScenario(!cart ? "new" : cart.promotions?.length ? "coupon" : "existing");
     if (change.kind === "add") {
       if (!catalog) return { status: "unavailable" };
       if (!catalog.regionId) return { status: "not-configured" };
       const variant = catalog.variant;
       if (!variant?.available || (variant.availableQuantity !== null && variant.availableQuantity < change.quantity)) return { status: "rejected" };
       if (!cart) {
-        cart = await repository.create(catalog.regionId);
+        cart = await timeShopPhase("cart.create", () => repository.create(catalog.regionId!));
         (await cookies()).set(CART_COOKIE_NAME, signCartCookie(cart.id, customer.userId, secret), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: CART_COOKIE_MAX_AGE });
       }
       if (cart.region_id !== catalog.regionId) return { status: "not-configured" };
@@ -73,6 +80,7 @@ export async function changeShopCartAction(input: unknown): Promise<CartResult> 
     }
     return { status: "ready", cart: cartSnapshot(cart) };
   } catch (error) {
+    if (error instanceof CommerceCheckoutLockedError) setShopTimingScenario("payment_locked");
     if (error instanceof CommerceCheckoutLockedError && parsed.data.kind === "remove" && session?.cartId) {
       try { return { status: "checkout-locked", cancellation: await session.repository.cancellation(session.cartId), itemId: parsed.data.itemId }; }
       catch (previewError) { return previewError instanceof CommerceAuthorizationError ? failed(previewError) : failed(error); }

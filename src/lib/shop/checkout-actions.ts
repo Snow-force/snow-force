@@ -1,5 +1,7 @@
 "use server";
 
+import { withShopTiming, timeShopPhase } from "./performance-server";
+import { checkoutOperation } from "./performance-contract";
 import { getCartContext } from "./cart-context";
 import { CommerceAuthorizationError, CommerceDetailsChangedError, CommerceEstimateUnavailableError, CommerceRejectedError, CommerceSalesDisabledError } from "./commerce-client";
 import { cartSnapshot } from "./commerce-cart";
@@ -9,7 +11,7 @@ import { getUsCommerceRegion } from "./storefront-repository";
 import { syncOwnedMemberOrder } from "./order-sync";
 
 async function context() {
-  const { customer, cartId } = await getCartContext();
+  const { customer, cartId } = await timeShopPhase("auth", getCartContext);
   let region: ReturnType<typeof getUsCommerceRegion> | undefined;
   return cartId ? { customer, repository: createCheckoutRepository(customer.request, customer, cartId), region: () => region ??= getUsCommerceRegion(customer.request) } : null;
 }
@@ -49,11 +51,17 @@ async function review(session: NonNullable<Awaited<ReturnType<typeof context>>>,
   const selectedOptionId = selected && ((status.pickupSelected && status.pickupOffer?.id === selected.shipping_option_id && selected.amount === 0) || options.some((option) => option.id === selected.shipping_option_id && Math.round(option.price * 100) === Math.round(selected.amount * 100))) ? selected.shipping_option_id : null;
   return { ...status, ...(process.env.SHOP_CHECKOUT_DRAFTS==="true"?{draftsEnabled:true}:{}), configured: status.configured && /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publishableKey), cart: cartSnapshot(cart), address: parsed.success ? parsed.data : null, options, selectedOptionId };
 }
-export async function getShopCheckoutAction(): Promise<CheckoutResult> {
+export async function getShopCheckoutAction(diagnostic?: unknown): Promise<CheckoutResult> {
+  return withShopTiming("checkout.read", diagnostic, readCheckout);
+}
+async function readCheckout(): Promise<CheckoutResult> {
   try { const session = await context(); return session ? await review(session) : { status: "empty" }; }
   catch (error) { return failed(error); }
 }
-export async function changeShopCheckoutAction(input: unknown): Promise<CheckoutResult> {
+export async function changeShopCheckoutAction(input: unknown, diagnostic?: unknown): Promise<CheckoutResult> {
+  return withShopTiming(checkoutOperation(input), diagnostic, () => changeCheckout(input));
+}
+async function changeCheckout(input: unknown): Promise<CheckoutResult> {
   const parsed = checkoutInputSchema.safeParse(input);
   if (!parsed.success) return { status: "invalid" };
   const change = parsed.data;
@@ -64,10 +72,10 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
     if(change.kind==="preview"||change.kind==="draft-payment"){
       if(process.env.SHOP_CHECKOUT_DRAFTS!=="true")return {status:"not-configured"};
       if(change.kind==="preview")return await repository.preview(change.draft);
-      const committed=await repository.commitDraft(change.token),current=await review(session,true,false,committed);
+      const committed=await timeShopPhase("checkout.commit",()=>repository.commitDraft(change.token)),current=await timeShopPhase("checkout.review",()=>review(session,true,false,committed));
       if(current.status!=="review")return current;
       if(!current.configured||current.paymentStarted||!current.address||!current.selectedOptionId||!current.taxQuote?.ready||current.policy?.version!==change.policyVersion||committed.expected.policyVersion!==change.policyVersion||current.taxQuote.totalCents!==committed.expected.totalCents||Math.round(current.cart.total*100)!==committed.expected.totalCents)return {status:"rejected"};
-      const payment=await repository.payment(current.fingerprint,change.policyVersion);
+      const payment=await timeShopPhase("checkout.prepare",()=>repository.payment(current.fingerprint,change.policyVersion));
       if(payment.status!=="payment")return payment.status==="review"?{status:"rejected"}:payment;
       if(payment.totalCents!==committed.expected.totalCents)return {status:"rejected"};
       return {status:"payment",clientSecret:payment.clientSecret,publishableKey:process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY??"",total:payment.totalCents/100,review:{...current,paymentStarted:true,policyAccepted:true}};
@@ -134,7 +142,7 @@ export async function changeShopCheckoutAction(input: unknown): Promise<Checkout
       await repository.quote();
     } else {
       if (!current.address || !current.selectedOptionId || !current.taxQuote?.ready || current.fingerprint !== change.fingerprint || !current.policy || current.policy.version !== change.policyVersion || current.cart.total <= 0 || current.taxQuote.totalCents !== Math.round(current.cart.total * 100)) return { status: "rejected" };
-      const payment = await repository.payment(change.fingerprint, change.policyVersion);
+      const payment = await timeShopPhase("checkout.prepare",()=>repository.payment(change.fingerprint, change.policyVersion));
       if (payment.status !== "payment") return payment.status === "review" ? { status: "rejected" } : payment;
       if (payment.totalCents !== current.taxQuote.totalCents) return { status: "rejected" };
       return { status: "payment", clientSecret: payment.clientSecret, publishableKey: process.env.NEXT_PUBLIC_COMMERCE_STRIPE_PUBLISHABLE_KEY ?? "", total: payment.totalCents / 100 };

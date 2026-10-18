@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { commerceTimingPhase, shopTimingHeaders, timeShopPhase } from "./performance-server";
 
 export class CommerceUnavailableError extends Error {
   constructor() { super("The commerce service is unavailable."); this.name = "CommerceUnavailableError"; }
@@ -40,20 +41,20 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
   try { url = new URL(config.backendUrl); } catch { throw new CommerceUnavailableError(); }
   const local = ["127.0.0.1", "localhost"].includes(url.hostname);
   if (!config.publishableKey || !((local && url.protocol === "http:") || url.protocol === "https:") || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new CommerceUnavailableError();
-  return async (path, responseSchema, options = {}) => {
+  return async (path, responseSchema, options = {}) => timeShopPhase(commerceTimingPhase(path, options.method), async () => {
     // Only fixed API roots on the configured backend can receive credentials.
     let decoded: string;
     try { decoded = decodeURIComponent(path.split("?")[0]); } catch { throw new CommerceUnavailableError(); }
     if (!/^\/(store|auth)\//.test(decoded) || decoded.includes("\\") || decoded.includes("..") || /[\u0000-\u001f\u007f]/.test(decoded)) throw new CommerceUnavailableError();
     let response: Response;
     try {
-      response = await fetcher(`${url.origin}${path}`, {
+      response = await timeShopPhase("commerce.fetch", () => fetcher(`${url.origin}${path}`, {
         // Native checkout updates may refresh pricing, promotions and shipping.
         // Do not abandon these writes while the backend is still committing.
         method: options.method ?? "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(options.method && options.method !== "GET" && (/^\/store\/snowforce\/checkout\/cart_[A-Za-z0-9]+(?:\/(?:pickup|quote|edit|cancel|details|draft-commit))?$/.test(decoded) || /^\/store\/carts(?:\/cart_[A-Za-z0-9]+(?:\/(?:shipping-methods|promotions|line-items(?:\/cali_[A-Za-z0-9]+)?))?)?$/.test(decoded)) ? 60_000 : 15_000),
-        headers: { "Content-Type": "application/json", "x-publishable-api-key": config.publishableKey, ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
+        headers: { "Content-Type": "application/json", "x-publishable-api-key": config.publishableKey, ...shopTimingHeaders(), ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
         ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
-      });
+      }));
     } catch { throw new CommerceUnavailableError(); }
     if (response.status === 401 || response.status === 403) throw new CommerceAuthorizationError();
     if (response.status === 404) throw new CommerceNotFoundError();
@@ -72,7 +73,7 @@ export function createCommerceClient(config: CommerceConfig, fetcher: typeof fet
     }
     if (!response.ok) throw new CommerceUnavailableError();
     try { return responseSchema.parse(await response.json()); } catch { throw new CommerceUnavailableError(); }
-  };
+  });
 }
 
 export function commerceClient() {
