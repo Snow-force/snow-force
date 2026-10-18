@@ -1,22 +1,47 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-const mocks = vi.hoisted(() => ({ confirm: vi.fn(), submit: vi.fn(), load: vi.fn(), validate: vi.fn(), complete: vi.fn(), busy: vi.fn() }));
+import type { ShopClientTiming } from "@/lib/shop/performance-browser";
+const mocks = vi.hoisted(() => ({ confirm: vi.fn(), submit: vi.fn(), load: vi.fn(), validate: vi.fn(), complete: vi.fn(), busy: vi.fn(), sdkAvailable: true }));
 vi.mock("@stripe/react-stripe-js", () => ({
   Elements: ({ children }: { children: ReactNode }) => <>{children}</>,
   PaymentElement: ({ onReady, onLoadError }: { onReady: () => void; onLoadError: () => void }) => <div><p>Stripe payment details</p><button type="button" onClick={onReady}>Fixture payment ready</button><button type="button" onClick={onLoadError}>Fixture payment load error</button></div>,
-  useStripe: () => ({ confirmPayment: mocks.confirm }), useElements: () => ({ submit: mocks.submit }),
+  useStripe: () => mocks.sdkAvailable ? ({ confirmPayment: mocks.confirm }) : null, useElements: () => mocks.sdkAvailable ? ({ submit: mocks.submit }) : null,
 }));
 vi.mock("@stripe/stripe-js/pure", () => ({ loadStripe: mocks.load }));
 import StripeCheckoutForm from "./stripe-checkout-form";
 import { LanguageProvider, useLanguage } from "@/lib/language";
-beforeEach(() => { vi.resetAllMocks(); mocks.load.mockResolvedValue({}); mocks.submit.mockResolvedValue({}); mocks.validate.mockResolvedValue(true); mocks.complete.mockResolvedValue(undefined); mocks.confirm.mockResolvedValue({ paymentIntent: { status: "requires_capture" } }); });
+beforeEach(() => { vi.resetAllMocks(); mocks.sdkAvailable = true; mocks.load.mockResolvedValue({}); mocks.submit.mockResolvedValue({}); mocks.validate.mockResolvedValue(true); mocks.complete.mockResolvedValue(undefined); mocks.confirm.mockResolvedValue({ paymentIntent: { status: "requires_capture" } }); });
 afterEach(() => vi.useRealTimers());
-function view(ready = true) {
-  const rendered = render(<LanguageProvider initialLang="en"><StripeCheckoutForm clientSecret="pi_fixture_secret_fixture" publishableKey="pk_test_fixture" total={89.9} validate={mocks.validate} complete={mocks.complete} onBusyChange={mocks.busy} /></LanguageProvider>);
+function view(ready = true, timing?: ShopClientTiming) {
+  const rendered = render(<LanguageProvider initialLang="en"><StripeCheckoutForm timing={timing} clientSecret="pi_fixture_secret_fixture" publishableKey="pk_test_fixture" total={89.9} validate={mocks.validate} complete={mocks.complete} onBusyChange={mocks.busy} /></LanguageProvider>);
   if (ready) fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
   return rendered;
 }
+it("records interactivity only after onReady and usable SDK/Elements, without reinitializing on rerender", async () => {
+  const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };
+  mocks.sdkAvailable = false; const rendered = view(false, timing);
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
+  expect(report).toHaveBeenCalledWith("payment.element_ready"); expect(report).not.toHaveBeenCalledWith("payment.interactive");
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  mocks.sdkAvailable = true;
+  rendered.rerender(<LanguageProvider initialLang="en"><StripeCheckoutForm timing={timing} clientSecret="pi_fixture_secret_fixture" publishableKey="pk_test_fixture" total={89.9} validate={mocks.validate} complete={mocks.complete} onBusyChange={mocks.busy} /></LanguageProvider>);
+  await waitFor(() => expect(report).toHaveBeenCalledWith("payment.interactive")); expect(mocks.load).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
+  expect(report.mock.calls.filter(call => call[0] === "payment.element_ready")).toHaveLength(1);
+});
+it("records authorization separately from order callback completion without provider secrets", async () => {
+  const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };
+  view(true, timing); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  await waitFor(() => expect(report).toHaveBeenCalledWith("payment.order", "returned", expect.any(Number)));
+  expect(report).toHaveBeenCalledWith("payment.confirm", "authorized", expect.any(Number));
+  expect(JSON.stringify(report.mock.calls)).not.toMatch(/pi_fixture|secret|89\.9/); expect(mocks.confirm).toHaveBeenCalledOnce();
+});
+it("counts SDK rejection as a failed readiness attempt rather than omitting it from the denominator", async () => {
+  const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };
+  mocks.sdkAvailable = false; mocks.load.mockRejectedValue(Error("private SDK failure")); view(false, timing);
+  await screen.findByRole("alert"); expect(report).toHaveBeenCalledWith("payment.interactive", "error"); expect(report).not.toHaveBeenCalledWith("payment.interactive"); expect(JSON.stringify(report.mock.calls)).not.toContain("private SDK"); expect(mocks.confirm).not.toHaveBeenCalled();
+});
 it("validates Elements and the current server quote before confirming the same native intent", async () => {
   view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
   await waitFor(() => expect(mocks.complete).toHaveBeenCalledTimes(1));

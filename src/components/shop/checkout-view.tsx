@@ -6,12 +6,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { LockKeyhole, MapPin, Truck } from "lucide-react";
 import { useLanguage } from "@/lib/language";
-import { changeShopCheckoutAction, getShopCheckoutAction } from "@/lib/shop/checkout-actions";
+import { changeShopCheckoutAction as changeCheckout, getShopCheckoutAction as getCheckout } from "@/lib/shop/checkout-actions";
 import { cancelUnpaidCartPaymentAction, previewShopPaymentCancellationAction } from "@/lib/shop/cart-actions";
 import { checkoutAddressDraftKey, checkoutPreviewAddressKey, checkoutAddressSchema, checkoutPickupContactSchema, type CheckoutResult, type CheckoutReview, type CheckoutAddress, type CheckoutPreview } from "@/lib/shop/checkout";
 import { usStates } from "@/lib/shop/shipping-addresses";
 import { formatStorePrice } from "@/lib/shop/storefront";
 import { shopPolicySections, type ShopPolicySection, type ShopPublishedPolicy } from "@/lib/shop/policies";
+import { beginShopTiming, timeBrowserAction, type ShopClientTiming } from "@/lib/shop/performance-browser";
+import { checkoutOperation } from "@/lib/shop/performance-contract";
 import { useShopCart } from "./shop-provider";
 import { LoadingSpinner, LoadingStatus } from "./loading-status";
 import { CancelPaymentDialog, type CancelPaymentPrompt } from "./cancel-payment-dialog";
@@ -55,7 +57,10 @@ export function CheckoutView({ completing = false }: { completing?: boolean }) {
 
 function CheckoutFlow({ completing }: { completing: boolean }) {
   const { lang } = useLanguage();
-  const { reload: reloadCart, syncCheckout } = useShopCart();
+  const { reload: reloadCart, syncCheckout, timingSampleRate, timingRevision } = useShopCart();
+  const [paymentTiming, setPaymentTiming] = useState<ShopClientTiming | undefined>(undefined);
+  const getShopCheckoutAction = useCallback(() => { const timing = beginShopTiming(timingSampleRate, "checkout.read", "unknown", timingRevision); return timeBrowserAction(timing, diagnostic => diagnostic ? getCheckout(diagnostic) : getCheckout()); }, [timingSampleRate, timingRevision]);
+  const changeShopCheckoutAction = useCallback((input: unknown, suppliedTiming?: ShopClientTiming | null) => { const operation = checkoutOperation(input), timing = suppliedTiming === undefined ? beginShopTiming(timingSampleRate, operation, "unknown", timingRevision) : suppliedTiming ?? undefined; return timeBrowserAction(timing, diagnostic => diagnostic ? changeCheckout(input, diagnostic) : changeCheckout(input)); }, [timingSampleRate, timingRevision]);
   const [result, setResult] = useState<CheckoutResult | null>(null);
   const [savedReview, setReview] = useState<CheckoutReview | null>(null);
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
@@ -145,7 +150,7 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
       void perform(() => changeShopCheckoutAction(review.draftsEnabled || needsDetails ? receivingChange() : {kind:"quote"}), true, review.draftsEnabled ? "estimating" : "saving");
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [review, busy, error, result?.status, deliveryMode, address, addressKey, appointmentConfirmed, addressDirty, quoteReady, perform, receivingChange]);
+  }, [review, busy, error, result?.status, deliveryMode, address, addressKey, appointmentConfirmed, addressDirty, quoteReady, perform, receivingChange, changeShopCheckoutAction]);
   const checkPayment = async () => {
     if (active.current || stripeActive.current) return;
     paymentGeneration.current += 1;
@@ -185,7 +190,7 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
     const operation = completing ? changeShopCheckoutAction({ kind: "complete" }) : getShopCheckoutAction();
     void operation.then((next) => { if (current) { setResult(next); if (next.status === "review") { syncCheckout(next.cart); setReview(next); setAddress(next.address ?? blank); setDeliveryMode(next.pickupSelected ? "pickup" : "delivery"); setAppointmentConfirmed(!!next.pickupSelected); } if (next.status === "complete") void reloadCart(); } }).catch(() => { if (current) setError("unavailable"); }).finally(() => { if (current) { active.current = false; setBusy(false); } });
     return () => { current = false; paymentGeneration.current += 1; };
-  }, [completing, reloadCart, syncCheckout]);
+  }, [completing, reloadCart, syncCheckout, getShopCheckoutAction, changeShopCheckoutAction]);
   const displayError = error ?? (result && ["invalid", "rejected", "unavailable", "not-configured", "stale-details", "estimate-unavailable"].includes(result.status) ? result.status : null);
   const detailsLocked = (busy && pending !== "estimating" && !(pending === "saving" && review?.detailsVersion)) || !!review?.paymentStarted || !review?.configured || stripeBusy;
   const field = (name: keyof Omit<CheckoutAddress, "countryCode" | "state">, en: string, zh: string, autoComplete: string, maxLength: number, optional = false) => <label className="flex flex-col gap-2 text-sm font-medium">{text(en, zh)}<input className="min-h-12 rounded-lg border border-[#d2d2d7] bg-white px-3 font-normal" name={name} value={address[name]} required={!optional} maxLength={maxLength} autoComplete={autoComplete} disabled={detailsLocked} onChange={(event) => { markDraftChanged(); setAddress((previous) => ({ ...previous, [name]: event.target.value })); }} /></label>;
@@ -242,11 +247,13 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
           </> : <p role="alert" className="mt-4 rounded-lg bg-[#f5f5f7] p-4 text-sm">{text("Shop policies are being prepared. Payment will be available after they are published.", "商城政策正在准备中，正式发布后才可付款。")} <Link className="text-[#0066cc] underline" href="/shop/policies">{text("Shop policies", "商城政策")}</Link></p>}
           <button className="btn-primary mt-5 w-full gap-2" disabled={busy || !review.configured || !quoteReady || !review.address || !review.selectedOptionId || addressDirty || !policyAgreed || (review.paymentStarted && !review.policyAccepted)} onClick={() => {
             const policy = review.policy;
-            if (!policy || !policyAgreed) return;
-            void perform(() => changeShopCheckoutAction(preview ? {kind:"draft-payment",token:preview.token,policyVersion:policy.version,agreed:true} : { kind: "payment", fingerprint: review.fingerprint, policyVersion: policy.version, agreed: true }), false, "payment");
+            if (!policy || !policyAgreed || active.current || stripeActive.current) return;
+            const timing = beginShopTiming(timingSampleRate, "checkout.prepare", "unknown", timingRevision);
+            setPaymentTiming(timing);
+            void perform(() => changeShopCheckoutAction(preview ? {kind:"draft-payment",token:preview.token,policyVersion:policy.version,agreed:true} : { kind: "payment", fingerprint: review.fingerprint, policyVersion: policy.version, agreed: true }, timing ?? null), false, "payment");
           }}>{busy && pending === "payment" && <LoadingSpinner />}{review.paymentStarted ? text("Resume payment", "继续付款") : text("Review & continue to payment", "确认金额并继续付款")}</button>
         </section></>}
-        {result.status === "payment" && <section className="checkout-card">{review.policy && <CheckoutPolicyTerms policy={review.policy} lang={lang} />}<h2 className="mb-6 mt-6 text-xl font-semibold">{text("Secure payment", "安全付款")}</h2><StripeCheckoutForm {...result} onBusyChange={paymentBusyChanged} validate={async () => { if (currentPaymentGeneration !== paymentGeneration.current) return false; const current = await getShopCheckoutAction(); if (currentPaymentGeneration !== paymentGeneration.current) return false; if (current.status !== "review" || current.fingerprint !== review.fingerprint || !current.configured || !current.taxQuote?.ready || current.taxQuote.totalCents !== Math.round(result.total * 100)) { apply(current); return false; } return true; }} complete={async () => { if (currentPaymentGeneration === paymentGeneration.current) await perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing"); }} /></section>}
+        {result.status === "payment" && <section className="checkout-card">{review.policy && <CheckoutPolicyTerms policy={review.policy} lang={lang} />}<h2 className="mb-6 mt-6 text-xl font-semibold">{text("Secure payment", "安全付款")}</h2><StripeCheckoutForm {...result} timing={paymentTiming} onBusyChange={paymentBusyChanged} validate={async () => { if (currentPaymentGeneration !== paymentGeneration.current) return false; const current = await getShopCheckoutAction(); if (currentPaymentGeneration !== paymentGeneration.current) return false; if (current.status !== "review" || current.fingerprint !== review.fingerprint || !current.configured || !current.taxQuote?.ready || current.taxQuote.totalCents !== Math.round(result.total * 100)) { apply(current); return false; } return true; }} complete={async () => { if (currentPaymentGeneration === paymentGeneration.current) await perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing"); }} /></section>}
       </div>
       <aside className="checkout-card checkout-summary" aria-label={text("Order summary", "订单核对")}>
         <h2 className="text-xl font-semibold">{text("Order summary", "订单核对")}</h2>

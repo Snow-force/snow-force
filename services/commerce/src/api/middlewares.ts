@@ -3,9 +3,10 @@ import { requireOwnedCart, useCheckoutBoundary } from "./cart-ownership";
 import { useAfterSalesBoundary } from "./after-sales-boundary";
 import { useManagementBoundary } from "./management-boundary";
 import { useFullCaptureBoundary } from "../lib/full-capture";
+import { observeShopRequest } from "./shop-performance";
 
 export default defineMiddlewares({ routes: [{
-  matcher: "/store/*", methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"], middlewares: [useManagementBoundary],
+  matcher: "/store/*", methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"], middlewares: [observeShopRequest, useManagementBoundary],
 }, {
   matcher: "/admin/*", methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"], middlewares: [useManagementBoundary],
 }, {
