@@ -13,6 +13,8 @@
 !proxy.ts
 !src/
 !src/**
+!scripts/
+!scripts/shop-performance-summary.mjs
 !public/
 !public/**
 !Dockerfile.web
