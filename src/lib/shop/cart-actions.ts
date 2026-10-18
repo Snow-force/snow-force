@@ -47,9 +47,15 @@ export async function changeShopCartAction(input: unknown): Promise<CartResult> 
     session = await cartContext();
     const { repository, customer, secret, cartId } = session;
     const change = parsed.data;
-    let cart = cartId ? await repository.get(cartId) : null;
+    // Start independent cart and selected-variant reads together. Every native
+    // ownership, edit, stock and payment fence still runs before the mutation.
+    const [initialCart, catalog] = await Promise.all([
+      cartId ? repository.get(cartId) : Promise.resolve(null),
+      change.kind === "add" ? loadPurchasableVariant(customer.request, change.variantId) : Promise.resolve(null),
+    ]);
+    let cart = initialCart;
     if (change.kind === "add") {
-      const catalog = await loadPurchasableVariant(customer.request, change.variantId);
+      if (!catalog) return { status: "unavailable" };
       if (!catalog.regionId) return { status: "not-configured" };
       const variant = catalog.variant;
       if (!variant?.available || (variant.availableQuantity !== null && variant.availableQuantity < change.quantity)) return { status: "rejected" };
