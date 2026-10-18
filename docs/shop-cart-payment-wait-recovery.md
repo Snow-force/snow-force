@@ -18,4 +18,6 @@ Browser checks use the existing synthetic member, isolated local Medusa/PostgreS
 
 Local screenshots and request traces are supporting evidence. They do not establish production p95 or validate every wallet, bank challenge or webhook ordering scenario. Keep those entries open in the overall plan until separately exercised. No real payment, capture or refund is part of this batch.
 
+CI log review also identified an existing nested `act`/`userEvent` conflict in the admin translation tests. Those tests now use `userEvent`'s own interaction wrapper, wait for visible completion, and assert that the original console error function records no errors. No warning output is suppressed and admin runtime behavior is unchanged.
+
 Rollback is the previous frontend revision. The server contracts and native payment history remain compatible; a frontend rollback must not change provider transaction facts.
