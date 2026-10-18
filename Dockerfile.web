@@ -6,6 +6,7 @@ RUN npm ci --no-audit --no-fund
 COPY next.config.js tsconfig.json next-env.d.ts postcss.config.js tailwind.config.ts eslint.config.mjs vitest.config.mts ./
 COPY proxy.ts ./
 COPY src ./src
+COPY scripts/shop-performance-summary.mjs ./scripts/shop-performance-summary.mjs
 COPY public ./public
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
