@@ -11,6 +11,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
 vi.mock("@stripe/stripe-js/pure", () => ({ loadStripe: mocks.load }));
 import StripeCheckoutForm from "./stripe-checkout-form";
 import { LanguageProvider, useLanguage } from "@/lib/language";
+import { loadCheckoutStripe } from "@/lib/shop/stripe-loader";
 beforeEach(() => { vi.resetAllMocks(); mocks.sdkAvailable = true; mocks.load.mockResolvedValue({}); mocks.submit.mockResolvedValue({}); mocks.validate.mockResolvedValue(true); mocks.complete.mockResolvedValue(undefined); mocks.confirm.mockResolvedValue({ paymentIntent: { status: "requires_capture" } }); });
 afterEach(() => vi.useRealTimers());
 function view(ready = true, timing?: ShopClientTiming) {
@@ -18,6 +19,13 @@ function view(ready = true, timing?: ShopClientTiming) {
   if (ready) fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
   return rendered;
 }
+it("reuses the prewarmed SDK through confirmation uncertainty and language changes", async () => {
+  await loadCheckoutStripe("pk_test_prewarmed"); mocks.confirm.mockRejectedValue(Error("response lost"));
+  render(<LanguageProvider initialLang="en"><LanguageSwitch /><StripeCheckoutForm prewarm clientSecret="pi_fixture_secret_fixture" publishableKey="pk_test_prewarmed" total={89.9} validate={mocks.validate} complete={mocks.complete} /></LanguageProvider>);
+  fireEvent.click(screen.getByRole("button",{name:"Fixture payment ready"})); fireEvent.click(screen.getByRole("button",{name:"Authorize $89.90"}));
+  await screen.findByRole("alert"); fireEvent.click(screen.getByRole("button",{name:"Chinese"}));
+  expect(mocks.load).toHaveBeenCalledExactlyOnceWith("pk_test_prewarmed"); expect(mocks.confirm).toHaveBeenCalledOnce(); expect(screen.getByRole("button",{name:"授权付款 $89.90"})).toBeDisabled();
+});
 it("records interactivity only after onReady and usable SDK/Elements, without reinitializing on rerender", async () => {
   const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };
   mocks.sdkAvailable = false; const rendered = view(false, timing);

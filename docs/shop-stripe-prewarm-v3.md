@@ -1,0 +1,11 @@
+# Checkout SDK prewarming (v3 PR-B)
+
+Checkout may download the official Stripe.js SDK and the static payment component while its existing server read is pending. It does not prepare a PaymentIntent, accept policy terms, create Elements or authorize payment. The payment component mounts only after the existing server action returns the current checkout's client secret. Financial validation and manual capture remain unchanged.
+
+The feature defaults off. Set `SHOP_STRIPE_PREWARM=true` and `SHOP_STRIPE_PREWARM_SAMPLE_RATE=0.1` for a 10% cohort of checkout mounts. Rates must be finite and between zero and one; the public key must be valid. This is runtime server configuration on the Checkout page, independent of the observation sampling rate. Return pages never prewarm. A checkout keeps its assignment across rerenders and language changes. Assignment is per mount, not a persistent customer identity.
+
+Only selected visits use the shared SDK promise. Control visits retain the old loader. The cache stores at most four public-key SDK clients and no Elements, client secrets, carts or payment state. A failed/null SDK load is evicted so explicit form reload can retry. The existing loading timeout, uncertain-confirmation guard and cancellation recovery still apply. Language changes do not remount the payment attempt.
+
+Browser measurements include `variant=baseline|prewarm`. Compare `checkout.prepare / payment.interactive` within the same revision, scenario, device, network and visit group; the summary keeps cohorts separate. `payment.sdk` remains the residual wait after mounting, not the total SDK download. A lower residual wait alone does not demonstrate faster end-to-end checkout. Initial/subsequent module invocations do not prove cold/warm caches, and low-sample percentiles are not acceptance evidence.
+
+Before enabling production prewarming, complete desktop/mobile slow-network, SDK failure/retry, 3DS, wallet and uncertain-payment Sandbox acceptance. Keep unsupported browser/wallet cases explicitly unverified. Rollback is to disable `SHOP_STRIPE_PREWARM` and redeploy the same source. Preserve payment and recovery evidence. PR-C/D and infrastructure changes are separate batches; production p95 targets remain unverified until representative observations exist.

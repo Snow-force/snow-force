@@ -14,6 +14,7 @@ export const browserTimingSchema = diagnosticSchema.extend({
   visit: z.enum(["initial", "subsequent"]),
   scenario: z.enum(["unknown", "new", "existing", "coupon", "payment_locked"]).default("unknown"),
   revision: z.string().regex(/^[a-f0-9]{40}$/).optional(),
+  variant: z.enum(["baseline", "prewarm"]).optional(),
 }).strict();
 export type BrowserTiming = z.infer<typeof browserTimingSchema>;
 export function performanceSampleRate(enabled: string | undefined, rawRate: string | undefined) {

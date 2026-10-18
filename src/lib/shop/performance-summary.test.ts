@@ -8,3 +8,8 @@ it("computes phase percentiles and failure rates without mixing scenarios, revis
   expect(groups[0]).toMatchObject({ n: 100, p50Ms: 50, p95Ms: 95, p99Ms: 99, errorRate: .01, timeoutRate: .01, sufficientForP95: true, sufficientForP99: false });
   expect(groups[1]).toMatchObject({ n: 1, p50Ms: 1000 }); expect(JSON.stringify(groups)).not.toContain("11111111"); expect(JSON.stringify(groups)).not.toContain("secret");
 });
+it("keeps prewarm and baseline cohorts separate even on the same revision", () => {
+  const base = {event:"snowforce.shop_performance",source:"browser",operation:"checkout.prepare",phase:"payment.interactive",operationId:"11111111-1111-4111-8111-000000000001",durationMs:100,sequence:1,outcome:"ok"};
+  const groups = summarizeShopPerformance([{...base,variant:"baseline"},{...base,variant:"prewarm",durationMs:20}]);
+  expect(groups).toHaveLength(2); expect(groups[0]).toMatchObject({variant:"baseline",p50Ms:100}); expect(groups[1]).toMatchObject({variant:"prewarm",p50Ms:20});
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { loadCheckoutStripe, selectStripeWarmup, type StripeWarmupConfig } from "@/lib/shop/stripe-loader";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
@@ -51,16 +52,24 @@ function CheckoutPolicyTerms({ policy, lang }: { policy: ShopPublishedPolicy; la
     </div>
   </details>;
 }
-export function CheckoutView({ completing = false }: { completing?: boolean }) {
-  return <CheckoutFlow key={completing ? "return" : "review"} completing={completing} />;
+export function CheckoutView({ completing = false, warmup }: { completing?: boolean; warmup?: StripeWarmupConfig }) {
+  return <CheckoutFlow key={completing ? "return" : "review"} completing={completing} warmup={warmup} />;
 }
 
-function CheckoutFlow({ completing }: { completing: boolean }) {
+function CheckoutFlow({ completing, warmup }: { completing: boolean; warmup?: StripeWarmupConfig }) {
+  const [prewarmSelected] = useState(() => !completing && selectStripeWarmup(warmup?.sampleRate ?? 0));
+  useEffect(() => {
+    if (!prewarmSelected || !warmup?.publishableKey) return;
+    // Independent downloads only; payment preparation still requires explicit
+    // agreement and the server's current checkout validation.
+    void loadCheckoutStripe(warmup.publishableKey);
+    void import("./stripe-checkout-form").catch(() => undefined);
+  }, [prewarmSelected, warmup?.publishableKey]);
   const { lang } = useLanguage();
   const { reload: reloadCart, syncCheckout, timingSampleRate, timingRevision } = useShopCart();
   const [paymentTiming, setPaymentTiming] = useState<ShopClientTiming | undefined>(undefined);
-  const getShopCheckoutAction = useCallback(() => { const timing = beginShopTiming(timingSampleRate, "checkout.read", "unknown", timingRevision); return timeBrowserAction(timing, diagnostic => diagnostic ? getCheckout(diagnostic) : getCheckout()); }, [timingSampleRate, timingRevision]);
-  const changeShopCheckoutAction = useCallback((input: unknown, suppliedTiming?: ShopClientTiming | null) => { const operation = checkoutOperation(input), timing = suppliedTiming === undefined ? beginShopTiming(timingSampleRate, operation, "unknown", timingRevision) : suppliedTiming ?? undefined; return timeBrowserAction(timing, diagnostic => diagnostic ? changeCheckout(input, diagnostic) : changeCheckout(input)); }, [timingSampleRate, timingRevision]);
+  const getShopCheckoutAction = useCallback(() => { const timing = beginShopTiming(timingSampleRate, "checkout.read", "unknown", timingRevision, prewarmSelected ? "prewarm" : "baseline"); return timeBrowserAction(timing, diagnostic => diagnostic ? getCheckout(diagnostic) : getCheckout()); }, [timingSampleRate, timingRevision, prewarmSelected]);
+  const changeShopCheckoutAction = useCallback((input: unknown, suppliedTiming?: ShopClientTiming | null) => { const operation = checkoutOperation(input), timing = suppliedTiming === undefined ? beginShopTiming(timingSampleRate, operation, "unknown", timingRevision, prewarmSelected ? "prewarm" : "baseline") : suppliedTiming ?? undefined; return timeBrowserAction(timing, diagnostic => diagnostic ? changeCheckout(input, diagnostic) : changeCheckout(input)); }, [timingSampleRate, timingRevision, prewarmSelected]);
   const [result, setResult] = useState<CheckoutResult | null>(null);
   const [savedReview, setReview] = useState<CheckoutReview | null>(null);
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
@@ -248,12 +257,12 @@ function CheckoutFlow({ completing }: { completing: boolean }) {
           <button className="btn-primary mt-5 w-full gap-2" disabled={busy || !review.configured || !quoteReady || !review.address || !review.selectedOptionId || addressDirty || !policyAgreed || (review.paymentStarted && !review.policyAccepted)} onClick={() => {
             const policy = review.policy;
             if (!policy || !policyAgreed || active.current || stripeActive.current) return;
-            const timing = beginShopTiming(timingSampleRate, "checkout.prepare", "unknown", timingRevision);
+            const timing = beginShopTiming(timingSampleRate, "checkout.prepare", "unknown", timingRevision, prewarmSelected ? "prewarm" : "baseline");
             setPaymentTiming(timing);
             void perform(() => changeShopCheckoutAction(preview ? {kind:"draft-payment",token:preview.token,policyVersion:policy.version,agreed:true} : { kind: "payment", fingerprint: review.fingerprint, policyVersion: policy.version, agreed: true }, timing ?? null), false, "payment");
           }}>{busy && pending === "payment" && <LoadingSpinner />}{review.paymentStarted ? text("Resume payment", "继续付款") : text("Review & continue to payment", "确认金额并继续付款")}</button>
         </section></>}
-        {result.status === "payment" && <section className="checkout-card">{review.policy && <CheckoutPolicyTerms policy={review.policy} lang={lang} />}<h2 className="mb-6 mt-6 text-xl font-semibold">{text("Secure payment", "安全付款")}</h2><StripeCheckoutForm {...result} timing={paymentTiming} onBusyChange={paymentBusyChanged} validate={async () => { if (currentPaymentGeneration !== paymentGeneration.current) return false; const current = await getShopCheckoutAction(); if (currentPaymentGeneration !== paymentGeneration.current) return false; if (current.status !== "review" || current.fingerprint !== review.fingerprint || !current.configured || !current.taxQuote?.ready || current.taxQuote.totalCents !== Math.round(result.total * 100)) { apply(current); return false; } return true; }} complete={async () => { if (currentPaymentGeneration === paymentGeneration.current) await perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing"); }} /></section>}
+        {result.status === "payment" && <section className="checkout-card">{review.policy && <CheckoutPolicyTerms policy={review.policy} lang={lang} />}<h2 className="mb-6 mt-6 text-xl font-semibold">{text("Secure payment", "安全付款")}</h2><StripeCheckoutForm {...result} prewarm={prewarmSelected} timing={paymentTiming} onBusyChange={paymentBusyChanged} validate={async () => { if (currentPaymentGeneration !== paymentGeneration.current) return false; const current = await getShopCheckoutAction(); if (currentPaymentGeneration !== paymentGeneration.current) return false; if (current.status !== "review" || current.fingerprint !== review.fingerprint || !current.configured || !current.taxQuote?.ready || current.taxQuote.totalCents !== Math.round(result.total * 100)) { apply(current); return false; } return true; }} complete={async () => { if (currentPaymentGeneration === paymentGeneration.current) await perform(() => changeShopCheckoutAction({ kind: "complete" }), false, "completing"); }} /></section>}
       </div>
       <aside className="checkout-card checkout-summary" aria-label={text("Order summary", "订单核对")}>
         <h2 className="text-xl font-semibold">{text("Order summary", "订单核对")}</h2>
