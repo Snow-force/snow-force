@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -36,17 +36,18 @@ function readRequestBody(init: RequestInit | undefined): TranslationRequestBody 
 }
 
 async function clickTranslateButton() {
-  await act(async () => {
-    await userEvent.click(screen.getByRole("button", { name: "中文 -> English" }));
-  });
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "中文 -> English" }));
 }
 
 describe("AdminTranslateMissingButton", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("submits missing translation items in chunks of at most 50 and applies every result", async () => {
+    const consoleError = vi.spyOn(console, "error");
     const requests: TranslationRequestBody[] = [];
     vi.stubGlobal(
       "fetch",
@@ -77,10 +78,13 @@ describe("AdminTranslateMissingButton", () => {
         value: `translated field.${index}`,
       })),
     );
-    expect(screen.getByText("Filled 55 fields.")).toBeInTheDocument();
+    expect(await screen.findByText("Filled 55 fields.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "中文 -> English" })).toBeEnabled());
+    expect(consoleError).not.toHaveBeenCalled();
   });
 
   it("does not apply partial translations when a later chunk fails", async () => {
+    const consoleError = vi.spyOn(console, "error");
     const requests: TranslationRequestBody[] = [];
     vi.stubGlobal(
       "fetch",
@@ -110,5 +114,7 @@ describe("AdminTranslateMissingButton", () => {
     await waitFor(() => expect(screen.getByText("Chunk failed.")).toBeInTheDocument());
     expect(requests.map((request) => request.items.length)).toEqual([50, 5]);
     expect(onApply).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByRole("button", { name: "中文 -> English" })).toBeEnabled());
+    expect(consoleError).not.toHaveBeenCalled();
   });
 });

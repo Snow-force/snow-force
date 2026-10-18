@@ -55,12 +55,39 @@ describe("authenticated cart server actions", () => {
     expect(mocks.request).not.toHaveBeenCalled();
     expect(mocks.cookieSet).not.toHaveBeenCalled();
   });
+  it("starts independent existing-cart and variant reads together, then still checks the native edit fence", async () => {
+    mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) });
+    let finishRead: (value: { cart: typeof fixtureCart }) => void = () => { throw new Error("Missing read"); };
+    const blockedRead = new Promise<{ cart: typeof fixtureCart }>(resolve => { finishRead = resolve; });
+    mocks.request.mockImplementation((path: string) => path.startsWith("/store/carts/cart_fixture?") ? blockedRead : Promise.resolve({ cart: fixtureCart }));
+    const operation = changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 });
+    await vi.waitFor(() => expect(mocks.request.mock.calls.some(([path]) => String(path).startsWith("/store/carts/cart_fixture?"))).toBe(true));
+    // Variant verification has already started before the cart response arrives.
+    expect(mocks.catalog).toHaveBeenCalledExactlyOnceWith(mocks.request, "variant_pink");
+    expect(mocks.request.mock.calls.some(([path]) => String(path).includes("/line-items"))).toBe(false);
+    finishRead({ cart: fixtureCart });
+    expect((await operation).status).toBe("ready");
+    expect(mocks.request.mock.calls.some(([path]) => String(path).includes("/checkout/cart_fixture/edit"))).toBe(true);
+    expect(mocks.request.mock.calls.some(([path]) => String(path).includes("/line-items"))).toBe(true);
+  });
   it("creates an owner-bound HTTP-only cookie and adds the current published variant", async () => {
     const result = await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 2 });
     expect(result.status).toBe("ready");
     expect(mocks.catalog).toHaveBeenCalledExactlyOnceWith(mocks.request, "variant_pink");
     expect(mocks.cookieSet).toHaveBeenCalledWith(CART_COOKIE_NAME, expect.any(String), expect.objectContaining({ httpOnly: true, sameSite: "lax", path: "/" }));
     expect(mocks.request.mock.calls[2][2]).toMatchObject({ method: "POST", token: "trusted-server-token", body: { variant_id: "variant_pink", quantity: 2 } });
+  });
+  it("never mutates or creates a cart if either parallel preflight fails", async () => {
+    mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) });
+    mocks.request.mockResolvedValue({ cart: { ...fixtureCart, customer: { id: "cus_other" } } });
+    expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 })).toEqual({ status: "signed-out" });
+    expect(mocks.request.mock.calls.every(([, , options]) => !options?.method || options.method === "GET")).toBe(true);
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    mocks.request.mockClear().mockResolvedValue({ cart: fixtureCart });
+    mocks.catalog.mockRejectedValue(new Error("Catalog unavailable"));
+    expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 })).toEqual({ status: "unavailable" });
+    expect(mocks.request.mock.calls.every(([, , options]) => !options?.method || options.method === "GET")).toBe(true);
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
   });
   it("refuses missing US setup, unlisted variants and quantity beyond latest stock", async () => {
     expect(await changeShopCartAction({ kind: "add", variantId: "variant_blue", quantity: 1 })).toEqual({ status: "rejected" });

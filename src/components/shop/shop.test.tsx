@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const actions = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn() }));
 vi.mock("@/lib/shop/cart-actions", () => ({ getShopCartAction: actions.get, changeShopCartAction: actions.change }));
@@ -10,7 +10,7 @@ import { ProductDetail } from "./product-detail";
 import { CartPageView } from "./cart-page-view";
 import { Nav } from "@/components/site/nav";
 import { Footer } from "@/components/site/footer";
-import { cartSnapshot } from "@/lib/shop/commerce-cart";
+import { cartSnapshot, type CartResult } from "@/lib/shop/commerce-cart";
 vi.mock("server-only", () => ({}));
 beforeEach(() => {
   vi.resetAllMocks();
@@ -99,6 +99,48 @@ describe("real product cart", () => {
     expect(within(dialog).getByText("Pink / M")).toBeInTheDocument();
     expect(within(dialog).getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("href", "/shop/checkout");
     expect(localStorage.length).toBe(0);
+  });
+  it("opens cart immediately during a slow add without claiming the item is saved", async () => {
+    let finish: (value: CartResult) => void = () => { throw new Error("Missing pending request"); };
+    actions.change.mockReturnValueOnce(new Promise<CartResult>((resolve) => { finish = resolve; }));
+    render(<LanguageProvider initialLang="en"><ShopProvider><ProductDetail product={fixtureProduct()} related={[]} /></ShopProvider></LanguageProvider>);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Add to cart" })).not.toBeDisabled());
+    fireEvent.click(screen.getByRole("radio", { name: "Pink" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to cart" }));
+    const dialog = screen.getByRole("dialog", { name: "Your gear cart" });
+    expect(within(dialog).getByText("Adding item to your cart…")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Pink / M")).not.toBeInTheDocument();
+    await act(async () => finish({ status: "ready", cart: cartSnapshot(fixtureCart) }));
+    expect(within(dialog).getByText("Pink / M")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Adding item to your cart…")).not.toBeInTheDocument();
+  });
+  it.each(["empty", "existing"] as const)("announces one pending addition to an %s cart and preserves it after failure", async initial => {
+    const cart = cartSnapshot(fixtureCart);
+    actions.get.mockResolvedValue({ status: "ready", cart: initial === "empty" ? { ...cart, items: [], subtotal: 0, total: 0 } : cart });
+    let finish: (value: CartResult) => void = () => { throw new Error("Missing pending request"); };
+    actions.change.mockReturnValueOnce(new Promise<CartResult>(resolve => { finish = resolve; }));
+    render(<LanguageProvider initialLang="en"><ShopProvider><ProductDetail product={fixtureProduct()} related={[]} /></ShopProvider></LanguageProvider>);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Add to cart" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("radio", { name: "Pink" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to cart" }));
+    const dialog = screen.getByRole("dialog", { name: "Your gear cart" });
+    expect(within(dialog).getAllByText("Adding item to your cart…")).toHaveLength(1);
+    expect(within(dialog).queryByText("Your next mountain kit starts here.")).not.toBeInTheDocument();
+    if (initial === "existing") {
+      expect(within(dialog).getByText("Pink / M")).toBeInTheDocument();
+      const checkout = within(dialog).getByRole("link", { name: "Proceed to checkout" });
+      expect(checkout).toHaveAttribute("aria-disabled", "true");
+      expect(fireEvent.click(checkout)).toBe(false);
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close cart" }));
+    await act(async () => { finish({ status: "unavailable" }); });
+    expect(dialog).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByRole("button", { name: /Cart/ }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("temporarily unavailable");
+    expect(within(dialog).queryByText("Adding item to your cart…")).not.toBeInTheDocument();
+    expect(actions.change).toHaveBeenCalledOnce();
+    if (initial === "existing") expect(within(dialog).getByText("Pink / M")).toBeInTheDocument();
+    else expect(within(dialog).getByText("Your next mountain kit starts here.")).toBeVisible();
   });
   it("updates and removes with server totals, preserving the cart after a rejected change", async () => {
     actions.get.mockResolvedValue({ status: "ready", cart: cartSnapshot(fixtureCart) });

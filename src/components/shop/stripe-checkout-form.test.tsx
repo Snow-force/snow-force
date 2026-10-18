@@ -9,7 +9,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
 }));
 vi.mock("@stripe/stripe-js/pure", () => ({ loadStripe: mocks.load }));
 import StripeCheckoutForm from "./stripe-checkout-form";
-import { LanguageProvider } from "@/lib/language";
+import { LanguageProvider, useLanguage } from "@/lib/language";
 beforeEach(() => { vi.resetAllMocks(); mocks.load.mockResolvedValue({}); mocks.submit.mockResolvedValue({}); mocks.validate.mockResolvedValue(true); mocks.complete.mockResolvedValue(undefined); mocks.confirm.mockResolvedValue({ paymentIntent: { status: "requires_capture" } }); });
 afterEach(() => vi.useRealTimers());
 function view(ready = true) {
@@ -28,7 +28,7 @@ it("does not submit a stale server quote", async () => {
   await screen.findByRole("alert"); expect(mocks.confirm).not.toHaveBeenCalled(); expect(mocks.complete).not.toHaveBeenCalled();
 });
 it("does not complete orders for invalid payment details or a declined confirmation", async () => {
-  mocks.confirm.mockResolvedValue({ error: { message: "Card declined" } }); view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  mocks.confirm.mockResolvedValue({ error: { type: "card_error", message: "Card declined" } }); view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Card declined"); expect(mocks.complete).not.toHaveBeenCalled();
 });
 it("prevents duplicate confirmations while the first request is pending", async () => {
@@ -84,16 +84,23 @@ it("shows a spinner and forbids submission until the PaymentElement is ready", a
   expect(button).toBeEnabled();
   await waitFor(() => expect(screen.queryByText("Loading secure payment…")).not.toBeInTheDocument());
 });
-it("offers a read-only check when secure payment loading remains unresolved and removes it on readiness", async () => {
+it("announces a slow loader, then recovers after a timeout without authorizing payment", async () => {
   vi.useFakeTimers(); view(false);
   await act(async () => { await Promise.resolve(); vi.advanceTimersByTime(8_000); });
   expect(screen.getByText(/taking longer than usual/)).toBeVisible();
   act(() => vi.advanceTimersByTime(22_000));
-  expect(screen.getByRole("link", { name: "Check orders in a new tab" })).toHaveAttribute("href", "/member/orders");
+  expect(screen.getByRole("alert")).toHaveTextContent("taking too long to load");
+  expect(screen.queryByText("Loading secure payment…")).not.toBeInTheDocument();
   expect(mocks.submit).not.toHaveBeenCalled(); expect(mocks.confirm).not.toHaveBeenCalled();
+  // A late ready event from the timed-out instance cannot bypass explicit retry.
   fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
-  expect(screen.queryByRole("link", { name: "Check orders in a new tab" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Reload secure payment form" }));
+  expect(mocks.load).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
   expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeEnabled();
+  expect(mocks.confirm).not.toHaveBeenCalled();
 });
 it("replaces a failed element loader with an actionable error, not an infinite spinner", async () => {
   const { container } = view(false);
@@ -110,4 +117,106 @@ it.each(["null", "rejected"] as const)("handles a %s SDK load without authorizin
   expect(await screen.findByRole("alert")).toHaveTextContent("secure payment service could not load");
   expect(container.querySelector("[data-loading-spinner]")).toBeNull();
   expect(mocks.confirm).not.toHaveBeenCalled();
+});
+
+it("retries a failed SDK load with the same payment and waits for fresh form readiness", async () => {
+  mocks.load.mockRejectedValueOnce(new Error("Offline")).mockResolvedValue({});
+  view(false);
+  await screen.findByRole("alert");
+  fireEvent.click(screen.getByRole("button", { name: "Reload secure payment form" }));
+  expect(mocks.load).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeEnabled();
+  expect(mocks.validate).not.toHaveBeenCalled(); expect(mocks.confirm).not.toHaveBeenCalled();
+});
+
+it("reloads an element failure without submitting or preparing another payment", () => {
+  view(false);
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment load error" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reload secure payment form" }));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  expect(mocks.load).toHaveBeenCalledTimes(2);
+  expect(mocks.submit).not.toHaveBeenCalled(); expect(mocks.confirm).not.toHaveBeenCalled();
+});
+
+it.each(["transport", "provider"] as const)("blocks repeated authorization after an uncertain %s result", async failure => {
+  if (failure === "transport") mocks.confirm.mockRejectedValue(new Error("Timeout with private provider data"));
+  else mocks.confirm.mockResolvedValue({ error: { type: "api_connection_error", message: "Private provider data" } });
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Use Check payment status");
+  const button = screen.getByRole("button", { name: "Authorize $89.90" });
+  expect(button).toBeDisabled(); fireEvent.click(button);
+  expect(mocks.confirm).toHaveBeenCalledOnce();
+  expect(screen.getByRole("link", { name: "Check orders in a new tab" })).toHaveAttribute("href", "/member/orders");
+  expect(mocks.busy).toHaveBeenLastCalledWith(false);
+  expect(screen.queryByText(/Private provider data/)).not.toBeInTheDocument();
+});
+
+it("permits corrected details after a definite card decline", async () => {
+  mocks.confirm.mockResolvedValue({ error: { type: "card_error", message: "Card declined" } });
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Card declined");
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeEnabled();
+  expect(mocks.complete).not.toHaveBeenCalled();
+});
+
+it("permits retry if the quote check fails before confirmation is attempted", async () => {
+  mocks.validate.mockRejectedValue(new Error("Offline"));
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Check your connection and try again");
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeEnabled();
+  expect(mocks.confirm).not.toHaveBeenCalled();
+});
+
+it.each(["succeeded", "requires_capture", "processing"])("never authorizes again after %s even when order verification has not replaced the form", async status => {
+  mocks.confirm.mockResolvedValue({ paymentIntent: { status } });
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  await waitFor(() => expect(mocks.complete).toHaveBeenCalledOnce());
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  expect(mocks.confirm).toHaveBeenCalledOnce();
+  expect(screen.getByRole("link", { name: "Check orders in a new tab" })).toBeVisible();
+});
+
+it.each(["requires_action", "requires_confirmation", "requires_payment_method"])("shows instructions for %s without claiming the order is complete", async status => {
+  mocks.confirm.mockResolvedValue({ paymentIntent: { status } });
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Payment still needs confirmation");
+  expect(mocks.complete).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeEnabled();
+});
+
+it.each(["missing", "canceled"])("requires a server check for a %s confirmation result", async status => {
+  mocks.confirm.mockResolvedValue(status === "missing" ? {} : { paymentIntent: { status } });
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Use Check payment status");
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  expect(mocks.complete).not.toHaveBeenCalled();
+});
+
+it("requires status checking after authorization when order verification rejects", async () => {
+  mocks.complete.mockRejectedValue(new Error("Lost order verification response"));
+  view(); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Use Check payment status");
+  expect(screen.getByRole("button", { name: "Authorize $89.90" })).toBeDisabled();
+  expect(mocks.confirm).toHaveBeenCalledOnce();
+});
+
+function LanguageSwitch() {
+  const { setLang } = useLanguage();
+  return <button onClick={() => setLang("zh")}>Chinese</button>;
+}
+
+it("preserves an uncertain payment across a language switch", async () => {
+  mocks.confirm.mockRejectedValue(new Error("Lost response"));
+  render(<LanguageProvider initialLang="en"><LanguageSwitch /><StripeCheckoutForm clientSecret="pi_fixture_secret_fixture" publishableKey="pk_test_fixture" total={89.9} validate={mocks.validate} complete={mocks.complete} /></LanguageProvider>);
+  fireEvent.click(screen.getByRole("button", { name: "Fixture payment ready" }));
+  fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+  await screen.findByRole("alert");
+  fireEvent.click(screen.getByRole("button", { name: "Chinese" }));
+  expect(screen.getByRole("alert")).toHaveTextContent("付款结果尚未确认");
+  expect(screen.getByRole("button", { name: /授权付款/ })).toBeDisabled();
+  expect(mocks.confirm).toHaveBeenCalledOnce();
+  expect(mocks.load).toHaveBeenCalledOnce();
 });
