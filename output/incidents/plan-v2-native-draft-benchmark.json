@@ -1,0 +1,218 @@
+{
+  "testedAt": "2026-10-17T23:06:00.345Z",
+  "environment": "isolated local native HTTP Medusa/PostgreSQL and Stripe Sandbox Tax",
+  "scope": "Excludes member authentication, browser rendering and payment preparation; not production latency",
+  "n": 30,
+  "operations": [
+    {
+      "operation": "newPreviewMs",
+      "p50Ms": 544,
+      "p95Ms": 606
+    },
+    {
+      "operation": "reusedPreviewMs",
+      "p50Ms": 280,
+      "p95Ms": 336
+    },
+    {
+      "operation": "commitMs",
+      "p50Ms": 1538,
+      "p95Ms": 1763
+    }
+  ],
+  "pickup": {
+    "previewMs": 593,
+    "commitMs": 1668,
+    "totalCents": 4202
+  },
+  "checks": [
+    "30 new drafts and exact evidence reuse",
+    "native commit exact 5197-cent delivery total",
+    "pickup native final quote with zero shipping",
+    "delivery restored",
+    "no order or active payment session"
+  ],
+  "samples": [
+    {
+      "sample": 1,
+      "newPreviewMs": 567,
+      "reusedPreviewMs": 285,
+      "commitMs": 1567
+    },
+    {
+      "sample": 2,
+      "newPreviewMs": 542,
+      "reusedPreviewMs": 287,
+      "commitMs": 1500
+    },
+    {
+      "sample": 3,
+      "newPreviewMs": 606,
+      "reusedPreviewMs": 275,
+      "commitMs": 1617
+    },
+    {
+      "sample": 4,
+      "newPreviewMs": 578,
+      "reusedPreviewMs": 288,
+      "commitMs": 1763
+    },
+    {
+      "sample": 5,
+      "newPreviewMs": 565,
+      "reusedPreviewMs": 268,
+      "commitMs": 1767
+    },
+    {
+      "sample": 6,
+      "newPreviewMs": 574,
+      "reusedPreviewMs": 278,
+      "commitMs": 1585
+    },
+    {
+      "sample": 7,
+      "newPreviewMs": 523,
+      "reusedPreviewMs": 327,
+      "commitMs": 1492
+    },
+    {
+      "sample": 8,
+      "newPreviewMs": 564,
+      "reusedPreviewMs": 276,
+      "commitMs": 1608
+    },
+    {
+      "sample": 9,
+      "newPreviewMs": 546,
+      "reusedPreviewMs": 293,
+      "commitMs": 1563
+    },
+    {
+      "sample": 10,
+      "newPreviewMs": 618,
+      "reusedPreviewMs": 271,
+      "commitMs": 1569
+    },
+    {
+      "sample": 11,
+      "newPreviewMs": 535,
+      "reusedPreviewMs": 266,
+      "commitMs": 1458
+    },
+    {
+      "sample": 12,
+      "newPreviewMs": 535,
+      "reusedPreviewMs": 263,
+      "commitMs": 1553
+    },
+    {
+      "sample": 13,
+      "newPreviewMs": 583,
+      "reusedPreviewMs": 289,
+      "commitMs": 1607
+    },
+    {
+      "sample": 14,
+      "newPreviewMs": 536,
+      "reusedPreviewMs": 293,
+      "commitMs": 1486
+    },
+    {
+      "sample": 15,
+      "newPreviewMs": 538,
+      "reusedPreviewMs": 267,
+      "commitMs": 1551
+    },
+    {
+      "sample": 16,
+      "newPreviewMs": 508,
+      "reusedPreviewMs": 280,
+      "commitMs": 1511
+    },
+    {
+      "sample": 17,
+      "newPreviewMs": 550,
+      "reusedPreviewMs": 285,
+      "commitMs": 1481
+    },
+    {
+      "sample": 18,
+      "newPreviewMs": 517,
+      "reusedPreviewMs": 294,
+      "commitMs": 1528
+    },
+    {
+      "sample": 19,
+      "newPreviewMs": 545,
+      "reusedPreviewMs": 272,
+      "commitMs": 1512
+    },
+    {
+      "sample": 20,
+      "newPreviewMs": 530,
+      "reusedPreviewMs": 298,
+      "commitMs": 1472
+    },
+    {
+      "sample": 21,
+      "newPreviewMs": 521,
+      "reusedPreviewMs": 336,
+      "commitMs": 1540
+    },
+    {
+      "sample": 22,
+      "newPreviewMs": 544,
+      "reusedPreviewMs": 361,
+      "commitMs": 1500
+    },
+    {
+      "sample": 23,
+      "newPreviewMs": 503,
+      "reusedPreviewMs": 273,
+      "commitMs": 1541
+    },
+    {
+      "sample": 24,
+      "newPreviewMs": 561,
+      "reusedPreviewMs": 276,
+      "commitMs": 1538
+    },
+    {
+      "sample": 25,
+      "newPreviewMs": 517,
+      "reusedPreviewMs": 277,
+      "commitMs": 1426
+    },
+    {
+      "sample": 26,
+      "newPreviewMs": 562,
+      "reusedPreviewMs": 258,
+      "commitMs": 1435
+    },
+    {
+      "sample": 27,
+      "newPreviewMs": 537,
+      "reusedPreviewMs": 294,
+      "commitMs": 1550
+    },
+    {
+      "sample": 28,
+      "newPreviewMs": 592,
+      "reusedPreviewMs": 320,
+      "commitMs": 1549
+    },
+    {
+      "sample": 29,
+      "newPreviewMs": 502,
+      "reusedPreviewMs": 335,
+      "commitMs": 1515
+    },
+    {
+      "sample": 30,
+      "newPreviewMs": 576,
+      "reusedPreviewMs": 271,
+      "commitMs": 1479
+    }
+  ],
+  "productionWrites": 0
+}

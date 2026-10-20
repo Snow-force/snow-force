@@ -1,0 +1,40 @@
+{
+  "testedAt": "2026-10-17T19:53:42.838Z",
+  "environment": "Isolated local Medusa/PostgreSQL + Stripe Sandbox Tax; no production requests",
+  "prototype": "Read current authenticated tax source once, calculate and validate an unapplied preview. Existing saved address only; NOT a new draft-address API, payment authorization, or production implementation.",
+  "samples": [
+    {
+      "sourceReadMs": 357,
+      "calculationAndValidationMs": 294,
+      "totalMs": 651
+    },
+    {
+      "sourceReadMs": 305,
+      "calculationAndValidationMs": 246,
+      "totalMs": 551
+    },
+    {
+      "sourceReadMs": 282,
+      "calculationAndValidationMs": 294,
+      "totalMs": 576
+    }
+  ],
+  "baselineFullNativeQuoteMs": [
+    1951,
+    1796,
+    1711
+  ],
+  "baselineMeasurement": "Same process and fixture, native refresh after an untimed withdrawal to force new calculation; includes normalization, creation, atomic application and final proof. Not an HTTP or draft-address benchmark. Baseline changes only isolated quote evidence, and restores 5197 cents; no active session/order.",
+  "checks": [
+    "authoritative server merchandise, discounts, configuration and shipping source",
+    "all three full provider results validated, 5197 cents including 302 cents tax",
+    "preview cart, address, items, shipping, quote operations/applications, sessions and orders hash unchanged before any baseline writes"
+  ],
+  "productionChanges": 0,
+  "financialTransactions": 0,
+  "remaining": [
+    "Implement a versioned draft-address source and server shipping eligibility before connecting to UI.",
+    "Optimize final commit too; moving the same 19-second operation to the pay button is insufficient.",
+    "Verify first-address cold/warm production performance and concurrent edits."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "verifiedAt": "2026-10-04T11:16:49.945Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "specifiedAccounts": [
+    {
+      "email": "snowforceclub@gmail.com",
+      "present": true,
+      "id": "user_01M3XAT5CHH31V1W1AC17279DS"
+    },
+    {
+      "email": "taiyuanmei0824@gmail.com",
+      "present": true,
+      "id": "user_01M3XAZ1RDY8JS5W0B4FDAD5MK"
+    }
+  ],
+  "noAccountOrPasswordChanges": true
+}

@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-10-15T02:37:11.732Z",
+  "source": "local synthetic browser Sandbox database",
+  "productionConnections": 0,
+  "productionDataCopied": false,
+  "protectedKeyRecoveredFromDisk": true,
+  "aes256GcmAuthenticationBeforeRestore": true,
+  "tamperedCiphertextRejectedBeforeRestore": true,
+  "tablesVerified": 161,
+  "everyTableCountAndDigestMatched": true,
+  "encryptedBytes": 639607,
+  "realCustomerDataUsed": false,
+  "productionRecoveryStillRequiresExplicitAuthorization": true
+}

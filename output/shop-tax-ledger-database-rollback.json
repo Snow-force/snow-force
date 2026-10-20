@@ -1,0 +1,20 @@
+{
+  "role": "snowforce_commerce",
+  "tlsVerified": true,
+  "realLedgerSQL": true,
+  "stableRequestReplay": true,
+  "immutableQuoteReplay": true,
+  "immutableConstraints": true,
+  "paymentBinding": true,
+  "rollbackVerified": true,
+  "stripeRequests": 0,
+  "permanentFixtureMutations": false,
+  "counts": {
+    "customers": "0",
+    "carts": "0",
+    "operations": "0",
+    "quotes": "0",
+    "applications": "0",
+    "sessions": "0"
+  }
+}

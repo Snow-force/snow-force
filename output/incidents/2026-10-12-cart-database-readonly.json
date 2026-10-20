@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-10-13T05:47:59.284Z",
+  "scope": "Production commerce schema, TLS verified, read-only transaction; no credentials or customer identities recorded",
+  "products": [
+    {
+      "product_id": "prod_01M4A7N9A0MM81XZZP1MXC3BH0",
+      "title": "PSN Éclat 68 All-Mountain Skis – Nacre Pink",
+      "status": "published",
+      "variant_id": "variant_01M4A7NBCAYDSB3X9A5N166XH0",
+      "sku": "PSN-ECLAT68-NACRE-155",
+      "manage_inventory": true,
+      "allow_backorder": false,
+      "shipping_profile_id": "sp_01M3TP33WS4JZATMTGESVFXJ70",
+      "shipping_profile": "Default Shipping Profile"
+    }
+  ],
+  "inventory": [
+    {
+      "sku": "PSN-ECLAT68-NACRE-155",
+      "inventory_item_id": "iitem_01M4A7NBRQMR20DESPYZNVZG57",
+      "required_quantity": "1",
+      "location_id": "sloc_01M3V8ZR6505EY8B9H7Z4CWF3S",
+      "location": "SnowForce Irvine warehouse",
+      "stocked_quantity": "15",
+      "reserved_quantity": "0",
+      "available_quantity": "15",
+      "sales_channel_id": "sc_01M3TPQG1T6H82CG6WFD51SW3X",
+      "sales_channel": "Default Sales Channel",
+      "is_disabled": false
+    }
+  ],
+  "channels": [
+    {
+      "product_id": "prod_01M4A7N9A0MM81XZZP1MXC3BH0",
+      "sales_channel_id": "sc_01M3TPQG1T6H82CG6WFD51SW3X",
+      "name": "Default Sales Channel",
+      "is_disabled": false
+    }
+  ],
+  "keys": [
+    {
+      "id": "apk_01M3TP51N9DAE092AHTFXVQSTH",
+      "title": "Default Publishable API Key",
+      "type": "publishable",
+      "revoked_at": null,
+      "matches_local_storefront_key": true,
+      "sales_channel_id": "sc_01M3TPQG1T6H82CG6WFD51SW3X",
+      "sales_channel": "Default Sales Channel",
+      "is_disabled": false
+    }
+  ],
+  "prices": [
+    {
+      "sku": "PSN-ECLAT68-NACRE-155",
+      "id": "price_01M4A7NCDHTHV40ZD06SCKWX1P",
+      "currency_code": "usd",
+      "amount": "499",
+      "price_list_id": null,
+      "min_quantity": null,
+      "max_quantity": null,
+      "rules_count": 0
+    }
+  ],
+  "regions": [
+    {
+      "id": "reg_01M4A68JBXBJ23QZSKJHTC3E4P",
+      "name": "US",
+      "currency_code": "usd",
+      "countries": [
+        "us"
+      ]
+    }
+  ],
+  "cartCounts": [
+    {
+      "total": 0,
+      "incomplete": 0
+    }
+  ],
+  "carts": [],
+  "store": [
+    {
+      "name": "SnowForce",
+      "default_region_id": null,
+      "default_sales_channel_id": "sc_01M3TPQG1T6H82CG6WFD51SW3X",
+      "default_location_id": "sloc_01M3V8ZR6505EY8B9H7Z4CWF3S",
+      "published_policy": null,
+      "active_tax_revision": null
+    }
+  ],
+  "writes": 0
+}

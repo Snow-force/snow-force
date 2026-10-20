@@ -1,0 +1,74 @@
+{
+  "verified_at": "2026-10-03T01:49:24.512Z",
+  "http": [
+    {
+      "path": "/shop",
+      "status": 200
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200
+    },
+    {
+      "path": "/shop/checkout",
+      "status": 200
+    },
+    {
+      "path": "/member/orders",
+      "status": 200,
+      "anonymous_login_fields": true
+    },
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/app/login",
+      "status": 200
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_missing/edit",
+      "method": "POST",
+      "store_key": false,
+      "customer_token": false,
+      "status": 400
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_missing/edit",
+      "method": "POST",
+      "store_key": true,
+      "customer_token": false,
+      "status": 401
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_missing/quote",
+      "method": "POST",
+      "store_key": false,
+      "customer_token": false,
+      "status": 400
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_missing/quote",
+      "method": "POST",
+      "store_key": true,
+      "customer_token": false,
+      "status": 401
+    }
+  ],
+  "scope": "Read-only public HTTP pages, anonymous auth boundaries, Stripe GET setup and database counts. No visual browser or real checkout E2E verification.",
+  "actual_stripe": {
+    "livemode": false,
+    "settings_status": "pending",
+    "registrations": 0,
+    "api_ready": false,
+    "policy_flag": false
+  },
+  "actual_catalog": [
+    {
+      "status": "draft",
+      "count": 14
+    }
+  ],
+  "actual_orders": 0,
+  "actual_stripe_posts": 0
+}

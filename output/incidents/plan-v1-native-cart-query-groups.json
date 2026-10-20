@@ -1,0 +1,278 @@
+{
+  "traceId": "dccc81dc984689bb1fe1f282976523fb",
+  "httpMs": 4565.0866,
+  "queryGroups": [
+    {
+      "operation": "SELECT postgres",
+      "n": 13,
+      "totalMs": 290,
+      "maxMs": 28
+    },
+    {
+      "operation": "SELECT commerce.cart_line_item",
+      "n": 11,
+      "totalMs": 277,
+      "maxMs": 63
+    },
+    {
+      "operation": "SELECT commerce.cart_shipping_method",
+      "n": 9,
+      "totalMs": 265,
+      "maxMs": 98
+    },
+    {
+      "operation": "SELECT commerce.cart_shipping_method_adjustment",
+      "n": 7,
+      "totalMs": 230,
+      "maxMs": 104
+    },
+    {
+      "operation": "SELECT commerce.cart_line_item_tax_line",
+      "n": 7,
+      "totalMs": 228,
+      "maxMs": 98
+    },
+    {
+      "operation": "SELECT commerce.workflow_execution",
+      "n": 9,
+      "totalMs": 194,
+      "maxMs": 23
+    },
+    {
+      "operation": "SELECT commerce.cart_line_item_adjustment",
+      "n": 7,
+      "totalMs": 157,
+      "maxMs": 31
+    },
+    {
+      "operation": "SELECT commerce.credit_line",
+      "n": 7,
+      "totalMs": 146,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.cart_shipping_method_tax_line",
+      "n": 7,
+      "totalMs": 146,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.cart_payment_collection",
+      "n": 6,
+      "totalMs": 130,
+      "maxMs": 23
+    },
+    {
+      "operation": "SELECT commerce.cart",
+      "n": 6,
+      "totalMs": 127,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.product_shipping_profile",
+      "n": 5,
+      "totalMs": 112,
+      "maxMs": 29
+    },
+    {
+      "operation": "SELECT commerce.shipping_profile",
+      "n": 5,
+      "totalMs": 107,
+      "maxMs": 23
+    },
+    {
+      "operation": "SELECT commerce.product_variant commerce.product",
+      "n": 4,
+      "totalMs": 91,
+      "maxMs": 24
+    },
+    {
+      "operation": "SELECT commerce.cart_promotion",
+      "n": 4,
+      "totalMs": 90,
+      "maxMs": 24
+    },
+    {
+      "operation": "SELECT commerce.customer",
+      "n": 4,
+      "totalMs": 86,
+      "maxMs": 23
+    },
+    {
+      "operation": "SELECT commerce.product_tags commerce.product_tag",
+      "n": 3,
+      "totalMs": 68,
+      "maxMs": 25
+    },
+    {
+      "operation": "SELECT commerce.product",
+      "n": 3,
+      "totalMs": 64,
+      "maxMs": 23
+    },
+    {
+      "operation": "SELECT commerce.product_category_product commerce.product_category",
+      "n": 3,
+      "totalMs": 63,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.shipping_option",
+      "n": 2,
+      "totalMs": 48,
+      "maxMs": 24
+    },
+    {
+      "operation": "SELECT commerce.inventory_item",
+      "n": 2,
+      "totalMs": 44,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.region",
+      "n": 2,
+      "totalMs": 44,
+      "maxMs": 24
+    },
+    {
+      "operation": "SELECT commerce.sales_channel_stock_location",
+      "n": 2,
+      "totalMs": 43,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.price_rule",
+      "n": 2,
+      "totalMs": 43,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.sales_channel",
+      "n": 2,
+      "totalMs": 42,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.price_set",
+      "n": 2,
+      "totalMs": 42,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.shipping_option_rule",
+      "n": 2,
+      "totalMs": 42,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.location_fulfillment_set",
+      "n": 2,
+      "totalMs": 41,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.promotion promotion_promotion_rule promotion_rule",
+      "n": 1,
+      "totalMs": 39,
+      "maxMs": 39
+    },
+    {
+      "operation": "SELECT promotion_rule",
+      "n": 1,
+      "totalMs": 28,
+      "maxMs": 28
+    },
+    {
+      "operation": "SELECT commerce.customer_group_customer commerce.customer_group",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.inventory_level",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.stock_location",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.product_variant",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.product_variant_price_set",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.price_preference",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "UPDATE commerce.cart_line_item",
+      "n": 1,
+      "totalMs": 22,
+      "maxMs": 22
+    },
+    {
+      "operation": "SELECT commerce.api_key",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.publishable_api_key_sales_channel",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.product_variant_inventory_item",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.fulfillment_set",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.shipping_option commerce.shipping_option_type",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.price",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.tax_region",
+      "n": 1,
+      "totalMs": 21,
+      "maxMs": 21
+    },
+    {
+      "operation": "SELECT commerce.shipping_option_price_set",
+      "n": 1,
+      "totalMs": 20,
+      "maxMs": 20
+    }
+  ],
+  "method": "SQL operation/table names only, clipped to backend HTTP interval. Per-group duration sums can overlap and must not be added as an end-to-end critical path.",
+  "productionChanges": 0
+}

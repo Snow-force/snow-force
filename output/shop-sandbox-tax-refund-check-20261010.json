@@ -1,0 +1,62 @@
+{
+  "checked_at": "2026-10-10T09:03:04.290Z",
+  "run_id": "96ebacfa-e6ee-4011-bda5-1d600ee67a68",
+  "scope": "real Stripe Sandbox payment, inherited provider capture, application API factories, quote/allocation/tax-result validators; synthetic cart/order/payment/capture IDs and receipt fields; no native database ledger, admin execution, inventory, queue or webhook acceptance",
+  "live_mutation": false,
+  "refunds": [
+    {
+      "operation_id": "da524582-c991-4a8a-acb9-8ae0acbf6733",
+      "refund_id": "re_3UOw8mAbMQunT3pr1HulVT7b",
+      "status": "succeeded",
+      "amount_cents": 1078,
+      "net_cents": 1000,
+      "tax_cents": 78,
+      "reversal_id": "tax_1UOwBKAbMQunT3pryXpZUAty",
+      "reversal_validated": true
+    },
+    {
+      "operation_id": "874db6a6-9762-4656-a83b-1ac4e9577a06",
+      "refund_id": "re_3UOw8mAbMQunT3pr1zpgSLYa",
+      "status": "succeeded",
+      "amount_cents": 1078,
+      "net_cents": 1000,
+      "tax_cents": 78,
+      "reversal_id": "tax_1UOwBLAbMQunT3prWpfYjxpu",
+      "reversal_validated": true
+    },
+    {
+      "operation_id": "2a11f42c-8b8b-4f32-9bbb-f2e761a9229a",
+      "refund_id": "re_3UOw8mAbMQunT3pr1cMTAosv",
+      "status": "succeeded",
+      "amount_cents": 1077,
+      "net_cents": 1000,
+      "tax_cents": 77,
+      "reversal_id": "tax_1UOwBMAbMQunT3prIXnfEGhd",
+      "reversal_validated": true
+    }
+  ],
+  "checks": [
+    "actual application creator and inherited native Stripe capture authorize then capture exactly the calculated total",
+    "real funds and original Tax Transaction header and all line items pass application validators",
+    "three partial cash refunds and specific-line tax reversals conserve every original net and tax cent; replay produces the same remote records"
+  ],
+  "intent_id": "pi_3UOw8mAbMQunT3pr1caBi4cD",
+  "captured_payment": {
+    "id": "pi_3UOw8mAbMQunT3pr1caBi4cD",
+    "livemode": false,
+    "status": "succeeded",
+    "amount": 3233,
+    "amount_received": 3233,
+    "amount_capturable": 0
+  },
+  "tax_sale_id": "tax_1UOw3bAbMQunT3prWt6N27vu",
+  "final_charge": {
+    "id": "ch_3UOw8mAbMQunT3pr1cGR7E0j",
+    "livemode": false,
+    "captured": true,
+    "refunded": true,
+    "amount": 3233,
+    "amount_refunded": 3233
+  },
+  "status": "passed"
+}

@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-03T09:54:22.3065057+00:00",
+  "account": "snowforceclub@gmail.com",
+  "workspaceId": "18937ccb-da72-4953-9c43-9daddc58553b",
+  "projectId": "026e1ce6-a125-422c-b29f-a44ee11bdac1",
+  "environmentId": "1245a65e-0f62-4182-8c85-1858aa98c634",
+  "subscription": "TRIAL",
+  "subscriptionButton": "disabled; payment entry blank",
+  "latestDeployment": null,
+  "domainCount": 0,
+  "sourceConnected": false,
+  "nonsecretVariableCount": 13,
+  "credentialsUploaded": false,
+  "priorGoalTurnClassification": "progress: verified connector identity and saved deployment configuration",
+  "currentGoalTurnClassification": "no progress: live checks confirm the same manual subscription blocker",
+  "consecutiveGoalTurnsWithSubscriptionBlocker": 3,
+  "immediateAction": "User completes SnowForce Hobby subscription",
+  "remainingAfterActivation": [
+    "Connect reviewed code source",
+    "Provide and verify production database and admin credentials",
+    "TLS Redis and durable image upload credentials",
+    "Public deployment and end-to-end acceptance",
+    "Partner login guide with verified public address"
+  ],
+  "evidence": [
+    "Railway whoami/get-status/get-service-config/list-domains",
+    "output/shop-railway-snowforce-subscription-pending.jpg"
+  ],
+  "goalComplete": false
+}

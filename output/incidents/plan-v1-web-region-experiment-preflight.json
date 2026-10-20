@@ -1,0 +1,32 @@
+{
+  "preparedAt": "2026-10-17T03:12:12.636Z",
+  "scope": "Independent stateless Web region experiment from user implementation plan P2",
+  "sourceCommit": "6276a0c313e79b420fcb6a515eb4dcc1af4a0421",
+  "beforeRegions": {
+    "sfo": {
+      "numReplicas": 1
+    }
+  },
+  "targetRegions": {
+    "us-east4-eqdc4a": {
+      "numReplicas": 1
+    }
+  },
+  "resourceLimits": {
+    "containers": {
+      "cpu": 1,
+      "memoryBytes": 1000000000
+    }
+  },
+  "volumeCount": 0,
+  "healthcheck": "/api/health",
+  "rollback": {
+    "regions": {
+      "sfo": {
+        "numReplicas": 1
+      }
+    }
+  },
+  "stagedPatchApplied": false,
+  "notes": "Only regions will be changed live via update_service, not the pending environment patch. Compare checkout and anonymous public-page HTTP measurements; keep source, domain, replica count and limits stable. Redis migration is excluded and requires separately prepared backup/recovery and maintenance approval per plan P2."
+}

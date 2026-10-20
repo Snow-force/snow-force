@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-10-10",
+  "website": "https://snow-force.com",
+  "deployedSourceCommit": "c6f3ba3e61f1c64bf3c0e17a3f5422c500c2e01d",
+  "deployments": {
+    "web": {
+      "id": "0dfbbb40-6bdb-4d77-a606-259644915a88",
+      "status": "SUCCESS"
+    },
+    "commerce": {
+      "id": "a3db3707-4a51-40c1-9b37-a015c53857b9",
+      "status": "SUCCESS"
+    }
+  },
+  "httpEvidence": "shop-post-deploy-http-20261010.json",
+  "browserChecksPassed": [
+    "商城八栏目及 FEATURED 集合菜单显示；Fuzzy Collection 正确包含三个已发布商品。",
+    "配件父分类筛选为两个商品；价格升序排序、trapper 搜索及无结果提示生效。",
+    "雪板规格选择、数量由 1 增至 2、图片切换及图片放大正常。",
+    "未登录加入购物车显示会员登录门槛，购物车仍为 0；结账页面亦提示登录。",
+    "活动列表和详情显示，Mammoth 报名要求已验证会员登录；活动二维码正常展开。",
+    "FAQ 问答展开及中英文切换生效；语言测试后恢复 English。",
+    "首页视频实际 readyState=4、播放时 paused=false、无媒体错误；测试后暂停。",
+    "首页回顾轮播从 photo 1 切换到 photo 2。",
+    "390px 手机布局下主菜单展开，会员入口正常跳转；文档宽度与可见宽度相同，无页面横向溢出；视口测试后恢复。",
+    "会员登录、注册及 Magic Link 表单模式切换正常；没有提交注册或发送邮件。",
+    "现有登录后的 Medusa 后台可读取五个公共主分类。"
+  ],
+  "findings": [
+    {
+      "id": "product-size-conflict",
+      "priority": "需核对经营资料",
+      "location": "/shop/eclat-68-all-mountain-skis-nacre-pink",
+      "detail": "描述为154/161 cm，可选规格为155/165 cm，已选SKU为PSN-ECLAT68-NACRE-155；未猜测哪套尺寸正确，未修改商品。",
+      "screenshot": "shop-post-deploy-size-mismatch-20261010.png"
+    },
+    {
+      "id": "faq-account-conflict",
+      "priority": "需修正文案",
+      "location": "/faq",
+      "source": "src/app/faq/page.tsx:54",
+      "detail": "新手指南中英两版均声称无需账号，与已验证会员登录报名门槛及同页报名问答冲突。",
+      "screenshot": "site-post-deploy-faq-conflict-20261010.png"
+    },
+    {
+      "id": "brands-empty",
+      "priority": "待运营配置",
+      "location": "/shop/brands",
+      "detail": "菜单正常但当前没有品牌数据，显示商品发布后将出现品牌的空状态。"
+    },
+    {
+      "id": "payments-not-ready",
+      "priority": "正式收款门槛",
+      "location": "/shop/policies",
+      "detail": "线上政策显示尚未生效；正式商城付款仍未开放，商品税务分类与取货方式仍待经营者确认。"
+    },
+    {
+      "id": "supabase-session-warning",
+      "priority": "需跟进日志",
+      "source": "src/lib/shop/commerce-auth.ts:11",
+      "detail": "当前网站部署日志出现getSession/session.user警告。该函数先调用getCurrentMemberAccount/getUser验证用户，再读取会话token；未仅凭日志判定发生越权。"
+    }
+  ],
+  "limitations": [
+    "本轮没有使用会员凭据完成登录，因此未验证登录后购物车更新、下单、发货和售后。",
+    "没有发送注册/找回密码/魔法链接邮件，没有完成Google OAuth，没有执行正式扣款或退款。",
+    "后台仅验证现有登录的读取，不修改商品、经营政策或税务配置。"
+  ],
+  "oneDrive": {
+    "observed": "用户截图的发布文档为本会话生成；所列Medusa JS名称与services/commerce/.medusa/server/public/admin/assets及.cache依赖目录匹配，哈希会随构建变化。",
+    "unverified": "未获得3774项待删除的完整路径，不能认定全部可删；建议先保留、暂停同步，开发副本迁到OneDrive之外并验证后再清理云端副本。"
+  }
+}

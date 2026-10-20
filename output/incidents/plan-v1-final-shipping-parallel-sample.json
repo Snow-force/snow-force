@@ -1,0 +1,19 @@
+{
+  "measuredAt": "2026-10-17T03:26:13Z",
+  "environment": "production",
+  "recordedFrom": "HTTP root spans observed in prior active execution; retained values, not a new measurement",
+  "backendRevision": "57e3a970006ef2a0c093b34088307ed2f9f0709d",
+  "backendDeployment": "b5f6eefb-0556-49e1-98d9-d3565eb079dc",
+  "webRevision": "6276a0c313e79b420fcb6a515eb4dcc1af4a0421",
+  "webRegion": "sfo",
+  "shippingParallelReads": true,
+  "temporaryTiming": false,
+  "samples": [
+    {"operation":"full-address-shipping-tax-action","durationMs":19403.015516,"trace":"85f8c8bdeb8ed414f0aa95cc9d2e3867"},
+    {"operation":"details-save","durationMs":4982.959372,"trace":"a7f0e506e392cdd0f29e01dd46ea0f50"},
+    {"operation":"tax-quote","durationMs":8113.811039,"trace":"d9c8aace966dda8a98a7e78f3fb1011b"},
+    {"operation":"shipping-options-before","durationMs":1350.218417,"trace":"4dd0e30beb9188eda429de66940b563b"},
+    {"operation":"shipping-options-after","durationMs":1237.591814,"trace":"2eeeec437a78bbaf1b20fb4ffb2a54e5"}
+  ],
+  "limitations": "One real sample, not p95 or a controlled comparison; nested spans cannot be summed. Whole-flow target remains unmet. No payment prepared, no order or financial transaction executed. No-op deduplication is not a first-address latency improvement."
+}

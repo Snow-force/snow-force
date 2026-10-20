@@ -1,0 +1,37 @@
+{
+  "observedAt": "2026-10-13T07:50:06.985Z",
+  "source": "Live Medusa admin Stripe official tax-code catalog",
+  "candidates": [
+    {
+      "description": "A physical good that can be moved or touched. Also known as tangible personal property.",
+      "id": "txcd_99999999",
+      "name": "General - Tangible Goods (txcd_99999999)"
+    },
+    {
+      "description": "Clothing, footwear, and accessories worn on a person's body while participating in recreational or sporting activities, and which are not typical for everyday usage. Please select a more granular product tax category where appropriate.",
+      "id": "txcd_30021000",
+      "name": "Athletic Activity Clothing (txcd_30021000)"
+    },
+    {
+      "description": "Bags including handbags, purses, coin purses, fanny packs / bum bags, and diaper / nappy bags.",
+      "id": "txcd_30060001",
+      "name": "Purses and Handbags (txcd_30060001)"
+    },
+    {
+      "description": "A shaped covering for the head worn for warmth, as a fashion item, or as part of a uniform.",
+      "id": "txcd_30060006",
+      "name": "Hats (txcd_30060006)"
+    },
+    {
+      "description": "Protective gear worn about the human body while participating in athletic, recreational, or sporting activities, and which are not typical for everyday usage. Please select a more granular product tax category where appropriate.",
+      "id": "txcd_30071000",
+      "name": "Sports Activities Equipment (txcd_30071000)"
+    },
+    {
+      "description": "Bags designed to carry students' books during the school day. This category does not include backpacks for traveling, hiking, camping, and so on.",
+      "id": "txcd_37060001",
+      "name": "Bookbags/Backpacks - Student (txcd_37060001)"
+    }
+  ],
+  "selectionStatus": "Candidates only; no product tax review saved"
+}

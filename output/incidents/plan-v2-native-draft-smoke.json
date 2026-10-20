@@ -1,0 +1,15 @@
+{
+  "testedAt": "2026-10-17T23:11:57.580Z",
+  "environment": "Isolated native Medusa/PostgreSQL and Stripe Sandbox",
+  "previewMs": 565,
+  "commitMs": 1700,
+  "checks": [
+    "actual availability workflow uses draft destination",
+    "native cart hash unchanged by preview",
+    "native total equals 5197 cents after commit with imported provider result",
+    "replay of old token rejected with 409",
+    "original fixture address and tax restored",
+    "no order or active payment session"
+  ],
+  "productionWrites": 0
+}

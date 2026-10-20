@@ -1,0 +1,42 @@
+{
+  "verifiedAt": "2026-10-04T11:21:42.820Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "email": "snowforceclub@gmail.com",
+  "checks": [
+    {
+      "name": "Two independently created secure native administrator sessions",
+      "passed": true
+    },
+    {
+      "name": "Both concurrent sessions identify the shared club administrator",
+      "passed": true
+    },
+    {
+      "name": "Both sessions read the same fourteen original drafts",
+      "passed": true
+    },
+    {
+      "name": "First logged-out session is rejected",
+      "passed": true
+    },
+    {
+      "name": "Second session retains identity and inventory access after first logout",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "ownSessionCleanup": [
+    {
+      "index": 0,
+      "deleted": true,
+      "oldCookieRejected": true
+    },
+    {
+      "index": 1,
+      "deleted": true,
+      "oldCookieRejected": true
+    }
+  ],
+  "noBusinessWrites": true,
+  "noCookiesOrTokensPersisted": true
+}

@@ -1,0 +1,90 @@
+{
+  "verified_at": "2026-10-02T18:30:13.605Z",
+  "role": "snowforce_commerce",
+  "tls": {
+    "encrypted": true,
+    "authorized": true
+  },
+  "checks": [
+    {
+      "stage": "isolated_provider_request",
+      "key": "snowforce-tax-quote:e5a48148-2232-46da-9c72-8722cb3885e6",
+      "request_fingerprint": "6b1f13b9823b1bce15aa11a7f922cf784a7f8d48e294b5a498239cad68628007",
+      "tax_date": 1790965809
+    },
+    {
+      "stage": "ambiguous_request_retained",
+      "pending": 1
+    },
+    {
+      "stage": "isolated_provider_request",
+      "key": "snowforce-tax-quote:e5a48148-2232-46da-9c72-8722cb3885e6",
+      "request_fingerprint": "6b1f13b9823b1bce15aa11a7f922cf784a7f8d48e294b5a498239cad68628007",
+      "tax_date": 1790965809
+    },
+    {
+      "stage": "isolated_provider_request",
+      "key": "snowforce-tax-quote:e5a48148-2232-46da-9c72-8722cb3885e6",
+      "request_fingerprint": "6b1f13b9823b1bce15aa11a7f922cf784a7f8d48e294b5a498239cad68628007",
+      "tax_date": 1790965809
+    },
+    {
+      "stage": "failed_record_rolled_back",
+      "quote_count": 0
+    },
+    {
+      "stage": "isolated_provider_request",
+      "key": "snowforce-tax-quote:e5a48148-2232-46da-9c72-8722cb3885e6",
+      "request_fingerprint": "6b1f13b9823b1bce15aa11a7f922cf784a7f8d48e294b5a498239cad68628007",
+      "tax_date": 1790965809
+    },
+    {
+      "stage": "completed_result_reused",
+      "provider_requests": 4,
+      "permanent_identities": 1,
+      "request_fingerprints": 1,
+      "stored_quotes": 1,
+      "native_tax_applications": 0,
+      "source": "isolated source and provider; real ledger SQL"
+    }
+  ],
+  "isolated_sql_mutations": 4,
+  "committed_business_mutations": 0,
+  "actual_stripe_posts": 0,
+  "before": {
+    "counts": {
+      "customer": 0,
+      "cart": 0,
+      "order": 0,
+      "payment_session": 0,
+      "snowforce_tax_operations": 0,
+      "snowforce_tax_quotes": 0,
+      "snowforce_tax_quote_applications": 0
+    },
+    "store_metadata_digest": "9745f9fbd86389a6684cb8a26c93d5049502598ade342d2a5783e42f1c239149"
+  },
+  "after": {
+    "counts": {
+      "customer": 0,
+      "cart": 0,
+      "order": 0,
+      "payment_session": 0,
+      "snowforce_tax_operations": 0,
+      "snowforce_tax_quotes": 0,
+      "snowforce_tax_quote_applications": 0
+    },
+    "store_metadata_digest": "9745f9fbd86389a6684cb8a26c93d5049502598ade342d2a5783e42f1c239149"
+  },
+  "actual_setup": {
+    "livemode": false,
+    "status": "pending",
+    "registration_count": 0,
+    "api_ready": false,
+    "payment_policy_confirmed": false
+  },
+  "limits": [
+    "Native graph, merchant facts, locking and provider are isolated fixtures",
+    "No authenticated customer, actual Tax Calculation or purchase end-to-end acceptance",
+    "Private receipt/application and native cart tax lines were not written"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "observedAt": "2026-10-16T17:48:55Z",
+  "source": "36da11e052f7994c6c7ec84ba24f0a8ef0de1c2f",
+  "deployment": "5b8dbcff-0ccf-4818-8969-cca0fd14c355",
+  "traceId": "89bf9c8718d0a2e8d5674790de857b21",
+  "productionQuoteEndpointMs": 11517.94,
+  "previousSingleSampleMs": 13254.62,
+  "note": "Individual natural expired-quote renewals; not p95 or a controlled production stress test. No address change, payment or order was submitted. Still exceeds the initial end-to-end target.",
+  "groups": {
+    "POST /store/snowforce/checkout/*/quote": {
+      "count": 1,
+      "sumMs": 11453.341089
+    },
+    "in queue": {
+      "count": 1,
+      "sumMs": 0.400896
+    },
+    "processing": {
+      "count": 1,
+      "sumMs": 11452.940193
+    },
+    "postgresql": {
+      "count": 335,
+      "sumMs": 7182.211983000001
+    },
+    "redis": {
+      "count": 27,
+      "sumMs": 1687.162771
+    },
+    "GET /v1/account": {
+      "count": 8,
+      "sumMs": 1729.497463
+    },
+    "GET /v1/*/settings": {
+      "count": 7,
+      "sumMs": 683.375927
+    },
+    "GET /v1/*/registrations": {
+      "count": 7,
+      "sumMs": 645.0784090000001
+    },
+    "POST /v1/*/calculations": {
+      "count": 1,
+      "sumMs": 180.665421
+    },
+    "GET /v1/*/calculations/*/line_items": {
+      "count": 1,
+      "sumMs": 99.36556
+    }
+  },
+  "productionFinancialWrites": 0
+}

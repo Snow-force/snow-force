@@ -1,0 +1,11 @@
+{
+  "testedAt": "2026-10-16T17:39:28.104Z",
+  "environment": "isolated native PostgreSQL and Medusa",
+  "checks": [
+    "owned SQL snapshot matches native graph public cart fields and amount engine; private identity fields come from the owned SQL row",
+    "wrong owner returns no snapshot",
+    "payment session fields are enumerated without provider data or secrets"
+  ],
+  "productionWrites": 0,
+  "note": "Prototype only; not a production source change or performance claim."
+}

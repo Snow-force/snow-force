@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-10-18T20:42:07.647Z",
+  "sourceRevision": "1da290a9fc00d2921948a9972e480c4f311ef43d",
+  "environment": "Isolated local production build / Medusa / Stripe Sandbox",
+  "checks": [
+    "Real browser cart add and quantity restoration correlated across browser/web/commerce",
+    "Real Stripe Payment Element reached onReady with SDK and Elements usable",
+    "Unconfirmed test PaymentIntent canceled through product recovery workflow; no payment data entered or authorization submitted"
+  ],
+  "state": {
+    "quantity": 1,
+    "orders": 0,
+    "active_payments": 0
+  },
+  "testIntentStatus": "canceled",
+  "receivedCents": 0,
+  "capturableCents": 0,
+  "productionWrites": 0,
+  "limitations": [
+    "One local sample for each operation is not production p95 or p99",
+    "No 3DS or wallet confirmation was performed in this readiness-only check",
+    "No SQL or Redis durations inferred from aggregate request time"
+  ]
+}

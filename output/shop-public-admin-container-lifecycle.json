@@ -1,0 +1,10 @@
+{
+  "network": "none",
+  "publicInterface": true,
+  "port8080": true,
+  "exitCode": 0,
+  "isolated": true,
+  "terminationForwarded": true,
+  "productionChild": true,
+  "containerId": "068a4a44b8fd12885473fd6299404199e942c51cc0d2851a7c2d05eaa70af594"
+}

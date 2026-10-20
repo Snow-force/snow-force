@@ -1,0 +1,56 @@
+{
+  "verified_at": "2026-10-02T15:35:07.844Z",
+  "role": "snowforce_commerce",
+  "tlsVerified": true,
+  "migration": "20261002152248_shop_tax_quote_ledger.sql",
+  "migration_sha256": "5c7abee80196513f7e611ab5bfc629fa2aa478174e46dfe618ea1dd24f30d166",
+  "schema": [
+    {
+      "table": "snowforce_tax_operations",
+      "owner": "snowforce_commerce",
+      "rls": true,
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    {
+      "table": "snowforce_tax_quote_applications",
+      "owner": "snowforce_commerce",
+      "rls": true,
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    {
+      "table": "snowforce_tax_quotes",
+      "owner": "snowforce_commerce",
+      "rls": true,
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    }
+  ],
+  "counts": {
+    "operations": "0",
+    "quotes": "0",
+    "applications": "0",
+    "orders": "0",
+    "published_products": "0"
+  },
+  "tax_policy_confirmed": false,
+  "stripe_tax_setup": {
+    "livemode": false,
+    "settings": "pending",
+    "registrations": 0,
+    "blockers": [
+      "california_registration_required",
+      "settings_pending",
+      "us_head_office_required"
+    ],
+    "api_ready": false
+  },
+  "financial_requests": 0,
+  "migration_history_verified": true,
+  "applied_sql_md5": "9204735437e227bb0d3a944e54ed9a63",
+  "source_sql_md5": "9204735437e227bb0d3a944e54ed9a63"
+}

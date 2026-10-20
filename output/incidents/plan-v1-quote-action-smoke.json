@@ -1,0 +1,24 @@
+{
+  "testedAt": "2026-10-16T18:17:47.592Z",
+  "environment": "isolated local Next production build + local Medusa/PostgreSQL + Stripe Sandbox Tax; synthetic Supabase member",
+  "measurement": "HTTP server-action completion including real member authentication; excludes browser render and human input; one functional smoke sample, not a latency percentile estimate",
+  "optimizedReads": true,
+  "mode": "smoke",
+  "source": "61e0495 frontend on 99b32de owned SQL snapshot",
+  "productionFinancialWrites": 0,
+  "operations": [
+    {
+      "operation": "quote-renewal",
+      "n": 1,
+      "durationMs": 1784,
+      "failures": 0
+    }
+  ],
+  "samples": [
+    {
+      "operation": "quote-renewal",
+      "durationMs": 1784,
+      "status": "review"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "verifiedAt": "2026-10-15T20:50:20.414Z",
+  "temporaryAuthUsersRemoved": 1,
+  "temporaryProfilesRemoved": 1,
+  "temporaryConsentsRemoved": 1,
+  "orderProjectionsCreated": 0,
+  "paymentsCreated": 0,
+  "sessionsRevoked": true,
+  "realCustomerRowsChanged": 0,
+  "emailsSent": 0
+}

@@ -1,0 +1,48 @@
+{
+  "verifiedAt": "2026-10-18T20:49:41.220Z",
+  "checks": [
+    {
+      "origin": "https://snow-force.com",
+      "endpoint": "/api/health",
+      "status": "ok",
+      "service": "snowforce-web"
+    },
+    {
+      "origin": "https://snow-force.com",
+      "endpoint": "/api/shop/version",
+      "status": 200,
+      "service": "snowforce-web",
+      "revision": "1f97bee42fdd3ef179bc0e78245d5921223bb1d8"
+    },
+    {
+      "origin": "https://snow-force.com",
+      "endpoint": "/api/shop/performance",
+      "invalidSchemaStatus": 400,
+      "bodyBytes": 0,
+      "contentType": null
+    },
+    {
+      "origin": "https://www.snow-force.com",
+      "endpoint": "/api/health",
+      "status": "ok",
+      "service": "snowforce-web"
+    },
+    {
+      "origin": "https://www.snow-force.com",
+      "endpoint": "/api/shop/version",
+      "status": 200,
+      "service": "snowforce-web",
+      "revision": "1f97bee42fdd3ef179bc0e78245d5921223bb1d8"
+    },
+    {
+      "origin": "https://www.snow-force.com",
+      "endpoint": "/api/shop/performance",
+      "invalidSchemaStatus": 403,
+      "bodyBytes": 0,
+      "contentType": null
+    }
+  ],
+  "crossSiteStatus": 403,
+  "syntheticTimingEventsRecorded": 0,
+  "productionMemberCartPaymentWrites": 0
+}

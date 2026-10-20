@@ -1,0 +1,9 @@
+{
+  "testedAt": "2026-10-03T02:38:14.9080509-07:00",
+  "testExit": 0,
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "buildIsolation": "production environment; project-local CLI configuration; telemetry disabled",
+  "buildLog": "output/shop-railway-backend-validation-build-isolated.log",
+  "buildCheckedAt": "2026-10-03T09:41:02.5535411+00:00"
+}

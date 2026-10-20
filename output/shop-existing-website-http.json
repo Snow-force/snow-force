@@ -1,0 +1,14 @@
+[
+  {
+    "Url": "https://snow-force.com/",
+    "Status": 200
+  },
+  {
+    "Url": "https://snow-force.com/shop",
+    "Status": 200
+  },
+  {
+    "Url": "https://snow-force.com/shop/policies",
+    "Status": 200
+  }
+]

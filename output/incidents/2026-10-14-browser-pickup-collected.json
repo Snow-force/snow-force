@@ -1,0 +1,9 @@
+{
+  "verifiedAt": "2026-10-15T01:56:04.158Z",
+  "stripeMode": "test",
+  "orderId": "order_01M4YKVSKENVS2VMJAVRJ6MPD2",
+  "fulfillmentStatus": "delivered",
+  "fulfillmentId": "ful_01M4YMB0TZB7B8P0W3DP9V826E",
+  "noCarrierShipmentCreated": true,
+  "productionOrdersOrFundsChanged": 0
+}

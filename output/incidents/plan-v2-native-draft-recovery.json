@@ -1,0 +1,11 @@
+{
+  "testedAt": "2026-10-17T23:14:05.119Z",
+  "environment": "real isolated native workflows/PostgreSQL and independent Stripe Sandbox",
+  "checks": [
+    "explicit commit safely resumes original pending native operation",
+    "completed unapplied native calculation is reused without overwriting evidence",
+    "fresh receiving quote remains payable at 5197 cents",
+    "no pending native operation or order remains"
+  ],
+  "productionWrites": 0
+}

@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-02T07:58:02.146Z",
+  "pages": {
+    "/shop": 200,
+    "/shop/checkout": 200,
+    "/shop/policies": 200,
+    "/member/orders": 200
+  },
+  "endToEndPurchaseVerified": false,
+  "supportEmailVisible": true,
+  "health": 200,
+  "anonymousPurchaseTerms": 401
+}

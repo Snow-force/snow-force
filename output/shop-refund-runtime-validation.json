@@ -1,0 +1,90 @@
+{
+  "checked_at": "2026-10-10 09:58:51 UTC",
+  "scope": "Local refund runtime and admin integration; actual native MedusaApp/PostgreSQL checks use fixture credentials and funds; no production migration, deployment or live funds",
+  "registration_recheck": {
+    "account_id": "acct_1ToZcNAbMQunT3pr",
+    "id": "taxreg_1UOw2HAbMQunT3pre61qoGuJ",
+    "state": "CA",
+    "type": "state_sales_tax",
+    "status": "active",
+    "livemode": false,
+    "mutation_this_turn": false
+  },
+  "implementation": {
+    "staff_execution_endpoint": true,
+    "immutable_plan_confirmation": true,
+    "retry_same_operation": true,
+    "late_case_response_aborted": true,
+    "cash_and_tax_job_schedule": "*/2 * * * *",
+    "max_tasks_per_queue": 10,
+    "default_enabled": false,
+    "guard": "Actual Medusa dispatched provider instance + shared PG connection + configured key fingerprint + sales mode + webhook credential"
+  },
+  "validation": {
+    "root_tests_passed": 984,
+    "root_test_files": 159,
+    "commerce_tests_passed": 570,
+    "failed": 0,
+    "focused_tests_passed": 75,
+    "typecheck": "passed",
+    "root_build": "passed (webpack)",
+    "commerce_backend_admin_build": "passed",
+    "root_coverage": {
+      "statements": 58.32,
+      "branches": 52.84,
+      "functions": 56.36,
+      "lines": 59.2
+    },
+    "focused_coverage": {
+      "refund_runtime": {
+        "lines": 100,
+        "branches": 100,
+        "functions": 100
+      },
+      "refund_admin": {
+        "lines": 98.65,
+        "branches": 92.86,
+        "functions": 93.55
+      },
+      "refund_execution": {
+        "lines": 93.58,
+        "branches": 90.06,
+        "functions": 92.31
+      }
+    },
+    "native_workflow_checks": 4,
+    "reservation_checks": 8,
+    "native_runtime_dispatch_checks": 3,
+    "native_workflow_warnings": [],
+    "actual_stripe_calls_in_native_database_checks": 0,
+    "postgres_stopped": true,
+    "temporary_database_removed": true
+  },
+  "evidence": [
+    "output/shop-refund-runtime-commerce-tests-final.log",
+    "output/shop-refund-runtime-root-tests-final.log",
+    "output/shop-refund-runtime-root-coverage-final.log",
+    "output/shop-refund-runtime-root-build-final.log",
+    "output/shop-refund-runtime-commerce-build-final.log",
+    "output/shop-refund-runtime-typecheck-final.log",
+    "output/shop-refund-runtime-combined-coverage.log",
+    "output/shop-refund-runtime-native-dispatch-verification.json",
+    "output/shop-native-refund-workflow-local-verification.json",
+    "output/shop-tax-refund-reservations-local-verification.json"
+  ],
+  "outstanding": [
+    "Actual native storefront purchase and inventory using isolated Stripe Sandbox",
+    "Real signed Stripe webhook delivery, duplicate delivery and durable recovery",
+    "Complete native refund/admin/cash/tax flow in the same Sandbox transaction",
+    "Production migration and deployment",
+    "Confirmed formal tax registration and live runtime credentials",
+    "Enable formal collection after complete acceptance"
+  ],
+  "production": {
+    "changed": false,
+    "migrations_applied_this_turn": false,
+    "deployed_this_turn": false,
+    "live_collection_enabled": false
+  },
+  "full_commerce_acceptance_complete": false
+}

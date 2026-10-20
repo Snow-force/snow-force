@@ -1,0 +1,211 @@
+{
+  "environment": "Local Next production build, authenticated synthetic member, isolated Medusa/PostgreSQL with memory locks; no injected delay during measurement",
+  "measuredAt": "2026-10-18T06:32:19.356Z",
+  "n": 30,
+  "failures": 0,
+  "timingIncludes": "Next server action, authentication, backend request and parsed response; browser rendering excluded",
+  "measurements": [
+    {
+      "operation": "addMs",
+      "p50Ms": 793,
+      "p95Ms": 967
+    },
+    {
+      "operation": "updateMs",
+      "p50Ms": 767,
+      "p95Ms": 970
+    },
+    {
+      "operation": "readMs",
+      "p50Ms": 605,
+      "p95Ms": 786
+    }
+  ],
+  "finalFixtureQuantity": 1,
+  "orders": 0,
+  "activePaymentSessions": 0,
+  "productionWrites": 0,
+  "limitations": "Not production p95 or a controlled comparison against the old action; desktop/mobile delay checks measured separately.",
+  "samples": [
+    {
+      "sample": 1,
+      "addMs": 1772,
+      "updateMs": 1124,
+      "readMs": 1224
+    },
+    {
+      "sample": 2,
+      "addMs": 935,
+      "updateMs": 970,
+      "readMs": 653
+    },
+    {
+      "sample": 3,
+      "addMs": 967,
+      "updateMs": 863,
+      "readMs": 616
+    },
+    {
+      "sample": 4,
+      "addMs": 846,
+      "updateMs": 827,
+      "readMs": 600
+    },
+    {
+      "sample": 5,
+      "addMs": 828,
+      "updateMs": 777,
+      "readMs": 589
+    },
+    {
+      "sample": 6,
+      "addMs": 845,
+      "updateMs": 809,
+      "readMs": 692
+    },
+    {
+      "sample": 7,
+      "addMs": 807,
+      "updateMs": 767,
+      "readMs": 605
+    },
+    {
+      "sample": 8,
+      "addMs": 821,
+      "updateMs": 773,
+      "readMs": 595
+    },
+    {
+      "sample": 9,
+      "addMs": 793,
+      "updateMs": 748,
+      "readMs": 583
+    },
+    {
+      "sample": 10,
+      "addMs": 784,
+      "updateMs": 752,
+      "readMs": 618
+    },
+    {
+      "sample": 11,
+      "addMs": 795,
+      "updateMs": 759,
+      "readMs": 637
+    },
+    {
+      "sample": 12,
+      "addMs": 792,
+      "updateMs": 799,
+      "readMs": 637
+    },
+    {
+      "sample": 13,
+      "addMs": 781,
+      "updateMs": 783,
+      "readMs": 675
+    },
+    {
+      "sample": 14,
+      "addMs": 798,
+      "updateMs": 787,
+      "readMs": 612
+    },
+    {
+      "sample": 15,
+      "addMs": 768,
+      "updateMs": 760,
+      "readMs": 652
+    },
+    {
+      "sample": 16,
+      "addMs": 789,
+      "updateMs": 773,
+      "readMs": 600
+    },
+    {
+      "sample": 17,
+      "addMs": 779,
+      "updateMs": 752,
+      "readMs": 786
+    },
+    {
+      "sample": 18,
+      "addMs": 778,
+      "updateMs": 802,
+      "readMs": 624
+    },
+    {
+      "sample": 19,
+      "addMs": 818,
+      "updateMs": 774,
+      "readMs": 598
+    },
+    {
+      "sample": 20,
+      "addMs": 870,
+      "updateMs": 731,
+      "readMs": 591
+    },
+    {
+      "sample": 21,
+      "addMs": 806,
+      "updateMs": 753,
+      "readMs": 582
+    },
+    {
+      "sample": 22,
+      "addMs": 781,
+      "updateMs": 735,
+      "readMs": 578
+    },
+    {
+      "sample": 23,
+      "addMs": 808,
+      "updateMs": 858,
+      "readMs": 601
+    },
+    {
+      "sample": 24,
+      "addMs": 781,
+      "updateMs": 760,
+      "readMs": 591
+    },
+    {
+      "sample": 25,
+      "addMs": 813,
+      "updateMs": 760,
+      "readMs": 596
+    },
+    {
+      "sample": 26,
+      "addMs": 766,
+      "updateMs": 794,
+      "readMs": 605
+    },
+    {
+      "sample": 27,
+      "addMs": 770,
+      "updateMs": 755,
+      "readMs": 616
+    },
+    {
+      "sample": 28,
+      "addMs": 770,
+      "updateMs": 741,
+      "readMs": 644
+    },
+    {
+      "sample": 29,
+      "addMs": 760,
+      "updateMs": 756,
+      "readMs": 580
+    },
+    {
+      "sample": 30,
+      "addMs": 786,
+      "updateMs": 763,
+      "readMs": 602
+    }
+  ]
+}

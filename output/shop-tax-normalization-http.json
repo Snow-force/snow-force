@@ -1,0 +1,25 @@
+{
+  "kind": "local HTTP availability and unauthenticated write rejection; not customer purchase E2E",
+  "pages": [
+    {
+      "url": "http://127.0.0.1:9000/health",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3100/shop",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3100/shop/checkout",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3100/shop/policies",
+      "status": 200
+    }
+  ],
+  "anonymous_normalize_status": 401,
+  "published_products": 0,
+  "support_email_present": true,
+  "authenticated_mutations": 0
+}

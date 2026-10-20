@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-09T05:13:36.311Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback database; actual native order module/migrations; fixture tax-sale ledger and captured source; no payment provider or production mutation",
+  "checks": [
+    "native order creation preserves quote markers and raw price/quantity",
+    "actual SQL binds duplicate SKUs to original transaction lines",
+    "sequential refunds conserve original net/tax cents",
+    "native price edit reaches version two while refunds retain the original version-one price and bindings",
+    "fixture specific-line tax reversals validate all allocation amounts"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-10T09:57:29.720Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback database; actual Medusa order/return/payment/user migrations and APIs; fixture Stripe provider, captured source, committed tax-sale and after-sales rows; no production mutation or real provider HTTP",
+  "checks": [
+    "actual requested returns cannot reserve until received; partial receipt caps reserved quantities",
+    "real concurrent transactions reserve distinct rounding positions and cannot over-refund received units",
+    "reconstructed requests recover immutable allocation without replacing operation amounts",
+    "latest untouched cancellation retains audit and releases only its original rounding prefix",
+    "started reservations freeze quantities and attempt times; pre-POST approval recheck rejects a later changed case version",
+    "database trigger rejects evidence edits, deleting audit, changing attempt times and unsafe earlier cancellation",
+    "untracked native payment refunds require reconciliation before further reservations",
+    "private runtime role executes reservations; browser and service-role grants remain absent with RLS and invoker trigger"
+  ]
+}

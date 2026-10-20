@@ -1,0 +1,16 @@
+{
+  "verifiedAt": "2026-10-15T02:18:07Z",
+  "commit": "30ff27acabc381289ff325528d0b447b24cdde7b",
+  "githubQualityGate": {"runId": 38669021628, "conclusion": "success"},
+  "webDeployment": {"id": "299021b6-fde0-4fcd-aa1f-cbe01e42cb09", "status": "SUCCESS"},
+  "commerceDeployment": {"id": "59a51f1f-2d25-42ab-ab60-c322d0368c72", "status": "SUCCESS"},
+  "validation": {"storefrontTests": 1032, "commerceTests": 648, "storefrontCoveragePassed": true, "commerceFocusedCoveragePassed": true, "backendTypecheckPassed": true, "bothProductionBuildsPassed": true},
+  "pickup": {"enabledInLiveAdmin": true, "workflow": "Contact customer service to arrange appointment, then choose pickup and pay on website", "feeCents": 0, "warehouse": "SnowForce Irvine warehouse", "address": "1 Park Plaza, #600 Office 44, Irvine, CA 92614", "screenshots": ["2026-10-14-live-pickup-enabled.jpg", "2026-10-14-browser-pickup-collected.jpg"]},
+  "originalIncident": {"sku": "PSN-ECLAT68-NACRE-155", "published": true, "currency": "usd", "unitPrice": 499, "stocked": 15, "reserved": 0, "available": 15, "salesChannel": "Default Sales Channel", "productChannelLinked": true, "warehouseChannelLinked": true, "shippingProfile": "Default Shipping Profile", "cartRegion": "US", "cartCurrency": "usd", "cartSalesChannelMatchesDefault": true, "localConfiguredPublishableKeyActiveAndChannelLinked": true, "railwayRuntimeVariableValuesRedacted": true, "liveCartReadWithExistingMemberSessionPassed": true},
+  "stripeTax": {"account": "acct_1ToZcEAItQQT9la8", "mode": "live", "status": "active", "collectingStates": ["CA"], "taxPolicyConfirmed": false, "paymentRuntimeGatesOpen": false},
+  "pending": ["Confirm temporary permit dates 2026-10-07 through 2027-01-04", "Final approval and publication of policy draft revision 4", "Explicit authorization for production commerce backup and local restore; automatic approval review rejected the unapproved copy before execution", "Explicit authorization for controlled production Redis restart recovery test"],
+  "productionOrdersOrFundsChanged": 0,
+  "realCatalogPriceOrInventoryChanges": 0,
+  "temporaryMemberAndOrderProjectionsCleaned": true,
+  "encryptedProductionBackupOrRestoreExecuted": false
+}

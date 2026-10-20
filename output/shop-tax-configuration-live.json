@@ -1,0 +1,39 @@
+{
+  "kind": "actual Medusa Admin HTTP verification",
+  "accounts": [
+    {
+      "email": "snowforceclub@gmail.com",
+      "read_status": 200,
+      "revision": 1,
+      "persisted": true,
+      "active_revision": null,
+      "warehouse_available": true,
+      "native_address_complete": true,
+      "policy_version": null,
+      "activation_status": 400,
+      "saved_unconfirmed_draft": false
+    },
+    {
+      "email": "taiyuanmei0824@gmail.com",
+      "read_status": 200,
+      "revision": 1,
+      "persisted": true,
+      "active_revision": null,
+      "warehouse_available": true,
+      "native_address_complete": true,
+      "policy_version": null,
+      "activation_status": 400,
+      "saved_unconfirmed_draft": false
+    }
+  ],
+  "checks": {
+    "anonymous_denied": true
+  },
+  "stripe": {
+    "livemode": false,
+    "settings": "pending",
+    "registrations": 0,
+    "policy_confirmed": false,
+    "checkout_ready": false
+  }
+}

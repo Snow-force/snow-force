@@ -1,0 +1,26 @@
+{
+  "checked_at": "2026-10-10T08:48:34.149Z",
+  "scope": "operator-confirmed Irvine headquarters; independent Sandbox only",
+  "registration_created": false,
+  "live_mutation": false,
+  "account_id": "acct_1ToZcNAbMQunT3pr",
+  "before": {
+    "status": "pending",
+    "head_office": null
+  },
+  "after": {
+    "status": "active",
+    "head_office": {
+      "address": {
+        "city": "Irvine",
+        "country": "US",
+        "line1": "1 Park Plaza",
+        "line2": "Suite 600",
+        "postal_code": "92614",
+        "state": "CA"
+      }
+    },
+    "missing_fields": []
+  },
+  "status": "verified"
+}

@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-04T10:27:30.198Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "productId": "prod_01M42SP2HHYMDWHVKR1DZ2122A",
+  "inventoryId": "iitem_01M42SQYVDKQJFXBBFMWBGQ4YM",
+  "variantId": "variant_01M42SP4AS5S6RVQ1Z08Q3C8CY",
+  "uploadId": "products/snowforce-browser-acceptance-1791095403513-01M4375SMJHVXW8R9FZ2A8VCB9.webp",
+  "uiSaved": {
+    "draft": true,
+    "sku": true,
+    "usdPrice": 38.5,
+    "stock": 4,
+    "image": true
+  },
+  "refreshedAndApiVerified": true,
+  "paymentEnabled": false,
+  "cleanup": {
+    "product": true,
+    "inventory": true,
+    "upload": true,
+    "remainingDrafts": 14
+  }
+}

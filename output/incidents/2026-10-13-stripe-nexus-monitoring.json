@@ -1,0 +1,149 @@
+{
+  "observedAt": "2026-10-14T03:08:38.965Z",
+  "accountId": "acct_1ToZcEAItQQT9la8",
+  "legalCompanyName": "CLN GLOBAL LLC",
+  "chargesEnabled": true,
+  "payoutsEnabled": true,
+  "computedAtUtc": "2026-10-12T00:00:00.000Z",
+  "monitoring": {
+    "computed_at": 1791763200,
+    "locations": [
+      {
+        "customer_location": {
+          "country": "US",
+          "region": "united_states",
+          "state": "WA"
+        },
+        "is_threshold_crossed": false,
+        "is_undetermined": false,
+        "revenue": {
+          "currency": "usd",
+          "value": 47300
+        },
+        "threshold": {
+          "count": null,
+          "include_b2b": true,
+          "include_non_taxable": true,
+          "limit_type": "revenue",
+          "revenue": {
+            "currency": "usd",
+            "value": 10000000
+          },
+          "threshold_type": "local"
+        },
+        "transaction_count": 5,
+        "window": {
+          "end_date": 1798761600,
+          "start_date": 1767225600,
+          "window_type": "previous_or_current_year"
+        }
+      },
+      {
+        "customer_location": {
+          "country": "US",
+          "region": "united_states",
+          "state": "GA"
+        },
+        "is_threshold_crossed": false,
+        "is_undetermined": false,
+        "revenue": {
+          "currency": "usd",
+          "value": 11800
+        },
+        "threshold": {
+          "count": 200,
+          "include_b2b": false,
+          "include_non_taxable": true,
+          "limit_type": "revenue_or_count",
+          "revenue": {
+            "currency": "usd",
+            "value": 10000000
+          },
+          "threshold_type": "local"
+        },
+        "transaction_count": 1,
+        "window": {
+          "end_date": 1798761600,
+          "start_date": 1767225600,
+          "window_type": "previous_or_current_year"
+        }
+      },
+      {
+        "customer_location": {
+          "country": "US",
+          "region": "united_states",
+          "state": "NJ"
+        },
+        "is_threshold_crossed": false,
+        "is_undetermined": false,
+        "revenue": {
+          "currency": "usd",
+          "value": 7900
+        },
+        "threshold": {
+          "count": 200,
+          "include_b2b": true,
+          "include_non_taxable": true,
+          "limit_type": "revenue_or_count",
+          "revenue": {
+            "currency": "usd",
+            "value": 10000000
+          },
+          "threshold_type": "local"
+        },
+        "transaction_count": 1,
+        "window": {
+          "end_date": 1798761600,
+          "start_date": 1767225600,
+          "window_type": "previous_or_current_year"
+        }
+      },
+      {
+        "customer_location": {
+          "country": "US",
+          "region": "united_states",
+          "state": "NY"
+        },
+        "is_threshold_crossed": false,
+        "is_undetermined": false,
+        "revenue": {
+          "currency": "usd",
+          "value": 7900
+        },
+        "threshold": {
+          "count": 101,
+          "include_b2b": true,
+          "include_non_taxable": true,
+          "limit_type": "revenue_and_count",
+          "revenue": {
+            "currency": "usd",
+            "value": 50000000
+          },
+          "threshold_type": "local"
+        },
+        "transaction_count": 1,
+        "window": {
+          "end_date": 1790812800,
+          "start_date": 1759276800,
+          "window_type": "rolling_year_by_quarter"
+        }
+      }
+    ],
+    "unattributed_locations": [
+      {
+        "country": null,
+        "revenue": {
+          "currency": "usd",
+          "value": 9900
+        },
+        "transaction_count": 1,
+        "window": {
+          "end_date": 1790812800,
+          "start_date": 1759276800
+        }
+      }
+    ]
+  },
+  "interpretation": "Stripe-data monitoring signals only. No reported jurisdiction crossed its threshold; one payment is unattributed. Other channels and physical presence remain to be verified before deciding on additional state registrations.",
+  "additionalRegistrationsCreated": 0
+}

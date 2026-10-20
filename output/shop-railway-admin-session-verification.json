@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-10-04T05:55:38.680Z",
+  "origin": "https://snowforce-commerce-production.up.railway.app",
+  "cookieLogin": true,
+  "adminIdentityMatches": true,
+  "existingProductCount": 14,
+  "draftCount": 14,
+  "cookieHttpOnly": true,
+  "cookieSecure": true,
+  "financialOperations": [
+    {
+      "path": "/admin/orders/acceptance_nonexistent/fulfillments",
+      "status": 400,
+      "managementBlocked": true
+    },
+    {
+      "path": "/admin/payments/acceptance_nonexistent/capture",
+      "status": 400,
+      "managementBlocked": true
+    },
+    {
+      "path": "/admin/returns",
+      "status": 400,
+      "managementBlocked": true
+    },
+    {
+      "path": "/admin/snowforce/after-sales/acceptance_nonexistent/funds",
+      "status": 400,
+      "managementBlocked": true
+    }
+  ]
+}

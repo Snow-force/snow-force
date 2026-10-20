@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-15T01:35:04.563Z",
+  "stripeMode": "test",
+  "accountId": "acct_1ToZcNAbMQunT3pr",
+  "orderId": "order_01M4YJVBTC2QZQT2KBAN4G0Z6D",
+  "cartId": "cart_01M4YJ3J3HXA912N41V49RYZDR",
+  "paymentId": "pay_01M4YJVC59XKSHJQ6JYYJMN9SK",
+  "intentId": "pi_3UQdR3AbMQunT3pr1wiGYbz1",
+  "authorizedCents": 49900,
+  "capturedCents": 49900,
+  "nativePaymentStatus": "captured",
+  "fulfillmentStatus": "not_fulfilled",
+  "stockBeforeCapture": {
+    "stocked_quantity": "15",
+    "reserved_quantity": "1"
+  },
+  "productionOrdersOrFundsChanged": 0
+}

@@ -1,0 +1,117 @@
+{
+  "checkedAt": "2026-10-04T21:39:50.790Z",
+  "beforeCount": 12,
+  "afterCount": 14,
+  "unchangedOtherRecords": [
+    {
+      "name": "autodiscover.snow-force.com",
+      "type": "CNAME",
+      "unchanged": true
+    },
+    {
+      "name": "enterpriseenrollment.snow-force.com",
+      "type": "CNAME",
+      "unchanged": true
+    },
+    {
+      "name": "enterpriseregistration.snow-force.com",
+      "type": "CNAME",
+      "unchanged": true
+    },
+    {
+      "name": "pay.snow-force.com",
+      "type": "CNAME",
+      "unchanged": true
+    },
+    {
+      "name": "send.notifications.snow-force.com",
+      "type": "MX",
+      "unchanged": true
+    },
+    {
+      "name": "snow-force.com",
+      "type": "MX",
+      "unchanged": true
+    },
+    {
+      "name": "dc-fd741b8612._spfm.send.notifications.snow-force.com",
+      "type": "TXT",
+      "unchanged": true
+    },
+    {
+      "name": "resend._domainkey.notifications.snow-force.com",
+      "type": "TXT",
+      "unchanged": true
+    },
+    {
+      "name": "send.notifications.snow-force.com",
+      "type": "TXT",
+      "unchanged": true
+    },
+    {
+      "name": "snow-force.com",
+      "type": "TXT",
+      "unchanged": true
+    }
+  ],
+  "newVerificationRecords": [
+    {
+      "type": "TXT",
+      "name": "_railway-verify.snow-force.com",
+      "texts": [
+        "_railway-verify . snow-force.com",
+        "TXT",
+        "\"railway-verify=4475bd9603472ef6e17495142154e439dbaf80566ad2d4da29efd10bb90ece77\"",
+        "DNS only",
+        "Auto",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "type": "TXT",
+      "name": "_railway-verify.www.snow-force.com",
+      "texts": [
+        "_railway-verify.www . snow-force.com",
+        "TXT",
+        "\"railway-verify=1a90167796fd046cf9aae543e32ac3e41766f95956166f31ffd86297ad4f9bb9\"",
+        "DNS only",
+        "Auto",
+        "—",
+        "—",
+        "—"
+      ]
+    }
+  ],
+  "websiteRecords": [
+    {
+      "type": "CNAME",
+      "name": "snow-force.com",
+      "texts": [
+        "snow-force.com",
+        "CNAME",
+        "yms0edov.up.railway.app",
+        "DNS only",
+        "Auto",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "type": "CNAME",
+      "name": "www.snow-force.com",
+      "texts": [
+        "www . snow-force.com",
+        "CNAME",
+        "vpb9mqhe.up.railway.app",
+        "DNS only",
+        "Auto",
+        "—",
+        "—",
+        "—"
+      ]
+    }
+  ]
+}

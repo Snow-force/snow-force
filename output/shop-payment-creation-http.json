@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-02T05:31:19.178Z",
+  "results": [
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/shop",
+      "status": 200
+    },
+    {
+      "path": "/shop/checkout",
+      "status": 200
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200
+    },
+    {
+      "path": "/store/snowforce/checkout/:id",
+      "anonymous": true,
+      "status": 401
+    }
+  ]
+}

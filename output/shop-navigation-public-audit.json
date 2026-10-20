@@ -1,0 +1,86 @@
+{
+  "checked_at": "2026-10-09T03:57:14.507Z",
+  "backend": "https://snowforce-commerce-production.up.railway.app",
+  "results": [
+    {
+      "path": "/health",
+      "status": 200,
+      "count": null
+    },
+    {
+      "path": "/store/product-categories?limit=100",
+      "status": 200,
+      "count": 1,
+      "categories": [
+        {
+          "id": "pcat_01M4F4CDJWRNQ6T9RSEG10P9SR",
+          "handle": "bags-backpacks",
+          "name": "Bag & Backpacks",
+          "parent_category_id": null
+        }
+      ]
+    },
+    {
+      "path": "/store/collections?limit=100",
+      "status": 200,
+      "count": 9,
+      "collections": [
+        {
+          "id": "pcol_01M4F2MG32EZT8NGXBCADHE9D5",
+          "handle": "rider-picks",
+          "title": "SnowForce Rider Picks "
+        },
+        {
+          "id": "pcol_01M4F2KF18DPMX8H7CK1PBJDNX",
+          "handle": "sale-clearance",
+          "title": "Sale & Clearance"
+        },
+        {
+          "id": "pcol_01M4F2JMZTK8GVDBDDSA4YP0M4",
+          "handle": "member-exclusive",
+          "title": "Snow Force Member Exclusive Deals"
+        },
+        {
+          "id": "pcol_01M4F2HHP9EJ2GFN4FGK4FWN12",
+          "handle": "snow-gear",
+          "title": "Snow Gear"
+        },
+        {
+          "id": "pcol_01M4F2GQCEQDD9RRRDP5G8Y795",
+          "handle": "snow-apparel",
+          "title": "Snow Appare"
+        },
+        {
+          "id": "pcol_01M4F2F7GR7B2BHGEAMJY3J8JX",
+          "handle": "fuzzy-collection",
+          "title": "Fuzzy Collection"
+        },
+        {
+          "id": "pcol_01M4F2DZNEP6FD1QQ37W9AD0BB",
+          "handle": "winter-essentials",
+          "title": "Winter Essentials"
+        },
+        {
+          "id": "pcol_01M4F2CQXNJMNNXZ4RV2XGE7YC",
+          "handle": "bestsellers",
+          "title": "Bestsellers"
+        },
+        {
+          "id": "pcol_01M4F2B05W5Q6HRETQS238KPSM",
+          "handle": "new-arrivals",
+          "title": "New Arrivals"
+        }
+      ]
+    },
+    {
+      "path": "/store/products?limit=1",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "path": "/store/snowforce/promotions",
+      "status": 404,
+      "count": null
+    }
+  ]
+}

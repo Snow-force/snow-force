@@ -1,0 +1,53 @@
+{
+  "managementMode": true,
+  "localOnly": true,
+  "checks": [
+    {
+      "method": "GET",
+      "path": "/app",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/admin/products",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/hooks/payment/stripe_stripe",
+      "status": 400,
+      "managementBoundary": true
+    },
+    {
+      "email": "snowforceclub@gmail.com",
+      "action": "admin login",
+      "status": 200
+    },
+    {
+      "email": "snowforceclub@gmail.com",
+      "method": "GET",
+      "path": "/admin/products?limit=1",
+      "status": 200,
+      "count": 14
+    },
+    {
+      "email": "snowforceclub@gmail.com",
+      "method": "GET",
+      "path": "/admin/inventory-items?limit=1",
+      "status": 200,
+      "count": 0
+    },
+    {
+      "email": "snowforceclub@gmail.com",
+      "action": "payment capture disabled",
+      "status": 400,
+      "managementBoundary": true
+    },
+    {
+      "email": "taiyuanmei0824@gmail.com",
+      "action": "admin login",
+      "status": 401
+    }
+  ],
+  "passed": false
+}

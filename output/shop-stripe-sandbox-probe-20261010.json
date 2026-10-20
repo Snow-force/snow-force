@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-10-10T08:29:30.992Z",
+  "status": "stripe_side_probe_passed",
+  "receipt_screenshot": "output/shop-stripe-sandbox-refund-receipt-20261010.jpg",
+  "scope": "Actual Stripe Sandbox API and hosted Checkout browser payment with an official test card; connector-executed refunds. Standalone Stripe probe only, not Medusa/storefront end-to-end acceptance.",
+  "stripe_context": "acct_1ToZcNAbMQunT3pr",
+  "account_name": "Snow Force Club sandbox",
+  "livemode": false,
+  "checkout": {
+    "id": "cs_test_a1l2cjdq99XDliwJSbDOqi7vKlMd5mn9PJ3XvgiqWKjTs27Rm3eBiYgQ4H",
+    "status": "complete",
+    "payment_status": "paid",
+    "amount_total": 3153,
+    "currency": "usd"
+  },
+  "payment": {
+    "id": "pi_3UOvboAbMQunT3pr1AuxvpCu",
+    "status": "succeeded",
+    "amount": 3153,
+    "amount_received": 3153,
+    "amount_capturable": 0,
+    "capture_method": "automatic",
+    "charge_id": "ch_3UOvboAbMQunT3pr1eWAV50H",
+    "captured": true,
+    "refunded": true,
+    "amount_refunded": 3153
+  },
+  "refunds": [
+    {
+      "id": "re_3UOvboAbMQunT3pr1LUTH6i7",
+      "status": "succeeded",
+      "amount": 1052,
+      "currency": "usd",
+      "payment_intent": "pi_3UOvboAbMQunT3pr1AuxvpCu",
+      "created": 1791620827,
+      "metadata": {
+        "snowforce_probe_step": "1",
+        "snowforce_run": "20261010-refund-acceptance",
+        "snowforce_scope": "stripe_only_probe"
+      }
+    },
+    {
+      "id": "re_3UOvboAbMQunT3pr17czxfsM",
+      "status": "succeeded",
+      "amount": 1051,
+      "currency": "usd",
+      "payment_intent": "pi_3UOvboAbMQunT3pr1AuxvpCu",
+      "created": 1791620854,
+      "metadata": {
+        "snowforce_probe_step": "2",
+        "snowforce_run": "20261010-refund-acceptance",
+        "snowforce_scope": "stripe_only_probe"
+      }
+    },
+    {
+      "id": "re_3UOvboAbMQunT3pr1De6SaUj",
+      "status": "succeeded",
+      "amount": 1050,
+      "currency": "usd",
+      "payment_intent": "pi_3UOvboAbMQunT3pr1AuxvpCu",
+      "created": 1791620878,
+      "metadata": {
+        "snowforce_probe_step": "3",
+        "snowforce_run": "20261010-refund-acceptance",
+        "snowforce_scope": "stripe_only_probe"
+      }
+    }
+  ],
+  "expected_overrefund_rejection": {
+    "amount": 1,
+    "error_code": "INVALID_ARGUMENT",
+    "message": "Charge has already been refunded",
+    "final_amount_refunded": 3153
+  },
+  "limits": [
+    "Checkout used automatic capture; shop manual capture not verified in this probe",
+    "No Medusa order, stock, refund allocation, native ledger or tax reversal was exercised",
+    "No webhook delivery, app idempotency/recovery or after-sales admin acceptance verified",
+    "No live funds used; production collection remains disabled"
+  ]
+}

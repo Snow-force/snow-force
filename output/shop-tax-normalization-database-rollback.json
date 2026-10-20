@@ -1,0 +1,32 @@
+{
+  "kind": "real PostgreSQL transaction and native amount-engine verification with isolated merchant/Stripe/locking fixtures; not purchase E2E",
+  "role": "snowforce_commerce",
+  "tls_verified": true,
+  "native_graph_fields_accepted": 49,
+  "rounding_shipping_and_raw_values_match": true,
+  "retry_wrote_nothing": true,
+  "write_failure_rolled_back": true,
+  "lease_abort_rolled_back": true,
+  "empty_collection_preserved_and_link_retired": true,
+  "exact_money_stale_collection_retired_without_metadata_change": true,
+  "store_metadata_unchanged": true,
+  "all_fixture_rows_rolled_back": true,
+  "committed_business_writes": 0,
+  "isolated_sql_writes": 12,
+  "counts": {
+    "carts": "0",
+    "adjustments": "0",
+    "links": "0",
+    "collections": "0",
+    "sessions": "0",
+    "orders": "0",
+    "operations": "0",
+    "quotes": "0"
+  },
+  "stripe_readonly": {
+    "livemode": false,
+    "status": "pending",
+    "registrations": 0
+  },
+  "payment_gate_enabled": false
+}

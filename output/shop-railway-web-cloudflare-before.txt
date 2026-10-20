@@ -1,0 +1,460 @@
+Browser tab: 125114042, Title: "DNS | Records | snow-force.com | Snowforceclub@gmail.com's Account | Cloudflare", URL: "https://dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/records".
+0 AXWebArea DNS | Records | snow-force.com | Snowforceclub@gmail.com's Account | Cloudflare, URL: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/records
+	1 container
+		2 container react-app
+			3 container
+				4 link Description: Cloudflare home, Value: dash.cloudflare.com/
+				5 pop up button (collapsed) Description: Switch Account, ID: base-ui-:rn:, Secondary Actions: Expand
+					6 text Snowforceclub@gmail.com's Account
+					7 image
+				8 container
+					9 button Quick search...
+						10 image
+						61 text Quick search...
+						62 container
+							63 text Ctrl  K
+					11 link Description: Back to Domains, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/domains/overview
+					12 content list
+						13 link Description: Overview, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/
+						14 container
+							15 button (expanded) Description: Recents, Secondary Actions: Collapse
+								64 text Recents
+								16 image
+							17 content list
+								18 container
+									19 link Description: Records snow-force.com / DNS, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/records
+									20 checkbox Description: Pin, Value: 0, ID: base-ui-:r68:
+								21 container
+									22 link Description: snow-force.com Domains, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com
+									23 checkbox Description: Pin, Value: 0, ID: base-ui-:r6f:
+								24 container
+									25 link Description: Zero Trust Protect & connect, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/zero-trust/landing-page
+									26 checkbox Description: Pin, Value: 0, ID: base-ui-:r6m:
+								27 container
+									28 link Description: Members Manage account, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/members
+									29 checkbox Description: Pin, Value: 0, ID: base-ui-:r6t:
+						65 button (collapsed) AI Crawl Control, Secondary Actions: Expand
+							66 text AI Crawl Control
+							67 image
+						68 button (collapsed) Agent Readiness, Secondary Actions: Expand
+							69 text Agent Readiness
+							70 image
+						71 link Description: Analytics, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/analytics
+						30 button (collapsed) Observability New, Secondary Actions: Expand
+							72 image
+							73 text Observability
+							74 text New
+							32 image
+						75 container
+							76 button (expanded) DNS, Secondary Actions: Collapse
+								77 text DNS
+								78 image
+							79 content list
+								80 link Description: Records, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/records
+								81 link Description: Analytics, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/analytics
+								82 link Description: Settings, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/settings
+						33 button (collapsed) Email, Secondary Actions: Expand
+							83 text Email
+							34 image
+						84 button (collapsed) SSL/TLS, Secondary Actions: Expand
+							85 text SSL/TLS
+							86 image
+						87 button (collapsed) Security, Secondary Actions: Expand
+							88 text Security
+							89 image
+						90 link Description: Access, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/access
+						91 button (collapsed) Speed, Secondary Actions: Expand
+							92 text Speed
+							93 image
+						94 button (collapsed) Caching, Secondary Actions: Expand
+							95 text Caching
+							96 image
+						97 link Description: Workers Routes, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/workers
+						98 button (collapsed) Rules, Secondary Actions: Expand
+							99 text Rules
+							100 image
+						101 link Description: Error Pages New, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/error-pages
+						102 link Description: Network, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/network
+						103 button (collapsed) Traffic, Secondary Actions: Expand
+							104 text Traffic
+							105 image
+						35 link Description: Web3, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/web3
+						36 button (collapsed) Manage account, Secondary Actions: Expand
+							106 text Manage account
+							37 image
+				38 button (expanded) Description: Collapse sidebar, ID: base-ui-:r2:, Secondary Actions: Collapse
+			39 container
+				107 checkbox Description: Star domain, Value: 0, ID: base-ui-:r7c:
+					108 image
+				109 container base-ui-:r7e:
+					110 text snow-force.com
+					111 button free
+					112 image
+				42 button Ask AI
+					43 image
+					44 text Ask AI
+				45 link Description: Support, Value: dash.cloudflare.com/?to=/:account/support
+				46 pop up button (collapsed) Description: User menu, ID: base-ui-:r6:, Secondary Actions: Expand
+					47 image
+			113 container
+				114 heading DNS records for snow-force.com, Value: 1
+					115 text DNS records for snow-force.com
+				116 text Manage how the Internet finds your web content, verifies services, and routes traffic.
+				117 container base-ui-:r7i:
+					118 text DNS Setup : Full
+				119 link Description: DNS documentation, Value: developers.cloudflare.com/dns/get-started/
+			120 image
+			121 text Proxying is required for most security and performance features
+			122 container
+				123 text Set your DNS records to  proxied  by clicking "Edit" in the table below, to benefit from DDoS protection, security rules, caching, and more.
+			124 button Dismiss DNS proxy warning
+				125 image
+			126 button Collapse
+				127 text Recommendations
+				128 text 1
+				129 image
+			130 container
+				131 text Block fake emails sent from @snow-force.com addresses
+				132 link Description: Add a DMARC record, Value: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/email/dmarc-management
+				133 text  so your email provider can stop fake emails from reaching inboxes.
+			134 container
+				135 image
+				136 search text field (settable) Description: Search, ID: search
+			137 pop up button (collapsed) Filters, ID: base-ui-:r8o:, Secondary Actions: Expand
+				138 image
+				139 text Filters
+			140 pop up button (collapsed) Display options, ID: base-ui-:r8s:, Secondary Actions: Expand
+				141 image
+				142 text Display options
+			143 pop up button (collapsed) Import, ID: base-ui-:r8v:, Secondary Actions: Expand
+				144 image
+				145 text Import
+			146 pop up button (collapsed) Export, ID: base-ui-:r91:, Secondary Actions: Expand
+				147 image
+				148 text Export
+			149 button Add record
+				150 image
+				151 text Add record
+			152 container
+				153 text You have used  12 of 200  available DNS records in this domain.
+			154 table DNS records
+				155 row
+					156 cell
+						157 checkbox Description: Select All, Value: 0, ID: base-ui-:r92:
+					158 cell
+						159 text Name
+						160 button Sort by Name
+							161 image
+						162 button Resize Name column
+					163 cell
+						164 text Type
+						165 button Sort by Type
+							166 image
+					167 cell
+						168 text Content
+						169 button Sort by Content
+							170 image
+						171 button Resize Content column
+					172 cell
+						173 text Proxy status
+						174 button Sort by Proxy status
+							175 image
+					176 cell
+						177 text TTL
+						178 button Sort by TTL
+							179 image
+					180 cell
+						181 text Tags
+						182 button Resize Tags column
+					183 cell
+						184 text Comment
+						185 button Resize Comment column
+					186 cell
+						187 text Details
+						188 button Resize Details column
+				189 container
+					190 row
+						191 cell
+							192 checkbox Description: Select CNAME record with name autodiscover.snow-force.com, Value: 0, ID: base-ui-:rb6:
+						193 cell
+							194 container
+								195 text autodiscover . snow-force.com
+						196 cell
+							197 text CNAME
+						198 cell
+							199 text autodiscover.outlook.com
+						200 cell
+							201 text DNS only
+						202 cell
+							203 text Auto
+						204 cell
+							205 text —
+						206 cell
+							207 text —
+						208 cell
+							209 text —
+						210 cell
+							211 button (collapsed) Description: Edit CNAME record with name autodiscover.snow-force.com, Secondary Actions: Expand
+					212 row
+						213 cell
+							214 checkbox Description: Select CNAME record with name enterpriseenrollment.snow-force.com, Value: 0, ID: base-ui-:rb9:
+						215 cell
+							216 container
+								217 text enterpriseenrollment . snow-force.com
+						218 cell
+							219 text CNAME
+						220 cell
+							221 text enterpriseenrollment-s.manage.microsoft.com
+						222 cell
+							223 text DNS only
+						224 cell
+							225 text Auto
+						226 cell
+							227 text —
+						228 cell
+							229 text —
+						230 cell
+							231 text —
+						232 cell
+							233 button (collapsed) Description: Edit CNAME record with name enterpriseenrollment.snow-force.com, Secondary Actions: Expand
+					234 row
+						235 cell
+							236 checkbox Description: Select CNAME record with name enterpriseregistration.snow-force.com, Value: 0, ID: base-ui-:rbc:
+						237 cell
+							238 container
+								239 text enterpriseregistration . snow-force.com
+						240 cell
+							241 text CNAME
+						242 cell
+							243 text enterpriseregistration.windows.net
+						244 cell
+							245 text DNS only
+						246 cell
+							247 text Auto
+						248 cell
+							249 text —
+						250 cell
+							251 text —
+						252 cell
+							253 text —
+						254 cell
+							255 button (collapsed) Description: Edit CNAME record with name enterpriseregistration.snow-force.com, Secondary Actions: Expand
+					256 row
+						257 cell
+							258 checkbox Description: Select CNAME record with name pay.snow-force.com, Value: 0, ID: base-ui-:rbf:
+						259 cell
+							260 container
+								261 text pay . snow-force.com
+						262 cell
+							263 text CNAME
+						264 cell
+							265 text paylinks.commerce.godaddy.com
+						266 cell
+							267 text DNS only
+						268 cell
+							269 text Auto
+						270 cell
+							271 text —
+						272 cell
+							273 text —
+						274 cell
+							275 text —
+						276 cell
+							277 button (collapsed) Description: Edit CNAME record with name pay.snow-force.com, Secondary Actions: Expand
+					278 row
+						279 cell
+							280 checkbox Description: Select CNAME record with name snow-force.com, Value: 0, ID: base-ui-:rbi:
+						281 cell
+							282 button Description: Info, ID: base-ui-:rbm:
+								283 image
+						284 cell
+							285 text snow-force.com
+						286 cell
+							287 text CNAME
+						288 cell
+							289 text 2f583a945b1214e5.vercel-dns-017.com
+						290 cell
+							291 text DNS only
+						292 cell
+							293 text Auto
+						294 cell
+							295 text —
+						296 cell
+							297 text —
+						298 cell
+							299 text —
+						300 cell
+							301 button (collapsed) Description: Edit CNAME record with name snow-force.com, Secondary Actions: Expand
+					302 row
+						303 cell
+							304 checkbox Description: Select CNAME record with name www.snow-force.com, Value: 0, ID: base-ui-:rbn:
+						305 cell
+							306 container
+								307 text www . snow-force.com
+						308 cell
+							309 text CNAME
+						310 cell
+							311 text 2f583a945b1214e5.vercel-dns-017.com
+						312 cell
+							313 text DNS only
+						314 cell
+							315 text Auto
+						316 cell
+							317 text —
+						318 cell
+							319 text —
+						320 cell
+							321 text —
+						322 cell
+							323 button (collapsed) Description: Edit CNAME record with name www.snow-force.com, Secondary Actions: Expand
+					324 row
+						325 cell
+							326 checkbox Description: Select MX record with name send.notifications.snow-force.com, Value: 0, ID: base-ui-:rbq:
+						327 cell
+							328 container
+								329 text send.notifications . snow-force.com
+						330 cell
+							331 text MX
+						332 cell
+							333 text feedback-smtp.us-east-1.amazonses.com
+						334 cell
+							335 text DNS only
+						336 cell
+							337 text Auto
+						338 cell
+							339 text —
+						340 cell
+							341 text —
+						342 cell
+							343 container base-ui-:rc0:
+								344 image
+								345 text 10
+						346 cell
+							347 button (collapsed) Description: Edit MX record with name send.notifications.snow-force.com, Secondary Actions: Expand
+					348 row
+						349 cell
+							350 checkbox Description: Select MX record with name snow-force.com, Value: 0, ID: base-ui-:rc1:
+						351 cell
+							352 text snow-force.com
+						353 cell
+							354 text MX
+						355 cell
+							356 text snowforce-com01b.mail.protection.outlook.com
+						357 cell
+							358 text DNS only
+						359 cell
+							360 text Auto
+						361 cell
+							362 text —
+						363 cell
+							364 text —
+						365 cell
+							366 container base-ui-:rc7:
+								367 image
+								368 text 0
+						369 cell
+							370 button (collapsed) Description: Edit MX record with name snow-force.com, Secondary Actions: Expand
+					371 row
+						372 cell
+							373 checkbox Description: Select TXT record with name dc-fd741b8612._spfm.send.notifications.snow-force.com, Value: 0, ID: base-ui-:rc8:
+						374 cell
+							375 container
+								376 text dc-fd741b8612._spfm.send.notifications . snow-force.com
+						377 cell
+							378 text TXT
+						379 cell
+							380 text "v=spf1 include:amazonses.com ~all"
+						381 cell
+							382 text DNS only
+						383 cell
+							384 text Auto
+						385 cell
+							386 text —
+						387 cell
+							388 text —
+						389 cell
+							390 text —
+						391 cell
+							392 button (collapsed) Description: Edit TXT record with name dc-fd741b8612._spfm.send.notifications.snow-force.com, Secondary Actions: Expand
+					393 row
+						394 cell
+							395 checkbox Description: Select TXT record with name resend._domainkey.notifications.snow-force.com, Value: 0, ID: base-ui-:rcd:
+						396 cell
+							397 container
+								398 text resend._domainkey.notifications . snow-force.com
+						399 cell
+							400 text TXT
+						401 cell
+							402 text "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDAYa9Hxd+o7DfCMgKskJUVXu37dss8zXA7ub3Gyaym0pnygAMwhFXuxT9I9LS4LvcWrHl2VTyIonJgJjehP8e2GlX+lC4t8ats0OOzFscgY+aMfDOBhzOD52dtrvE11vaDQT3326cySzYkkgSY5TQ9rtkLUojryptjF93Rtzh3ZwIDAQAB"
+						403 cell
+							404 text DNS only
+						405 cell
+							406 text Auto
+						407 cell
+							408 text —
+						409 cell
+							410 text —
+						411 cell
+							412 text —
+						413 cell
+							414 button (collapsed) Description: Edit TXT record with name resend._domainkey.notifications.snow-force.com, Secondary Actions: Expand
+					415 row
+						416 cell
+							417 checkbox Description: Select TXT record with name send.notifications.snow-force.com, Value: 0, ID: base-ui-:rci:
+						418 cell
+							419 container
+								420 text send.notifications . snow-force.com
+						421 cell
+							422 text TXT
+						423 cell
+							424 text "v=spf1 include:dc-fd741b8612._spfm.send.notifications.snow-force.com ~all"
+						425 cell
+							426 text DNS only
+						427 cell
+							428 text Auto
+						429 cell
+							430 text —
+						431 cell
+							432 text —
+						433 cell
+							434 text —
+						435 cell
+							436 button (collapsed) Description: Edit TXT record with name send.notifications.snow-force.com, Secondary Actions: Expand
+					437 row
+						438 cell
+							439 checkbox Description: Select TXT record with name snow-force.com, Value: 0, ID: base-ui-:rcn:
+						440 cell
+							441 text snow-force.com
+						442 cell
+							443 text TXT
+						444 cell
+							445 text "v=spf1 include:spf.protection.outlook.com -all"
+						446 cell
+							447 text DNS only
+						448 cell
+							449 text Auto
+						450 cell
+							451 text —
+						452 cell
+							453 text —
+						454 cell
+							455 text —
+						456 cell
+							457 button (collapsed) Description: Edit TXT record with name snow-force.com, Secondary Actions: Expand
+			458 container
+				459 text Showing  1-12  of 12
+			48 content list
+				49 link Description: Support, Value: support.cloudflare.com/
+				50 link Description: System Status, Value: cloudflarestatus.com/
+				51 link Description: Careers, Value: cloudflare.com/careers/
+				52 link Description: Terms of Use, Value: cloudflare.com/website-terms/
+				53 link Description: Report Security Issues, Value: cloudflare.com/disclosure/
+				54 link Description: Privacy Policy, Value: cloudflare.com/privacypolicy/
+				55 button A blue and white pill with a checkmark and an x, representing privacy choices Your Privacy Choices, ID: ot-sdk-btn
+					56 image A blue and white pill with a checkmark and an x, representing privacy choices
+					57 text Your Privacy Choices
+				58 container
+					59 text ©  2026  Cloudflare, Inc.
+		60 container Notifications
+
+The focused UI element is 0 AXWebArea DNS | Records | snow-force.com | Snowforceclub@gmail.com's Account | Cloudflare, URL: dash.cloudflare.com/15e07c01302161e269733a000bde761e/snow-force.com/dns/records

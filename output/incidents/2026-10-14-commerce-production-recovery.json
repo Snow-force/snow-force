@@ -1,0 +1,40 @@
+{
+  "verifiedAt": "2026-10-15T06:38:46.553Z",
+  "sourceProject": "bhmwxkynhyhquspiyact",
+  "schema": "commerce",
+  "productionWrites": 0,
+  "transportTLS": "verify-full",
+  "backupCipher": "AES-256-GCM",
+  "keyProtection": "Windows DPAPI CurrentUser",
+  "protectedKeyRecoveredFromDisk": true,
+  "authenticatedBeforeRestore": true,
+  "tablesVerified": 169,
+  "totalRows": 2686,
+  "everyTableCountAndDataDigestMatched": true,
+  "readBackAsApplicationRole": "snowforce_commerce",
+  "extensions": [
+    {
+      "extname": "pg_trgm",
+      "extversion": "1.6",
+      "schema": "commerce"
+    },
+    {
+      "extname": "unaccent",
+      "extversion": "1.1",
+      "schema": "commerce"
+    }
+  ],
+  "restoreTarget": "isolated local Postgres 127.0.0.1:55435",
+  "restoreDatabase": "commerce_recovery_20261014_b12eb1bc",
+  "encryptedBackupDirectory": "C:\\Users\\123\\OneDrive\\Project\\snow-force\\.data\\commerce-production-recovery-20261014-e856a2a6",
+  "encryptedBytes": 660993,
+  "sha256": "eb51dd6a2d7edcec7f38fa29596a656884e76f704c629342752aceebe8f83027",
+  "supabaseAuthPublicSchemaAndStorageIncluded": false,
+  "automaticOffsiteBackupsConfigured": false,
+  "limitations": [
+    "The encrypted backup key requires this Windows user profile",
+    "This is a commerce-schema recovery, not Supabase Auth/public schema or object-storage recovery"
+  ],
+  "plaintextRestoreCopiesRemovedAt": "2026-10-15T06:51:23.701Z",
+  "plaintextRestoreCopiesRetained": false
+}

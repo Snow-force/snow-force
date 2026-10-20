@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-10-09T04:47:28.664Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback database; actual native payment module; fixture provider; no live Stripe or production mutations",
+  "checks": [
+    "actual reviewed invoker trigger passes startup validation",
+    "native partial, zero and sub-cent captures reject before provider calls and roll back records",
+    "native full capture and completed retry produce one provider call and one full record",
+    "concurrent native requests produce one provider call and one full record",
+    "native provider failure removes provisional record and permits a full retry",
+    "unrelated native payment providers retain partial capture behavior",
+    "direct writes cannot change amounts, reassign captures or add a second active capture",
+    "disabled database protection fails sales startup validation",
+    "private trigger function is unavailable to public application roles"
+  ]
+}

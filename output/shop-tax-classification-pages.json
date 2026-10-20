@@ -1,0 +1,22 @@
+[
+  {
+    "url": "http://127.0.0.1:3100/shop",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:3100/shop/checkout",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:3100/shop/policies",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:9000/health",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:9000/app/snowforce-tax",
+    "status": 200
+  }
+]

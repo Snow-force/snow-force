@@ -1,0 +1,58 @@
+{
+  "verified_at": "2026-10-02T22:11:14.758Z",
+  "http": [
+    {
+      "path": "/shop",
+      "status": 200
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200
+    },
+    {
+      "path": "/shop/checkout",
+      "status": 200
+    },
+    {
+      "path": "/member/orders",
+      "status": 200,
+      "anonymous_login_fields": true
+    },
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/app/login",
+      "status": 200
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_missing",
+      "method": "POST",
+      "store_key": false,
+      "customer_token": false,
+      "status": 400
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_missing",
+      "method": "POST",
+      "store_key": true,
+      "customer_token": false,
+      "status": 401
+    }
+  ],
+  "actual_stripe": {
+    "livemode": false,
+    "settings_status": "pending",
+    "registrations": 0,
+    "api_ready": false,
+    "policy_flag": false
+  },
+  "actual_catalog": [
+    {
+      "status": "draft",
+      "count": 14
+    }
+  ],
+  "actual_orders": 0
+}

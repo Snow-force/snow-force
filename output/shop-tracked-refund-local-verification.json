@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-10T00:02:06.176Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "scope": "disposable loopback PostgreSQL; actual Medusa refund/order APIs and private-role SQL; fixture provider proofs and original sale; no real Stripe HTTP or production changes",
+  "checks": [
+    "completed first refund passes both private-role application checks and actual database invoker checks; incomplete cash state was rejected",
+    "actual second original-price refund freezes after first completed cash, tax and native order debit; next rounding amount is 1051 cents",
+    "settled raw order debit changes are rejected at mutation time before they can affect continuation",
+    "settled native refund removal is rejected at mutation time before it can orphan funds evidence",
+    "continuation invoker retains no browser/service-role execute grants and the original immutable receipt/allocation guard remains installed"
+  ]
+}

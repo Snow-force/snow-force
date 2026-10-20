@@ -1,0 +1,34 @@
+{
+  "verified_at": "2026-10-02T15:44:19.350Z",
+  "checks": [
+    {
+      "url": "http://127.0.0.1:9000/health",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9000/app/snowforce-tax-setup",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9000/admin/snowforce/tax/setup",
+      "status": 401
+    },
+    {
+      "url": "http://127.0.0.1:3100/shop",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3100/shop/checkout",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3100/shop/policies",
+      "status": 200
+    }
+  ],
+  "authenticated_browser_visual_check": false,
+  "store_catalog": {
+    "status": 200,
+    "published_product_count": 0
+  }
+}

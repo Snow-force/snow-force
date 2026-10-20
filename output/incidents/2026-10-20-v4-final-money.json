@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-20T19:07:40.166Z",
+  "sandboxAccountVerified": true,
+  "testCases": 2,
+  "testIntentStatuses": [
+    "canceled",
+    "canceled"
+  ],
+  "nativeOrders": 2,
+  "nativeOrderStatuses": [
+    "canceled",
+    "canceled"
+  ],
+  "nativeSessionRecords": 2,
+  "receivedCents": 0,
+  "capturableCents": 0,
+  "captureCalls": 0,
+  "financialAndRecoveryRecordsPreserved": true,
+  "duplicateOrders": false,
+  "productionFinancialActions": 0
+}

@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-10-09T04:21:09.503Z",
+  "mode": "read-only local fixture; no transactions",
+  "checks": [
+    "Eight desktop sections",
+    "Multi-column hierarchy",
+    "Escape closes and restores keyboard focus",
+    "Parent category includes assigned descendants only",
+    "Native brand page scope",
+    "Sale collection and real variant markdown",
+    "Backend category appears on next request without rebuild",
+    "Mobile disclosure without horizontal overflow"
+  ],
+  "errors": []
+}

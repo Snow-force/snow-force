@@ -1,0 +1,42 @@
+{
+  "revision": "aa4ad8fa71b25c886336a55fbe9ca6585f1c4c4b",
+  "sampleCount": 1,
+  "oldAddMs": 8240,
+  "newAddMs": 7077,
+  "measure": "Railway web HTTP request duration; before and after one sample each, not a controlled p95 estimate",
+  "concurrentReads": [
+    {
+      "name": "GET /store/carts/*",
+      "startOffsetMs": 0,
+      "durationMs": 437
+    },
+    {
+      "name": "GET /store/regions",
+      "startOffsetMs": 1,
+      "durationMs": 165
+    },
+    {
+      "name": "GET /store/products",
+      "startOffsetMs": 167,
+      "durationMs": 504
+    }
+  ],
+  "nativeRequests": [
+    {
+      "name": "POST /store/snowforce/checkout/*/edit",
+      "durationMs": 942
+    },
+    {
+      "name": "POST /store/carts/*/line-items",
+      "durationMs": 4358
+    }
+  ],
+  "traceId": "921d05cbf76a907dd9ea3b5a442e1cba",
+  "feedback": "Formal browser opened the cart immediately, retained quantity 1 while pending, and showed quantity 2 only on success",
+  "originalQuantityRestored": true,
+  "productionFinancialWrites": 0,
+  "targetMet": false,
+  "refreshRetainsOriginalQuantity": true,
+  "liveScreenshot": "plan-v1-cart-live-immediate-feedback.png",
+  "restoredScreenshot": "plan-v1-cart-live-restored.png"
+}

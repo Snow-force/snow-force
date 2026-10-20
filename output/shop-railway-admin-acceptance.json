@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-10-04T05:40:50.025Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "adminEmail": "snowforceclub@gmail.com",
+  "adminLogin": true,
+  "existingProductCount": 14,
+  "existingDraftCount": 14,
+  "productId": "prod_01M42PVM0MM2W6GZE9BZ8Y0XAP",
+  "uploadId": "products/snowforce-deployment-acceptance-1791092444427-01M42PVKBJXPXEEG2KD5HKDM35.webp",
+  "imageUrl": "https://bhmwxkynhyhquspiyact.supabase.co/storage/v1/object/public/shop-products/products/snowforce-deployment-acceptance-1791092444427-01M42PVKBJXPXEEG2KD5HKDM35.webp",
+  "locationId": "sloc_01M3V8ZR6505EY8B9H7Z4CWF3S",
+  "sku": "SF-DEPLOY-ACCEPTANCE-1791092444427",
+  "inventoryItemId": "iitem_01M42PVPE5VJCK6AN012K1W6XB",
+  "saved": {
+    "draft": true,
+    "usdPrice": true,
+    "inventory": true,
+    "s3Image": true
+  },
+  "afterBackendRestart": {
+    "price": true,
+    "inventory": true,
+    "image": true,
+    "draft": true
+  },
+  "cleanup": {
+    "product": true,
+    "inventory": true,
+    "upload": true
+  },
+  "checkedAt": "2026-10-04T05:44:29.209Z"
+}

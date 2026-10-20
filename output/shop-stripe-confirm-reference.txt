@@ -1,0 +1,545 @@
+
+  # Confirm a PaymentIntent                                                                                                               
+                                                                                                                                          
+  ## Start here: Integrate with Stripe using skills and plugins                                                                           
+                                                                                                                                          
+  Stripe provides skills and plugins for agents to build faster and more accurately. See ]8;id=3531550973;https://docs.stripe.com/skills.mdAgent skills]8;; ]8;id=3531550973;https://docs.stripe.com/skills.mdhttps://docs.stripe.com/skills.md]8;;   
+  for more information.                                                                                                                   
+                                                                                                                                          
+  **Quickstart**: Install the Stripe CLI with npm install -g @stripe/cli and run stripe agent setup.                                      
+                                                                                                                                          
+  | Nested parameters, fields, and event types on API reference pages are collapsed by default. Use the provided ?query=<name> links to   
+  | show the full definitions. Request the page with an empty ?query= to expand every entry at once.                                      
+                                                                                                                                          
+  Confirm that your customer intends to pay with current or provided payment method. Upon confirmation, the PaymentIntent will attempt to 
+  initiate a payment.                                                                                                                     
+                                                                                                                                          
+  If the selected payment method requires additional authentication steps, the PaymentIntent will transition to the requires_action status
+  and suggest additional actions via next_action. If payment fails, the PaymentIntent transitions to the requires_payment_method status or
+  the canceled status if the confirmation limit is reached.  If payment succeeds, the PaymentIntent will transition to the succeeded      
+  status (or requires_capture, if capture_method is set to manual).                                                                       
+                                                                                                                                          
+  If the confirmation_method is automatic, payment may be attempted using our ]8;id=778797965;https://docs.stripe.com/stripe-js/reference.md#stripe-handle-card-paymentclient SDKs]8;; ]8;id=778797965;https://docs.stripe.com/stripe-js/reference.md#stripe-handle-card-paymenthttps://docs.stripe.com/stripe-]8;;                 
+  ]8;id=778797965;https://docs.stripe.com/stripe-js/reference.md#stripe-handle-card-paymentjs/reference.md#stripe-handle-card-payment]8;; and the PaymentIntent’s ]8;id=3758666842;https://docs.stripe.com/api/payment_intents/confirm.md#payment_intent_object-client_secretclient_]8;;]8;id=3758666842;https://docs.stripe.com/api/payment_intents/confirm.md#payment_intent_object-client_secretsecret]8;;                                                        
+  ]8;id=3758666842;https://docs.stripe.com/api/payment_intents/confirm.md#payment_intent_object-client_secrethttps://docs.stripe.com/api/payment_intents/confirm.md#payment_intent_object-client_secret]8;;. After next_actions are handled by the       
+  client, no additional confirmation is required to complete the payment.                                                                 
+                                                                                                                                          
+  If the confirmation_method is manual, all payment attempts must be initiated using a secret key.                                        
+                                                                                                                                          
+  If any actions are required for the payment, the PaymentIntent will return to the requires_confirmation state after those actions are   
+  completed. Your server needs to then explicitly re-confirm the PaymentIntent to initiate the next payment attempt.                      
+                                                                                                                                          
+  There is a variable upper limit on how many times a PaymentIntent can be confirmed. After this limit is reached, any further calls to   
+  this endpoint will transition the PaymentIntent to the canceled state.                                                                  
+                                                                                                                                          
+  ## Prerequisites                                                                                                                        
+                                                                                                                                          
+  Before you can run the following code snippet, you need to call these APIs with the provided parameters to set up the prerequisite API  
+  object(s).                                                                                                                              
+                                                                                                                                          
+  1. createPaymentIntent                                                                                                                  
+  POST /v1/payment_intents {"amount":2000,"currency":"usd","automatic_payment_methods":{"enabled":true}}                                  
+                                                                                                                                          
+  ## Request                                                                                                                              
+                                                                                                                                          
+    curl https://api.stripe.com/v1/payment_intents/{{PAYMENT_INTENT_ID}}/confirm \                                                        
+      -u "<<YOUR_SECRET_KEY>>" \                                                                                                          
+      -d payment_method=pm_card_visa \                                                                                                    
+      --data-urlencode "return_url=https://www.example.com"                                                                               
+                                                                                                                                          
+  ### Response                                                                                                                            
+                                                                                                                                          
+    {                                                                                                                                     
+      "id": "pi_3MtweELkdIwHu7ix0Dt0gF2H",                                                                                                
+      "object": "payment_intent",                                                                                                         
+      "amount": 2000,                                                                                                                     
+      "amount_capturable": 0,                                                                                                             
+      "amount_details": {                                                                                                                 
+        "tip": {}                                                                                                                         
+      },                                                                                                                                  
+      "amount_received": 2000,                                                                                                            
+      "application": null,                                                                                                                
+      "application_fee_amount": null,                                                                                                     
+      "automatic_payment_methods": {                                                                                                      
+        "enabled": true                                                                                                                   
+      },                                                                                                                                  
+      "canceled_at": null,                                                                                                                
+      "cancellation_reason": null,                                                                                                        
+      "capture_method": "automatic",                                                                                                      
+      "client_secret": "pi_3MtweELkdIwHu7ix0Dt0gF2H_secret_ALlpPMIZse0ac8YzPxkMkFgGC",                                                    
+      "confirmation_method": "automatic",                                                                                                 
+      "created": 1680802258,                                                                                                              
+      "currency": "usd",                                                                                                                  
+      "customer": null,                                                                                                                   
+      "description": null,                                                                                                                
+      "last_payment_error": null,                                                                                                         
+      "latest_charge": "ch_3MtweELkdIwHu7ix05lnLAFd",                                                                                     
+      "livemode": false,                                                                                                                  
+      "metadata": {},                                                                                                                     
+      "next_action": null,                                                                                                                
+      "on_behalf_of": null,                                                                                                               
+      "payment_method": "pm_1MtweELkdIwHu7ixxrsejPtG",                                                                                    
+      "payment_method_options": {                                                                                                         
+        "card": {                                                                                                                         
+          "installments": null,                                                                                                           
+          "mandate_options": null,                                                                                                        
+          "network": null,                                                                                                                
+          "request_three_d_secure": "automatic"                                                                                           
+        },                                                                                                                                
+        "link": {                                                                                                                         
+          "persistent_token": null                                                                                                        
+        }                                                                                                                                 
+      },                                                                                                                                  
+      "payment_method_types": [                                                                                                           
+        "card",                                                                                                                           
+        "link"                                                                                                                            
+      ],                                                                                                                                  
+      "processing": null,                                                                                                                 
+      "receipt_email": null,                                                                                                              
+      "review": null,                                                                                                                     
+      "setup_future_usage": null,                                                                                                         
+      "shipping": null,                                                                                                                   
+      "source": null,                                                                                                                     
+      "statement_descriptor": null,                                                                                                       
+      "statement_descriptor_suffix": null,                                                                                                
+      "status": "succeeded",                                                                                                              
+      "transfer_data": null,                                                                                                              
+      "transfer_group": null                                                                                                              
+    }                                                                                                                                     
+                                                                                                                                          
+  ## Parameters                                                                                                                           
+                                                                                                                                          
+  • allowed_payment_method_types (array of enums, optional)                                                                               
+  The list of payment method types allowed for use with this payment. Stripe automatically returns compatible payment methods from this   
+  list in the payment_method_types field of the response, based on the other PaymentIntent parameters, such as currency, amount, and      
+  customer.                                                                                                                               
+  Possible enum values:                                                                                                                   
+      • acss_debit                                                                                                                        
+      ]8;id=1747100636;https://docs.stripe.com/payments/acss-debit.mdPre-authorized debit payments]8;; ]8;id=1747100636;https://docs.stripe.com/payments/acss-debit.mdhttps://docs.stripe.com/payments/acss-debit.md]8;; are used to debit Canadian bank accounts through the   
+      Automated Clearing Settlement System (ACSS).                                                                                        
+      • affirm                                                                                                                            
+      ]8;id=4171213470;https://docs.stripe.com/payments/affirm.mdAffirm]8;; ]8;id=4171213470;https://docs.stripe.com/payments/affirm.mdhttps://docs.stripe.com/payments/affirm.md]8;; is a buy now, pay later payment method in the US.                                 
+      • afterpay_clearpay                                                                                                                 
+      ]8;id=3883471581;https://docs.stripe.com/payments/afterpay-clearpay.mdAfterpay / Clearpay]8;; ]8;id=3883471581;https://docs.stripe.com/payments/afterpay-clearpay.mdhttps://docs.stripe.com/payments/afterpay-clearpay.md]8;; is a buy now, pay later payment method used in Australia, 
+      Canada, France, New Zealand, Spain, the UK, and the US.                                                                             
+      • alipay                                                                                                                            
+      ]8;id=2850940413;https://docs.stripe.com/payments/alipay.mdAlipay]8;; ]8;id=2850940413;https://docs.stripe.com/payments/alipay.mdhttps://docs.stripe.com/payments/alipay.md]8;; is a digital wallet payment method used in China.                                 
+      • alma                                                                                                                              
+      ]8;id=2441595246;https://docs.stripe.com/payments/alma.mdAlma]8;; ]8;id=2441595246;https://docs.stripe.com/payments/alma.mdhttps://docs.stripe.com/payments/alma.md]8;; is a Buy Now, Pay Later payment method that lets customers pay in 2, 3, or 4          
+      installments.                                                                                                                       
+      • amazon_pay                                                                                                                        
+      ]8;id=3711425790;https://docs.stripe.com/payments/amazon-pay.mdAmazon Pay]8;; ]8;id=3711425790;https://docs.stripe.com/payments/amazon-pay.mdhttps://docs.stripe.com/payments/amazon-pay.md]8;; is a Wallet payment method that lets hundreds of millions of Amazon       
+      customers pay their way, every day.                                                                                                 
+      • au_becs_debit                                                                                                                     
+      ]8;id=1294436692;https://docs.stripe.com/payments/au-becs-debit.mdBECS Direct Debit]8;; ]8;id=1294436692;https://docs.stripe.com/payments/au-becs-debit.mdhttps://docs.stripe.com/payments/au-becs-debit.md]8;; is used to debit Australian bank accounts through the Bulk      
+      Electronic Clearing System (BECS).                                                                                                  
+      • bacs_debit                                                                                                                        
+      ]8;id=711066929;https://docs.stripe.com/payments/payment-methods/bacs-debit.mdBacs Direct Debit]8;; ]8;id=711066929;https://docs.stripe.com/payments/payment-methods/bacs-debit.mdhttps://docs.stripe.com/payments/payment-methods/bacs-debit.md]8;; is used to debit UK bank accounts.                 
+      • bancontact                                                                                                                        
+      ]8;id=3302234866;https://docs.stripe.com/payments/bancontact.mdBancontact]8;; ]8;id=3302234866;https://docs.stripe.com/payments/bancontact.mdhttps://docs.stripe.com/payments/bancontact.md]8;; is a bank redirect payment method used in Belgium.                        
+      • billie                                                                                                                            
+      ]8;id=1247968262;https://docs.stripe.com/payments/billie.mdBillie]8;; ]8;id=1247968262;https://docs.stripe.com/payments/billie.mdhttps://docs.stripe.com/payments/billie.md]8;; is a payment method.                                                              
+      • bizum                                                                                                                             
+      ]8;id=2924827554;https://docs.stripe.com/payments/bizum.mdBizum]8;; ]8;id=2924827554;https://docs.stripe.com/payments/bizum.mdhttps://docs.stripe.com/payments/bizum.md]8;; is a payment method.                                                                
+      • blik                                                                                                                              
+      ]8;id=2975899557;https://docs.stripe.com/payments/blik.mdBLIK]8;; ]8;id=2975899557;https://docs.stripe.com/payments/blik.mdhttps://docs.stripe.com/payments/blik.md]8;; is a single-use payment method common in Poland.                                      
+      • boku_promptpay                                                                                                                    
+      PromptPay is a payment method.                                                                                                      
+      • boleto                                                                                                                            
+      ]8;id=1942270420;https://docs.stripe.com/payments/boleto.mdBoleto]8;; ]8;id=1942270420;https://docs.stripe.com/payments/boleto.mdhttps://docs.stripe.com/payments/boleto.md]8;; is a voucher-based payment method used in Brazil.                                 
+      • capchase_pay                                                                                                                      
+      CapchasePay is a payment method.                                                                                                    
+      • card                                                                                                                              
+      ]8;id=2078261864;https://docs.stripe.com/payments/payment-methods/overview.md#cardsCard payments]8;; ]8;id=2078261864;https://docs.stripe.com/payments/payment-methods/overview.md#cardshttps://docs.stripe.com/payments/payment-methods/overview.md#cards]8;; are supported through many networks, card brands,  
+      and select Link funding sources (Link is also known as Onelink in the UK).                                                          
+      • card_present                                                                                                                      
+      ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdStripe Terminal]8;; ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdhttps://docs.stripe.com/terminal/payments/collect-card-payment.md]8;; is used to collect in-person card payments.       
+      • cashapp                                                                                                                           
+      ]8;id=3910817621;https://docs.stripe.com/payments/cash-app-pay.mdCash App Pay]8;; ]8;id=3910817621;https://docs.stripe.com/payments/cash-app-pay.mdhttps://docs.stripe.com/payments/cash-app-pay.md]8;; enables customers to frictionlessly authenticate payments in the Cash 
+      App using their stored balance or linked card.                                                                                      
+      • check_scan                                                                                                                        
+      CheckScan is a payment method.                                                                                                      
+      • click_to_pay                                                                                                                      
+      ClickToPay is a payment method.                                                                                                     
+      • crypto                                                                                                                            
+      ]8;id=2135679789;https://docs.stripe.com/payments/stablecoin-payments.mdStablecoin payments]8;; ]8;id=2135679789;https://docs.stripe.com/payments/stablecoin-payments.mdhttps://docs.stripe.com/payments/stablecoin-payments.md]8;; enable customers to pay in stablecoins like USDC from   
+      100s of wallets including Phantom and Metamask.                                                                                     
+      • customer_balance                                                                                                                  
+      Uses a customer’s ]8;id=2846806904;https://docs.stripe.com/payments/customer-balance.mdcash balance]8;; ]8;id=2846806904;https://docs.stripe.com/payments/customer-balance.mdhttps://docs.stripe.com/payments/customer-balance.md]8;; for the payment.                                
+      • demo_pay                                                                                                                          
+      DemoPay is a payment method.                                                                                                        
+      • duitnow                                                                                                                           
+      Duitnow is a payment method.                                                                                                        
+      • dummy_auth_push                                                                                                                   
+      Dummy auth push payment method for internal testing.                                                                                
+      • dummy_passthrough_card                                                                                                            
+      Dummy auth push payment method for internal testing.                                                                                
+      • edenred                                                                                                                           
+      ]8;id=2876664360;https://docs.stripe.com/payments/edenred.mdEdenred]8;; ]8;id=2876664360;https://docs.stripe.com/payments/edenred.mdhttps://docs.stripe.com/payments/edenred.md]8;; is a payment method.                                                            
+      • eps                                                                                                                               
+      ]8;id=2822653845;https://docs.stripe.com/payments/eps.mdEPS]8;; ]8;id=2822653845;https://docs.stripe.com/payments/eps.mdhttps://docs.stripe.com/payments/eps.md]8;; is an Austria-based bank redirect payment method.                                       
+      • fpx                                                                                                                               
+      ]8;id=234056101;https://docs.stripe.com/payments/fpx.mdFPX]8;; ]8;id=234056101;https://docs.stripe.com/payments/fpx.mdhttps://docs.stripe.com/payments/fpx.md]8;; is a Malaysia-based bank redirect payment method.                                       
+      • gcash                                                                                                                             
+      GCash is a payment method.                                                                                                          
+      • getbalance                                                                                                                        
+      ]8;id=3904466995;https://docs.stripe.com/payments/getbalance.mdGetbalance]8;; ]8;id=3904466995;https://docs.stripe.com/payments/getbalance.mdhttps://docs.stripe.com/payments/getbalance.md]8;; is a payment method.                                                      
+      • gift_card                                                                                                                         
+      Gift card is a payment method for redeeming third-party gift cards.                                                                 
+      • giropay                                                                                                                           
+      ]8;id=3713713498;https://docs.stripe.com/payments/giropay.mdgiropay]8;; ]8;id=3713713498;https://docs.stripe.com/payments/giropay.mdhttps://docs.stripe.com/payments/giropay.md]8;; is a German bank redirect payment method.                                       
+      • gopay                                                                                                                             
+      Gopay is a payment method.                                                                                                          
+      • grabpay                                                                                                                           
+      ]8;id=4193234527;https://docs.stripe.com/payments/grabpay.mdGrabPay]8;; ]8;id=4193234527;https://docs.stripe.com/payments/grabpay.mdhttps://docs.stripe.com/payments/grabpay.md]8;; is a digital wallet payment method used in Southeast Asia.                      
+      • id_bank_transfer                                                                                                                  
+      ]8;id=2884628053;https://docs.stripe.com/payments/id-bank-transfer.mdIndonesia bank transfer]8;; ]8;id=2884628053;https://docs.stripe.com/payments/id-bank-transfer.mdhttps://docs.stripe.com/payments/id-bank-transfer.md]8;; payments are used to accept bank transfers from        
+      customers in Indonesia.                                                                                                             
+      • ideal                                                                                                                             
+      ]8;id=1858192016;https://docs.stripe.com/payments/ideal.mdiDEAL]8;; ]8;id=1858192016;https://docs.stripe.com/payments/ideal.mdhttps://docs.stripe.com/payments/ideal.md]8;; is a Netherlands-based bank redirect payment method.                                
+      • interac_present                                                                                                                   
+      ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdStripe Terminal]8;; ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdhttps://docs.stripe.com/terminal/payments/collect-card-payment.md]8;; accepts ]8;id=3915029097;https://docs.stripe.com/terminal/payments/regional.md?integration-country=CA#interac-paymentsInterac]8;; ]8;id=3915029097;https://docs.stripe.com/terminal/payments/regional.md?integration-country=CA#interac-paymentshttps://docs.stripe.]8;;              
+      ]8;id=3915029097;https://docs.stripe.com/terminal/payments/regional.md?integration-country=CA#interac-paymentscom/terminal/payments/regional.md?integration-country=CA#interac-payments]8;; debit cards for in-person payments in Canada.             
+      • kakao_pay                                                                                                                         
+      ]8;id=916819977;https://docs.stripe.com/payments/kakao-pay/accept-a-payment.mdKakao Pay]8;; ]8;id=916819977;https://docs.stripe.com/payments/kakao-pay/accept-a-payment.mdhttps://docs.stripe.com/payments/kakao-pay/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.    
+      • klarna                                                                                                                            
+      ]8;id=399825356;https://docs.stripe.com/payments/klarna.mdKlarna]8;; ]8;id=399825356;https://docs.stripe.com/payments/klarna.mdhttps://docs.stripe.com/payments/klarna.md]8;; is a global buy now, pay later payment method.                                    
+      • knet                                                                                                                              
+      KNET is a bank redirect payment method used in Kuwait.                                                                              
+      • konbini                                                                                                                           
+      ]8;id=4048743415;https://docs.stripe.com/payments/konbini.mdKonbini]8;; ]8;id=4048743415;https://docs.stripe.com/payments/konbini.mdhttps://docs.stripe.com/payments/konbini.md]8;; is a cash-based voucher payment method used in Japan.                           
+      • kr_card                                                                                                                           
+      ]8;id=1463556653;https://docs.stripe.com/payments/kr-card/accept-a-payment.mdKorean cards]8;; ]8;id=1463556653;https://docs.stripe.com/payments/kr-card/accept-a-payment.mdhttps://docs.stripe.com/payments/kr-card/accept-a-payment.md]8;; enables customers to accept local credit and debit cards  
+      in South Korea.                                                                                                                     
+      • kr_market                                                                                                                         
+      KrMarket is a payment method.                                                                                                       
+      • kriya                                                                                                                             
+      Kriya is a payment method.                                                                                                          
+      • line_pay                                                                                                                          
+      LINE Pay is a Thai mobile wallet payment method.                                                                                    
+      • link                                                                                                                              
+      ]8;id=2032753955;https://docs.stripe.com/payments/link.mdLink (also known as Onelink in the UK)]8;; ]8;id=2032753955;https://docs.stripe.com/payments/link.mdhttps://docs.stripe.com/payments/link.md]8;; allows customers to pay with their saved payment    
+      details.                                                                                                                            
+      • mb_way                                                                                                                            
+      MB WAY is a payment method.                                                                                                         
+      • mobilepay                                                                                                                         
+      ]8;id=1697515583;https://docs.stripe.com/payments/mobilepay.mdMobilePay]8;; ]8;id=1697515583;https://docs.stripe.com/payments/mobilepay.mdhttps://docs.stripe.com/payments/mobilepay.md]8;; is a Nordic card-passthrough wallet payment method where customers authorize
+      the payment in the MobilePay application.                                                                                           
+      • momo                                                                                                                              
+      ]8;id=3794997123;https://docs.stripe.com/payments/momo.mdMoMo]8;; ]8;id=3794997123;https://docs.stripe.com/payments/momo.mdhttps://docs.stripe.com/payments/momo.md]8;; is a Vietnamese mobile wallet payment method.                                         
+      • mondu                                                                                                                             
+      ]8;id=1900041024;https://docs.stripe.com/payments/mondu.mdMondu]8;; ]8;id=1900041024;https://docs.stripe.com/payments/mondu.mdhttps://docs.stripe.com/payments/mondu.md]8;; is a payment method.                                                                
+      • multibanco                                                                                                                        
+      ]8;id=3923655027;https://docs.stripe.com/payments/multibanco.mdMultibanco]8;; ]8;id=3923655027;https://docs.stripe.com/payments/multibanco.mdhttps://docs.stripe.com/payments/multibanco.md]8;; is a voucher payment method                                               
+      • naver_pay                                                                                                                         
+      ]8;id=547876238;https://docs.stripe.com/payments/naver-pay/accept-a-payment.mdNaver Pay]8;; ]8;id=547876238;https://docs.stripe.com/payments/naver-pay/accept-a-payment.mdhttps://docs.stripe.com/payments/naver-pay/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.    
+      • netbanking                                                                                                                        
+      ]8;id=2335964650;https://docs.stripe.com/payments/netbanking.mdNetBanking]8;; ]8;id=2335964650;https://docs.stripe.com/payments/netbanking.mdhttps://docs.stripe.com/payments/netbanking.md]8;; is a bank redirect payment method used in India.                          
+      • ng_bank                                                                                                                           
+      Naira wallet is a payment method.                                                                                                   
+      • ng_bank_transfer                                                                                                                  
+      Naira bank transfer is a payment method.                                                                                            
+      • ng_card                                                                                                                           
+      Naira card is a payment method.                                                                                                     
+      • ng_market                                                                                                                         
+      NgMarket is a payment method.                                                                                                       
+      • ng_ussd                                                                                                                           
+      Naira USSD is a payment method used in Nigeria to power USSD payments.                                                              
+      • ng_wallet                                                                                                                         
+      NgWallet is a payment method.                                                                                                       
+      • nz_bank_account                                                                                                                   
+      ]8;id=633762290;https://docs.stripe.com/payments/nz-bank-account.mdNew Zealand BECS Direct Debit]8;; ]8;id=633762290;https://docs.stripe.com/payments/nz-bank-account.mdhttps://docs.stripe.com/payments/nz-bank-account.md]8;; is used to debit New Zealand bank accounts through
+      the Bulk Electronic Clearing System (BECS).                                                                                         
+      • octopus                                                                                                                           
+      ]8;id=2627461900;https://docs.stripe.com/payments/octopus.mdOctopus]8;; ]8;id=2627461900;https://docs.stripe.com/payments/octopus.mdhttps://docs.stripe.com/payments/octopus.md]8;; is a payment method.                                                            
+      • oxxo                                                                                                                              
+      ]8;id=3106162393;https://docs.stripe.com/payments/oxxo.mdOXXO]8;; ]8;id=3106162393;https://docs.stripe.com/payments/oxxo.mdhttps://docs.stripe.com/payments/oxxo.md]8;; is a cash-based voucher payment method used in Mexico.                                
+      • p24                                                                                                                               
+      ]8;id=2869237345;https://docs.stripe.com/payments/p24.mdPrzelewy24]8;; ]8;id=2869237345;https://docs.stripe.com/payments/p24.mdhttps://docs.stripe.com/payments/p24.md]8;; is a bank redirect payment method used in Poland.                                
+      • paper_check                                                                                                                       
+      PaperCheck is a payment method.                                                                                                     
+      • pay_by_bank                                                                                                                       
+      ]8;id=3969375816;https://docs.stripe.com/payments/pay-by-bank.mdPay By Bank]8;; ]8;id=3969375816;https://docs.stripe.com/payments/pay-by-bank.mdhttps://docs.stripe.com/payments/pay-by-bank.md]8;; is an open banking payment method in the UK.                            
+      • payco                                                                                                                             
+      ]8;id=3476853119;https://docs.stripe.com/payments/payco/accept-a-payment.mdPAYCO]8;; ]8;id=3476853119;https://docs.stripe.com/payments/payco/accept-a-payment.mdhttps://docs.stripe.com/payments/payco/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.            
+      • paynow                                                                                                                            
+      ]8;id=3722671129;https://docs.stripe.com/payments/paynow.mdPayNow]8;; ]8;id=3722671129;https://docs.stripe.com/payments/paynow.mdhttps://docs.stripe.com/payments/paynow.md]8;; is a QR code payment method used in Singapore.                                    
+      • paypal                                                                                                                            
+      ]8;id=601642962;https://docs.stripe.com/payments/paypal.mdPayPal]8;; ]8;id=601642962;https://docs.stripe.com/payments/paypal.mdhttps://docs.stripe.com/payments/paypal.md]8;; is an online wallet and redirect payment method commonly used in Europe.          
+      • paypay                                                                                                                            
+      ]8;id=3087088939;https://docs.stripe.com/payments/paypay.mdPayPay]8;; ]8;id=3087088939;https://docs.stripe.com/payments/paypay.mdhttps://docs.stripe.com/payments/paypay.md]8;; is a payment method.                                                              
+      • payto                                                                                                                             
+      ]8;id=4165680878;https://docs.stripe.com/payments/payto.mdPayTo]8;; ]8;id=4165680878;https://docs.stripe.com/payments/payto.mdhttps://docs.stripe.com/payments/payto.md]8;; is a real time payment method                                                       
+      • pix                                                                                                                               
+      ]8;id=785924260;https://docs.stripe.com/payments/pix.mdPix]8;; ]8;id=785924260;https://docs.stripe.com/payments/pix.mdhttps://docs.stripe.com/payments/pix.md]8;; is an instant bank transfer payment method in Brazil.                                   
+      • promptpay                                                                                                                         
+      ]8;id=397252131;https://docs.stripe.com/payments/promptpay.mdPromptPay]8;; ]8;id=397252131;https://docs.stripe.com/payments/promptpay.mdhttps://docs.stripe.com/payments/promptpay.md]8;; is an instant funds transfer service popular in Thailand.                   
+      • qris                                                                                                                              
+      ]8;id=1514990418;https://docs.stripe.com/payments/qris.mdQRIS]8;; ]8;id=1514990418;https://docs.stripe.com/payments/qris.mdhttps://docs.stripe.com/payments/qris.md]8;; is a QR Code payment method in Indonesia.                                             
+      • rechnung                                                                                                                          
+      ]8;id=2499110019;https://docs.stripe.com/payments/rechnung.mdRechnung]8;; ]8;id=2499110019;https://docs.stripe.com/payments/rechnung.mdhttps://docs.stripe.com/payments/rechnung.md]8;; is a buy now, pay later payment option in Germany using white-label invoicing.
+      • revolut_pay                                                                                                                       
+      ]8;id=3602946019;https://docs.stripe.com/payments/revolut-pay.mdRevolut Pay]8;; ]8;id=3602946019;https://docs.stripe.com/payments/revolut-pay.mdhttps://docs.stripe.com/payments/revolut-pay.md]8;; is a digital wallet payment method used in the United Kingdom.          
+      • samsung_pay                                                                                                                       
+      ]8;id=2380110636;https://docs.stripe.com/payments/samsung-pay/accept-a-payment.mdSamsung Pay]8;; ]8;id=2380110636;https://docs.stripe.com/payments/samsung-pay/accept-a-payment.mdhttps://docs.stripe.com/payments/samsung-pay/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.
+      • satispay                                                                                                                          
+      ]8;id=2625923485;https://docs.stripe.com/payments/satispay.mdSatispay]8;; ]8;id=2625923485;https://docs.stripe.com/payments/satispay.mdhttps://docs.stripe.com/payments/satispay.md]8;; is a payment method.                                                          
+      • scalapay                                                                                                                          
+      Scalapay is a payment method.                                                                                                       
+      • sepa_debit                                                                                                                        
+      ]8;id=1499247455;https://docs.stripe.com/payments/sepa-debit.mdSEPA Direct Debit]8;; ]8;id=1499247455;https://docs.stripe.com/payments/sepa-debit.mdhttps://docs.stripe.com/payments/sepa-debit.md]8;; is used to debit bank accounts within the Single Euro Payments Area
+      (SEPA) region.                                                                                                                      
+      • sequra                                                                                                                            
+      SeQura is a payment method.                                                                                                         
+      • shop_pay                                                                                                                          
+      ]8;id=398731646;https://docs.stripe.com/payments/shop-pay.mdShop Pay]8;; ]8;id=398731646;https://docs.stripe.com/payments/shop-pay.mdhttps://docs.stripe.com/payments/shop-pay.md]8;; is a Wallet payment method that lets hundreds of millions of Shopify customers
+      pay their way, every day.                                                                                                           
+      • shopeepay                                                                                                                         
+      Shopeepay is a payment method.                                                                                                      
+      • sofort                                                                                                                            
+      ]8;id=221481242;https://docs.stripe.com/payments/sofort.mdSofort]8;; ]8;id=221481242;https://docs.stripe.com/payments/sofort.mdhttps://docs.stripe.com/payments/sofort.md]8;; is a bank redirect payment method used in Europe.                                 
+      • south_korea_market                                                                                                                
+      SouthKoreaMarket is a payment method.                                                                                               
+      • stripe_balance                                                                                                                    
+      ]8;id=1429735686;https://docs.stripe.com/payments/balance-pay.mdPay with Stripe balance]8;; ]8;id=1429735686;https://docs.stripe.com/payments/balance-pay.mdhttps://docs.stripe.com/payments/balance-pay.md]8;; is a payment method linked directly to a Stripe account’s   
+      available balance.                                                                                                                  
+      • sunbit                                                                                                                            
+      ]8;id=26718628;https://docs.stripe.com/payments/sunbit.mdSunbit]8;; ]8;id=26718628;https://docs.stripe.com/payments/sunbit.mdhttps://docs.stripe.com/payments/sunbit.md]8;; is a payment method.                                                              
+      • swish                                                                                                                             
+      ]8;id=1723768269;https://docs.stripe.com/payments/swish.mdSwish]8;; ]8;id=1723768269;https://docs.stripe.com/payments/swish.mdhttps://docs.stripe.com/payments/swish.md]8;; is a Swedish wallet payment method where customers authorize the payment in the     
+      Swish application.                                                                                                                  
+      • tamara                                                                                                                            
+      ]8;id=1320392759;https://docs.stripe.com/payments/tamara.mdTamara]8;; ]8;id=1320392759;https://docs.stripe.com/payments/tamara.mdhttps://docs.stripe.com/payments/tamara.md]8;; is a payment method.                                                              
+      • test_pay                                                                                                                          
+      TestPay is a payment method.                                                                                                        
+      • touch_n_go                                                                                                                        
+      Touch 'n Go is a Malaysian mobile wallet payment method.                                                                            
+      • truemoney                                                                                                                         
+      TrueMoney is a payment method.                                                                                                      
+      • twint                                                                                                                             
+      ]8;id=932081997;https://docs.stripe.com/payments/twint.mdTWINT]8;; ]8;id=932081997;https://docs.stripe.com/payments/twint.mdhttps://docs.stripe.com/payments/twint.md]8;; is a single-use payment method used in Switzerland.                                 
+      • upi                                                                                                                               
+      ]8;id=2602745679;https://docs.stripe.com/payments/upi.mdUPI]8;; ]8;id=2602745679;https://docs.stripe.com/payments/upi.mdhttps://docs.stripe.com/payments/upi.md]8;; is an instant real-time payment system in India.                                        
+      • us_bank_account                                                                                                                   
+      ]8;id=3463150820;https://docs.stripe.com/payments/ach-direct-debit.mdACH Direct Debit]8;; ]8;id=3463150820;https://docs.stripe.com/payments/ach-direct-debit.mdhttps://docs.stripe.com/payments/ach-direct-debit.md]8;; is used to debit US bank accounts through the Automated       
+      Clearing House (ACH) payments system.                                                                                               
+      • us_cash_voucher                                                                                                                   
+      UsCashVoucher enables Treasury customers to add cash to their account using a voucher at select major US retailers.                 
+      • vipps                                                                                                                             
+      ]8;id=3405250233;https://docs.stripe.com/payments/vipps.mdVipps]8;; ]8;id=3405250233;https://docs.stripe.com/payments/vipps.mdhttps://docs.stripe.com/payments/vipps.md]8;; is a Nordic card-passthrough wallet payment method where customers authorize the    
+      payment in the Vipps application.                                                                                                   
+      • wechat_pay                                                                                                                        
+      ]8;id=1024912184;https://docs.stripe.com/payments/wechat-pay.mdWeChat Pay]8;; ]8;id=1024912184;https://docs.stripe.com/payments/wechat-pay.mdhttps://docs.stripe.com/payments/wechat-pay.md]8;; is a digital wallet payment method based in China.                        
+      • wero                                                                                                                              
+      Wero is a payment method.                                                                                                           
+      • zip                                                                                                                               
+      ]8;id=400086554;https://docs.stripe.com/payments/zip.mdZip]8;; ]8;id=400086554;https://docs.stripe.com/payments/zip.mdhttps://docs.stripe.com/payments/zip.md]8;; is a Buy now, pay later Payment Method                                                  
+  • ]8;id=2984557000;https://docs.stripe.com/api/payment_intents/confirm.md?query=amount_detailsamount_details]8;; ]8;id=2984557000;https://docs.stripe.com/api/payment_intents/confirm.md?query=amount_detailshttps://docs.stripe.com/api/payment_intents/confirm.md?query=amount_details]8;; (object, optional)                         
+  Provides industry-specific information about the amount.                                                                                
+  • amount_to_confirm (integer, optional)                                                                                                 
+  Amount to confirm on the PaymentIntent. Defaults to amount if not provided.                                                             
+  • capture_method (enum, optional)                                                                                                       
+  Controls when the funds will be captured from the customer’s account.                                                                   
+  Possible enum values:                                                                                                                   
+      • automatic                                                                                                                         
+      Stripe automatically captures funds when the customer authorizes the payment.                                                       
+      • automatic_async                                                                                                                   
+      (Default) Stripe asynchronously captures funds when the customer authorizes the payment. Recommended over capture_method=automatic  
+      due to improved latency. Read the ]8;id=3438155341;https://docs.stripe.com/payments/payment-intents/asynchronous-capture.mdintegration guide]8;; ]8;id=3438155341;https://docs.stripe.com/payments/payment-intents/asynchronous-capture.mdhttps://docs.stripe.com/payments/payment-intents/asynchronous-capture.md]8;; for    
+      more information.                                                                                                                   
+      • manual                                                                                                                            
+      Place a hold on the funds when the customer authorizes the payment, but ]8;id=1789519292;https://docs.stripe.com/payments/capture-later.mddon’t capture the funds until later]8;; ]8;id=1789519292;https://docs.stripe.com/payments/capture-later.mdhttps://docs.stripe.]8;;    
+      ]8;id=1789519292;https://docs.stripe.com/payments/capture-later.mdcom/payments/capture-later.md]8;;. (Not all payment methods support this.)                                                              
+  • confirmation_token (string, optional)                                                                                                 
+  ID of the ConfirmationToken used to confirm this PaymentIntent.If the provided ConfirmationToken contains properties that are also being
+  provided in this request, such as payment_method, then the values in this request will take precedence.                                 
+  • error_on_requires_action (boolean, optional)                                                                                          
+  Set to true to fail the payment attempt if the PaymentIntent transitions into requires_action. This parameter is intended for simpler   
+  integrations that do not handle customer actions, like ]8;id=2307188845;https://docs.stripe.com/payments/save-card-without-authentication.mdsaving cards without authentication]8;; ]8;id=2307188845;https://docs.stripe.com/payments/save-card-without-authentication.mdhttps://docs.stripe.com/payments/save-card-]8;;  
+  ]8;id=2307188845;https://docs.stripe.com/payments/save-card-without-authentication.mdwithout-authentication.md]8;;.                                                                                                              
+  • excluded_payment_method_types (array of enums, optional)                                                                              
+  The list of payment method types to exclude from use with this payment.                                                                 
+  Possible enum values:                                                                                                                   
+      • acss_debit                                                                                                                        
+      ]8;id=1747100636;https://docs.stripe.com/payments/acss-debit.mdPre-authorized debit payments]8;; ]8;id=1747100636;https://docs.stripe.com/payments/acss-debit.mdhttps://docs.stripe.com/payments/acss-debit.md]8;; are used to debit Canadian bank accounts through the   
+      Automated Clearing Settlement System (ACSS).                                                                                        
+      • affirm                                                                                                                            
+      ]8;id=4171213470;https://docs.stripe.com/payments/affirm.mdAffirm]8;; ]8;id=4171213470;https://docs.stripe.com/payments/affirm.mdhttps://docs.stripe.com/payments/affirm.md]8;; is a buy now, pay later payment method in the US.                                 
+      • afterpay_clearpay                                                                                                                 
+      ]8;id=3883471581;https://docs.stripe.com/payments/afterpay-clearpay.mdAfterpay / Clearpay]8;; ]8;id=3883471581;https://docs.stripe.com/payments/afterpay-clearpay.mdhttps://docs.stripe.com/payments/afterpay-clearpay.md]8;; is a buy now, pay later payment method used in Australia, 
+      Canada, France, New Zealand, Spain, the UK, and the US.                                                                             
+      • alipay                                                                                                                            
+      ]8;id=2850940413;https://docs.stripe.com/payments/alipay.mdAlipay]8;; ]8;id=2850940413;https://docs.stripe.com/payments/alipay.mdhttps://docs.stripe.com/payments/alipay.md]8;; is a digital wallet payment method used in China.                                 
+      • alma                                                                                                                              
+      ]8;id=2441595246;https://docs.stripe.com/payments/alma.mdAlma]8;; ]8;id=2441595246;https://docs.stripe.com/payments/alma.mdhttps://docs.stripe.com/payments/alma.md]8;; is a Buy Now, Pay Later payment method that lets customers pay in 2, 3, or 4          
+      installments.                                                                                                                       
+      • amazon_pay                                                                                                                        
+      ]8;id=3711425790;https://docs.stripe.com/payments/amazon-pay.mdAmazon Pay]8;; ]8;id=3711425790;https://docs.stripe.com/payments/amazon-pay.mdhttps://docs.stripe.com/payments/amazon-pay.md]8;; is a Wallet payment method that lets hundreds of millions of Amazon       
+      customers pay their way, every day.                                                                                                 
+      • au_becs_debit                                                                                                                     
+      ]8;id=1294436692;https://docs.stripe.com/payments/au-becs-debit.mdBECS Direct Debit]8;; ]8;id=1294436692;https://docs.stripe.com/payments/au-becs-debit.mdhttps://docs.stripe.com/payments/au-becs-debit.md]8;; is used to debit Australian bank accounts through the Bulk      
+      Electronic Clearing System (BECS).                                                                                                  
+      • bacs_debit                                                                                                                        
+      ]8;id=711066929;https://docs.stripe.com/payments/payment-methods/bacs-debit.mdBacs Direct Debit]8;; ]8;id=711066929;https://docs.stripe.com/payments/payment-methods/bacs-debit.mdhttps://docs.stripe.com/payments/payment-methods/bacs-debit.md]8;; is used to debit UK bank accounts.                 
+      • bancontact                                                                                                                        
+      ]8;id=3302234866;https://docs.stripe.com/payments/bancontact.mdBancontact]8;; ]8;id=3302234866;https://docs.stripe.com/payments/bancontact.mdhttps://docs.stripe.com/payments/bancontact.md]8;; is a bank redirect payment method used in Belgium.                        
+      • billie                                                                                                                            
+      ]8;id=1247968262;https://docs.stripe.com/payments/billie.mdBillie]8;; ]8;id=1247968262;https://docs.stripe.com/payments/billie.mdhttps://docs.stripe.com/payments/billie.md]8;; is a payment method.                                                              
+      • bizum                                                                                                                             
+      ]8;id=2924827554;https://docs.stripe.com/payments/bizum.mdBizum]8;; ]8;id=2924827554;https://docs.stripe.com/payments/bizum.mdhttps://docs.stripe.com/payments/bizum.md]8;; is a payment method.                                                                
+      • blik                                                                                                                              
+      ]8;id=2975899557;https://docs.stripe.com/payments/blik.mdBLIK]8;; ]8;id=2975899557;https://docs.stripe.com/payments/blik.mdhttps://docs.stripe.com/payments/blik.md]8;; is a single-use payment method common in Poland.                                      
+      • boleto                                                                                                                            
+      ]8;id=1942270420;https://docs.stripe.com/payments/boleto.mdBoleto]8;; ]8;id=1942270420;https://docs.stripe.com/payments/boleto.mdhttps://docs.stripe.com/payments/boleto.md]8;; is a voucher-based payment method used in Brazil.                                 
+      • card                                                                                                                              
+      ]8;id=2078261864;https://docs.stripe.com/payments/payment-methods/overview.md#cardsCard payments]8;; ]8;id=2078261864;https://docs.stripe.com/payments/payment-methods/overview.md#cardshttps://docs.stripe.com/payments/payment-methods/overview.md#cards]8;; are supported through many networks, card brands,  
+      and select Link funding sources (Link is also known as Onelink in the UK).                                                          
+      • card_present                                                                                                                      
+      ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdStripe Terminal]8;; ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdhttps://docs.stripe.com/terminal/payments/collect-card-payment.md]8;; is used to collect in-person card payments.       
+      • cashapp                                                                                                                           
+      ]8;id=3910817621;https://docs.stripe.com/payments/cash-app-pay.mdCash App Pay]8;; ]8;id=3910817621;https://docs.stripe.com/payments/cash-app-pay.mdhttps://docs.stripe.com/payments/cash-app-pay.md]8;; enables customers to frictionlessly authenticate payments in the Cash 
+      App using their stored balance or linked card.                                                                                      
+      • crypto                                                                                                                            
+      ]8;id=2135679789;https://docs.stripe.com/payments/stablecoin-payments.mdStablecoin payments]8;; ]8;id=2135679789;https://docs.stripe.com/payments/stablecoin-payments.mdhttps://docs.stripe.com/payments/stablecoin-payments.md]8;; enable customers to pay in stablecoins like USDC from   
+      100s of wallets including Phantom and Metamask.                                                                                     
+      • customer_balance                                                                                                                  
+      Uses a customer’s ]8;id=2846806904;https://docs.stripe.com/payments/customer-balance.mdcash balance]8;; ]8;id=2846806904;https://docs.stripe.com/payments/customer-balance.mdhttps://docs.stripe.com/payments/customer-balance.md]8;; for the payment.                                
+      • eps                                                                                                                               
+      ]8;id=2822653845;https://docs.stripe.com/payments/eps.mdEPS]8;; ]8;id=2822653845;https://docs.stripe.com/payments/eps.mdhttps://docs.stripe.com/payments/eps.md]8;; is an Austria-based bank redirect payment method.                                       
+      • fpx                                                                                                                               
+      ]8;id=234056101;https://docs.stripe.com/payments/fpx.mdFPX]8;; ]8;id=234056101;https://docs.stripe.com/payments/fpx.mdhttps://docs.stripe.com/payments/fpx.md]8;; is a Malaysia-based bank redirect payment method.                                       
+      • giropay                                                                                                                           
+      ]8;id=3713713498;https://docs.stripe.com/payments/giropay.mdgiropay]8;; ]8;id=3713713498;https://docs.stripe.com/payments/giropay.mdhttps://docs.stripe.com/payments/giropay.md]8;; is a German bank redirect payment method.                                       
+      • grabpay                                                                                                                           
+      ]8;id=4193234527;https://docs.stripe.com/payments/grabpay.mdGrabPay]8;; ]8;id=4193234527;https://docs.stripe.com/payments/grabpay.mdhttps://docs.stripe.com/payments/grabpay.md]8;; is a digital wallet payment method used in Southeast Asia.                      
+      • ideal                                                                                                                             
+      ]8;id=1858192016;https://docs.stripe.com/payments/ideal.mdiDEAL]8;; ]8;id=1858192016;https://docs.stripe.com/payments/ideal.mdhttps://docs.stripe.com/payments/ideal.md]8;; is a Netherlands-based bank redirect payment method.                                
+      • interac_present                                                                                                                   
+      ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdStripe Terminal]8;; ]8;id=2754190618;https://docs.stripe.com/terminal/payments/collect-card-payment.mdhttps://docs.stripe.com/terminal/payments/collect-card-payment.md]8;; accepts ]8;id=3915029097;https://docs.stripe.com/terminal/payments/regional.md?integration-country=CA#interac-paymentsInterac]8;; ]8;id=3915029097;https://docs.stripe.com/terminal/payments/regional.md?integration-country=CA#interac-paymentshttps://docs.stripe.]8;;              
+      ]8;id=3915029097;https://docs.stripe.com/terminal/payments/regional.md?integration-country=CA#interac-paymentscom/terminal/payments/regional.md?integration-country=CA#interac-payments]8;; debit cards for in-person payments in Canada.             
+      • kakao_pay                                                                                                                         
+      ]8;id=916819977;https://docs.stripe.com/payments/kakao-pay/accept-a-payment.mdKakao Pay]8;; ]8;id=916819977;https://docs.stripe.com/payments/kakao-pay/accept-a-payment.mdhttps://docs.stripe.com/payments/kakao-pay/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.    
+      • klarna                                                                                                                            
+      ]8;id=399825356;https://docs.stripe.com/payments/klarna.mdKlarna]8;; ]8;id=399825356;https://docs.stripe.com/payments/klarna.mdhttps://docs.stripe.com/payments/klarna.md]8;; is a global buy now, pay later payment method.                                    
+      • konbini                                                                                                                           
+      ]8;id=4048743415;https://docs.stripe.com/payments/konbini.mdKonbini]8;; ]8;id=4048743415;https://docs.stripe.com/payments/konbini.mdhttps://docs.stripe.com/payments/konbini.md]8;; is a cash-based voucher payment method used in Japan.                           
+      • kr_card                                                                                                                           
+      ]8;id=1463556653;https://docs.stripe.com/payments/kr-card/accept-a-payment.mdKorean cards]8;; ]8;id=1463556653;https://docs.stripe.com/payments/kr-card/accept-a-payment.mdhttps://docs.stripe.com/payments/kr-card/accept-a-payment.md]8;; enables customers to accept local credit and debit cards  
+      in South Korea.                                                                                                                     
+      • mb_way                                                                                                                            
+      MB WAY is a payment method.                                                                                                         
+      • mobilepay                                                                                                                         
+      ]8;id=1697515583;https://docs.stripe.com/payments/mobilepay.mdMobilePay]8;; ]8;id=1697515583;https://docs.stripe.com/payments/mobilepay.mdhttps://docs.stripe.com/payments/mobilepay.md]8;; is a Nordic card-passthrough wallet payment method where customers authorize
+      the payment in the MobilePay application.                                                                                           
+      • multibanco                                                                                                                        
+      ]8;id=3923655027;https://docs.stripe.com/payments/multibanco.mdMultibanco]8;; ]8;id=3923655027;https://docs.stripe.com/payments/multibanco.mdhttps://docs.stripe.com/payments/multibanco.md]8;; is a voucher payment method                                               
+      • naver_pay                                                                                                                         
+      ]8;id=547876238;https://docs.stripe.com/payments/naver-pay/accept-a-payment.mdNaver Pay]8;; ]8;id=547876238;https://docs.stripe.com/payments/naver-pay/accept-a-payment.mdhttps://docs.stripe.com/payments/naver-pay/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.    
+      • nz_bank_account                                                                                                                   
+      ]8;id=633762290;https://docs.stripe.com/payments/nz-bank-account.mdNew Zealand BECS Direct Debit]8;; ]8;id=633762290;https://docs.stripe.com/payments/nz-bank-account.mdhttps://docs.stripe.com/payments/nz-bank-account.md]8;; is used to debit New Zealand bank accounts through
+      the Bulk Electronic Clearing System (BECS).                                                                                         
+      • oxxo                                                                                                                              
+      ]8;id=3106162393;https://docs.stripe.com/payments/oxxo.mdOXXO]8;; ]8;id=3106162393;https://docs.stripe.com/payments/oxxo.mdhttps://docs.stripe.com/payments/oxxo.md]8;; is a cash-based voucher payment method used in Mexico.                                
+      • p24                                                                                                                               
+      ]8;id=2869237345;https://docs.stripe.com/payments/p24.mdPrzelewy24]8;; ]8;id=2869237345;https://docs.stripe.com/payments/p24.mdhttps://docs.stripe.com/payments/p24.md]8;; is a bank redirect payment method used in Poland.                                
+      • pay_by_bank                                                                                                                       
+      ]8;id=3969375816;https://docs.stripe.com/payments/pay-by-bank.mdPay By Bank]8;; ]8;id=3969375816;https://docs.stripe.com/payments/pay-by-bank.mdhttps://docs.stripe.com/payments/pay-by-bank.md]8;; is an open banking payment method in the UK.                            
+      • payco                                                                                                                             
+      ]8;id=3476853119;https://docs.stripe.com/payments/payco/accept-a-payment.mdPAYCO]8;; ]8;id=3476853119;https://docs.stripe.com/payments/payco/accept-a-payment.mdhttps://docs.stripe.com/payments/payco/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.            
+      • paynow                                                                                                                            
+      ]8;id=3722671129;https://docs.stripe.com/payments/paynow.mdPayNow]8;; ]8;id=3722671129;https://docs.stripe.com/payments/paynow.mdhttps://docs.stripe.com/payments/paynow.md]8;; is a QR code payment method used in Singapore.                                    
+      • paypal                                                                                                                            
+      ]8;id=601642962;https://docs.stripe.com/payments/paypal.mdPayPal]8;; ]8;id=601642962;https://docs.stripe.com/payments/paypal.mdhttps://docs.stripe.com/payments/paypal.md]8;; is an online wallet and redirect payment method commonly used in Europe.          
+      • paypay                                                                                                                            
+      ]8;id=3087088939;https://docs.stripe.com/payments/paypay.mdPayPay]8;; ]8;id=3087088939;https://docs.stripe.com/payments/paypay.mdhttps://docs.stripe.com/payments/paypay.md]8;; is a payment method.                                                              
+      • payto                                                                                                                             
+      ]8;id=4165680878;https://docs.stripe.com/payments/payto.mdPayTo]8;; ]8;id=4165680878;https://docs.stripe.com/payments/payto.mdhttps://docs.stripe.com/payments/payto.md]8;; is a real time payment method                                                       
+      • pix                                                                                                                               
+      ]8;id=785924260;https://docs.stripe.com/payments/pix.mdPix]8;; ]8;id=785924260;https://docs.stripe.com/payments/pix.mdhttps://docs.stripe.com/payments/pix.md]8;; is an instant bank transfer payment method in Brazil.                                   
+      • promptpay                                                                                                                         
+      ]8;id=397252131;https://docs.stripe.com/payments/promptpay.mdPromptPay]8;; ]8;id=397252131;https://docs.stripe.com/payments/promptpay.mdhttps://docs.stripe.com/payments/promptpay.md]8;; is an instant funds transfer service popular in Thailand.                   
+      • revolut_pay                                                                                                                       
+      ]8;id=3602946019;https://docs.stripe.com/payments/revolut-pay.mdRevolut Pay]8;; ]8;id=3602946019;https://docs.stripe.com/payments/revolut-pay.mdhttps://docs.stripe.com/payments/revolut-pay.md]8;; is a digital wallet payment method used in the United Kingdom.          
+      • samsung_pay                                                                                                                       
+      ]8;id=2380110636;https://docs.stripe.com/payments/samsung-pay/accept-a-payment.mdSamsung Pay]8;; ]8;id=2380110636;https://docs.stripe.com/payments/samsung-pay/accept-a-payment.mdhttps://docs.stripe.com/payments/samsung-pay/accept-a-payment.md]8;; is a digital wallet payment method used in South Korea.
+      • satispay                                                                                                                          
+      ]8;id=2625923485;https://docs.stripe.com/payments/satispay.mdSatispay]8;; ]8;id=2625923485;https://docs.stripe.com/payments/satispay.mdhttps://docs.stripe.com/payments/satispay.md]8;; is a payment method.                                                          
+      • scalapay                                                                                                                          
+      Scalapay is a payment method.                                                                                                       
+      • sepa_debit                                                                                                                        
+      ]8;id=1499247455;https://docs.stripe.com/payments/sepa-debit.mdSEPA Direct Debit]8;; ]8;id=1499247455;https://docs.stripe.com/payments/sepa-debit.mdhttps://docs.stripe.com/payments/sepa-debit.md]8;; is used to debit bank accounts within the Single Euro Payments Area
+      (SEPA) region.                                                                                                                      
+      • sequra                                                                                                                            
+      SeQura is a payment method.                                                                                                         
+      • sofort                                                                                                                            
+      ]8;id=221481242;https://docs.stripe.com/payments/sofort.mdSofort]8;; ]8;id=221481242;https://docs.stripe.com/payments/sofort.mdhttps://docs.stripe.com/payments/sofort.md]8;; is a bank redirect payment method used in Europe.                                 
+      • sunbit                                                                                                                            
+      ]8;id=26718628;https://docs.stripe.com/payments/sunbit.mdSunbit]8;; ]8;id=26718628;https://docs.stripe.com/payments/sunbit.mdhttps://docs.stripe.com/payments/sunbit.md]8;; is a payment method.                                                              
+      • swish                                                                                                                             
+      ]8;id=1723768269;https://docs.stripe.com/payments/swish.mdSwish]8;; ]8;id=1723768269;https://docs.stripe.com/payments/swish.mdhttps://docs.stripe.com/payments/swish.md]8;; is a Swedish wallet payment method where customers authorize the payment in the     
+      Swish application.                                                                                                                  
+      • twint                                                                                                                             
+      ]8;id=932081997;https://docs.stripe.com/payments/twint.mdTWINT]8;; ]8;id=932081997;https://docs.stripe.com/payments/twint.mdhttps://docs.stripe.com/payments/twint.md]8;; is a single-use payment method used in Switzerland.                                 
+      • upi                                                                                                                               
+      ]8;id=2602745679;https://docs.stripe.com/payments/upi.mdUPI]8;; ]8;id=2602745679;https://docs.stripe.com/payments/upi.mdhttps://docs.stripe.com/payments/upi.md]8;; is an instant real-time payment system in India.                                        
+      • us_bank_account                                                                                                                   
+      ]8;id=3463150820;https://docs.stripe.com/payments/ach-direct-debit.mdACH Direct Debit]8;; ]8;id=3463150820;https://docs.stripe.com/payments/ach-direct-debit.mdhttps://docs.stripe.com/payments/ach-direct-debit.md]8;; is used to debit US bank accounts through the Automated       
+      Clearing House (ACH) payments system.                                                                                               
+      • wechat_pay                                                                                                                        
+      ]8;id=1024912184;https://docs.stripe.com/payments/wechat-pay.mdWeChat Pay]8;; ]8;id=1024912184;https://docs.stripe.com/payments/wechat-pay.mdhttps://docs.stripe.com/payments/wechat-pay.md]8;; is a digital wallet payment method based in China.                        
+      • zip                                                                                                                               
+      ]8;id=400086554;https://docs.stripe.com/payments/zip.mdZip]8;; ]8;id=400086554;https://docs.stripe.com/payments/zip.mdhttps://docs.stripe.com/payments/zip.md]8;; is a Buy now, pay later Payment Method                                                  
+  • ]8;id=959715411;https://docs.stripe.com/api/payment_intents/confirm.md?query=hookshooks]8;; ]8;id=959715411;https://docs.stripe.com/api/payment_intents/confirm.md?query=hookshttps://docs.stripe.com/api/payment_intents/confirm.md?query=hooks]8;; (object, optional)                                           
+  Automations to be run during the PaymentIntent lifecycle                                                                                
+  • mandate (string, optional)                                                                                                            
+  ID of the mandate that’s used for this payment.                                                                                         
+  • ]8;id=413078524;https://docs.stripe.com/api/payment_intents/confirm.md?query=mandate_datamandate_data]8;; ]8;id=413078524;https://docs.stripe.com/api/payment_intents/confirm.md?query=mandate_datahttps://docs.stripe.com/api/payment_intents/confirm.md?query=mandate_data]8;; (object, optional)                             
+  This hash contains details about the mandate to create.                                                                                 
+  • off_session (boolean | string, optional)                                                                                              
+  Set to true to indicate that the customer isn’t in your checkout flow during this payment attempt and can’t authenticate. Use this      
+  parameter in scenarios where you collect payment method details and ]8;id=3136415961;https://docs.stripe.com/payments/save-during-payment.mdcharge them later]8;; ]8;id=3136415961;https://docs.stripe.com/payments/save-during-payment.mdhttps://docs.stripe.com/payments/save-during-]8;;     
+  ]8;id=3136415961;https://docs.stripe.com/payments/save-during-payment.mdpayment.md]8;;.                                                                                                                             
+  • ]8;id=3702860528;https://docs.stripe.com/api/payment_intents/confirm.md?query=payment_detailspayment_details]8;; ]8;id=3702860528;https://docs.stripe.com/api/payment_intents/confirm.md?query=payment_detailshttps://docs.stripe.com/api/payment_intents/confirm.md?query=payment_details]8;; (object, optional)                       
+  Provides industry-specific information about the charge.                                                                                
+  • payment_method (string, optional)                                                                                                     
+  ID of the payment method (a PaymentMethod, Card, or ]8;id=1230759181;https://docs.stripe.com/payments/payment-methods/transitioning.md#compatibilitycompatible Source]8;; ]8;id=1230759181;https://docs.stripe.com/payments/payment-methods/transitioning.md#compatibilityhttps://docs.stripe.com/payments/payment-methods/transitioning.]8;;   
+  ]8;id=1230759181;https://docs.stripe.com/payments/payment-methods/transitioning.md#compatibilitymd#compatibility]8;; object) to attach to this PaymentIntent. If the payment method is attached to a Customer, it must match the ]8;id=3522180765;https://docs.stripe.com/api/payment_intents/confirm.md#create_payment_intent-customercustomer]8;;   
+  ]8;id=3522180765;https://docs.stripe.com/api/payment_intents/confirm.md#create_payment_intent-customerhttps://docs.stripe.com/api/payment_intents/confirm.md#create_payment_intent-customer]8;; that is set on this PaymentIntent.                
+  • ]8;id=1169452728;https://docs.stripe.com/api/payment_intents/confirm.md?query=payment_method_datapayment_method_data]8;; ]8;id=1169452728;https://docs.stripe.com/api/payment_intents/confirm.md?query=payment_method_datahttps://docs.stripe.com/api/payment_intents/confirm.md?query=payment_method_data]8;; (object, optional)               
+  If provided, this hash will be used to create a PaymentMethod. The new PaymentMethod will appear in the ]8;id=214593295;https://docs.stripe.com/api/payment_intents/object.md#payment_intent_object-payment_methodpayment_]8;;]8;id=214593295;https://docs.stripe.com/api/payment_intents/object.md#payment_intent_object-payment_methodmethod]8;; ]8;id=214593295;https://docs.stripe.com/api/payment_intents/object.md#payment_intent_object-payment_methodhttps://docs.]8;;    
+  ]8;id=214593295;https://docs.stripe.com/api/payment_intents/object.md#payment_intent_object-payment_methodstripe.com/api/payment_intents/object.md#payment_intent_object-payment_method]8;; property on the PaymentIntent.                            
+  • ]8;id=3623949486;https://docs.stripe.com/api/payment_intents/confirm.md?query=payment_method_optionspayment_method_options]8;; ]8;id=3623949486;https://docs.stripe.com/api/payment_intents/confirm.md?query=payment_method_optionshttps://docs.stripe.com/api/payment_intents/confirm.md?query=payment_method_options]8;; (object, optional)         
+  Payment method-specific configuration for this PaymentIntent.                                                                           
+  • ]8;id=748160890;https://docs.stripe.com/api/payment_intents/confirm.md?query=radar_optionsradar_options]8;; ]8;id=748160890;https://docs.stripe.com/api/payment_intents/confirm.md?query=radar_optionshttps://docs.stripe.com/api/payment_intents/confirm.md?query=radar_options]8;; (object, optional)                           
+  Options to configure Radar. Learn more about ]8;id=563496893;https://docs.stripe.com/radar/radar-session.mdRadar Sessions]8;; ]8;id=563496893;https://docs.stripe.com/radar/radar-session.mdhttps://docs.stripe.com/radar/radar-session.md]8;;.                             
+  • receipt_email (string, optional)                                                                                                      
+  Email address that the receipt for the resulting payment will be sent to. If receipt_email is specified for a payment in live mode, a   
+  receipt will be sent regardless of your ]8;id=3798091630;https://dashboard.stripe.com/account/emailsemail settings]8;; ]8;id=3798091630;https://dashboard.stripe.com/account/emailshttps://dashboard.stripe.com/account/emails]8;;.                                     
+  • return_url (string, optional)                                                                                                         
+  The URL to redirect your customer back to after they authenticate or cancel their payment on the payment method’s app or site. If you’d 
+  prefer to redirect to a mobile application, you can alternatively supply an application URI scheme. This parameter is only used for     
+  cards and other redirect-based payment methods.                                                                                         
+  • setup_future_usage (enum, optional)                                                                                                   
+  Indicates that you intend to make future payments with this PaymentIntent’s payment method.If you provide a Customer with the           
+  PaymentIntent, you can use this parameter to ]8;id=3136415961;https://docs.stripe.com/payments/save-during-payment.mdattach the payment method]8;; ]8;id=3136415961;https://docs.stripe.com/payments/save-during-payment.mdhttps://docs.stripe.com/payments/save-during-payment.md]8;; to the   
+  Customer after the PaymentIntent is confirmed and the customer completes any required actions. If you don’t provide a Customer, you can 
+  still ]8;id=1998847979;https://docs.stripe.com/api/payment_methods/attach.mdattach]8;; ]8;id=1998847979;https://docs.stripe.com/api/payment_methods/attach.mdhttps://docs.stripe.com/api/payment_methods/attach.md]8;; the payment method to a Customer after the transaction completes.If  
+  the payment method is card_present and isn’t a digital wallet, Stripe creates and attaches a ]8;id=3115018386;https://docs.stripe.com/api/charges/object.md#charge_object-payment_method_details-card_present-generated_cardgenerated_]8;;]8;id=3115018386;https://docs.stripe.com/api/charges/object.md#charge_object-payment_method_details-card_present-generated_cardcard]8;; ]8;id=3115018386;https://docs.stripe.com/api/charges/object.md#charge_object-payment_method_details-card_present-generated_cardhttps://docs.stripe.]8;;        
+  ]8;id=3115018386;https://docs.stripe.com/api/charges/object.md#charge_object-payment_method_details-card_present-generated_cardcom/api/charges/object.md#charge_object-payment_method_details-card_present-generated_card]8;; payment method representing the card to the  
+  Customer instead.When processing card payments, Stripe uses setup_future_usage to help you comply with regional legislation and network 
+  rules, such as ]8;id=2545554176;https://docs.stripe.com/strong-customer-authentication.mdSCA]8;; ]8;id=2545554176;https://docs.stripe.com/strong-customer-authentication.mdhttps://docs.stripe.com/strong-customer-authentication.md]8;;.If you’ve already set setup_future_usage and you’re        
+  performing a request using a publishable key, you can only update the value from on_session to off_session.                             
+  Possible enum values:                                                                                                                   
+      • off_session                                                                                                                       
+      Use off_session if your customer may or may not be present in your checkout flow.                                                   
+      • on_session                                                                                                                        
+      Use on_session if you intend to only reuse the payment method when your customer is present in your checkout flow.                  
+  • ]8;id=3005621515;https://docs.stripe.com/api/payment_intents/confirm.md?query=shippingshipping]8;; ]8;id=3005621515;https://docs.stripe.com/api/payment_intents/confirm.md?query=shippinghttps://docs.stripe.com/api/payment_intents/confirm.md?query=shipping]8;; (object, optional)                                     
+  Shipping information for this PaymentIntent.                                                                                            
+  • use_stripe_sdk (boolean, optional)                                                                                                    
+  Set to true when confirming server-side and using Stripe.js, iOS, or Android client-side SDKs to handle the next actions.               
+                                                                                                                                          
+  ## Returns                                                                                                                              
+                                                                                                                                          
+  Returns the resulting PaymentIntent after all possible transitions are applied.                                                         
+

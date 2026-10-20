@@ -1,0 +1,16 @@
+{
+  "testedAt": "2026-10-17T23:07:33.471Z",
+  "environment": "local Next production build, native local Medusa and independent Stripe Sandbox",
+  "checks": [
+    "browser address A then B remains editable and estimates B",
+    "explicit fixture policy checkbox then final native commit",
+    "existing guarded payment preparation returned a real test-mode Stripe form",
+    "native payable proof and durable policy consent verified",
+    "test intent was unconfirmed with zero received/capturable money",
+    "existing product cancellation retired the unpaid session and cleared consent",
+    "final delivery quote restored; zero orders"
+  ],
+  "totalCents": 5197,
+  "finalIntentStatus": "canceled",
+  "productionWrites": 0
+}

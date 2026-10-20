@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-13T05:48:25.714Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "method": "POST",
+  "path": "/store/snowforce/customer",
+  "status": 400,
+  "body": {
+    "type": "not_allowed",
+    "message": "The shop is open for administration only. Sales and payment operations are disabled."
+  },
+  "scope": "Management guard rejection before customer creation; no user credentials or identity supplied"
+}

@@ -1,0 +1,148 @@
+{
+  "checkedAt": "2026-10-03T10:20:49.9466274+00:00",
+  "railwayPluginInstalled": true,
+  "railwayPluginEnabled": true,
+  "railwayToolsAvailableInThisTurn": true,
+  "browserLoginVerified": true,
+  "browserLoginVerifiedFor": "snowforceclub@gmail.com",
+  "targetHostingAccount": "snowforceclub@gmail.com",
+  "hostingAccountCorrection": {
+    "previousAccountEmail": "taiyuanmei0824@gmail.com",
+    "previousWorkspaceName": "harrymeit's Projects",
+    "previousWorkspaceId": "3868cc9d-721a-42cf-9fe1-e4e0ba51b752",
+    "previousWorkspaceIsAuthorizedDeploymentTarget": false,
+    "currentBrowserLoggedIn": true,
+    "snowforceWorkspaceVerified": true,
+    "projectTransferred": false,
+    "personalProjectDeleted": false,
+    "credentialsUploaded": false,
+    "nextAction": "activate SnowForce subscription; verify source and production configuration",
+    "evidenceScreenshot": "output/shop-railway-snowforce-project-created.jpg"
+  },
+  "workspacePlan": "trial",
+  "project": {
+    "name": "SnowForce Commerce",
+    "id": "026e1ce6-a125-422c-b29f-a44ee11bdac1",
+    "visibility": "private"
+  },
+  "environmentId": "1245a65e-0f62-4182-8c85-1858aa98c634",
+  "service": {
+    "stagedChangesApplied": true,
+    "id": "ecc29173-f680-4ed5-a6e9-b69bffe8d17a",
+    "sourceConnected": false,
+    "status": "offline",
+    "name": "snowforce-commerce",
+    "healthcheckPath": "/health",
+    "rootDirectory": "/services/commerce"
+  },
+  "observedServiceMemoryLimitGB": 1,
+  "subscriptionSubmitted": false,
+  "publicBackendDeployed": false,
+  "productionRedisConfigured": false,
+  "durableImageCredentialsConfigured": false,
+  "evidenceSource": "Verified Railway connector identity, service config and status; authenticated SnowForce Chrome UI",
+  "remaining": [
+    "SnowForce paid plan activation and cost limit",
+    "GitHub repository connection for published release branch",
+    "authorized backend credential upload",
+    "TLS Redis and durable image credentials",
+    "public deployment and partner acceptance"
+  ],
+  "workspace": {
+    "name": "snowforce-club's Projects",
+    "id": "18937ccb-da72-4953-9c43-9daddc58553b",
+    "accountEmail": "snowforceclub@gmail.com"
+  },
+  "previousPersonalProject": {
+    "id": "1710a67c-26c5-403b-9225-6bcd78238564",
+    "name": "SnowForce Commerce",
+    "visibility": "private"
+  },
+  "previousPersonalService": {
+    "id": "5eb08baf-258e-4d42-a781-4913a5a84bf3",
+    "name": "snowforce-commerce",
+    "status": "offline",
+    "sourceConnected": false,
+    "rootDirectory": "/services/commerce",
+    "healthcheckPath": "/health"
+  },
+  "localValidation": {
+    "commerceTests": 394,
+    "evidence": [
+      "output/shop-railway-root-validation.json",
+      "output/shop-railway-backend-validation.json"
+    ],
+    "commerceTypecheckExit": 0,
+    "commerceBuildExit": 0,
+    "rootTestsExit": 0,
+    "proofScope": "local tests and builds; not public backend acceptance",
+    "commerceTestsExit": 0,
+    "rootBuildExit": 0,
+    "rootTests": 954
+  },
+  "repositoryConnection": {
+    "sourceConnected": false,
+    "evidence": "output/shop-railway-snowforce-repository-required.jpg",
+    "newGitHubPermissionsGranted": false,
+    "availableRepositories": 0
+  },
+  "connectorIdentityVerified": {
+    "projectId": "026e1ce6-a125-422c-b29f-a44ee11bdac1",
+    "userId": "743f474c-3f4f-407c-a394-35f6e87a666d",
+    "workspaceId": "18937ccb-da72-4953-9c43-9daddc58553b",
+    "email": "snowforceclub@gmail.com"
+  },
+  "cloudConfiguration": {
+    "dockerfilePath": "Dockerfile",
+    "healthcheckTimeout": 300,
+    "builder": "DOCKERFILE",
+    "rootDirectory": "/services/commerce",
+    "latestDeployment": null,
+    "skipDeploys": true,
+    "healthcheckPath": "/health",
+    "nonsecretVariableNames": [
+      "COMMERCE_OPERATING_MODE",
+      "COMMERCE_TAX_POLICY_CONFIRMED",
+      "DATABASE_SCHEMA",
+      "MEDUSA_DISABLE_TELEMETRY",
+      "MEDUSA_WORKER_MODE",
+      "NODE_ENV",
+      "PORT",
+      "S3_BUCKET",
+      "S3_ENDPOINT",
+      "S3_FILE_URL",
+      "S3_REGION",
+      "SNOWFORCE_STOREFRONT_URL",
+      "STORE_CORS"
+    ],
+    "credentialsUploaded": false
+  },
+  "publicDomain": {
+    "reason": "Code source, production credentials, and deployment acceptance incomplete; defer public exposure until prerequisites are ready",
+    "bypassAttempted": false,
+    "earlyGenerationRejectedByAutoReview": true,
+    "created": false
+  },
+  "deploymentSource": {
+    "mainUnchanged": "98e1ae9cb3a4abb6428bc97240b530316ce9ab1f",
+    "repository": "Snow-force/snow-force",
+    "pushed": true,
+    "codeCommit": "4e6a16624a26299e1cffc130309c2c6838118385",
+    "branch": "codex/commerce-public-admin",
+    "credentialPatternScan": "no matches in 22 selected files",
+    "remoteTip": "d8e8251e59a28af6b127a70360759ee35018c683",
+    "secretsCommitted": false,
+    "canonicalRemote": "https://github.com/Snow-force/snow-force.git"
+  },
+  "releaseCoverage": {
+    "managementBranches": 100,
+    "managementFunctions": 100,
+    "reports": [
+      "output/shop-railway-release-root-coverage.log",
+      "output/shop-railway-release-management-coverage.log"
+    ],
+    "managementLines": 100,
+    "rootBranches": 51.68,
+    "rootLines": 58.28
+  }
+}

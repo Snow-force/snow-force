@@ -1,0 +1,20 @@
+{
+  "head": "ccaf725a2c4efbcbb08165f3cd38f66eaa5a8037",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/29",
+  "rootTests": 1127,
+  "commerceTests": 702,
+  "typecheck": "passed",
+  "rootCoverage": "passed",
+  "rootProductionBuild": "passed",
+  "unchangedSourceHashes": 1024,
+  "commerceBackendAndAdminBuild": "passed",
+  "versionGuardCoverage": {"lines":100,"branches":100},
+  "snapshotCoverage": {"lines":100,"branches":100},
+  "withdrawalCoverage": {"lines":100,"branches":92.19},
+  "isolatedNativeDeliveryPickupDelivery": "passed",
+  "paymentOrOrderCreated": false,
+  "productionAcceptance": "business amounts verified; performance target not met",
+  "productionVersion": "ea4139c2fb1e847038ad8deb68ad98edbc2ad1d6",
+  "productionDeployment": "594f05b6-e11f-4db0-b58b-ac5525cce0a0",
+  "productionAddressActionMs": 21220.993588
+}

@@ -1,0 +1,17 @@
+{
+  "verified": true,
+  "reports": [
+    {
+      "file": "snowforce-shop-admin-user-guide.pdf",
+      "pages": 14,
+      "publicAdminLinks": 12,
+      "localLinks": 0
+    },
+    {
+      "file": "snowforce-shop-partner-guide.pdf",
+      "pages": 7,
+      "publicAdminLinks": 1,
+      "localLinks": 0
+    }
+  ]
+}

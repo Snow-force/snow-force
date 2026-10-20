@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-10-16T07:17:26.607Z",
+  "frontend": {
+    "commit": "13e7930deacb4ab863877656cc8db91532edc501",
+    "deployment": "cd4ffbf1-a244-4c64-bc41-66934fc570c2",
+    "status": "SUCCESS",
+    "region": "sfo",
+    "replicas": 1,
+    "versionEndpointStatus": 200,
+    "cacheControl": "no-store",
+    "browser": "Existing live tab reloaded; original USD499 ski retained; checkout opens with blank address and collapsed v5 policies"
+  },
+  "backend": {
+    "commit": "2c020aaa3f1158f55fc8ab89db7038f27db582d6",
+    "deployment": "57bdff45-baa0-4ac3-8d4c-a1f7fc858805",
+    "status": "SUCCESS",
+    "region": "us-east4-eqdc4a",
+    "replicas": 1,
+    "recoveryEvidence": "plan-v1-approved-live-recovery.json"
+  },
+  "optimizedReads": "not enabled in production",
+  "regionPatch": "still staged; not applied",
+  "redis": "unchanged persistent volume in sfo"
+}

@@ -1,0 +1,48 @@
+{
+  "recordedAt": "2026-10-18T19:41:20.187Z",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/35",
+  "commit": "68007e9c714df027c90a3a91144d481101255673",
+  "tree": "7c559dc3c615d44b73bc26649a8ddbbb1b09883d",
+  "status": "validated_pr_open_not_deployed_waiting_new_plan_body",
+  "validation": {
+    "rootTests": 1168,
+    "rootCoverage": "passed",
+    "rootBuild": "passed",
+    "commerceTests": 744,
+    "commerceTypecheck": "passed",
+    "commerceBackendAdminBuild": "passed",
+    "focusedTests": 53,
+    "changedModulesLineCoverage": "100%",
+    "changedModulesFunctionCoverage": "100%",
+    "ci": {
+      "jobId": 117614693388,
+      "runId": 39106924985,
+      "conclusion": "success",
+      "actWarnings": 0,
+      "warningLines": [
+        "2026-10-18T07:14:41.5905474Z (node:2149) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.",
+        "2026-10-18T07:14:42.4348447Z (node:2149) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+        "2026-10-18T07:14:49.2883066Z npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation",
+        "2026-10-18T07:14:49.7852088Z npm warn deprecated tsconfck@3.1.6: unmaintained",
+        "2026-10-18T07:14:52.6229748Z npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.",
+        "2026-10-18T07:20:01.5595552Z (node:6101) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead."
+      ],
+      "testResults": [
+        "2026-10-18T07:16:56.0500340Z  Test Files  179 passed (179)",
+        "2026-10-18T07:16:56.0513148Z       Tests  1168 passed (1168)",
+        "2026-10-18T07:19:06.7728205Z  Test Files  179 passed (179)",
+        "2026-10-18T07:19:06.7742126Z       Tests  1168 passed (1168)",
+        "2026-10-18T07:19:44.7070106Z ✓ Compiled successfully in 19.1s"
+      ],
+      "deployment": "Not merged or deployed; user requested the newly specified plan and its body is unavailable from the reference."
+    }
+  },
+  "production": {
+    "webCommit": "aa4ad8fa71b25c886336a55fbe9ca6585f1c4c4b",
+    "commerceCommit": "c799ecb5f3c83f48a299dcabf2661f52015f117c",
+    "changesThisBatch": 0
+  },
+  "blocker": "Referenced latest ChatGPT answer is an opaque content reference, no body or attachments. Read-thread and browser attempts did not yield plan text; asked user for plan body or local path.",
+  "localRuntime": "Stopped; synthetic fixture quantity restored to 1, no new orders or active-linked sessions.",
+  "remaining": "Implement the newly specified plan once its actual contents are available; do not assume v1 is the new plan."
+}

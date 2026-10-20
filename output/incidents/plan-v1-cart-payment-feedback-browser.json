@@ -1,0 +1,26 @@
+{
+  "verifiedAt": "2026-10-18T06:37:49.434Z",
+  "environment": "Isolated local Next production build, Medusa/PostgreSQL and independent Stripe Sandbox",
+  "checks": [
+    "desktop 35-second add opens cart immediately with original quantity",
+    "390x844 mobile 45-second add exposes read-only recovery after 30 seconds",
+    "each delayed add completes once and original quantity is restored",
+    "old browser tab refresh recovers after a local rebuild",
+    "real Stripe form timeout stops loading and offers explicit reload",
+    "reload reaches ready state without creating another native payment or intent",
+    "language switch preserves the same iframe instances",
+    "product cancellation retires the unconfirmed test payment and restores editing with policy unchecked"
+  ],
+  "testIntentFinalStatus": "canceled",
+  "receivedCents": 0,
+  "capturableCents": 0,
+  "finalCartQuantity": 1,
+  "activePaymentSessions": 0,
+  "orders": 0,
+  "productionWrites": 0,
+  "limitations": [
+    "No customer payment information was entered or authorization submitted",
+    "Wallet confirmations, captures, refunds and webhook ordering remain separate acceptance tasks",
+    "Local timing is not production p95"
+  ]
+}

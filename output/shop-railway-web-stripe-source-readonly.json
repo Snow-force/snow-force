@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-04T21:03:25.548Z",
+  "accountName": "Snow Force Club",
+  "stripeContext": "acct_1ToZcEAItQQT9la8",
+  "livemode": true,
+  "endpointCount": 1,
+  "endpoints": [
+    {
+      "id": "we_1Tv2PpAItQQT9la8pAH6xLlv",
+      "url": "https://snow-force.com/api/stripe/webhook",
+      "status": "enabled",
+      "livemode": true,
+      "enabledEvents": [
+        "checkout.session.completed"
+      ],
+      "apiVersion": null,
+      "secretReturned": false
+    }
+  ],
+  "scope": "Read-only live webhook configuration; no payment, endpoint creation, secret rotation or event replay; existing signing secret not returned by API"
+}

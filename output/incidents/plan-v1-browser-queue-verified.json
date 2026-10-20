@@ -1,0 +1,12 @@
+{
+  "testedAt": "2026-10-16T07:33:56.871Z",
+  "environment": "isolated browser, Next production build and native Medusa/PostgreSQL",
+  "checks": [
+    "inputs remain editable during delayed address save",
+    "payment disabled while latest draft is pending",
+    "latest queued draft persisted through native workflow",
+    "browser shows recomputed total 51.97 USD",
+    "no order created"
+  ],
+  "productionWrites": 0
+}

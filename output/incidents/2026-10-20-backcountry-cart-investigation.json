@@ -1,0 +1,154 @@
+{
+  "at": "2026-10-20T08:26:01.016Z",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/40",
+  "revision": "30dcfdf8e864b88a38297d132843908f6cf5c4b3",
+  "tree": "93a2749702c2d0fab8de25e396a5f161d6e44c5b",
+  "backcountry": {
+    "page": "https://www.backcountry.com/mountain-hardwear-summit-grid-big-grid-hat",
+    "reaEvidenceId": "ev_e521e6dc5499c01a7572f2ff8b632d8527d31cfe59ed626d4a5f06f36a908db6",
+    "sourceSelection": {
+      "requested_paths": [
+        "_app-e0d59667c4ec7d9a.js",
+        "774-2a307df990c84624.js",
+        "[id]-5d3a2dd50242fdca.js"
+      ],
+      "unselected_files": 26
+    },
+    "selectedArtifacts": [
+      {
+        "url": "https://www.backcountry.com/_next/static/chunks/pages/_app-e0d59667c4ec7d9a.js",
+        "file": "_app-e0d59667c4ec7d9a.js",
+        "bytes": 655945,
+        "sha256": "21767fa50a28826bd80c207b2c758649980d4d22e178b8d69efebe7a1c803144"
+      },
+      {
+        "url": "https://www.backcountry.com/_next/static/chunks/774-2a307df990c84624.js",
+        "file": "774-2a307df990c84624.js",
+        "bytes": 97867,
+        "sha256": "376a94fa08b3f0c25caa5bf8054c65385bd300fb6dfb8b4710e658ca9f5fefd0"
+      },
+      {
+        "url": "https://www.backcountry.com/_next/static/chunks/pages/pdp/%5Bid%5D-5d3a2dd50242fdca.js",
+        "file": "[id]-5d3a2dd50242fdca.js",
+        "bytes": 101896,
+        "sha256": "f237728f4497eb6c89a02f7b5d66a46cf05fd3985e7d88b36de1f06a35765155"
+      }
+    ],
+    "observations": [
+      "Single test hat added to a mini-cart; quantity changed from 1 to 2 using a local control.",
+      "Quantity input changed before subtotal completed updating; Calculating... appeared on removal.",
+      "Only the investigation hat was changed; the final mini-cart was empty. No checkout, personal details or payment submission."
+    ],
+    "staticFindings": [
+      {
+        "file": "_app-e0d59667c4ec7d9a.js",
+        "characterOffset": 319500,
+        "finding": "Fallback cart driver posts add, updateQuantity or remove to /api/cart, checks interstitial/form exceptions/success and response attributes before normalizing a cart."
+      },
+      {
+        "file": "774-2a307df990c84624.js",
+        "characterOffset": 88140,
+        "finding": "Product add handler passes SKU/product/quantity and mini-cart options, awaits the cart action before subsequent reporting."
+      }
+    ],
+    "inferences": [
+      "A single target-quantity command and local mini-cart state avoid unnecessary full-page interaction."
+    ],
+    "unknowns": [
+      "Backcountry server-side storage, locks, inventory and pricing architecture",
+      "Exact live network request count or elapsed request timings",
+      "Whether a generic framework optimistic-response path is used by these cart mutations"
+    ],
+    "limitations": [
+      "Caller-selected source analysis leaves 26 inventoried files outside analysis scope. Inventory identity covers the complete artifact; relationships through unselected sources remain unknown.",
+      "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+      "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+      "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+      "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+      "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+      "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+    ]
+  },
+  "snowforce": {
+    "changes": [
+      "Parallel owner-checked cart and US-region reads; both must complete before editing.",
+      "One target quantity selector replaces repeated increment requests when changing multiple units.",
+      "Correlated browser timing for update/remove."
+    ],
+    "safety": [
+      "Native edit/payment/stock/pricing guards unchanged.",
+      "No checkout while mutation pending; confirmed quantities and prices remain authoritative.",
+      "Rejections retain the last confirmed cart."
+    ],
+    "localBrowserSamples": [
+      {
+        "operationId": "5d1c3f51-ee04-440d-ae2f-d165ea90888b",
+        "operation": "cart.add",
+        "durationMs": 1359,
+        "outcome": "ok"
+      },
+      {
+        "operationId": "128f7402-faf1-4ef9-ba3b-851cdc8768de",
+        "operation": "cart.update",
+        "durationMs": 1232,
+        "outcome": "ok"
+      },
+      {
+        "operationId": "7bd6117c-c36a-4fb1-a3a5-e6fcd76295f7",
+        "operation": "cart.update",
+        "durationMs": 1022,
+        "outcome": "ok"
+      },
+      {
+        "operationId": "a4abb558-dc35-45c2-9aef-d09d55ff5b93",
+        "operation": "cart.remove",
+        "durationMs": 1001,
+        "outcome": "ok"
+      }
+    ],
+    "comparison": "No comparable before/after production measurements. Local single samples are not production percentiles.",
+    "databaseChecks": [
+      {
+        "at": "2026-10-20T08:23:13.041Z",
+        "quantity": 5,
+        "orders": 0,
+        "paymentCollections": 0,
+        "isolatedDatabase": true,
+        "productionCartWrites": 0
+      },
+      {
+        "at": "2026-10-20T08:23:50.453Z",
+        "quantity": 2,
+        "orders": 0,
+        "paymentCollections": 0,
+        "isolatedDatabase": true,
+        "productionCartWrites": 0
+      },
+      {
+        "at": "2026-10-20T08:24:07.501Z",
+        "quantity": 0,
+        "orders": 0,
+        "paymentCollections": 0,
+        "isolatedDatabase": true,
+        "productionCartWrites": 0
+      }
+    ],
+    "fixtureCleanup": {
+      "verifiedAt": "2026-10-20T08:25:17.536Z",
+      "temporaryAuthUsersRemoved": 1,
+      "temporaryProfilesRemoved": 1,
+      "temporaryConsentsRemoved": 1,
+      "orderProjectionsCreated": 0,
+      "paymentsCreated": 0,
+      "sessionsRevoked": true,
+      "realCustomerRowsChanged": 0,
+      "emailsSent": 0
+    },
+    "tests": 1215,
+    "testFiles": 186,
+    "coveragePassed": true,
+    "productionBuildPassed": true,
+    "productionDeployed": false,
+    "ci": "in_progress"
+  }
+}

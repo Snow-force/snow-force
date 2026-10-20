@@ -1,0 +1,12 @@
+{
+  "verifiedAt": "2026-10-20T03:33:18.319Z",
+  "temporaryAuthUsersRemoved": 1,
+  "temporaryProfilesRemoved": 1,
+  "temporaryConsentsRemoved": 1,
+  "orderProjectionsCreated": 0,
+  "testPaymentRecordsPreserved": 3,
+  "productionFinancialActions": 0,
+  "sessionsRevoked": true,
+  "realCustomerRowsChanged": 0,
+  "emailsSent": 0
+}

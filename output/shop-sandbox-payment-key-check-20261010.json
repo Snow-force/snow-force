@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-10-10T08:51:06.264Z",
+  "scope": "actual application Stripe payment-creator factory; no Medusa cart/order, card confirmation, charge, tax transaction or webhook",
+  "live_mutation": false,
+  "run_id": "8d3280ff-4537-4107-98c8-d7834b41e25d",
+  "checks": [
+    "application factory creates an unpaid Sandbox PaymentIntent with manual capture",
+    "same creation key and request replay the same remote PaymentIntent",
+    "configured frontend public key retrieves the newly created intent",
+    "unpaid intent canceled; no funds captured"
+  ],
+  "payment_intent_id": "pi_3UOvzhAbMQunT3pr0rAfDRUf",
+  "status": "passed",
+  "final_payment": {
+    "id": "pi_3UOvzhAbMQunT3pr0rAfDRUf",
+    "status": "canceled",
+    "livemode": false,
+    "amount_received": 0,
+    "amount_capturable": 0
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "createdAt": "2026-10-17T19:54:04.063Z",
+  "status": "architecture-validation; not a production implementation",
+  "scope": "SnowForce checkout root-cause redesign, retaining Medusa catalog/orders and existing manual-capture payment semantics unless user selects otherwise",
+  "evidence": {
+    "productionTrace": "plan-v2-root-cause-tax-trace.json",
+    "isolatedProof": "plan-v2-readonly-preview-proof.json"
+  },
+  "sources": [
+    {
+      "url": "https://www.backcountry.com/cart",
+      "supports": "Public cart UI only; no claim about private backend, unavailable live checkout request timing."
+    },
+    {
+      "url": "https://shopify.dev/docs/api/storefront/latest/objects/CartCost",
+      "supports": "Estimated cart costs may change at checkout; not proof Shopify uses this proposed implementation."
+    },
+    {
+      "url": "https://shopify.dev/docs/api/ajax/reference/cart#generate-shipping-rates",
+      "supports": "Separate prepare/poll operations for shipping rates."
+    },
+    {
+      "url": "https://docs.stripe.com/tax/custom",
+      "supports": "Standalone Tax Calculations separate from tax transactions and payment."
+    }
+  ],
+  "rootCauses": [
+    "Address edits trigger a synchronous orchestration of native cart mutation, repeated delivery reads, tax withdrawal/normalization/calculation/application and final proof.",
+    "Observed one tax request: 147 PostgreSQL spans, 7 Stripe account GETs, 6 settings GETs and 6 registration-list GETs.",
+    "Payment-grade modules each independently re-observe shared state; repeated work is compounded by network round trips."
+  ],
+  "proposedContracts": {
+    "preview": {
+      "input": [
+        "cartId",
+        "expectedDraftVersion",
+        "validated receiving draft",
+        "selected server shipping option ID"
+      ],
+      "serverOnly": [
+        "current owned merchandise/discount source",
+        "fresh region/channel/inventory/delivery eligibility",
+        "reviewed tax configuration and active registration observation",
+        "provider calculation and all returned line breakdowns"
+      ],
+      "output": [
+        "non-payable estimated quote",
+        "version and source binding",
+        "expiry",
+        "eligible shipping options",
+        "item/shipping/tax/fee amounts"
+      ],
+      "forbidden": [
+        "browser-provided money or tax codes",
+        "native cart/order/payment writes",
+        "policy acceptance",
+        "inventory reservation",
+        "treating estimated total as authorization"
+      ]
+    },
+    "finalize": {
+      "input": [
+        "expected draft version",
+        "quote ID and binding",
+        "explicit current policy consent"
+      ],
+      "server": [
+        "fresh owned state and payment-state checks",
+        "revalidate current item prices, availability, delivery, tax setup and policy",
+        "short coherent transaction to normalize/apply one exact quote and persist consent",
+        "prepare payment with existing idempotency and manual-capture controls"
+      ],
+      "onMismatch": "Return conflict and require review of changed amounts; no auto-charge",
+      "avoid": "Do not replay the full 19-second chain under a different button."
+    }
+  },
+  "implementationBatches": [
+    {
+      "name": "Quote source and draft contract",
+      "status": "pending",
+      "changes": "Separate server-owned versioned draft and semantic quote binding from applied native cart fingerprint; complete shipping and pickup eligibility."
+    },
+    {
+      "name": "Read-only preview and responsive UI",
+      "status": "proof only",
+      "changes": "One debounced latest-draft request; superseded responses ignored; local failures do not lock typing or grant payment readiness."
+    },
+    {
+      "name": "Atomic review and payment compatibility",
+      "status": "pending",
+      "changes": "Reuse a still-matching provider quote after final validation; consolidate authoritative reads, bounded setup observations, database round trips and native writes; preserve native payment/fulfillment/after-sales checks."
+    },
+    {
+      "name": "Release and performance acceptance",
+      "status": "pending",
+      "changes": "Focused security/race tests, root and commerce full tests/builds, isolated provider and native workflow tests, feature flag and rollback, formal first-address/multitab/mobile proof."
+    }
+  ],
+  "performanceTargets": {
+    "status": "proposed acceptance targets, not measured production results or SLA",
+    "preview": "p95 <= 2 seconds after debounce for valid address on warm path",
+    "finalReview": "p95 <= 3 seconds excluding provider authentication/customer challenge; measure separately",
+    "measurements": "At least 30 comparable cold/warm samples per operation, failures included; no-op edits excluded from first-address timing"
+  },
+  "safety": [
+    "No removal of inventory, price, ownership, tax-registration, payment-state, quote-expiry or consent checks.",
+    "No shared cache of customer carts, amounts or addresses.",
+    "No production charges, orders, captures or refunds for this investigation.",
+    "No new provider account, infrastructure migration, tax registration or SDK upgrade."
+  ],
+  "decisionPending": "User preference requested: retain SnowForce in-site checkout vs allow Stripe-hosted checkout. No final financial flow switched."
+}

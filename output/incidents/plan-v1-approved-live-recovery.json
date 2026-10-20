@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-16T06:55:13.735Z",
+  "deployment": "57bdff45-baa0-4ac3-8d4c-a1f7fc858805",
+  "source": "2c020aaa3f1158f55fc8ab89db7038f27db582d6",
+  "scope": "Previously approved single unpaid USD 53.24 cart only",
+  "before": {
+    "account": "acct_1ToZcEAItQQT9la8",
+    "cartId": "cart_01M4YPAA62DYZQ1XY2W4KPDFKN",
+    "sessionId": "payses_01M50RNZ1TRBQMRNXY8VWR9S3R",
+    "intentId": "pi_3UQwX4AItQQT9la82ZQjgVgQ",
+    "amountCents": 5324,
+    "status": "requires_payment_method",
+    "amountReceived": 0,
+    "amountCapturable": 0,
+    "noOrder": true,
+    "noNativePayment": true
+  },
+  "item": {
+    "id": "cali_01M4YPAGHYN7VZJBVA57B2GFTM",
+    "title": "PSN Polar Faux Fur Trapper Hat",
+    "variantId": "variant_01M4F14TR83Y0N0KQK6BD35BRP",
+    "quantity": 1
+  },
+  "cancellation": "Stripe confirmed canceled; zero received and capturable",
+  "recovery": "Native recovery verified; quote and consent withdrawn",
+  "removal": "Exact original merchandise item removed; fresh native read empty",
+  "completedAt": "2026-10-16T06:55:24.711Z",
+  "retainedHistoryVerifiedAt": "2026-10-16T06:55:52.104Z",
+  "history": {
+    "status": "canceled",
+    "unauthorized": true,
+    "original_intent": "pi_3UQwX4AItQQT9la82ZQjgVgQ",
+    "phase": "canceled",
+    "retired": true,
+    "items": 0,
+    "orders": 0
+  }
+}

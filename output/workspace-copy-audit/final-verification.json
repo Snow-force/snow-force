@@ -1,0 +1,413 @@
+{
+  "old_root": "C:\\Project\\snow-force",
+  "new_root": "C:\\Users\\taiyu\\OneDrive\\Project\\snow-force",
+  "old_files": 131200,
+  "new_files": 131186,
+  "old_bytes": 3790432120,
+  "new_bytes": 3790411775,
+  "missing": [
+    ".cache/railway-production/commerce.variables.json",
+    ".cache/railway-production/prepare.mjs",
+    ".cache/railway-production/redis.variables.json",
+    ".cache/railway-production/redis/ca-key.pem",
+    ".cache/railway-production/redis/ca.pem",
+    ".cache/railway-production/redis/ca.srl",
+    ".cache/railway-production/redis/password",
+    ".cache/railway-production/redis/redis.env",
+    ".cache/railway-production/redis/server-key.pem",
+    ".cache/railway-production/redis/server.csr",
+    ".cache/railway-production/redis/server.ext",
+    ".cache/railway-production/redis/server.pem",
+    ".cache/railway-production/redis/users.acl",
+    ".cache/railway-production/verify-public.mjs"
+  ],
+  "extra": [],
+  "size_changed": [],
+  "old_links": {
+    ".codegraph": "\\\\?\\C:\\Users\\taiyu\\.omo\\codegraph\\projects\\snow-force-52b07a5de7c27715"
+  },
+  "new_links": {},
+  "old_scan_errors": [],
+  "new_scan_errors": [],
+  "missing_directories": [
+    ".cache/railway-production",
+    ".cache/railway-production/redis"
+  ],
+  "extra_directories": [
+    ".codegraph"
+  ],
+  "phase": "complete",
+  "common_hashed": 131180,
+  "hash_changed": [],
+  "hash_errors": [
+    {
+      "path": "services/commerce/.data/admin-initial-access.json",
+      "operation": "hash",
+      "error": "PermissionError",
+      "winerror": null
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-details-form/components/product-create-details-variant-section/product-create-details-variant-section.tsx",
+      "operation": "hash",
+      "error": "FileNotFoundError",
+      "winerror": null
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-inventory-kit-form/components/product-create-inventory-kit-section/product-create-inventory-kit-section.spec.tsx",
+      "operation": "hash",
+      "error": "FileNotFoundError",
+      "winerror": null
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-inventory-kit-form/components/product-create-inventory-kit-section/product-create-inventory-kit-section.tsx",
+      "operation": "hash",
+      "error": "FileNotFoundError",
+      "winerror": null
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-organize-form/components/product-create-organize-attribute-section/product-create-details-attribute-section.tsx",
+      "operation": "hash",
+      "error": "FileNotFoundError",
+      "winerror": null
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-organize-form/components/product-create-sales-channel-stacked-modal/product-create-sales-channel-drawer.tsx",
+      "operation": "hash",
+      "error": "FileNotFoundError",
+      "winerror": null
+    }
+  ],
+  "elapsed_seconds": 611.3,
+  "groups": {
+    "[root files]": {
+      "old_files": 34,
+      "new_files": 34,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "tmp": {
+      "old_files": 77,
+      "new_files": 77,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "supabase": {
+      "old_files": 52,
+      "new_files": 52,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "src": {
+      "old_files": 442,
+      "new_files": 442,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "snowforce_team_apple": {
+      "old_files": 7,
+      "new_files": 7,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "services": {
+      "old_files": 90507,
+      "new_files": 90507,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "scripts": {
+      "old_files": 3,
+      "new_files": 3,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "public": {
+      "old_files": 39,
+      "new_files": 39,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "Products": {
+      "old_files": 7,
+      "new_files": 7,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "output": {
+      "old_files": 428,
+      "new_files": 428,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "oldversion content": {
+      "old_files": 25,
+      "new_files": 25,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "node_modules": {
+      "old_files": 31038,
+      "new_files": 31038,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "docs": {
+      "old_files": 57,
+      "new_files": 57,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    "artifacts": {
+      "old_files": 6,
+      "new_files": 6,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".vercel": {
+      "old_files": 2,
+      "new_files": 2,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".superpowers": {
+      "old_files": 7,
+      "new_files": 7,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".playwright-mcp": {
+      "old_files": 44,
+      "new_files": 44,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".playwright-cli": {
+      "old_files": 12,
+      "new_files": 12,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".opencode": {
+      "old_files": 3589,
+      "new_files": 3589,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".omo": {
+      "old_files": 238,
+      "new_files": 238,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".obsidian": {
+      "old_files": 10,
+      "new_files": 10,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".next": {
+      "old_files": 2132,
+      "new_files": 2132,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".github": {
+      "old_files": 1,
+      "new_files": 1,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".git": {
+      "old_files": 414,
+      "new_files": 414,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".data": {
+      "old_files": 4,
+      "new_files": 4,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".claudian": {
+      "old_files": 5,
+      "new_files": 5,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".claude": {
+      "old_files": 1,
+      "new_files": 1,
+      "missing": 0,
+      "extra": 0,
+      "hash_changed": 0
+    },
+    ".cache": {
+      "old_files": 2019,
+      "new_files": 2005,
+      "missing": 14,
+      "extra": 0,
+      "hash_changed": 0
+    }
+  },
+  "finalized": true,
+  "final_all_original_regular_files_present": true,
+  "final_common_byte_identical": 131200,
+  "hash_errors_resolved": [
+    {
+      "path": "services/commerce/.data/admin-initial-access.json",
+      "byte_identical": true
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-details-form/components/product-create-details-variant-section/product-create-details-variant-section.tsx",
+      "byte_identical": true
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-inventory-kit-form/components/product-create-inventory-kit-section/product-create-inventory-kit-section.spec.tsx",
+      "byte_identical": true
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-inventory-kit-form/components/product-create-inventory-kit-section/product-create-inventory-kit-section.tsx",
+      "byte_identical": true
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-organize-form/components/product-create-organize-attribute-section/product-create-details-attribute-section.tsx",
+      "byte_identical": true
+    },
+    {
+      "path": "services/commerce/node_modules/@medusajs/dashboard/src/routes/products/product-create/components/product-create-organize-form/components/product-create-sales-channel-stacked-modal/product-create-sales-channel-drawer.tsx",
+      "byte_identical": true
+    }
+  ],
+  "railway_cache_copied": {
+    "Source": "C:\\Project\\snow-force\\.cache\\railway-production",
+    "Destination": "C:\\Users\\taiyu\\OneDrive\\Project\\snow-force\\.cache\\railway-production",
+    "Files": 14,
+    "AllByteIdentical": true,
+    "AccessRulesPreserved": true,
+    "Checks": [
+      {
+        "Path": "commerce.variables.json",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "prepare.mjs",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis.variables.json",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "verify-public.mjs",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/ca-key.pem",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/ca.pem",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/ca.srl",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/password",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/redis.env",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/server-key.pem",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/server.csr",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/server.ext",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/server.pem",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      },
+      {
+        "Path": "redis/users.acl",
+        "ByteIdentical": true,
+        "AccessRulesIdentical": true
+      }
+    ]
+  },
+  "external_codegraph_not_copied": [
+    {
+      "path": ".gitignore",
+      "bytes": 229
+    },
+    {
+      "path": "codegraph.db",
+      "bytes": 9547776
+    },
+    {
+      "path": "codegraph.db-shm",
+      "bytes": 32768
+    },
+    {
+      "path": "codegraph.db-wal",
+      "bytes": 5187112
+    },
+    {
+      "path": "daemon.log",
+      "bytes": 5900
+    },
+    {
+      "path": "source.json",
+      "bytes": 61
+    }
+  ]
+}

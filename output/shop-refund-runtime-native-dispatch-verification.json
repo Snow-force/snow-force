@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-10T09:57:29.896Z",
+  "status": "passed",
+  "medusa": "2.21.2",
+  "scope": "Actual MedusaApp/payment module and approved provider in disposable loopback PostgreSQL; fixture credentials; no Stripe HTTP or production mutations",
+  "checks": [
+    "Actual native payment module dispatch resolves the approved instance with the same shared database connection",
+    "Changed key and management mode reject execution",
+    "Enabled staff refund page reads actual allocation, cash and tax task tables and returns sanitized plan/status data"
+  ],
+  "actual_stripe_api_calls": 0
+}

@@ -1,0 +1,15 @@
+{
+  "testedAt": "2026-10-16T18:35:30Z",
+  "webVersion": "6276a0c313e79b420fcb6a515eb4dcc1af4a0421",
+  "webDeployment": "c1f467d6-6d9f-4e0c-ae73-01260822b0d7",
+  "backendVersion": "99b32de50bcaec24436899073044972793299b73",
+  "actionTrace": "60f92fa48a1ce0e38ff24914574b5a9d",
+  "actionDurationMs": 19005,
+  "quoteDurationMs": 9853,
+  "freshFinalStatusStartedAt": "2026-10-16T18:35:27.462909634Z",
+  "freshFinalOptionsStartedAt": "2026-10-16T18:35:27.465710862Z",
+  "statusDurationMs": 1230,
+  "optionsDurationMs": 2196,
+  "finalReadsOverlapVerified": true,
+  "limitation": "One automatic expiration renewal; no p95 or controlled comparison. Complete flow remains slow."
+}

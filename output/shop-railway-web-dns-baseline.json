@@ -1,0 +1,76 @@
+{
+  "checkedAtUtc": "2026-10-04T20:29:34.7919533Z",
+  "source": "public DNS before Railway cutover",
+  "records": [
+    {
+      "name": "snow-force.com",
+      "type": "A",
+      "status": 0,
+      "answers": [
+        {
+          "name": "snow-force.com.",
+          "type": 1,
+          "TTL": 300,
+          "data": "216.198.79.65"
+        },
+        {
+          "name": "snow-force.com.",
+          "type": 1,
+          "TTL": 300,
+          "data": "64.29.17.65"
+        }
+      ]
+    },
+    {
+      "name": "snow-force.com",
+      "type": "AAAA",
+      "status": 0,
+      "answers": null
+    },
+    {
+      "name": "www.snow-force.com",
+      "type": "CNAME",
+      "status": 0,
+      "answers": [
+        {
+          "name": "www.snow-force.com.",
+          "type": 5,
+          "TTL": 300,
+          "data": "2f583a945b1214e5.vercel-dns-017.com."
+        }
+      ]
+    },
+    {
+      "name": "snow-force.com",
+      "type": "MX",
+      "status": 0,
+      "answers": [
+        {
+          "name": "snow-force.com.",
+          "type": 15,
+          "TTL": 300,
+          "data": "0 snowforce-com01b.mail.protection.outlook.com."
+        }
+      ]
+    },
+    {
+      "name": "snow-force.com",
+      "type": "NS",
+      "status": 0,
+      "answers": [
+        {
+          "name": "snow-force.com.",
+          "type": 2,
+          "TTL": 21600,
+          "data": "vera.ns.cloudflare.com."
+        },
+        {
+          "name": "snow-force.com.",
+          "type": 2,
+          "TTL": 21600,
+          "data": "yevgen.ns.cloudflare.com."
+        }
+      ]
+    }
+  ]
+}

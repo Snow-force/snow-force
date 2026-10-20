@@ -1,0 +1,33 @@
+{
+  "verifiedAt": "2026-10-15T07:15:31.426Z",
+  "productionWrites": 0,
+  "backendHealth": 200,
+  "regionId": "reg_01M4A68JBXBJ23QZSKJHTC3E4P",
+  "currency": "usd",
+  "countries": [
+    "us"
+  ],
+  "productId": "prod_01M4A7N9A0MM81XZZP1MXC3BH0",
+  "productStatus": "published",
+  "sku": "PSN-ECLAT68-NACRE-155",
+  "price": 499,
+  "availableInventory": 15,
+  "publishableKeySha256": "d631cf6a68c07e88de306d8aee75858e2065a2943b3801be48a45f5335b12579",
+  "policyVersion": 5,
+  "anonymousCheckoutDenied": 401,
+  "checkoutPaused": false,
+  "pages": [
+    {
+      "path": "/shop",
+      "status": 200
+    },
+    {
+      "path": "/shop/eclat-68-all-mountain-skis-nacre-pink",
+      "status": 200
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200
+    }
+  ]
+}

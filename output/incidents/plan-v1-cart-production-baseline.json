@@ -1,0 +1,21 @@
+{
+  "version": "c799ecb5f3c83f48a299dcabf2661f52015f117c",
+  "sampleCount": 1,
+  "webAddMs": 8240,
+  "nativeCartAddMs": 4565,
+  "nativeEditPreflightMs": 1046,
+  "sql": {
+    "spansInRequestWindow": 155,
+    "unionMs": 3359
+  },
+  "redis": {
+    "spansInRequestWindow": 22,
+    "unionMs": 1190
+  },
+  "sqlAndRedisUnionMs": 4038,
+  "note": "Intervals are clipped to the backend HTTP root; nested and concurrent durations cannot be added. One sample is not p95, and the original quantity was restored.",
+  "traces": {
+    "web": "7f8ad03a396a92bef6acd71dfff2c7b1",
+    "native": "dccc81dc984689bb1fe1f282976523fb"
+  }
+}

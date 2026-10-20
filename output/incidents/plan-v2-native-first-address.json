@@ -1,0 +1,47 @@
+{
+  "testedAt": "2026-10-17T23:25:57.053Z",
+  "environment": "new empty-address local native cart and Stripe Sandbox Tax",
+  "checks": [
+    "new owned cart starts without any receiving address or shipping method",
+    "first-address preview calculates 5197 cents without saving address or shipping",
+    "commit rebinds the virtual shipping row to the real native shipping row",
+    "native final amount and payable proof verified",
+    "pickup switch yields zero shipping and 4202 cents",
+    "no payment or order"
+  ],
+  "timings": [
+    {
+      "path": "/store/carts",
+      "ms": 661
+    },
+    {
+      "path": "/store/carts/cart_fixture/line-items",
+      "ms": 622
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_fixture",
+      "ms": 448
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_fixture/preview",
+      "ms": 781
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_fixture",
+      "ms": 289
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_fixture/draft-commit",
+      "ms": 2634
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_fixture/preview",
+      "ms": 938
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_fixture/draft-commit",
+      "ms": 2702
+    }
+  ],
+  "productionWrites": 0
+}

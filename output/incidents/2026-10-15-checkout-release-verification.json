@@ -1,0 +1,37 @@
+{
+  "sourceCommit": "bfa2c7b07c368724c1913f96bfc0f23fa4d93cb1",
+  "frontendTests": 1050,
+  "frontendTestFiles": 169,
+  "frontendCoveragePassed": true,
+  "frontendProductionBuildPassed": true,
+  "backendTests": 651,
+  "backendFocusedCoveragePassed": true,
+  "backendTypecheckPassed": true,
+  "backendProductionBuildPassed": true,
+  "localBrowser": {
+    "completeAddressToDeliveryTaxMs": 4740,
+    "syntheticMerchandiseCents": 3900,
+    "shippingCents": 995,
+    "californiaTaxCents": 302,
+    "deliveryTotalCents": 5197,
+    "pickupTotalCents": 4202,
+    "returnToCartMerchandiseSubtotalCents": 3900,
+    "policyVisibleHeightPx": 320,
+    "policyContentHeightPx": 989,
+    "consoleErrorsOrWarnings": 0,
+    "newFixturePaymentsCreated": 0,
+    "newFixtureOrdersCreated": 0,
+    "temporaryAuthFixtureCleaned": true
+  },
+  "productionBaseline": {
+    "backendRegion": "sfo",
+    "existingCheckoutReadyMs": 7377,
+    "operation": "Browser reload until existing recipient field is visible",
+    "cartModified": false,
+    "paymentCreated": false
+  },
+  "releaseState": "Frontend live; GitHub CI success; backend source and US East patch staged pending native operator click",
+  "websiteDeployment": "e51f77e7-2d98-44d2-b1c9-a4b62050c2c8",
+  "githubQualityGate": { "runId": 38805071018, "conclusion": "success" },
+  "productionAfterRelease": { "checkoutReadyMs": 6093, "backendRegion": "sfo", "automaticTaxVerified": false, "cartModified": false, "paymentCreated": false }
+}

@@ -1,0 +1,351 @@
+{
+  "date": "2026-10-10 America/Los_Angeles",
+  "scope": "Local dynamic navigation and approved Sandbox-only adapter; independent real Stripe Sandbox payment, manual capture, cash refunds and tax reversals; native database workflows verified separately with fixture provider; no production deployment, migration or live funds",
+  "frontend": {
+    "test_files": 159,
+    "tests_passed": 984,
+    "tests_failed": 0,
+    "coverage": {
+      "statements": 58.32,
+      "branches": 52.84,
+      "functions": 56.36,
+      "lines": 59.2
+    },
+    "build_command": "npm run build -- --webpack",
+    "lint_types_and_build": "passed",
+    "default_turbopack_build": "blocked by unreadable OneDrive .data/registrations.json placeholder; data preserved",
+    "latest_tests_evidence": "output/shop-registration-root-tests.log",
+    "latest_build_evidence": "output/shop-registration-root-build.log"
+  },
+  "commerce": {
+    "tests_passed": 554,
+    "tests_failed": 0,
+    "typecheck": "passed",
+    "medusa_backend_and_admin_build": "passed",
+    "compile_mode": "isolated management mode; production credentials not injected",
+    "final_tests_evidence": "output/shop-registration-commerce-final-tests.log"
+  },
+  "browser": {
+    "checks_passed": 8,
+    "errors_and_warnings": 0,
+    "evidence": "output/shop-navigation-browser-verification.json",
+    "data_source": "read-only local fixture; no payment or production data mutation"
+  },
+  "native_capture_validation": {
+    "checks_passed": 9,
+    "postgres": "17.11",
+    "medusa": "2.21.2",
+    "focused_coverage": {
+      "lines": 100,
+      "branches": 97.3,
+      "functions": 100
+    },
+    "data_source": "disposable loopback PostgreSQL database; actual native module; fixture provider",
+    "evidence": "output/shop-full-capture-local-verification.json",
+    "production_migration": "not applied",
+    "live_stripe_calls": 0
+  },
+  "partial_refund_validation": {
+    "focused_tests_passed": 18,
+    "native_order_checks_passed": 5,
+    "focused_coverage": {
+      "lines": 100,
+      "branches": 95.05,
+      "functions": 93.83
+    },
+    "evidence": "output/shop-tax-refund-native-local-verification.json",
+    "scope": "actual native order module/migrations in a disposable loopback database; fixture tax-sale tables and captured source; local HTTP Stripe SDK fixture",
+    "funds_and_queue_integration": "Adapter registered and verified locally; actual standalone Stripe Sandbox probe passed; runtime cash endpoint/scheduler, admin flow and full shop end-to-end acceptance pending",
+    "production_mutations": 0,
+    "live_stripe_calls": 0
+  },
+  "refund_reservation_validation": {
+    "focused_tests_passed": 17,
+    "native_database_checks_passed": 8,
+    "focused_coverage": {
+      "lines": 100,
+      "branches": 99.28,
+      "functions": 95
+    },
+    "evidence": "output/shop-tax-refund-reservations-local-verification.json",
+    "scope": "disposable loopback PostgreSQL database; actual Medusa order/return/payment/user migrations and APIs; fixture Stripe provider, captured source and original tax-sale/after-sales rows",
+    "migration": "20261009052229_shop_refund_allocations.sql; not applied to production",
+    "provider_execution": "not exposed or integrated",
+    "live_stripe_calls": 0
+  },
+  "refund_tax_outbox_validation": {
+    "focused_tests_passed": 20,
+    "native_database_checks_passed": 6,
+    "focused_coverage": {
+      "lines": 99.05,
+      "branches": 92.98,
+      "functions": 87.67
+    },
+    "evidence": "output/shop-tax-refund-outbox-local-verification.json",
+    "scope": "disposable loopback PostgreSQL; actual Medusa payment module and refund API, private-role queue SQL; explicit provider, committed-sale and after-sales fixtures; installed Stripe SDK tested against loopback HTTP only",
+    "migration": "20261009170338_shop_refund_tax_outbox.sql; not applied to production",
+    "http_scheduler_and_after_sales_completion": "After-sales completion integrated locally; cash/tax HTTP execution and scheduler not integrated",
+    "customer_refund_execution": "Candidate implemented but default/live execution rejected; no active endpoint or scheduler",
+    "actual_stripe_api_calls": 0
+  },
+  "production_audit": {
+    "public_categories": 1,
+    "public_collections": 9,
+    "published_products": 3,
+    "new_promotions_endpoint_http_status": 404,
+    "railway_services_online": 3,
+    "stripe_account_selected": "Snow Force Club",
+    "stripe_environment": "live",
+    "stripe_tax_settings_status": "active",
+    "stripe_tax_registrations": 0,
+    "stripe_tax_head_office_city": "Irvine",
+    "commerce_payment_credentials_in_variable_inventory": false
+  },
+  "permit": {
+    "source": "user-provided temporary California permit photo; not independently verified with CDTFA",
+    "type": "temporary",
+    "effective_from": "2026-10-07",
+    "effective_through": "2027-01-04",
+    "permit_city": "Eastvale",
+    "actual_shipping_city_confirmed_by_user": "Irvine",
+    "ongoing_operation_intent": true,
+    "ongoing_permit": "planned; not supplied or assumed issued"
+  },
+  "deployment": "not performed",
+  "production_taxonomy_initializer": "not applied",
+  "tax_registration_mutation": "Operator-approved California sales-tax registration added to independent Sandbox only; no live account registration mutation",
+  "payment_gate": "not enabled",
+  "launch_ready_to_collect_payments": false,
+  "remaining": [
+    "Backend-first publication and production taxonomy initialization with associations preserved",
+    "Formal tax registration and reviewed policy, business and product classifications",
+    "Sandbox API credentials verified in isolated harness; runtime and dedicated webhook configuration plus protected live credentials remain pending",
+    "Apply and independently verify tested native full-capture/refund/tax/continuation/completion migrations with the complete workflow",
+    "Integrate authenticated admin cash execution and scheduler; verify independent Sandbox shop end-to-end payment, refunds, tax, webhook and recovery",
+    "Production backup and restore verification",
+    "Resolve pg/Knex/MikroORM native transaction query sequencing warning and repeat clean exchange/database acceptance"
+  ],
+  "refund_execution_validation": {
+    "configured_provider": "Approved Snowforce adapter in local configuration; original Stripe ID and non-refund methods preserved; production unchanged",
+    "evidence": "output/shop-refund-execution-local-verification.json",
+    "native_database_checks_passed": 6,
+    "admin_preview_server_tests_passed": 9,
+    "admin_preview_ui_tests_passed": 4,
+    "migration": "20261009220808_shop_refund_execution.sql; not applied to production",
+    "focused_execution_tests_passed": 15,
+    "combined_focused_tests_passed": 47,
+    "combined_coverage": {
+      "functions": 90.43,
+      "branches": 94.15,
+      "lines": 92.48
+    },
+    "provider_scope_approval": "Approved explicitly by user on 2026-10-10",
+    "actual_stripe_calls": 0,
+    "default_and_live_execution": "refused before dependencies",
+    "native_reconciliation_tests_passed": 8,
+    "scope": "Disposable loopback PostgreSQL and actual Medusa records; explicit provider fixtures and installed SDK loopback HTTP only"
+  },
+  "refund_continuation_validation": {
+    "next_started_allocation_cents": 1051,
+    "module_coverage": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "native_database_checks_passed": 5,
+    "configured_provider_changed": false,
+    "evidence": "output/shop-tracked-refund-local-verification.json",
+    "first_completed_cents": 1052,
+    "actual_stripe_calls": 0,
+    "combined_with_reservations_tests_passed": 24,
+    "migration": "20261009224620_shop_tracked_refund_continuation.sql; not applied to production",
+    "scope": "Actual Medusa native refund/order records and private-role SQL in disposable loopback PostgreSQL; fixture Stripe proofs and original sale",
+    "focused_tests_passed": 7
+  },
+  "after_sales_completion_validation": {
+    "focused_tests_passed": 35,
+    "new_tests_added": 12,
+    "module_coverage": {
+      "lines": 100,
+      "branches": 98.57,
+      "functions": 100
+    },
+    "native_database_functional_checks_passed": 8,
+    "evidence": "output/shop-after-sales-refund-completion-local-verification.json",
+    "migration": "20261009230429_shop_after_sales_refund_completion.sql; not applied to production",
+    "database_acceptance": "functional checks passed with pg native transaction deprecation warning; clean acceptance pending",
+    "actual_stripe_calls": 0,
+    "configured_provider_changed": false,
+    "scope": "Private-role SQL and actual Medusa modules in disposable loopback PostgreSQL; fixture provider responses and order-payment link only"
+  },
+  "native_refund_bookkeeping_validation": {
+    "focused_tests_passed": 21,
+    "new_tests_added": 6,
+    "native_database_checks_passed": 5,
+    "module_coverage": {
+      "lines": 89.37,
+      "branches": 88.89,
+      "functions": 87.18
+    },
+    "evidence": "output/shop-native-refund-bookkeeping-local-verification.json",
+    "migration": "20261009233013_shop_native_refund_bookkeeping_guards.sql; not applied to production",
+    "scope": "Actual Medusa native refund/order APIs in disposable loopback PostgreSQL; fixture provider responses; existing-record candidate recovery only",
+    "initial_refund_workflow": "Native workflow verified with fixture provider; real independent Stripe payment/tax/refund probe passed separately; combined full shop acceptance pending",
+    "configured_provider_changed": false,
+    "actual_stripe_api_calls": 0
+  },
+  "native_refund_workflow_validation": {
+    "focused_callback_tests_passed": 8,
+    "new_tests_added": 2,
+    "native_database_checks_passed": 4,
+    "module_coverage": {
+      "lines": 100,
+      "branches": 100,
+      "functions": 100
+    },
+    "evidence": "output/shop-native-refund-workflow-local-verification.json",
+    "scope": "Actual installed native refundPaymentWorkflow, Query/Link, payment/order modules and local event bus in disposable loopback PostgreSQL; Stripe responses are fixtures",
+    "warning_count": 0,
+    "actual_stripe_api_calls": 0,
+    "configured_provider_changed": false,
+    "production_migrations_applied": false,
+    "local_postgres": "stopped after disposable databases cleaned"
+  },
+  "adapter_registration_validation": {
+    "approved": true,
+    "local_configured": true,
+    "production_deployed": false,
+    "provider_id": "pp_stripe_stripe",
+    "adapter_tests_passed": 7,
+    "combined_callback_tests_passed": 15,
+    "coverage": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 97.73
+    },
+    "evidence": "output/shop-stripe-refund-provider-coverage.log",
+    "live_refunds": "rejected"
+  },
+  "actual_stripe_sandbox_probe": {
+    "account": "Snow Force Club sandbox",
+    "stripe_context": "acct_1ToZcNAbMQunT3pr",
+    "livemode": false,
+    "payment_cents": 3153,
+    "refund_cents": [
+      1052,
+      1051,
+      1050
+    ],
+    "total_refunded_cents": 3153,
+    "overrefund_rejected": true,
+    "capture_method": "automatic",
+    "shop_end_to_end_accepted": false,
+    "evidence": "output/shop-stripe-sandbox-probe-20261010.json",
+    "receipt_screenshot": "output/shop-stripe-sandbox-refund-receipt-20261010.jpg"
+  },
+  "sandbox_tax_registration_validation": {
+    "checked_at": "2026-10-10T08:53:45.541Z",
+    "scope": "operator-approved California sales-tax test registration in the independent Snow Force Club Sandbox only",
+    "live_mutation": false,
+    "tax_authority_registration": false,
+    "ongoing_permit_issued_claim": false,
+    "account_id": "acct_1ToZcNAbMQunT3pr",
+    "created_new": true,
+    "registration": {
+      "id": "taxreg_1UOw2HAbMQunT3pre61qoGuJ",
+      "livemode": false,
+      "country": "US",
+      "state": "CA",
+      "type": "state_sales_tax",
+      "status": "active",
+      "active_from": 1791622425,
+      "expires_at": null
+    },
+    "status": "verified"
+  },
+  "actual_stripe_sandbox_tax_probe": {
+    "checked_at": "2026-10-10T09:03:04.290Z",
+    "run_id": "96ebacfa-e6ee-4011-bda5-1d600ee67a68",
+    "scope": "real Stripe Sandbox payment, inherited provider capture, application API factories, quote/allocation/tax-result validators; synthetic cart/order/payment/capture IDs and receipt fields; no native database ledger, admin execution, inventory, queue or webhook acceptance",
+    "live_mutation": false,
+    "refunds": [
+      {
+        "operation_id": "da524582-c991-4a8a-acb9-8ae0acbf6733",
+        "refund_id": "re_3UOw8mAbMQunT3pr1HulVT7b",
+        "status": "succeeded",
+        "amount_cents": 1078,
+        "net_cents": 1000,
+        "tax_cents": 78,
+        "reversal_id": "tax_1UOwBKAbMQunT3pryXpZUAty",
+        "reversal_validated": true
+      },
+      {
+        "operation_id": "874db6a6-9762-4656-a83b-1ac4e9577a06",
+        "refund_id": "re_3UOw8mAbMQunT3pr1zpgSLYa",
+        "status": "succeeded",
+        "amount_cents": 1078,
+        "net_cents": 1000,
+        "tax_cents": 78,
+        "reversal_id": "tax_1UOwBLAbMQunT3prWpfYjxpu",
+        "reversal_validated": true
+      },
+      {
+        "operation_id": "2a11f42c-8b8b-4f32-9bbb-f2e761a9229a",
+        "refund_id": "re_3UOw8mAbMQunT3pr1cMTAosv",
+        "status": "succeeded",
+        "amount_cents": 1077,
+        "net_cents": 1000,
+        "tax_cents": 77,
+        "reversal_id": "tax_1UOwBMAbMQunT3prIXnfEGhd",
+        "reversal_validated": true
+      }
+    ],
+    "checks": [
+      "actual application creator and inherited native Stripe capture authorize then capture exactly the calculated total",
+      "real funds and original Tax Transaction header and all line items pass application validators",
+      "three partial cash refunds and specific-line tax reversals conserve every original net and tax cent; replay produces the same remote records"
+    ],
+    "intent_id": "pi_3UOw8mAbMQunT3pr1caBi4cD",
+    "captured_payment": {
+      "id": "pi_3UOw8mAbMQunT3pr1caBi4cD",
+      "livemode": false,
+      "status": "succeeded",
+      "amount": 3233,
+      "amount_received": 3233,
+      "amount_capturable": 0
+    },
+    "tax_sale_id": "tax_1UOw3bAbMQunT3prWt6N27vu",
+    "final_charge": {
+      "id": "ch_3UOw8mAbMQunT3pr1cGR7E0j",
+      "livemode": false,
+      "captured": true,
+      "refunded": true,
+      "amount": 3233,
+      "amount_refunded": 3233
+    },
+    "status": "passed"
+  },
+  "refund_startup_and_api_regression_validation": {
+    "cold_entry_orders_passed": 10,
+    "focused_startup_and_related_tests_passed": 48,
+    "currency_api_focused_tests_passed": 15,
+    "shared_funds_contract_coverage": {
+      "lines": 100,
+      "branches": 100,
+      "functions": 100
+    },
+    "changes": [
+      "Independent shared refund schemas prevent startup-order failures",
+      "Stored requests still require USD; Refund API request omits unsupported currency field"
+    ],
+    "final_commerce_tests_passed": 554,
+    "typecheck": "passed",
+    "backend_and_admin_build": "passed",
+    "evidence": [
+      "output/shop-refund-import-focused.log",
+      "output/shop-refund-api-fields-focused.log",
+      "output/shop-registration-commerce-final-tests.log",
+      "output/shop-registration-commerce-build.log"
+    ]
+  }
+}

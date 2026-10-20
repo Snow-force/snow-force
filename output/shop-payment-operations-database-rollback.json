@@ -1,0 +1,20 @@
+{
+  "role": "snowforce_commerce",
+  "tlsVerified": true,
+  "exactUsdCents": true,
+  "realQueueSQL": true,
+  "conditionalAssociation": true,
+  "raceRejected": true,
+  "metadataPreserved": true,
+  "idempotentReplay": true,
+  "stripeRequests": "injected GET fixture only",
+  "permanentMutations": false,
+  "rollbackVerified": true,
+  "counts": {
+    "carts": "0",
+    "sessions": "0",
+    "payments": "0",
+    "orders": "0",
+    "refunds": "0"
+  }
+}

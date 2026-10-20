@@ -16,6 +16,22 @@ const {POST:quote}=require("../src/api/store/snowforce/checkout/[id]/quote/route
 process.env.JWT_SECRET="fixture-lifecycle-signing-key-at-least-32-characters";
 const withdraw=f=>withdrawCartTaxQuote(f.scope,auth,f.cart.id);
 
+test("edit preparation uses the owner-bound SQL snapshot without a duplicate graph read", async () => {
+  const f=await applicationFixture(),base=f.scope;
+  f.scope={resolve:(key,options)=>{
+    assert.notEqual(key,"query","no redundant graph dependency during edit preparation");
+    return base.resolve(key,options);
+  }};
+  const before=structuredClone(f.cart),writes=f.writes.length;
+  assert.deepEqual(await withdraw(f),{status:"editable",quote_removed:false,review_required:true});
+  assert.deepEqual(f.cart,before);assert.equal(f.writes.length,writes);
+  await assert.rejects(()=>withdrawCartTaxQuote(f.scope,{...auth,actor_id:"cus_other"},f.cart.id));
+  for(const guard of [{has_order:true},{has_session:true},{has_payment:true},{has_collection_funds:true}]){
+    f.guard=guard;await assert.rejects(()=>withdraw(f));
+    assert.deepEqual(f.cart,before);assert.equal(f.writes.length,writes);
+  }
+});
+
 test("a new empty native cart with unfilled address and collection remains editable without tax or money writes", async () => {
   for(const address of [null,{country_code:"us",first_name:null,last_name:null,address_1:null,address_2:null,city:null,province:null,postal_code:null,phone:null}]){
     const f=await applicationFixture(),resolve=f.scope.resolve.bind(f.scope);

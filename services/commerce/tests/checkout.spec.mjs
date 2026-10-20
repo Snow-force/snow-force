@@ -92,6 +92,25 @@ const request = (value, overrides = {}) => ({ auth_context: { actor_id: "cus_fix
 test("native cart endpoints reject anonymous, missing and foreign owners before continuing", async () => {
   for (const req of [request(null), request({ ...cart(), customer_id: "cus_other" }), request(cart(), { auth_context: undefined })]) await assert.rejects(() => requireOwnedCart(req, {}, () => assert.fail("must not continue")));
 });
+
+test("owned reads and completion retries avoid payment joins while edits retain all financial fences", async () => {
+  for (const overrides of [{ method: "GET" }, { path: "/store/carts/cart_fixture/complete" }, {}]) {
+    const calls = [], value = { ...cart(), metadata: null, payment_collection: null };
+    const req = request(value, { ...overrides, scope: { resolve: () => ({ graph: async input => {
+      calls.push(input);
+      return { data: [Object.fromEntries(input.fields.map(field => [field, value[field]]))] };
+    } }) } });
+    let passed = 0;
+    await requireOwnedCart(req, {}, () => passed++);
+    assert.equal(passed, 1);
+    assert.deepEqual(calls, [{ entity: "cart", filters: { id: "cart_fixture" }, fields: overrides.method === "GET" || overrides.path
+      ? ["id", "customer_id"]
+      : ["id", "customer_id", "completed_at", "metadata", "payment_collection.payment_sessions.status"] }]);
+  }
+  for (const method of ["GET", "POST", "DELETE"]) {
+    await assert.rejects(() => requireOwnedCart(request({ id: "cart_fixture", customer_id: "cus_other" }, { method }), {}, () => assert.fail("foreign cart")));
+  }
+});
 test("freezes paid carts across native mutations while allowing owned reads and completion retries", async () => {
   await assert.rejects(() => requireOwnedCart(request(cart()), {}, () => assert.fail("must not mutate")));
   let passed = 0;

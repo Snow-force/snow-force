@@ -1,0 +1,82 @@
+{
+  "observedAt": "2026-10-17T03:03:10.942Z",
+  "hoursBack": 1,
+  "sampleRateSeconds": 60,
+  "services": [
+    {
+      "name": "commerce",
+      "metrics": [
+        {
+          "measurement": "CPU_USAGE",
+          "current": 0.002300766666666667,
+          "average": 0.009219403825136611,
+          "min": 0,
+          "max": 0.07650739999999999,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "CPU_LIMIT",
+          "current": 1,
+          "average": 0.9836065573770492,
+          "min": 0,
+          "max": 1,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_USAGE_GB",
+          "current": 0.33585152,
+          "average": 0.39444510216393447,
+          "min": 0,
+          "max": 0.88365056,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_LIMIT_GB",
+          "current": 1.999998976,
+          "average": 1.9672121075409839,
+          "min": 0,
+          "max": 1.999998976,
+          "sampleCount": 61
+        }
+      ]
+    },
+    {
+      "name": "redis",
+      "metrics": [
+        {
+          "measurement": "CPU_USAGE",
+          "current": 0.005507116666666667,
+          "average": 0.004273350546448084,
+          "min": 0,
+          "max": 0.005930683333333333,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "CPU_LIMIT",
+          "current": 0.5,
+          "average": 0.4918032786885246,
+          "min": 0,
+          "max": 0.5,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_USAGE_GB",
+          "current": 0.020373504,
+          "average": 0.020075906098360654,
+          "min": 0,
+          "max": 0.020750336,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_LIMIT_GB",
+          "current": 0.49999872,
+          "average": 0.49180201967213155,
+          "min": 0,
+          "max": 0.49999872,
+          "sampleCount": 61
+        }
+      ]
+    }
+  ],
+  "interpretation": "Minute sampling shows no sustained resource saturation in this window; transient spikes cannot be ruled out. No capacity changes made."
+}

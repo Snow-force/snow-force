@@ -1,0 +1,135 @@
+{
+  "status": "This batch deployed and functionally verified; overall optimization plan remains incomplete",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/34",
+  "revision": "aa4ad8fa71b25c886336a55fbe9ca6585f1c4c4b",
+  "tree": "e24f950ad2735c15d2ba1ce761727b5dc07a24d3",
+  "validation": {
+    "rootTests": 1168,
+    "rootCoverage": "passed",
+    "rootProductionBuild": "passed",
+    "commerceTests": 742,
+    "commerceTypecheck": "passed",
+    "commerceBackendBuild": "passed",
+    "commerceAdminBuild": "passed",
+    "prQualityGate": 39104774155,
+    "actWarnings": 0
+  },
+  "evidence": {
+    "browser": "plan-v1-cart-payment-feedback-browser.json",
+    "benchmark": "plan-v1-cart-feedback-benchmark.json",
+    "ci": "plan-v1-cart-payment-feedback-ci.json",
+    "formalBefore": "plan-v1-cart-production-baseline.json",
+    "formalAfter": "plan-v1-cart-production-after.json"
+  },
+  "runtimeFlags": {
+    "valuesRedacted": true,
+    "flags": {
+      "SHOP_CHECKOUT_DRAFTS": "configured; value unavailable",
+      "SHOP_CHECKOUT_OPTIMIZED_READS": "configured; value unavailable"
+    }
+  },
+  "infrastructure": {
+    "unrelatedStagedPatchApplied": false,
+    "webRegion": "sfo",
+    "instances": 1,
+    "regionMigration": false,
+    "redisMigration": false,
+    "captureModeChanged": false,
+    "paymentMethodsChanged": false
+  },
+  "financialWrites": {
+    "productionPayments": 0,
+    "productionCaptures": 0,
+    "productionRefunds": 0,
+    "sandboxIntentCanceled": true,
+    "sandboxReceivedCents": 0,
+    "sandboxCapturableCents": 0,
+    "sandboxOrders": 0
+  },
+  "remainingPlanAcceptance": [
+    "Production authenticated p95 for cart, checkout and final payment preparation",
+    "Full wallet/bank challenge, interrupted-return and webhook ordering matrix",
+    "Member/admin loading-feedback inventory"
+  ],
+  "cleanup": {
+    "ownedLocalServersStopped": true,
+    "isolatedDatabaseStopped": true,
+    "originalFixtureQuantity": 1,
+    "unrelatedUserChangesPreserved": true,
+    "originalProductionCartQuantityRestored": true,
+    "productionRefreshVerified": true
+  },
+  "deployment": {
+    "id": "27806e15-e395-4f79-a839-7f9e44084ad6",
+    "status": "SUCCESS",
+    "revision": "aa4ad8fa71b25c886336a55fbe9ca6585f1c4c4b",
+    "formalVersionEndpointMatches": true,
+    "healthHTTP": 200,
+    "sourcePinned": true,
+    "mainQualityGate": 39105216209
+  },
+  "productionBaseline": {
+    "version": "c799ecb5f3c83f48a299dcabf2661f52015f117c",
+    "sampleCount": 1,
+    "webAddMs": 8240,
+    "nativeCartAddMs": 4565,
+    "nativeEditPreflightMs": 1046,
+    "sql": {
+      "spansInRequestWindow": 155,
+      "unionMs": 3359
+    },
+    "redis": {
+      "spansInRequestWindow": 22,
+      "unionMs": 1190
+    },
+    "sqlAndRedisUnionMs": 4038,
+    "note": "Intervals are clipped to the backend HTTP root; nested and concurrent durations cannot be added. One sample is not p95, and the original quantity was restored.",
+    "traces": {
+      "web": "7f8ad03a396a92bef6acd71dfff2c7b1",
+      "native": "dccc81dc984689bb1fe1f282976523fb"
+    }
+  },
+  "formalVerification": {
+    "revision": "aa4ad8fa71b25c886336a55fbe9ca6585f1c4c4b",
+    "sampleCount": 1,
+    "oldAddMs": 8240,
+    "newAddMs": 7077,
+    "measure": "Railway web HTTP request duration; before and after one sample each, not a controlled p95 estimate",
+    "concurrentReads": [
+      {
+        "name": "GET /store/carts/*",
+        "startOffsetMs": 0,
+        "durationMs": 437
+      },
+      {
+        "name": "GET /store/regions",
+        "startOffsetMs": 1,
+        "durationMs": 165
+      },
+      {
+        "name": "GET /store/products",
+        "startOffsetMs": 167,
+        "durationMs": 504
+      }
+    ],
+    "nativeRequests": [
+      {
+        "name": "POST /store/snowforce/checkout/*/edit",
+        "durationMs": 942
+      },
+      {
+        "name": "POST /store/carts/*/line-items",
+        "durationMs": 4358
+      }
+    ],
+    "traceId": "921d05cbf76a907dd9ea3b5a442e1cba",
+    "feedback": "Formal browser opened the cart immediately, retained quantity 1 while pending, and showed quantity 2 only on success",
+    "originalQuantityRestored": true,
+    "productionFinancialWrites": 0,
+    "targetMet": false,
+    "refreshRetainsOriginalQuantity": true,
+    "liveScreenshot": "plan-v1-cart-live-immediate-feedback.png",
+    "restoredScreenshot": "plan-v1-cart-live-restored.png"
+  },
+  "validatedAt": "2026-10-18T07:00:48.497Z"
+}

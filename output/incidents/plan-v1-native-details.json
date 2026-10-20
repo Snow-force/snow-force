@@ -1,0 +1,11 @@
+{
+  "testedAt": "2026-10-16T07:05:40.569Z",
+  "environment": "isolated local Medusa/PostgreSQL",
+  "productionWrites": 0,
+  "checks": [
+    "stale revision preserves original quote and address",
+    "valid revision reaches actual native update workflow",
+    "newer address rejects old revision",
+    "quote invalidated before next payment"
+  ]
+}

@@ -1,0 +1,134 @@
+[
+  {
+    "source": ".env.local",
+    "name": "NEXT_PUBLIC_SUPABASE_URL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "SUPABASE_SECRET_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "RESEND_API_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "STAFF_NOTIFICATION_EMAIL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "GOOGLE_TRANSLATE_API_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "NEXT_PUBLIC_SITE_URL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "STRIPE_SECRET_KEY",
+    "present": true,
+    "stripeMode": "test"
+  },
+  {
+    "source": ".env.local",
+    "name": "STRIPE_WEBHOOK_SECRET",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "present": true,
+    "stripeMode": "test"
+  },
+  {
+    "source": ".env.local",
+    "name": "MEDUSA_BACKEND_URL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "MEDUSA_PUBLISHABLE_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "SHOP_CART_COOKIE_SECRET",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.local",
+    "name": "COMMERCE_ORDER_SYNC_SECRET",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "NEXT_PUBLIC_SUPABASE_URL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "SUPABASE_SECRET_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "RESEND_API_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "STAFF_NOTIFICATION_EMAIL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "GOOGLE_TRANSLATE_API_KEY",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".env.production.local",
+    "name": "NEXT_PUBLIC_SITE_URL",
+    "present": true,
+    "stripeMode": null
+  },
+  {
+    "source": ".stripe-live.env",
+    "name": "STRIPE_SECRET_KEY",
+    "present": true,
+    "stripeMode": "live"
+  }
+]

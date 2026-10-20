@@ -1,0 +1,35 @@
+{
+  "testedAt": "2026-10-16T18:46:10.843Z",
+  "backendVersion": "ba5662977024cdb4d0980ce281fa850a025d9f35",
+  "backendDeployment": "f26bd23b-67f1-4fbe-81e1-18a35e50f551",
+  "webVersion": "6276a0c313e79b420fcb6a515eb4dcc1af4a0421",
+  "quoteTrace": "7c41916e5544d6754cc251dcc866b27d",
+  "quoteDurationMs": 7864,
+  "counts": {
+    "postgresql": {
+      "count": 156,
+      "sumDurationMs": 3468.6894999999986
+    },
+    "redis": {
+      "count": 9,
+      "sumDurationMs": 547.044811
+    }
+  },
+  "addressAction": {
+    "trace": "ec422bc21be7e7e0cf6746874243f763",
+    "durationMs": 22932,
+    "detailsDurationMs": 6191,
+    "initialShippingOptionsDurationMs": 2473,
+    "finalShippingOptionsDurationMs": 2436,
+    "detailsPostgreSQLCalls": 167
+  },
+  "ui": {
+    "quoteReady": true,
+    "taxCents": 3867,
+    "totalCents": 53767,
+    "policyAccepted": false,
+    "paymentPrepared": false
+  },
+  "targetMet": false,
+  "limitations": "Single original-address normalized save; not a controlled comparison or production p95. Total action did not improve consistently. Trace spans overlap."
+}

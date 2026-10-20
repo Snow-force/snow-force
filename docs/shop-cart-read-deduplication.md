@@ -1,0 +1,11 @@
+# Cart preflight read reduction
+
+Owned cart GETs previously fetched payment-session relations even though the middleware only used cart ownership. Cart edit preparation also performed a graph read immediately before an owner-bound SQL snapshot containing the same ownership, completion and payment-session evidence.
+
+The middleware now requests only cart and owner IDs for reads and completion retries. Native mutations retain their completion, quote and payment-session checks; completion continues through its existing locked checkout workflow. Edit preparation uses the existing fresh owner-bound SQL snapshot directly. Both checkout/native leases, transaction row locks, pending-operation checks, financial-history checks, quote signatures and locked final snapshots remain in place. No schema, dependencies, infrastructure or payment settings change.
+
+Validation uses the real installed Medusa cart totals engine and PostgreSQL snapshot tests, plus focused owner/payment/order/funds/race/rollback cases. A same-process isolated native Medusa/PostgreSQL comparison alternates old/current order with four warmups and 30 measured samples each. Edit preflight p50/p95 changed from 14.63/16.32ms to 12.54/14.50ms; read-owner guard changed from 2.62/3.56ms to 1.53/2.98ms. The edit's duplicate graph call is absent. Cart, items, shipping, quote operations, sessions and orders remain unchanged; foreign owners are rejected in both versions.
+
+These measurements exclude the browser, public network, member authentication and the native add workflow. They do not establish production p95 or resolve the remaining multi-second add-to-cart latency. The existing production add sample was 7.077 seconds, including 4.358 seconds in native add. Production acceptance must distinguish this bounded read reduction from that larger outstanding bottleneck.
+
+Evidence is kept locally in `output/incidents/plan-v1-cart-read-dedup-benchmark.json` and `plan-v1-cart-read-dedup-coverage.log`. Focused coverage is 100% lines/functions, 92.86% branches for cart ownership and 89.39% branches for quote withdrawal; full checkout-draft and payment regression checks remain required alongside root tests, coverage and production builds.

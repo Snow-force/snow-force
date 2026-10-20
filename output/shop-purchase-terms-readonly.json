@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-02T07:50:26.687Z",
+  "role": "snowforce_commerce",
+  "tlsVerified": true,
+  "originalCartLookup": true,
+  "missingPurchasePolicyRequiresReview": true,
+  "inventedDeadlines": false,
+  "statementsReadOnly": true,
+  "sqlReads": 3,
+  "counts": {
+    "orders": "0",
+    "requests": "0"
+  },
+  "financialOperations": false
+}

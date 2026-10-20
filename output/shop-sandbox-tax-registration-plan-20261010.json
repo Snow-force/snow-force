@@ -1,0 +1,16 @@
+{
+  "account_id": "acct_1ToZcNAbMQunT3pr",
+  "livemode": false,
+  "status": "operator_approved_and_verified_active",
+  "registration_id": "taxreg_1UOw2HAbMQunT3pre61qoGuJ",
+  "purpose": "Independent Sandbox California tax calculation and refund reversal acceptance only",
+  "request": {
+    "country": "US",
+    "country_options": { "us": { "state": "CA", "type": "state_sales_tax" } },
+    "active_from": "now"
+  },
+  "live_mode_impact": false,
+  "tax_authority_registration": false,
+  "ongoing_permit_issued_claim": false,
+  "created": true
+}

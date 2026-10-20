@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-10-16T02:12:02.657Z",
+  "environment": "local browser and isolated Medusa/PostgreSQL with supplied Stripe Sandbox",
+  "checkoutCancelToEdit": true,
+  "oldPaymentFormRemoved": true,
+  "freshPolicyAgreementRequired": true,
+  "automaticTaxRecalculation": true,
+  "lockedCartRemovalWithConfirmation": true,
+  "refreshRetainsEmptyCart": true,
+  "retainedCanceledPaymentSessions": 2,
+  "unfundedTestPaymentIntentsCanceled": 2,
+  "ordersCreated": 0,
+  "productionPaymentsChanged": 0
+}

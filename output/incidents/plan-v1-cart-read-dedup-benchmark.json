@@ -1,0 +1,768 @@
+{
+  "testedAt": "2026-10-18T07:06:39.919Z",
+  "environment": "Real isolated local Medusa container/PostgreSQL, memory locks, same process and cart, alternating old/current order, 4 warmups and 30 measured samples each; browser, network edge and Supabase member auth excluded",
+  "sourceBaseline": "aa4ad8fa71b25c886336a55fbe9ca6585f1c4c4b",
+  "summaries": [
+    {
+      "operation": "edit",
+      "version": "old",
+      "n": 30,
+      "p50Ms": 14.63,
+      "p95Ms": 16.32,
+      "graphCalls": 1
+    },
+    {
+      "operation": "edit",
+      "version": "current",
+      "n": 30,
+      "p50Ms": 12.54,
+      "p95Ms": 14.5,
+      "graphCalls": 0
+    },
+    {
+      "operation": "read-guard",
+      "version": "old",
+      "n": 30,
+      "p50Ms": 2.62,
+      "p95Ms": 3.56,
+      "graphCalls": 1
+    },
+    {
+      "operation": "read-guard",
+      "version": "current",
+      "n": 30,
+      "p50Ms": 1.53,
+      "p95Ms": 2.98,
+      "graphCalls": 1
+    }
+  ],
+  "checks": [
+    "foreign owners rejected in old and current edit/read guards",
+    "cart/items/shipping/quote operation/payment/order state unchanged",
+    "one original item quantity 1, zero orders and active linked sessions"
+  ],
+  "productionWrites": 0,
+  "limitations": "Measures only edit preflight and owner-read guard, not complete add-to-cart latency or production p95.",
+  "samples": [
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 16.53,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.5,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.37,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.7,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.99,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.51,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.91,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 3.13,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.9,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.84,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.19,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.46,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.05,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 2.98,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 16.29,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 9.9,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.55,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.5,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.42,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.65,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.23,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.56,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.3,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.62,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.63,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.67,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.21,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.57,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.35,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.51,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.4,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.73,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.45,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.46,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.84,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.54,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.23,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.54,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 13.62,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.57,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.45,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.53,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.39,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.32,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.86,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.53,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.39,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.95,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.74,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.73,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.58,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.6,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.64,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.35,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.09,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.79,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 13.87,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.95,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 15.6,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.69,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.52,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.53,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.84,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.99,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.33,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 3.09,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.54,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.27,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.67,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.65,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 13.81,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.26,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.95,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.23,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 10.63,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.44,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.56,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.32,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 12.29,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.62,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 13.98,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.05,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.64,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.53,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.46,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.56,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 13.91,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.01,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 12.8,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 1.97,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.04,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.3,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.05,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.38,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 15.58,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.01,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.98,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 3.56,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 13.69,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 6.63,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 14.5,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.49,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.11,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.58,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.51,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.2,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.48,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.54,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.72,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.11,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.89,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.96,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 16.32,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.9,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 11.56,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.72,
+      "graphCalls": 1
+    },
+    {
+      "version": "current",
+      "operation": "edit",
+      "durationMs": 12.85,
+      "graphCalls": 0
+    },
+    {
+      "version": "current",
+      "operation": "read-guard",
+      "durationMs": 1.65,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "edit",
+      "durationMs": 14.49,
+      "graphCalls": 1
+    },
+    {
+      "version": "old",
+      "operation": "read-guard",
+      "durationMs": 2.7,
+      "graphCalls": 1
+    }
+  ]
+}

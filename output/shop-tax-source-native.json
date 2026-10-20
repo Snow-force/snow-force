@@ -1,0 +1,29 @@
+{
+  "kind": "actual Medusa Query graph and read-only prerequisites verification",
+  "native_cart_fields_accepted": true,
+  "selected_field_count": 47,
+  "missing_cart_denied_before_address_and_payment_reads": true,
+  "missing_cart_private_merchant_reads": 0,
+  "missing_cart_stripe_calls": 0,
+  "native_shipping_policy": {
+    "fee_cents": 995,
+    "free_threshold_cents": 10000
+  },
+  "actual_business_configuration_ready": false,
+  "stripe_readonly": {
+    "livemode": false,
+    "settings_status": "pending",
+    "registration_count": 0
+  },
+  "database_counts": {
+    "draft_products": 14,
+    "published_products": 0,
+    "orders": 0,
+    "tax_operations": 0,
+    "tax_quotes": 0,
+    "tax_applications": 0
+  },
+  "writes": 0,
+  "payment_gate_enabled": false,
+  "positive_amount_cases": "isolated fixtures using installed native decorateCartTotals; not a live purchase"
+}

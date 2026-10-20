@@ -1,0 +1,35 @@
+{
+  "testedAt": "2026-10-16T18:34:17.859Z",
+  "head": "eebb63b44f0e2203f1c8a106e6b72f66ca072a36",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/28",
+  "root": {
+    "tests": 1127,
+    "testFiles": 179,
+    "coverage": "passed",
+    "productionBuild": "passed",
+    "sourceHashesUnchanged": 1024
+  },
+  "commerce": {
+    "tests": 698,
+    "typecheck": "passed",
+    "backendAndAdminBuild": "passed",
+    "shippingCoverage": {
+      "linePercent": 100,
+      "branchPercent": 94.29
+    }
+  },
+  "nativeFlows": {
+    "deliveryToPickupToDelivery": "passed",
+    "zeroPickupShipping": true,
+    "originalDeliveryAddressRestored": true,
+    "quoteSamplesMs": [
+      2011,
+      1972,
+      1918
+    ],
+    "activePaymentSessions": 0,
+    "orders": 0
+  },
+  "productionAcceptance": "pending deployment and real trace/UI verification",
+  "limitations": "Isolated local database and in-memory leases with Stripe Sandbox; not production latency or p95."
+}

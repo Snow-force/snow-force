@@ -1,0 +1,18 @@
+{
+  "VerifiedAt": "2026-10-02T03:40:14.9858598Z",
+  "AdminEmails": [
+    "club administrator",
+    "owner administrator"
+  ],
+  "AdminCount": 2,
+  "DistinctPasswords": true,
+  "CredentialFileOwner": "DESKTOP-HFRA7JB\\taiyu",
+  "AllowedAccounts": [
+    "DESKTOP-HFRA7JB\\taiyu"
+  ],
+  "CustomerServiceEmail": "Shop@snow-force.com",
+  "PolicyRevision": 1,
+  "Published": false,
+  "LoginAndAdminApiVerified": true,
+  "WrongPasswordRejected": true
+}

@@ -1,0 +1,830 @@
+{
+  "testedAt": "2026-10-17T02:50:25.561Z",
+  "backendVersion": "764d3b28ea49299514c08a62c6da2b1cd7976a66",
+  "backendDeployment": "d5e5bed2-519e-4f69-8d45-5d5efcc461d1",
+  "webVersion": "6276a0c313e79b420fcb6a515eb4dcc1af4a0421",
+  "requests": [
+    {
+      "traceId": "0d5123a776c656ce0f747598279fa575",
+      "route": "/store/snowforce/checkout/[cart]/shipping-options",
+      "httpDurationMs": 2079.587294,
+      "startedAt": "2026-10-17T02:47:31.513799257Z",
+      "observedDatabaseSpanCounts": {
+        "postgresql": 84
+      }
+    },
+    {
+      "traceId": "f66b3378356b10d14c6a7abd9f84eb9a",
+      "route": "/store/snowforce/checkout/[cart]/quote",
+      "httpDurationMs": 7588.791246,
+      "startedAt": "2026-10-17T02:47:23.888852985Z",
+      "observedDatabaseSpanCounts": {
+        "postgresql": 147,
+        "redis": 7
+      }
+    },
+    {
+      "traceId": "5638d2962f1e319170c65488099a76af",
+      "route": "/store/snowforce/checkout/[cart]/shipping-options",
+      "httpDurationMs": 2275.425288,
+      "startedAt": "2026-10-17T02:47:21.603239742Z",
+      "observedDatabaseSpanCounts": {
+        "postgresql": 85,
+        "redis": 11
+      }
+    },
+    {
+      "traceId": "85ccf448954810daa7692bc33a2bcbc2",
+      "route": "/store/snowforce/checkout/[cart]/details",
+      "httpDurationMs": 4911.358833,
+      "startedAt": "2026-10-17T02:47:16.259704054Z",
+      "observedDatabaseSpanCounts": {
+        "postgresql": 133,
+        "redis": 30
+      }
+    },
+    {
+      "traceId": "d37bf66dd9b7a3a726361246720a3dc8",
+      "route": "/shop/checkout",
+      "httpDurationMs": 20594.971475,
+      "startedAt": "2026-10-17T02:47:13.020242183Z",
+      "observedDatabaseSpanCounts": {}
+    }
+  ],
+  "events": [
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "e707a5a3-c3fd-404a-b0a8-4e6a61cbf340",
+      "sequence": 2,
+      "phase": "details.owner.initial",
+      "startedAt": "2026-10-17T02:47:16.340Z",
+      "durationMs": 66.56,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "e707a5a3-c3fd-404a-b0a8-4e6a61cbf340",
+      "sequence": 3,
+      "phase": "details.withdraw",
+      "startedAt": "2026-10-17T02:47:16.482Z",
+      "durationMs": 1160.063,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "e707a5a3-c3fd-404a-b0a8-4e6a61cbf340",
+      "sequence": 4,
+      "phase": "details.owner.final",
+      "startedAt": "2026-10-17T02:47:17.705Z",
+      "durationMs": 50.918,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "e707a5a3-c3fd-404a-b0a8-4e6a61cbf340",
+      "sequence": 5,
+      "phase": "details.native-save",
+      "startedAt": "2026-10-17T02:47:17.756Z",
+      "durationMs": 3251.891,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "e707a5a3-c3fd-404a-b0a8-4e6a61cbf340",
+      "sequence": 1,
+      "phase": "checkout.details",
+      "startedAt": "2026-10-17T02:47:16.340Z",
+      "durationMs": 4799.484,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "0f150542-ff5d-48f5-95c3-6f8bba7bcefc",
+      "sequence": 2,
+      "phase": "shipping.owner",
+      "startedAt": "2026-10-17T02:47:21.739Z",
+      "durationMs": 48.795,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "0f150542-ff5d-48f5-95c3-6f8bba7bcefc",
+      "sequence": 3,
+      "phase": "shipping.inventory",
+      "startedAt": "2026-10-17T02:47:21.788Z",
+      "durationMs": 1047.962,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "0f150542-ff5d-48f5-95c3-6f8bba7bcefc",
+      "sequence": 4,
+      "phase": "shipping.delivery-types",
+      "startedAt": "2026-10-17T02:47:22.836Z",
+      "durationMs": 24.632,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "0f150542-ff5d-48f5-95c3-6f8bba7bcefc",
+      "sequence": 5,
+      "phase": "shipping.pricing",
+      "startedAt": "2026-10-17T02:47:22.861Z",
+      "durationMs": 989.055,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "0f150542-ff5d-48f5-95c3-6f8bba7bcefc",
+      "sequence": 1,
+      "phase": "checkout.shipping",
+      "startedAt": "2026-10-17T02:47:21.739Z",
+      "durationMs": 2112.212,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 2,
+      "phase": "tax.cart.initial",
+      "startedAt": "2026-10-17T02:47:24.181Z",
+      "durationMs": 214.986,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 3,
+      "phase": "tax.pending",
+      "startedAt": "2026-10-17T02:47:24.396Z",
+      "durationMs": 23.116,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 4,
+      "phase": "tax.withdraw",
+      "startedAt": "2026-10-17T02:47:24.419Z",
+      "durationMs": 488.326,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 6,
+      "phase": "source.owner",
+      "startedAt": "2026-10-17T02:47:24.908Z",
+      "durationMs": 47.545,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 7,
+      "phase": "source.cart.initial",
+      "startedAt": "2026-10-17T02:47:24.956Z",
+      "durationMs": 26.479,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 9,
+      "phase": "source.shipping.initial",
+      "startedAt": "2026-10-17T02:47:24.983Z",
+      "durationMs": 26.864,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 8,
+      "phase": "source.region.initial",
+      "startedAt": "2026-10-17T02:47:24.983Z",
+      "durationMs": 47.649,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 10,
+      "phase": "source.classification.initial",
+      "startedAt": "2026-10-17T02:47:24.983Z",
+      "durationMs": 68.543,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 11,
+      "phase": "source.setup",
+      "startedAt": "2026-10-17T02:47:25.053Z",
+      "durationMs": 246.587,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 12,
+      "phase": "source.config.initial",
+      "startedAt": "2026-10-17T02:47:25.300Z",
+      "durationMs": 64.736,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 13,
+      "phase": "source.cart.final",
+      "startedAt": "2026-10-17T02:47:25.365Z",
+      "durationMs": 25.322,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 15,
+      "phase": "source.shipping.final",
+      "startedAt": "2026-10-17T02:47:25.391Z",
+      "durationMs": 27.62,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 14,
+      "phase": "source.region.final",
+      "startedAt": "2026-10-17T02:47:25.391Z",
+      "durationMs": 45.444,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 17,
+      "phase": "source.config.final",
+      "startedAt": "2026-10-17T02:47:25.391Z",
+      "durationMs": 68.989,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 16,
+      "phase": "source.classification.final",
+      "startedAt": "2026-10-17T02:47:25.391Z",
+      "durationMs": 69.495,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 5,
+      "phase": "tax.normalize",
+      "startedAt": "2026-10-17T02:47:24.907Z",
+      "durationMs": 1330.352,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 19,
+      "phase": "source.owner",
+      "startedAt": "2026-10-17T02:47:26.238Z",
+      "durationMs": 47.323,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 20,
+      "phase": "source.cart.initial",
+      "startedAt": "2026-10-17T02:47:26.286Z",
+      "durationMs": 24.909,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 22,
+      "phase": "source.shipping.initial",
+      "startedAt": "2026-10-17T02:47:26.312Z",
+      "durationMs": 27.856,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 21,
+      "phase": "source.region.initial",
+      "startedAt": "2026-10-17T02:47:26.311Z",
+      "durationMs": 43.975,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 23,
+      "phase": "source.classification.initial",
+      "startedAt": "2026-10-17T02:47:26.312Z",
+      "durationMs": 70.511,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 24,
+      "phase": "source.setup",
+      "startedAt": "2026-10-17T02:47:26.383Z",
+      "durationMs": 207.091,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 25,
+      "phase": "source.config.initial",
+      "startedAt": "2026-10-17T02:47:26.591Z",
+      "durationMs": 66.364,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 26,
+      "phase": "source.cart.final",
+      "startedAt": "2026-10-17T02:47:26.657Z",
+      "durationMs": 25.15,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 28,
+      "phase": "source.shipping.final",
+      "startedAt": "2026-10-17T02:47:26.683Z",
+      "durationMs": 25.657,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 27,
+      "phase": "source.region.final",
+      "startedAt": "2026-10-17T02:47:26.683Z",
+      "durationMs": 45.553,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 30,
+      "phase": "source.config.final",
+      "startedAt": "2026-10-17T02:47:26.683Z",
+      "durationMs": 66.002,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 29,
+      "phase": "source.classification.final",
+      "startedAt": "2026-10-17T02:47:26.683Z",
+      "durationMs": 66.952,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 31,
+      "phase": "source.owner",
+      "startedAt": "2026-10-17T02:47:26.964Z",
+      "durationMs": 47.239,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 32,
+      "phase": "source.cart.initial",
+      "startedAt": "2026-10-17T02:47:27.012Z",
+      "durationMs": 27.226,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 34,
+      "phase": "source.shipping.initial",
+      "startedAt": "2026-10-17T02:47:27.040Z",
+      "durationMs": 25.718,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 33,
+      "phase": "source.region.initial",
+      "startedAt": "2026-10-17T02:47:27.039Z",
+      "durationMs": 44.704,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 35,
+      "phase": "source.classification.initial",
+      "startedAt": "2026-10-17T02:47:27.040Z",
+      "durationMs": 66.552,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 36,
+      "phase": "source.setup",
+      "startedAt": "2026-10-17T02:47:27.107Z",
+      "durationMs": 208.754,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 37,
+      "phase": "source.config.initial",
+      "startedAt": "2026-10-17T02:47:27.316Z",
+      "durationMs": 62.26,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 38,
+      "phase": "source.cart.final",
+      "startedAt": "2026-10-17T02:47:27.379Z",
+      "durationMs": 29.153,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 40,
+      "phase": "source.shipping.final",
+      "startedAt": "2026-10-17T02:47:27.409Z",
+      "durationMs": 27.212,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 39,
+      "phase": "source.region.final",
+      "startedAt": "2026-10-17T02:47:27.408Z",
+      "durationMs": 50.669,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 41,
+      "phase": "source.classification.final",
+      "startedAt": "2026-10-17T02:47:27.409Z",
+      "durationMs": 66.167,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 42,
+      "phase": "source.config.final",
+      "startedAt": "2026-10-17T02:47:27.409Z",
+      "durationMs": 68.091,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 43,
+      "phase": "source.owner",
+      "startedAt": "2026-10-17T02:47:28.086Z",
+      "durationMs": 44.125,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 44,
+      "phase": "source.cart.initial",
+      "startedAt": "2026-10-17T02:47:28.131Z",
+      "durationMs": 23.832,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 46,
+      "phase": "source.shipping.initial",
+      "startedAt": "2026-10-17T02:47:28.155Z",
+      "durationMs": 23.812,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 45,
+      "phase": "source.region.initial",
+      "startedAt": "2026-10-17T02:47:28.155Z",
+      "durationMs": 48.246,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 47,
+      "phase": "source.classification.initial",
+      "startedAt": "2026-10-17T02:47:28.155Z",
+      "durationMs": 67.683,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 48,
+      "phase": "source.setup",
+      "startedAt": "2026-10-17T02:47:28.223Z",
+      "durationMs": 232.957,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 49,
+      "phase": "source.config.initial",
+      "startedAt": "2026-10-17T02:47:28.456Z",
+      "durationMs": 65.543,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 50,
+      "phase": "source.cart.final",
+      "startedAt": "2026-10-17T02:47:28.522Z",
+      "durationMs": 25.992,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 52,
+      "phase": "source.shipping.final",
+      "startedAt": "2026-10-17T02:47:28.549Z",
+      "durationMs": 25.282,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 51,
+      "phase": "source.region.final",
+      "startedAt": "2026-10-17T02:47:28.549Z",
+      "durationMs": 44.719,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 54,
+      "phase": "source.config.final",
+      "startedAt": "2026-10-17T02:47:28.549Z",
+      "durationMs": 62.913,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 53,
+      "phase": "source.classification.final",
+      "startedAt": "2026-10-17T02:47:28.549Z",
+      "durationMs": 70.663,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 18,
+      "phase": "tax.create",
+      "startedAt": "2026-10-17T02:47:26.238Z",
+      "durationMs": 2382.681,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 56,
+      "phase": "source.owner",
+      "startedAt": "2026-10-17T02:47:28.669Z",
+      "durationMs": 47.436,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 57,
+      "phase": "source.cart.initial",
+      "startedAt": "2026-10-17T02:47:28.717Z",
+      "durationMs": 25.351,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 59,
+      "phase": "source.shipping.initial",
+      "startedAt": "2026-10-17T02:47:28.743Z",
+      "durationMs": 25.493,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 58,
+      "phase": "source.region.initial",
+      "startedAt": "2026-10-17T02:47:28.743Z",
+      "durationMs": 45.145,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 60,
+      "phase": "source.classification.initial",
+      "startedAt": "2026-10-17T02:47:28.743Z",
+      "durationMs": 65.069,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 61,
+      "phase": "source.setup",
+      "startedAt": "2026-10-17T02:47:28.809Z",
+      "durationMs": 217.307,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 62,
+      "phase": "source.config.initial",
+      "startedAt": "2026-10-17T02:47:29.027Z",
+      "durationMs": 60.503,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 63,
+      "phase": "source.cart.final",
+      "startedAt": "2026-10-17T02:47:29.087Z",
+      "durationMs": 23.676,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 65,
+      "phase": "source.shipping.final",
+      "startedAt": "2026-10-17T02:47:29.112Z",
+      "durationMs": 25.239,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 64,
+      "phase": "source.region.final",
+      "startedAt": "2026-10-17T02:47:29.111Z",
+      "durationMs": 46.625,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 66,
+      "phase": "source.classification.final",
+      "startedAt": "2026-10-17T02:47:29.112Z",
+      "durationMs": 66.126,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 67,
+      "phase": "source.config.final",
+      "startedAt": "2026-10-17T02:47:29.112Z",
+      "durationMs": 66.716,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 55,
+      "phase": "tax.apply",
+      "startedAt": "2026-10-17T02:47:28.620Z",
+      "durationMs": 1645.137,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 68,
+      "phase": "tax.cart.final",
+      "startedAt": "2026-10-17T02:47:30.266Z",
+      "durationMs": 281.46,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 69,
+      "phase": "tax.setup.final",
+      "startedAt": "2026-10-17T02:47:30.547Z",
+      "durationMs": 303.961,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 70,
+      "phase": "tax.proof.final",
+      "startedAt": "2026-10-17T02:47:30.851Z",
+      "durationMs": 400.856,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "30757f8d-279b-47d3-9a4c-99194c5e269b",
+      "sequence": 1,
+      "phase": "tax.refresh",
+      "startedAt": "2026-10-17T02:47:23.978Z",
+      "durationMs": 7470.796,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "721e0e38-1c14-4449-9dd4-f3caf24db739",
+      "sequence": 2,
+      "phase": "shipping.owner",
+      "startedAt": "2026-10-17T02:47:31.639Z",
+      "durationMs": 42.996,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "721e0e38-1c14-4449-9dd4-f3caf24db739",
+      "sequence": 3,
+      "phase": "shipping.inventory",
+      "startedAt": "2026-10-17T02:47:31.682Z",
+      "durationMs": 955.718,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "721e0e38-1c14-4449-9dd4-f3caf24db739",
+      "sequence": 4,
+      "phase": "shipping.delivery-types",
+      "startedAt": "2026-10-17T02:47:32.638Z",
+      "durationMs": 22.545,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "721e0e38-1c14-4449-9dd4-f3caf24db739",
+      "sequence": 5,
+      "phase": "shipping.pricing",
+      "startedAt": "2026-10-17T02:47:32.661Z",
+      "durationMs": 907.175,
+      "outcome": "returned"
+    },
+    {
+      "event": "snowforce.checkout_timing",
+      "operationId": "721e0e38-1c14-4449-9dd4-f3caf24db739",
+      "sequence": 1,
+      "phase": "checkout.shipping",
+      "startedAt": "2026-10-17T02:47:31.639Z",
+      "durationMs": 1929.989,
+      "outcome": "returned"
+    }
+  ],
+  "ui": {
+    "taxCents": 3867,
+    "totalCents": 53767,
+    "ready": true,
+    "policyAccepted": false,
+    "paymentPrepared": false
+  },
+  "targetMet": false,
+  "limitations": "One normalized original-address save; not p95. Phase durations overlap when nested and cannot be summed. HTTP durations are root edge spans, not trace envelopes."
+}

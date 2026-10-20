@@ -1,0 +1,703 @@
+{
+  "testedAt": "2026-10-17T02:25:46.831Z",
+  "environment": "isolated timing only, not production performance",
+  "operations": [
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+        "sequence": 1,
+        "phase": "tax.refresh",
+        "startedAt": "2026-10-17T02:25:29.540Z",
+        "durationMs": 2725.975,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 18,
+          "phase": "tax.create",
+          "startedAt": "2026-10-17T02:25:30.217Z",
+          "durationMs": 1401.43,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 5,
+          "phase": "tax.normalize",
+          "startedAt": "2026-10-17T02:25:29.608Z",
+          "durationMs": 608.36,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 55,
+          "phase": "tax.apply",
+          "startedAt": "2026-10-17T02:25:31.618Z",
+          "durationMs": 364.62,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 11,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:29.675Z",
+          "durationMs": 337.66,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 69,
+          "phase": "tax.setup.final",
+          "startedAt": "2026-10-17T02:25:32.005Z",
+          "durationMs": 228.125,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 24,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:30.245Z",
+          "durationMs": 221.154,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 61,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:31.642Z",
+          "durationMs": 196.022,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "5b66176a-ac02-4a4d-8dc5-725352f16f9d",
+          "sequence": 36,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:30.779Z",
+          "durationMs": 182.712,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+        "sequence": 1,
+        "phase": "tax.refresh",
+        "startedAt": "2026-10-17T02:25:32.822Z",
+        "durationMs": 2107.161,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 18,
+          "phase": "tax.create",
+          "startedAt": "2026-10-17T02:25:33.228Z",
+          "durationMs": 1164.596,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 5,
+          "phase": "tax.normalize",
+          "startedAt": "2026-10-17T02:25:32.867Z",
+          "durationMs": 360.506,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 55,
+          "phase": "tax.apply",
+          "startedAt": "2026-10-17T02:25:34.393Z",
+          "durationMs": 310.769,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 24,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:33.294Z",
+          "durationMs": 187.899,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 11,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:32.927Z",
+          "durationMs": 180.323,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 36,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:33.681Z",
+          "durationMs": 180.234,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 69,
+          "phase": "tax.setup.final",
+          "startedAt": "2026-10-17T02:25:34.725Z",
+          "durationMs": 177.967,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "726163ae-18f4-429e-888a-f36e5ef04187",
+          "sequence": 48,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:34.209Z",
+          "durationMs": 166.681,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+        "sequence": 1,
+        "phase": "tax.refresh",
+        "startedAt": "2026-10-17T02:25:35.310Z",
+        "durationMs": 1954.077,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 18,
+          "phase": "tax.create",
+          "startedAt": "2026-10-17T02:25:35.638Z",
+          "durationMs": 1092.677,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 55,
+          "phase": "tax.apply",
+          "startedAt": "2026-10-17T02:25:36.731Z",
+          "durationMs": 311.137,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 5,
+          "phase": "tax.normalize",
+          "startedAt": "2026-10-17T02:25:35.348Z",
+          "durationMs": 289.892,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 36,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:36.035Z",
+          "durationMs": 211.222,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 61,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:36.753Z",
+          "durationMs": 207.176,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 11,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:35.365Z",
+          "durationMs": 198.021,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 69,
+          "phase": "tax.setup.final",
+          "startedAt": "2026-10-17T02:25:37.058Z",
+          "durationMs": 177.788,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "813fedb5-f2db-480d-80db-05fd09d49e65",
+          "sequence": 48,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:36.548Z",
+          "durationMs": 166.366,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "6d6eace5-50fd-4dda-94c1-c1ae0c8ada64",
+        "sequence": 1,
+        "phase": "checkout.details",
+        "startedAt": "2026-10-17T02:25:38.425Z",
+        "durationMs": 1174.998,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "6d6eace5-50fd-4dda-94c1-c1ae0c8ada64",
+          "sequence": 5,
+          "phase": "details.native-save",
+          "startedAt": "2026-10-17T02:25:38.487Z",
+          "durationMs": 1112.915,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "6d6eace5-50fd-4dda-94c1-c1ae0c8ada64",
+          "sequence": 3,
+          "phase": "details.withdraw",
+          "startedAt": "2026-10-17T02:25:38.432Z",
+          "durationMs": 45.902,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "6d6eace5-50fd-4dda-94c1-c1ae0c8ada64",
+          "sequence": 4,
+          "phase": "details.owner.final",
+          "startedAt": "2026-10-17T02:25:38.479Z",
+          "durationMs": 7.77,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "6d6eace5-50fd-4dda-94c1-c1ae0c8ada64",
+          "sequence": 2,
+          "phase": "details.owner.initial",
+          "startedAt": "2026-10-17T02:25:38.425Z",
+          "durationMs": 6.667,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+        "sequence": 1,
+        "phase": "tax.refresh",
+        "startedAt": "2026-10-17T02:25:39.626Z",
+        "durationMs": 2352.758,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 18,
+          "phase": "tax.create",
+          "startedAt": "2026-10-17T02:25:39.989Z",
+          "durationMs": 1352.238,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 55,
+          "phase": "tax.apply",
+          "startedAt": "2026-10-17T02:25:41.341Z",
+          "durationMs": 410.06,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 5,
+          "phase": "tax.normalize",
+          "startedAt": "2026-10-17T02:25:39.665Z",
+          "durationMs": 323.616,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 61,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:41.380Z",
+          "durationMs": 241.396,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 36,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:40.503Z",
+          "durationMs": 212.717,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 69,
+          "phase": "tax.setup.final",
+          "startedAt": "2026-10-17T02:25:41.765Z",
+          "durationMs": 189.756,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 48,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:41.117Z",
+          "durationMs": 184.123,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "ba4a323a-7161-46fa-a051-274880a25b0d",
+          "sequence": 24,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:40.032Z",
+          "durationMs": 168.434,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "b317e510-92bb-4fab-b9e7-c8b3dd175d8f",
+        "sequence": 1,
+        "phase": "checkout.details",
+        "startedAt": "2026-10-17T02:25:42.251Z",
+        "durationMs": 327.683,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "b317e510-92bb-4fab-b9e7-c8b3dd175d8f",
+          "sequence": 5,
+          "phase": "details.native-save",
+          "startedAt": "2026-10-17T02:25:42.295Z",
+          "durationMs": 282.708,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "b317e510-92bb-4fab-b9e7-c8b3dd175d8f",
+          "sequence": 3,
+          "phase": "details.withdraw",
+          "startedAt": "2026-10-17T02:25:42.258Z",
+          "durationMs": 31.417,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "b317e510-92bb-4fab-b9e7-c8b3dd175d8f",
+          "sequence": 2,
+          "phase": "details.owner.initial",
+          "startedAt": "2026-10-17T02:25:42.251Z",
+          "durationMs": 7.111,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "b317e510-92bb-4fab-b9e7-c8b3dd175d8f",
+          "sequence": 4,
+          "phase": "details.owner.final",
+          "startedAt": "2026-10-17T02:25:42.289Z",
+          "durationMs": 5.68,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "265884d0-70b6-41e0-acda-1cee6d3e5bb6",
+        "sequence": 1,
+        "phase": "checkout.shipping",
+        "startedAt": "2026-10-17T02:25:42.595Z",
+        "durationMs": 207.151,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "265884d0-70b6-41e0-acda-1cee6d3e5bb6",
+          "sequence": 3,
+          "phase": "shipping.inventory",
+          "startedAt": "2026-10-17T02:25:42.598Z",
+          "durationMs": 122.5,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "265884d0-70b6-41e0-acda-1cee6d3e5bb6",
+          "sequence": 5,
+          "phase": "shipping.pricing",
+          "startedAt": "2026-10-17T02:25:42.724Z",
+          "durationMs": 77.682,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "265884d0-70b6-41e0-acda-1cee6d3e5bb6",
+          "sequence": 2,
+          "phase": "shipping.owner",
+          "startedAt": "2026-10-17T02:25:42.595Z",
+          "durationMs": 3.146,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "265884d0-70b6-41e0-acda-1cee6d3e5bb6",
+          "sequence": 4,
+          "phase": "shipping.delivery-types",
+          "startedAt": "2026-10-17T02:25:42.721Z",
+          "durationMs": 2.129,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+        "sequence": 1,
+        "phase": "tax.refresh",
+        "startedAt": "2026-10-17T02:25:43.183Z",
+        "durationMs": 1889.381,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 18,
+          "phase": "tax.create",
+          "startedAt": "2026-10-17T02:25:43.464Z",
+          "durationMs": 1091.118,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 55,
+          "phase": "tax.apply",
+          "startedAt": "2026-10-17T02:25:44.555Z",
+          "durationMs": 266.67,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 5,
+          "phase": "tax.normalize",
+          "startedAt": "2026-10-17T02:25:43.214Z",
+          "durationMs": 249.859,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 69,
+          "phase": "tax.setup.final",
+          "startedAt": "2026-10-17T02:25:44.836Z",
+          "durationMs": 209.293,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 48,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:44.339Z",
+          "durationMs": 199.536,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 11,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:43.229Z",
+          "durationMs": 180.189,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 61,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:44.575Z",
+          "durationMs": 175.743,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "065bdffb-bd1f-46bf-a2e3-915fa29ed292",
+          "sequence": 36,
+          "phase": "source.setup",
+          "startedAt": "2026-10-17T02:25:43.858Z",
+          "durationMs": 169.078,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "root": {
+        "event": "snowforce.checkout_timing",
+        "operationId": "c9b4e782-b45e-462d-8929-83ae6980e5c1",
+        "sequence": 1,
+        "phase": "checkout.details",
+        "startedAt": "2026-10-17T02:25:46.254Z",
+        "durationMs": 353.084,
+        "outcome": "returned"
+      },
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "c9b4e782-b45e-462d-8929-83ae6980e5c1",
+          "sequence": 5,
+          "phase": "details.native-save",
+          "startedAt": "2026-10-17T02:25:46.312Z",
+          "durationMs": 295.07,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "c9b4e782-b45e-462d-8929-83ae6980e5c1",
+          "sequence": 3,
+          "phase": "details.withdraw",
+          "startedAt": "2026-10-17T02:25:46.262Z",
+          "durationMs": 40.543,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "c9b4e782-b45e-462d-8929-83ae6980e5c1",
+          "sequence": 4,
+          "phase": "details.owner.final",
+          "startedAt": "2026-10-17T02:25:46.303Z",
+          "durationMs": 8.643,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "c9b4e782-b45e-462d-8929-83ae6980e5c1",
+          "sequence": 2,
+          "phase": "details.owner.initial",
+          "startedAt": "2026-10-17T02:25:46.254Z",
+          "durationMs": 7.403,
+          "outcome": "returned"
+        }
+      ]
+    },
+    {
+      "longestPhases": [
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 4,
+          "phase": "tax.withdraw",
+          "startedAt": "2026-10-17T02:25:46.636Z",
+          "durationMs": 24.561,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 2,
+          "phase": "tax.cart.initial",
+          "startedAt": "2026-10-17T02:25:46.620Z",
+          "durationMs": 15.343,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 10,
+          "phase": "source.classification.initial",
+          "startedAt": "2026-10-17T02:25:46.670Z",
+          "durationMs": 5.509,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 9,
+          "phase": "source.shipping.initial",
+          "startedAt": "2026-10-17T02:25:46.670Z",
+          "durationMs": 4.961,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 8,
+          "phase": "source.region.initial",
+          "startedAt": "2026-10-17T02:25:46.670Z",
+          "durationMs": 4.899,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 7,
+          "phase": "source.cart.initial",
+          "startedAt": "2026-10-17T02:25:46.665Z",
+          "durationMs": 4.641,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 6,
+          "phase": "source.owner",
+          "startedAt": "2026-10-17T02:25:46.661Z",
+          "durationMs": 4.003,
+          "outcome": "returned"
+        },
+        {
+          "event": "snowforce.checkout_timing",
+          "operationId": "e42d37a1-2bfc-4d03-9ed8-5258482efd30",
+          "sequence": 3,
+          "phase": "tax.pending",
+          "startedAt": "2026-10-17T02:25:46.635Z",
+          "durationMs": 0.52,
+          "outcome": "returned"
+        }
+      ]
+    }
+  ]
+}

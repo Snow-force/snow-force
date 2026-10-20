@@ -1,0 +1,86 @@
+{
+  "verified_at": "2026-10-03T02:26:54.042Z",
+  "http": [
+    {
+      "path": "/shop",
+      "status": 200
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200
+    },
+    {
+      "path": "/shop/checkout",
+      "status": 200
+    },
+    {
+      "path": "/member/orders",
+      "status": 200
+    },
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/app/login",
+      "status": 200
+    },
+    {
+      "path": "/app/snowforce-tax-sales",
+      "status": 200
+    },
+    {
+      "path": "/admin/snowforce/tax/sales",
+      "method": "GET",
+      "authenticated": false,
+      "status": 401
+    },
+    {
+      "path": "/admin/snowforce/tax/sales/123e4567-e89b-42d3-a456-426614174099",
+      "method": "POST",
+      "authenticated": false,
+      "status": 401
+    }
+  ],
+  "scope": "HTTP and authenticated admin API verification only. No visual browser or real sale/refund E2E.",
+  "actual_shipping": {
+    "fee_cents": 995,
+    "free_threshold_cents": 10000
+  },
+  "verified_existing_admins": 2,
+  "actual_stripe": {
+    "livemode": false,
+    "settings_status": "pending",
+    "registrations": 0,
+    "api_ready": false,
+    "policy_flag": false
+  },
+  "actual_queue": {
+    "before": {
+      "tasks": 0,
+      "sales": 0,
+      "orders": 0
+    },
+    "after": {
+      "tasks": 0,
+      "sales": 0,
+      "orders": 0
+    },
+    "empty_job_passed": true,
+    "schedule": "*/2 * * * *"
+  },
+  "actual_catalog": [
+    {
+      "status": "draft",
+      "count": 14
+    }
+  ],
+  "actual_business": [
+    {
+      "active_revision": null,
+      "policy_version": null,
+      "support_email": "Shop@snow-force.com"
+    }
+  ],
+  "actual_stripe_posts": 0
+}

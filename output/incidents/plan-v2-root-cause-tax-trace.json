@@ -1,0 +1,40 @@
+{
+  "trace": "d9c8aace966dda8a98a7e78f3fb1011b",
+  "httpDurationMs": 8113.811039,
+  "apiCalls": {
+    "GET /v1/account": {
+      "count": 7,
+      "sumMs": 1538.474185
+    },
+    "GET /v1/tax/settings": {
+      "count": 6,
+      "sumMs": 588.571558
+    },
+    "GET /v1/tax/registrations?status=all&limit=100": {
+      "count": 6,
+      "sumMs": 597.932605
+    },
+    "POST /v1/tax/calculations": {
+      "count": 1,
+      "sumMs": 208.264819
+    },
+    "GET /v1/tax/calculations/[id]/line_items?limit=100&expand[0]=data.tax_breakdown": {
+      "count": 1,
+      "sumMs": 107.793087
+    }
+  },
+  "apiSpanUnionMs": 1855,
+  "database": {
+    "count": 147,
+    "p50Ms": 22.064645,
+    "p95Ms": 25.135405,
+    "spanUnionMs": 3140
+  },
+  "limits": "Span union is observed wall-time occupancy, not guaranteed critical-path attribution; repeated independent validation must be replaced by coherent operation-scoped checks, not simply removed.",
+  "sources": [
+    "https://shopify.dev/docs/api/ajax/reference/cart#generate-shipping-rates",
+    "https://shopify.dev/docs/api/storefront/latest/objects/CartCost",
+    "https://docs.stripe.com/tax/custom"
+  ],
+  "diagnosis": "Existing quote path combines preparation, normalization, persisted quote creation, atomic native application and final proof. Six independent tax setup observations multiply external GETs. Database and provider span unions may overlap; neither sum is an exact causal decomposition."
+}

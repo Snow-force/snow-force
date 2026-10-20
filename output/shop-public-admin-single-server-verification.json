@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-03T08:02:56.1304270Z",
+  "publicBackendDeployed": false,
+  "fullLinuxStackVerified": false,
+  "productionCapacityVerified": false,
+  "composeParsed": true,
+  "tlsHandshakeVerified": true,
+  "missingTrustRejected": true,
+  "wrongHostnameRejected": true,
+  "credentialOutputRedacted": true,
+  "overwriteRejected": true,
+  "siteTestsPassed": 954,
+  "backendTestsPassed": 394,
+  "focusedTestsPassed": 6,
+  "siteBuildPassed": true,
+  "backendBuildPassed": true,
+  "backendTypecheckPassed": true,
+  "localPreview": [
+    {
+      "Endpoint": "http://127.0.0.1:3100/shop",
+      "Status": 200
+    },
+    {
+      "Endpoint": "http://127.0.0.1:9000/health",
+      "Status": 200
+    },
+    {
+      "Endpoint": "http://127.0.0.1:9000/app",
+      "Status": 200
+    },
+    {
+      "Endpoint": "http://127.0.0.1:9000/admin/products",
+      "Status": 401
+    }
+  ],
+  "remaining": [
+    "hosting platform/account and agreed budget",
+    "production S3 access pair",
+    "actual cloud deployment and public acceptance",
+    "update partner guide with verified URL"
+  ]
+}

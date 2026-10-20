@@ -1,0 +1,49 @@
+{
+  "at": "2026-10-04T21:31:12.755Z",
+  "noDatabaseWrites": true,
+  "noPaymentOrEmailSent": true,
+  "rows": [
+    {
+      "name": "Backend health",
+      "status": 200,
+      "managementMessage": false,
+      "invalidSchema": false,
+      "unauthorized": false
+    },
+    {
+      "name": "Admin rejects anonymous read",
+      "status": 401,
+      "managementMessage": false,
+      "invalidSchema": false,
+      "unauthorized": false
+    },
+    {
+      "name": "Management mode rejects checkout read",
+      "status": 400,
+      "managementMessage": true,
+      "invalidSchema": false,
+      "unauthorized": false
+    },
+    {
+      "name": "Website order-sync missing signature",
+      "status": 401,
+      "managementMessage": false,
+      "invalidSchema": false,
+      "unauthorized": true
+    },
+    {
+      "name": "Website order-sync valid signature invalid schema",
+      "status": 400,
+      "managementMessage": false,
+      "invalidSchema": true,
+      "unauthorized": false
+    },
+    {
+      "name": "Website webhook invalid signature",
+      "status": 400,
+      "managementMessage": false,
+      "invalidSchema": false,
+      "unauthorized": false
+    }
+  ]
+}

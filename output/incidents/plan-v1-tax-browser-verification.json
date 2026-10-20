@@ -1,0 +1,9 @@
+{
+  "environment": "isolated Next production build, native Medusa/PostgreSQL and Stripe Sandbox Tax",
+  "observation": "Changing the apartment field immediately hid the old payable total. The current tax and total became visible again after the address action completed.",
+  "observedUpperBoundMs": 5624,
+  "timingLimit": "Includes the handoff between computer-use calls. This is one browser observation, not p95 and not production latency.",
+  "finalTotalCents": 5197,
+  "policyAccepted": false,
+  "productionFinancialWrites": 0
+}

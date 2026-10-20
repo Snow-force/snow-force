@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-04T21:03:33.0790921+00:00",
+  "scope": "Read-only store region and policy shape verification; empty responses are not transport failures",
+  "regions": {
+    "regionFieldPresent": true,
+    "regionCount": 0,
+    "usdUsOnlyRegionCount": 0
+  },
+  "policy": {
+    "policyFieldPresent": true,
+    "publishedPolicyPresent": false
+  }
+}

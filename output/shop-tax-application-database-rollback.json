@@ -1,0 +1,92 @@
+{
+  "verified_at": "2026-10-02T21:11:47.859Z",
+  "checks": [
+    {
+      "stage": "final_write_failure_rolled_back",
+      "native_tax_lines": 0,
+      "fee_items": 0,
+      "applications": 0,
+      "cart_metadata_unchanged": true
+    },
+    {
+      "stage": "atomic_application_and_reuse",
+      "amounts": {
+        "gross_cents": 11000,
+        "discount_cents": 1001,
+        "merchandise_cents": 9999,
+        "shipping_cents": 995,
+        "sales_tax_cents": 241,
+        "government_fee_cents": 28,
+        "total_cents": 11263
+      },
+      "native_rates_float4": [
+        1.54015,
+        8.74372
+      ],
+      "merchandise_for_shipping_cents": 9999,
+      "native_tax_lines": 2,
+      "fee_items": 1,
+      "applications": 1,
+      "reuse_writes": 0,
+      "source_locks": "real SHARE table locks with 5 second timeout",
+      "source_and_provider": "isolated business facts, graph relations, leases and provider"
+    }
+  ],
+  "actual_stripe_posts": 0,
+  "committed_business_mutations": 0,
+  "role": "snowforce_commerce",
+  "tls": {
+    "encrypted": true,
+    "authorized": true
+  },
+  "extra_float_digits": "0",
+  "before": {
+    "counts": {
+      "customer": 0,
+      "cart": 0,
+      "cart_address": 0,
+      "cart_line_item": 0,
+      "cart_line_item_adjustment": 0,
+      "cart_shipping_method": 0,
+      "cart_line_item_tax_line": 0,
+      "cart_shipping_method_tax_line": 0,
+      "snowforce_tax_operations": 0,
+      "snowforce_tax_quotes": 0,
+      "snowforce_tax_quote_applications": 0,
+      "order": 0,
+      "payment_session": 0
+    },
+    "store_metadata_digest": "9745f9fbd86389a6684cb8a26c93d5049502598ade342d2a5783e42f1c239149"
+  },
+  "isolated_sql_mutation_attempts": 17,
+  "after": {
+    "counts": {
+      "customer": 0,
+      "cart": 0,
+      "cart_address": 0,
+      "cart_line_item": 0,
+      "cart_line_item_adjustment": 0,
+      "cart_shipping_method": 0,
+      "cart_line_item_tax_line": 0,
+      "cart_shipping_method_tax_line": 0,
+      "snowforce_tax_operations": 0,
+      "snowforce_tax_quotes": 0,
+      "snowforce_tax_quote_applications": 0,
+      "order": 0,
+      "payment_session": 0
+    },
+    "store_metadata_digest": "9745f9fbd86389a6684cb8a26c93d5049502598ade342d2a5783e42f1c239149"
+  },
+  "actual_setup": {
+    "livemode": false,
+    "status": "pending",
+    "registration_count": 0,
+    "api_ready": false,
+    "payment_policy_confirmed": false
+  },
+  "limits": [
+    "Real SQL, native amount engine and complete rollback; source business facts, graph relations, customer actor, leases and provider are isolated fixtures",
+    "No real Stripe Calculation, payment, order, inventory reservation, fulfillment or return acceptance",
+    "No production concurrency or source-lock latency acceptance"
+  ]
+}

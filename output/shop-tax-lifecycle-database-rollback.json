@@ -1,0 +1,79 @@
+{
+  "verified_at": "2026-10-02T23:28:38.599Z",
+  "checks": [
+    {
+      "stage": "first_quote_and_repeat",
+      "quote_total_cents": 11263,
+      "fee_cents": 28,
+      "repeat_sql_writes": 0,
+      "isolated_provider_posts": 1
+    },
+    {
+      "stage": "withdrawal_last_write_failure",
+      "native_taxes_fee_metadata_rolled_back": true
+    },
+    {
+      "stage": "safe_historical_cancel_and_withdrawal",
+      "retired_canceled_payment_allowed": true,
+      "retired_pending_or_authorized_payment_rejected": true,
+      "quote_application_preserved": true,
+      "fee_soft_deleted": true
+    },
+    {
+      "stage": "new_quote_after_edit",
+      "new_operation_and_application": true,
+      "old_evidence_preserved": true,
+      "isolated_provider_posts": 2
+    }
+  ],
+  "actual_stripe_posts": 0,
+  "actual_orders": 0,
+  "scope": "Actual commerce-role SQL and native projector; isolated business facts, graph relations and Stripe writer. All inserts/updates finally rolled back. Not a real customer transaction E2E.",
+  "role": "snowforce_commerce",
+  "before": {
+    "counts": {
+      "customer": 0,
+      "cart": 0,
+      "cart_address": 0,
+      "cart_line_item": 0,
+      "cart_line_item_adjustment": 0,
+      "cart_line_item_tax_line": 0,
+      "cart_shipping_method": 0,
+      "cart_shipping_method_tax_line": 0,
+      "payment_collection": 0,
+      "cart_payment_collection": 0,
+      "payment_session": 0,
+      "payment": 0,
+      "order_cart": 0,
+      "snowforce_tax_operations": 0,
+      "snowforce_tax_quotes": 0,
+      "snowforce_tax_quote_applications": 0
+    },
+    "store_digest": "eab7eeb025608ec370f85fff3965dee5"
+  },
+  "stage": "new_quote",
+  "component": "apply",
+  "after": {
+    "counts": {
+      "customer": 0,
+      "cart": 0,
+      "cart_address": 0,
+      "cart_line_item": 0,
+      "cart_line_item_adjustment": 0,
+      "cart_line_item_tax_line": 0,
+      "cart_shipping_method": 0,
+      "cart_shipping_method_tax_line": 0,
+      "payment_collection": 0,
+      "cart_payment_collection": 0,
+      "payment_session": 0,
+      "payment": 0,
+      "order_cart": 0,
+      "snowforce_tax_operations": 0,
+      "snowforce_tax_quotes": 0,
+      "snowforce_tax_quote_applications": 0
+    },
+    "store_digest": "eab7eeb025608ec370f85fff3965dee5"
+  },
+  "final_rollback_verified": true,
+  "sql_mutation_attempts": 40
+}

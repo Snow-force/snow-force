@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-04T20:58:03.3564022+00:00",
+  "comparisonScope": "local protected website and commerce source configuration only; rendered Railway values are redacted",
+  "savedDeploymentCacheReadable": false,
+  "siteProductionAndCommerceAuthProjectMatch": true,
+  "siteProductionAndCommercePublicKeyMatch": true,
+  "orderSyncSecretPresentOnBoth": true,
+  "orderSyncSecretsMatch": true,
+  "cartCookieSecretConfigured": true,
+  "medusaPublishableKeyPresent": true
+}

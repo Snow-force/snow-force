@@ -1,0 +1,48 @@
+{
+  "connection": {
+    "role": "snowforce_commerce",
+    "clientTlsVerified": true
+  },
+  "catalog": {
+    "count": 677,
+    "exactCategoryVerified": true,
+    "requestsReadOnly": true
+  },
+  "rollback": {
+    "temporaryRevision": 1,
+    "replayVerified": true,
+    "staleRevisionBlocked": true,
+    "otherStoreMetadataPreserved": true
+  },
+  "after": {
+    "products": 14,
+    "published": 0,
+    "orders": 0,
+    "payments": 0,
+    "metadataUnchanged": true,
+    "taxPolicyConfirmed": false
+  },
+  "http": {
+    "admins": [
+      {
+        "email": "snowforceclub@gmail.com",
+        "productsStatus": 200,
+        "products": 14,
+        "officialCodesStatus": 200,
+        "officialCodesCount": 677,
+        "invalidOffsetStatus": 400,
+        "invalidSaveStatus": 400
+      },
+      {
+        "email": "taiyuanmei0824@gmail.com",
+        "productsStatus": 200,
+        "products": 14,
+        "officialCodesStatus": 200,
+        "officialCodesCount": 677,
+        "invalidOffsetStatus": 400,
+        "invalidSaveStatus": 400
+      }
+    ],
+    "anonymousStatus": 401
+  }
+}

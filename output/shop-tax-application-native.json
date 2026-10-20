@@ -1,0 +1,16 @@
+{
+  "verified_at": "2026-10-02T21:13:40.131Z",
+  "native_query": {
+    "source_fields": 50,
+    "tax_rate_and_fee_fields": 4,
+    "accepted": true,
+    "matched_carts": 0
+  },
+  "products": [
+    {
+      "status": "draft",
+      "count": 14
+    }
+  ],
+  "scope": "Missing-cart native Query validates the field plan; positive SQL transaction uses isolated graph/provider and is separate from actual customer acceptance"
+}

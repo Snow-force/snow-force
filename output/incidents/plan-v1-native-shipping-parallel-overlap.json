@@ -1,0 +1,213 @@
+{
+  "testedAt": "2026-10-17T02:58:26.627Z",
+  "environment": "isolated native HTTP, application phase timing",
+  "operationCount": 34,
+  "everyInventoryAndPricingPairOverlapped": true,
+  "operations": [
+    {
+      "durationMs": 338.201,
+      "inventoryMs": 328.299,
+      "pricingMs": 273.275,
+      "overlapMs": 273.27490234375
+    },
+    {
+      "durationMs": 168.716,
+      "inventoryMs": 163.088,
+      "pricingMs": 155.72,
+      "overlapMs": 155.719970703125
+    },
+    {
+      "durationMs": 162.321,
+      "inventoryMs": 151.306,
+      "pricingMs": 150.104,
+      "overlapMs": 143.305908203125
+    },
+    {
+      "durationMs": 254.907,
+      "inventoryMs": 248.351,
+      "pricingMs": 203.256,
+      "overlapMs": 203.256103515625
+    },
+    {
+      "durationMs": 186.998,
+      "inventoryMs": 165.632,
+      "pricingMs": 168.872,
+      "overlapMs": 154.632080078125
+    },
+    {
+      "durationMs": 177.942,
+      "inventoryMs": 145.625,
+      "pricingMs": 139.431,
+      "overlapMs": 135.625
+    },
+    {
+      "durationMs": 137.254,
+      "inventoryMs": 127.533,
+      "pricingMs": 125.169,
+      "overlapMs": 119.532958984375
+    },
+    {
+      "durationMs": 115.078,
+      "inventoryMs": 106.913,
+      "pricingMs": 105.679,
+      "overlapMs": 100.9130859375
+    },
+    {
+      "durationMs": 120.812,
+      "inventoryMs": 112.556,
+      "pricingMs": 111.834,
+      "overlapMs": 106.555908203125
+    },
+    {
+      "durationMs": 111.751,
+      "inventoryMs": 104.124,
+      "pricingMs": 102.532,
+      "overlapMs": 98.1240234375
+    },
+    {
+      "durationMs": 114.865,
+      "inventoryMs": 107.02,
+      "pricingMs": 106.564,
+      "overlapMs": 102.02001953125
+    },
+    {
+      "durationMs": 117.442,
+      "inventoryMs": 109.019,
+      "pricingMs": 108.189,
+      "overlapMs": 103.01904296875
+    },
+    {
+      "durationMs": 107.396,
+      "inventoryMs": 100.596,
+      "pricingMs": 99.941,
+      "overlapMs": 95.595947265625
+    },
+    {
+      "durationMs": 108.348,
+      "inventoryMs": 105.185,
+      "pricingMs": 101.131,
+      "overlapMs": 101.131103515625
+    },
+    {
+      "durationMs": 112.191,
+      "inventoryMs": 104.041,
+      "pricingMs": 104.125,
+      "overlapMs": 98.041015625
+    },
+    {
+      "durationMs": 109.362,
+      "inventoryMs": 102.003,
+      "pricingMs": 101.652,
+      "overlapMs": 97.0029296875
+    },
+    {
+      "durationMs": 102.865,
+      "inventoryMs": 95.931,
+      "pricingMs": 96.546,
+      "overlapMs": 92.930908203125
+    },
+    {
+      "durationMs": 106.438,
+      "inventoryMs": 98.085,
+      "pricingMs": 98.396,
+      "overlapMs": 93.0849609375
+    },
+    {
+      "durationMs": 105.685,
+      "inventoryMs": 97.822,
+      "pricingMs": 98.036,
+      "overlapMs": 92.822021484375
+    },
+    {
+      "durationMs": 112.469,
+      "inventoryMs": 104.692,
+      "pricingMs": 104.844,
+      "overlapMs": 99.69189453125
+    },
+    {
+      "durationMs": 101.635,
+      "inventoryMs": 93.874,
+      "pricingMs": 93.788,
+      "overlapMs": 88.8740234375
+    },
+    {
+      "durationMs": 98.047,
+      "inventoryMs": 90.679,
+      "pricingMs": 90.68,
+      "overlapMs": 85.678955078125
+    },
+    {
+      "durationMs": 105.215,
+      "inventoryMs": 99.443,
+      "pricingMs": 97.915,
+      "overlapMs": 94.443115234375
+    },
+    {
+      "durationMs": 104.007,
+      "inventoryMs": 95.607,
+      "pricingMs": 95.676,
+      "overlapMs": 90.60693359375
+    },
+    {
+      "durationMs": 107.109,
+      "inventoryMs": 97.456,
+      "pricingMs": 99.58,
+      "overlapMs": 93.4560546875
+    },
+    {
+      "durationMs": 102.08,
+      "inventoryMs": 95.249,
+      "pricingMs": 94.377,
+      "overlapMs": 90.2490234375
+    },
+    {
+      "durationMs": 102.293,
+      "inventoryMs": 93.174,
+      "pricingMs": 95.036,
+      "overlapMs": 89.174072265625
+    },
+    {
+      "durationMs": 112.834,
+      "inventoryMs": 105.461,
+      "pricingMs": 104.863,
+      "overlapMs": 99.4609375
+    },
+    {
+      "durationMs": 96.795,
+      "inventoryMs": 88.157,
+      "pricingMs": 90.383,
+      "overlapMs": 84.156982421875
+    },
+    {
+      "durationMs": 102.393,
+      "inventoryMs": 93.352,
+      "pricingMs": 94.247,
+      "overlapMs": 87.35205078125
+    },
+    {
+      "durationMs": 98.901,
+      "inventoryMs": 90.075,
+      "pricingMs": 91.132,
+      "overlapMs": 85.074951171875
+    },
+    {
+      "durationMs": 102.84,
+      "inventoryMs": 95.083,
+      "pricingMs": 96.007,
+      "overlapMs": 91.0830078125
+    },
+    {
+      "durationMs": 102.974,
+      "inventoryMs": 94.49,
+      "pricingMs": 96.222,
+      "overlapMs": 89.489990234375
+    },
+    {
+      "durationMs": 139.922,
+      "inventoryMs": 136.704,
+      "pricingMs": 124.911,
+      "overlapMs": 124.910888671875
+    }
+  ],
+  "limitations": "Nested phase durations are not additive; not production performance"
+}

@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-10T09:57:29.672Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "Disposable loopback PostgreSQL; actual Medusa native refund workflow, Query/Link, payment/order modules, unregistered candidate adapter and local event bus; provider dispatch and Stripe GET responses are fixtures; no real Stripe HTTP or production provider change",
+  "checks": [
+    "actual Query resolves the actual native order/payment Link created through the installed Link API",
+    "a mismatching native callback is rejected before provider reads; the failed native workflow cleans up its refund and leaves no debit",
+    "initial candidate calls the installed refundPaymentWorkflow and the unregistered provider adapter with an actual Medusa cradle, creating exactly one correctly associated refund and negative USD debit",
+    "repeated bookkeeping reuses the native refund and debit without another provider callback or funds POST"
+  ],
+  "warnings": [],
+  "actual_stripe_api_calls": 0
+}

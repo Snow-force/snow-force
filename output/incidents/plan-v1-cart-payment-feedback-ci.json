@@ -1,0 +1,23 @@
+{
+  "runId": 39104774155,
+  "jobId": 117608151008,
+  "head": "15f902f0c3f6822a8d12ef33db36276f5e1c18c4",
+  "conclusion": "success",
+  "actWarnings": 0,
+  "unexpectedStderrFiles": [],
+  "expectedNegativePathLogFiles": [
+    "src/lib/recaps/actions.test.ts",
+    "src/lib/members/actions.test.ts",
+    "src/lib/events/actions.test.ts",
+    "src/app/api/stripe/webhook/route.test.ts"
+  ],
+  "toolchainWarnings": [
+    "(node:2104) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.",
+    "(node:2104) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+    "npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation",
+    "npm warn deprecated tsconfck@3.1.6: unmaintained",
+    "npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.",
+    "(node:6126) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.",
+    "##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/"
+  ]
+}

@@ -1,0 +1,634 @@
+{
+  "testedAt": "2026-10-17T03:18:29.637Z",
+  "region": "west",
+  "measurement": "unauthenticated HTTP headers and full HTML receipt from the current Windows client; 3 warmup cycles reported separately",
+  "routes": [
+    {
+      "route": "/",
+      "n": 30,
+      "headersP50Ms": 951,
+      "headersP95Ms": 999,
+      "completeP50Ms": 957,
+      "completeP95Ms": 1004
+    },
+    {
+      "route": "/shop",
+      "n": 30,
+      "headersP50Ms": 297,
+      "headersP95Ms": 354,
+      "completeP50Ms": 999,
+      "completeP95Ms": 1041
+    },
+    {
+      "route": "/events",
+      "n": 30,
+      "headersP50Ms": 515,
+      "headersP95Ms": 1018,
+      "completeP50Ms": 517,
+      "completeP95Ms": 1021
+    }
+  ],
+  "samples": [
+    {
+      "route": "/",
+      "headersMs": 999,
+      "completeMs": 1003,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 314,
+      "completeMs": 1032,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 515,
+      "completeMs": 517,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 961,
+      "completeMs": 967,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 297,
+      "completeMs": 992,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 505,
+      "completeMs": 507,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 959,
+      "completeMs": 963,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 292,
+      "completeMs": 1022,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 1018,
+      "completeMs": 1021,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 920,
+      "completeMs": 925,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 297,
+      "completeMs": 972,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 557,
+      "completeMs": 560,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 947,
+      "completeMs": 951,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 291,
+      "completeMs": 987,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 454,
+      "completeMs": 457,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 925,
+      "completeMs": 930,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 322,
+      "completeMs": 975,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 536,
+      "completeMs": 538,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 951,
+      "completeMs": 959,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 299,
+      "completeMs": 1037,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 672,
+      "completeMs": 674,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 918,
+      "completeMs": 923,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 305,
+      "completeMs": 972,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 523,
+      "completeMs": 526,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 980,
+      "completeMs": 986,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 271,
+      "completeMs": 979,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 505,
+      "completeMs": 507,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 910,
+      "completeMs": 916,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 295,
+      "completeMs": 973,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 543,
+      "completeMs": 545,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 999,
+      "completeMs": 1004,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 279,
+      "completeMs": 1000,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 456,
+      "completeMs": 458,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 966,
+      "completeMs": 971,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 308,
+      "completeMs": 1019,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 658,
+      "completeMs": 661,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 952,
+      "completeMs": 957,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 300,
+      "completeMs": 1006,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 515,
+      "completeMs": 518,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 926,
+      "completeMs": 931,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 271,
+      "completeMs": 1005,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 436,
+      "completeMs": 439,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 918,
+      "completeMs": 925,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 297,
+      "completeMs": 967,
+      "bodyBytes": 132303
+    },
+    {
+      "route": "/events",
+      "headersMs": 457,
+      "completeMs": 459,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 928,
+      "completeMs": 934,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 307,
+      "completeMs": 982,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 453,
+      "completeMs": 469,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 946,
+      "completeMs": 952,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 299,
+      "completeMs": 1001,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 643,
+      "completeMs": 645,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 1209,
+      "completeMs": 1214,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 284,
+      "completeMs": 950,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 447,
+      "completeMs": 448,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 966,
+      "completeMs": 973,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 291,
+      "completeMs": 992,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 459,
+      "completeMs": 462,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 929,
+      "completeMs": 934,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 297,
+      "completeMs": 1025,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 1800,
+      "completeMs": 1802,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 965,
+      "completeMs": 970,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 294,
+      "completeMs": 1000,
+      "bodyBytes": 132303
+    },
+    {
+      "route": "/events",
+      "headersMs": 558,
+      "completeMs": 561,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 919,
+      "completeMs": 923,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 283,
+      "completeMs": 1040,
+      "bodyBytes": 132303
+    },
+    {
+      "route": "/events",
+      "headersMs": 541,
+      "completeMs": 544,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 956,
+      "completeMs": 960,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 304,
+      "completeMs": 999,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 494,
+      "completeMs": 497,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 942,
+      "completeMs": 948,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 284,
+      "completeMs": 1014,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 448,
+      "completeMs": 452,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 988,
+      "completeMs": 992,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 354,
+      "completeMs": 1041,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 465,
+      "completeMs": 468,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 908,
+      "completeMs": 913,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 298,
+      "completeMs": 977,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 580,
+      "completeMs": 582,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 956,
+      "completeMs": 961,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 287,
+      "completeMs": 953,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 452,
+      "completeMs": 454,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 946,
+      "completeMs": 951,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 356,
+      "completeMs": 1053,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 525,
+      "completeMs": 528,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 966,
+      "completeMs": 970,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 299,
+      "completeMs": 976,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 465,
+      "completeMs": 467,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 970,
+      "completeMs": 978,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 269,
+      "completeMs": 1013,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 532,
+      "completeMs": 535,
+      "bodyBytes": 68049
+    }
+  ],
+  "warmupSamples": [
+    {
+      "route": "/",
+      "headersMs": 1465,
+      "completeMs": 1474,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 320,
+      "completeMs": 1073,
+      "bodyBytes": 132303
+    },
+    {
+      "route": "/events",
+      "headersMs": 816,
+      "completeMs": 819,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 990,
+      "completeMs": 995,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 339,
+      "completeMs": 1058,
+      "bodyBytes": 132303
+    },
+    {
+      "route": "/events",
+      "headersMs": 1021,
+      "completeMs": 1023,
+      "bodyBytes": 68049
+    },
+    {
+      "route": "/",
+      "headersMs": 974,
+      "completeMs": 980,
+      "bodyBytes": 199732
+    },
+    {
+      "route": "/shop",
+      "headersMs": 335,
+      "completeMs": 980,
+      "bodyBytes": 132260
+    },
+    {
+      "route": "/events",
+      "headersMs": 670,
+      "completeMs": 673,
+      "bodyBytes": 68049
+    }
+  ],
+  "checks": [
+    "all responses HTTP 200 and expected public page content",
+    "no customer cookies or payment requests"
+  ],
+  "limitations": "Client location was not geolocated; this is not browser first-paint or proof of West Coast user p95. Cache state and internet variation may differ."
+}

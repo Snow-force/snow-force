@@ -1,0 +1,23 @@
+{
+  "observedAt": "2026-10-16T07:34:59.872025295Z",
+  "traceId": "a58d763236e47392b588c0fa5397896d",
+  "quoteWallMs": 13935.6,
+  "postgres": {
+    "calls": 335,
+    "sumMs": 7589,
+    "maxMs": 57.03
+  },
+  "redis": {
+    "calls": 42,
+    "sumMs": 2685.72,
+    "maxMs": 70.36
+  },
+  "stripe": {
+    "accountReads": 8,
+    "settingsReads": 7,
+    "registrationReads": 7,
+    "calculationPostMs": 199.76,
+    "lineItemReadMs": 107.34
+  },
+  "note": "Sums include overlap. No SQL text, addresses, client secrets, request bodies or customer identifiers retained. All existing ownership, fresh-source, payment and native amount checks remain required."
+}

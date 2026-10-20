@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-04T21:27:30.301Z",
+  "dnsError": "ECONNREFUSED",
+  "httpError": {
+    "message": "fetch failed",
+    "cause": "ERR_TLS_CERT_ALTNAME_INVALID"
+  }
+}

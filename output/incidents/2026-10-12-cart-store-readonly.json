@@ -1,0 +1,114 @@
+{
+  "checkedAt": "2026-10-13T05:48:00.370Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "regionsStatus": 200,
+  "regions": [
+    {
+      "id": "reg_01M4A68JBXBJ23QZSKJHTC3E4P",
+      "name": "US",
+      "currency": "usd",
+      "countries": [
+        "us"
+      ]
+    }
+  ],
+  "productsStatus": 200,
+  "products": [
+    {
+      "id": "prod_01M4A7N9A0MM81XZZP1MXC3BH0",
+      "title": "PSN Éclat 68 All-Mountain Skis – Nacre Pink",
+      "status": "published",
+      "handle": "eclat-68-all-mountain-skis-nacre-pink",
+      "variants": [
+        {
+          "id": "variant_01M4A7NBCA8DW3YH2M2H039D7Z",
+          "sku": "PSN-ECLAT68-NACRE-165",
+          "title": "165cm",
+          "manage_inventory": true,
+          "allow_backorder": false,
+          "inventory_quantity": 15,
+          "calculated_price": {
+            "id": "pset_01M4A7NCDJARN6XPD8AW8KR0VV",
+            "is_calculated_price_price_list": false,
+            "is_calculated_price_tax_inclusive": false,
+            "calculated_amount": 499,
+            "raw_calculated_amount": {
+              "value": "499",
+              "precision": 20
+            },
+            "is_original_price_price_list": false,
+            "is_original_price_tax_inclusive": false,
+            "original_amount": 499,
+            "raw_original_amount": {
+              "value": "499",
+              "precision": 20
+            },
+            "currency_code": "usd",
+            "calculated_price": {
+              "id": "price_01M4A7NCDJK8GH5YC7VF9F7T5E",
+              "price_list_id": null,
+              "price_list_type": null,
+              "min_quantity": null,
+              "max_quantity": null
+            },
+            "original_price": {
+              "id": "price_01M4A7NCDJK8GH5YC7VF9F7T5E",
+              "price_list_id": null,
+              "price_list_type": null,
+              "min_quantity": null,
+              "max_quantity": null
+            },
+            "calculated_amount_with_tax": 499,
+            "calculated_amount_without_tax": 499,
+            "original_amount_with_tax": 499,
+            "original_amount_without_tax": 499
+          }
+        },
+        {
+          "id": "variant_01M4A7NBCAYDSB3X9A5N166XH0",
+          "sku": "PSN-ECLAT68-NACRE-155",
+          "title": "155cm",
+          "manage_inventory": true,
+          "allow_backorder": false,
+          "inventory_quantity": 15,
+          "calculated_price": {
+            "id": "pset_01M4A7NCDJ2CCCWXC1G0CZY1HA",
+            "is_calculated_price_price_list": false,
+            "is_calculated_price_tax_inclusive": false,
+            "calculated_amount": 499,
+            "raw_calculated_amount": {
+              "value": "499",
+              "precision": 20
+            },
+            "is_original_price_price_list": false,
+            "is_original_price_tax_inclusive": false,
+            "original_amount": 499,
+            "raw_original_amount": {
+              "value": "499",
+              "precision": 20
+            },
+            "currency_code": "usd",
+            "calculated_price": {
+              "id": "price_01M4A7NCDHTHV40ZD06SCKWX1P",
+              "price_list_id": null,
+              "price_list_type": null,
+              "min_quantity": null,
+              "max_quantity": null
+            },
+            "original_price": {
+              "id": "price_01M4A7NCDHTHV40ZD06SCKWX1P",
+              "price_list_id": null,
+              "price_list_type": null,
+              "min_quantity": null,
+              "max_quantity": null
+            },
+            "calculated_amount_with_tax": 499,
+            "calculated_amount_without_tax": 499,
+            "original_amount_with_tax": 499,
+            "original_amount_without_tax": 499
+          }
+        }
+      ]
+    }
+  ]
+}

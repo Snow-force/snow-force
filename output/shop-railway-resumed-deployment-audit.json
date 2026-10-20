@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-03T10:29:24.4913718+00:00",
+  "goalResumed": true,
+  "resumedBlockingAuditTurns": 3,
+  "priorGoalTurnClassification": "no progress: same subscription blocker remained after live verification",
+  "currentGoalTurnClassification": "no progress: live SnowForce UI still Trial with subscription disabled; Railway has no deployment or domains",
+  "account": "snowforceclub@gmail.com",
+  "projectId": "026e1ce6-a125-422c-b29f-a44ee11bdac1",
+  "subscription": "TRIAL",
+  "latestDeployment": null,
+  "sourceConnected": false,
+  "releaseBranch": "codex/commerce-public-admin",
+  "remoteTip": "d8e8251e59a28af6b127a70360759ee35018c683",
+  "userGuidanceQuestionPending": true,
+  "userAction": "Complete Hobby subscription or state what help is needed",
+  "publicBackendDeployed": false,
+  "domainCount": 0,
+  "independentPreparationComplete": true,
+  "deploymentPrerequisitesPending": [
+    "User subscription activation",
+    "GitHub app access for published release branch",
+    "Authorized production credentials",
+    "TLS Redis and image-upload credentials"
+  ],
+  "goalComplete": false
+}

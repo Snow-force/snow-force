@@ -1,0 +1,47 @@
+{
+  "checkedAt": "2026-10-20T03:33:51.251Z",
+  "revision": "68aface89dba139d237eddc233e6a532409744be",
+  "tree": "ef7e5bd5afadea25c081f15702c1f681a72856d9",
+  "environment": "loopback Next/Medusa/PostgreSQL and independent Stripe Sandbox; synthetic member auth only",
+  "passed": [
+    "SDK blocked: explicit reload, same unfunded intent on failed retry",
+    "SDK recovery: resumed original intent",
+    "Failed 3DS challenge: confirmation disabled until server status recovery, no new intent",
+    "Cash App panel selected without authorization or duplicate intent",
+    "35-second delayed prepare: uncertainty warning visible and no repeat payment enabled",
+    "Verified cancellation: new estimate restored for unchanged checkout, fresh policy agreement required"
+  ],
+  "unverified": [
+    "Successful 3DS completion",
+    "Wallet/async authorization and completion",
+    "Bandwidth-throttled desktop/mobile matrix",
+    "Representative production baseline and p95"
+  ],
+  "final": {
+    "nativeSessionRecords": 3,
+    "activeSessions": 0,
+    "testIntentStatuses": [
+      "canceled",
+      "canceled",
+      "canceled"
+    ],
+    "receivedCents": 0,
+    "capturableCents": 0,
+    "orders": 0,
+    "quantity": 1,
+    "productionFinancialActions": 0,
+    "financialAndRecoveryRecordsPreserved": true,
+    "temporaryMemberFixtureRemoved": true,
+    "sessionsRevoked": true,
+    "localServicesStopped": true
+  },
+  "checks": {
+    "tests": 1209,
+    "files": 186,
+    "coverage": true,
+    "build": true,
+    "unexpectedConsole": 0,
+    "actWarnings": 0
+  },
+  "productionPrewarmEnabled": false
+}

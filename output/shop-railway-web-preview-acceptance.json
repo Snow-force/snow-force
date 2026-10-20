@@ -1,0 +1,108 @@
+{
+  "checkedAt": "2026-10-04T20:40:36.3867721+00:00",
+  "baseUrl": "https://snowforce-web-production-5cbf.up.railway.app",
+  "deploymentId": "8186e356-4bd8-4a50-acfc-a3789bc0c030",
+  "routes": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "location": "",
+      "cacheControl": "no-store",
+      "healthOk": true,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/admin",
+      "status": 307,
+      "location": "/staff-login",
+      "cacheControl": "no-store, must-revalidate, no-cache, max-age=0, private",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/admin/events",
+      "status": 307,
+      "location": "/staff-login",
+      "cacheControl": "no-store, must-revalidate, no-cache, max-age=0, private",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/admin/registrations/export",
+      "status": 307,
+      "location": "/staff-login",
+      "cacheControl": "",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/member/trips",
+      "status": 200,
+      "location": "",
+      "cacheControl": "no-store, must-revalidate, no-cache, max-age=0, private",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/merchant/dashboard",
+      "status": 200,
+      "location": "",
+      "cacheControl": "no-store, must-revalidate, no-cache, max-age=0, private",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/auth/callback?next=https%3A%2F%2Fexample.invalid",
+      "status": 307,
+      "location": "https://0.0.0.0:3000/member?error=callback",
+      "cacheControl": "",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200,
+      "location": "",
+      "cacheControl": "no-store, must-revalidate, no-cache, max-age=0, private",
+      "healthOk": false,
+      "policyUnavailable": true
+    },
+    {
+      "path": "/api/shop/order-sync",
+      "status": 405,
+      "location": "",
+      "cacheControl": "",
+      "healthOk": false,
+      "policyUnavailable": false
+    },
+    {
+      "path": "/api/stripe/webhook",
+      "status": 405,
+      "location": "",
+      "cacheControl": "",
+      "healthOk": false,
+      "policyUnavailable": false
+    }
+  ],
+  "assets": [
+    {
+      "path": "/_next/static/chunks/3syyno4s9qe-4.css",
+      "status": 200,
+      "contentType": "text/css; charset=UTF-8",
+      "contentLength": 90627
+    },
+    {
+      "path": "/_next/image?url=%2Flogo.jpg&w=96&q=75",
+      "status": 200,
+      "contentType": "image/jpeg",
+      "contentLength": 986
+    },
+    {
+      "path": "/videos/snowmountain.mp4",
+      "status": 200,
+      "contentType": "video/mp4",
+      "contentLength": 12148136
+    }
+  ],
+  "scope": "Read-only unauthenticated HTTP and asset checks; production credentials, business data, authenticated flows and DNS cutover remain pending"
+}

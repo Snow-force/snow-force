@@ -1,0 +1,31 @@
+{
+  "testedAt": "2026-10-16T18:55:38.475Z",
+  "environment": "isolated local PostgreSQL with disposable fixture, not production",
+  "queries": [
+    {
+      "query": "owned-cart-snapshot",
+      "planningMs": 0.657,
+      "executionMs": 0.476,
+      "planNodeTypes": {
+        "Seq Scan": 5,
+        "Index Scan": 7,
+        "Aggregate": 8,
+        "Sort": 8,
+        "Nested Loop": 1
+      }
+    },
+    {
+      "query": "shipping-policy-snapshot",
+      "planningMs": 0.38,
+      "executionMs": 0.303,
+      "planNodeTypes": {
+        "Index Scan": 8,
+        "Aggregate": 3,
+        "Sort": 3,
+        "Nested Loop": 2
+      }
+    }
+  ],
+  "schemaChanges": 0,
+  "limitations": "Small fixture dataset; no inference about production indexes or timings."
+}

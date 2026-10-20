@@ -1,0 +1,33 @@
+{
+  "verifiedAt": "2026-10-04T11:29:42.979Z",
+  "projectRef": "bhmwxkynhyhquspiyact",
+  "schema": "commerce",
+  "readOnly": true,
+  "noPasswordHashesReturned": true,
+  "identityLinksVerified": true,
+  "accounts": [
+    {
+      "email": "snowforceclub@gmail.com",
+      "userActive": true,
+      "provider": "emailpass",
+      "providerActive": true,
+      "authIdentityActive": true,
+      "correctlyLinkedToUser": true,
+      "passwordHashPresent": true,
+      "providerCreatedAt": "2026-10-02 03:34:01.907+00",
+      "providerUpdatedAt": "2026-10-02 03:34:01.907+00"
+    },
+    {
+      "email": "taiyuanmei0824@gmail.com",
+      "userActive": true,
+      "provider": "emailpass",
+      "providerActive": true,
+      "authIdentityActive": true,
+      "correctlyLinkedToUser": true,
+      "passwordHashPresent": true,
+      "providerCreatedAt": "2026-10-02 03:36:42.061+00",
+      "providerUpdatedAt": "2026-10-03 04:31:41.876+00"
+    }
+  ],
+  "passwordAcceptance": "Club initial credential accepted by public HTTP; personal initial credential returned 401. Identity linkage alone does not prove a current password."
+}

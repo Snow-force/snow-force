@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-10-16T06:53:07.314Z",
+  "account": "acct_1ToZcEAItQQT9la8",
+  "intentId": "pi_3UQwX4AItQQT9la82ZQjgVgQ",
+  "amount": 5324,
+  "currency": "usd",
+  "livemode": true,
+  "sessionId": "payses_01M50RNZ1TRBQMRNXY8VWR9S3R",
+  "captureMethod": "manual",
+  "status": "requires_payment_method",
+  "amountReceived": 0,
+  "amountCapturable": 0,
+  "latestCharge": {
+    "id": "py_3UQwX4AItQQT9la82j19n1Ch",
+    "paid": false,
+    "captured": false,
+    "status": "failed"
+  },
+  "writesPerformed": 0
+}

@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-10-13T08:20:12.431Z",
+  "scope": "Read-only TLS-verified production inspection; no customer identity, address, secret, or writes recorded. Additional local edit-guard SQL probe used short row locks, prohibited every write statement and rolls back the transaction; no API authentication was issued.",
+  "tables": [
+    {
+      "name": "cart",
+      "present": true
+    },
+    {
+      "name": "credit_line",
+      "present": true
+    },
+    {
+      "name": "order_cart",
+      "present": true
+    },
+    {
+      "name": "cart_payment_collection",
+      "present": true
+    },
+    {
+      "name": "payment_collection",
+      "present": true
+    },
+    {
+      "name": "payment_session",
+      "present": true
+    },
+    {
+      "name": "payment",
+      "present": true
+    },
+    {
+      "name": "snowforce_tax_operations",
+      "present": true
+    }
+  ],
+  "cart": {
+    "id": "cart_01M4T3EW71590C0S1DPJS3DJZ2",
+    "without_address": false,
+    "incomplete": true
+  },
+  "nativeSql": {
+    "schemaValid": true,
+    "issues": [],
+    "itemCount": 0,
+    "shippingCount": 0,
+    "hasQuote": false,
+    "hasCollection": false
+  },
+  "guard": {
+    "result": {
+      "status": "editable",
+      "quote_removed": false,
+      "review_required": true
+    },
+    "reads": 16,
+    "blockedWrites": 0
+  }
+}

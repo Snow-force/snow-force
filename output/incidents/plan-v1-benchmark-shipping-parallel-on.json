@@ -1,0 +1,484 @@
+{
+  "testedAt": "2026-10-17T03:08:35.644Z",
+  "environment": "isolated local Next production build + local Medusa/PostgreSQL + Stripe Sandbox Tax; synthetic Supabase member",
+  "measurement": "HTTP server-action completion including real member authentication; excludes browser render and human input",
+  "optimizedReads": true,
+  "mode": "on",
+  "source": "shipping parallel candidate on 764d3b2; unchanged 6276a0c checkout frontend",
+  "productionFinancialWrites": 0,
+  "operations": [
+    {
+      "operation": "cart-update",
+      "n": 30,
+      "p50Ms": 1032,
+      "p95Ms": 1368,
+      "failures": 0
+    },
+    {
+      "operation": "checkout-read",
+      "n": 30,
+      "p50Ms": 1083,
+      "p95Ms": 1284,
+      "failures": 0
+    },
+    {
+      "operation": "address-shipping-tax",
+      "n": 30,
+      "p50Ms": 3315,
+      "p95Ms": 3726,
+      "failures": 0
+    }
+  ],
+  "samples": [
+    {
+      "operation": "cart-update",
+      "durationMs": 1575,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1530,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3726,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1368,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1284,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3666,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1175,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1107,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3413,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1084,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1136,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3292,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1083,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1104,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3326,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1095,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1169,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3414,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1033,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1063,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3363,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1137,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1088,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 4079,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1111,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1083,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3392,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1077,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1063,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3190,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1084,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1062,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3214,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1048,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1273,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3379,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1002,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1043,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3439,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1066,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1131,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3305,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1001,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1076,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3315,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1036,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1232,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3342,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1032,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1056,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3204,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 999,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1131,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3425,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1022,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1082,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3334,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1023,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1070,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3191,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1022,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1027,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3359,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 974,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1070,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3174,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1012,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1102,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3107,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1019,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1064,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3310,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 976,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1090,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3327,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 993,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1092,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3211,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 963,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1067,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3202,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1053,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1030,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3254,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1029,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1100,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3177,
+      "status": "review"
+    },
+    {
+      "operation": "cart-update",
+      "durationMs": 1022,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1035,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 3192,
+      "status": "review"
+    }
+  ]
+}

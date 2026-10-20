@@ -1,0 +1,98 @@
+{
+  "checked_at": "2026-10-02T10:08:14.422Z",
+  "anonymous_status": 401,
+  "admins": [
+    {
+      "email": "snowforceclub@gmail.com",
+      "status": 200,
+      "cache_control": "private, no-store",
+      "snapshot": {
+        "schema_version": 1,
+        "account_id": "acct_1ToZcNAbMQunT3pr",
+        "livemode": false,
+        "observed_at": 1790935695,
+        "fingerprint": "999cce9f4e24aad70efd50e75cfb2ff5fab68aa6f4038cdc30d5e41b39400174",
+        "settings": {
+          "status": "pending",
+          "provider": "stripe",
+          "head_office_country": null,
+          "head_office_state": null,
+          "missing_fields": [
+            "head_office"
+          ]
+        },
+        "registrations": [],
+        "collecting_states": [],
+        "collecting_retail_fee_states": [],
+        "blockers": [
+          "california_registration_required",
+          "settings_pending",
+          "us_head_office_required"
+        ],
+        "api_ready": false
+      },
+      "policy_confirmed": false,
+      "integration_ready": false,
+      "checkout_ready": false
+    },
+    {
+      "email": "taiyuanmei0824@gmail.com",
+      "status": 200,
+      "cache_control": "private, no-store",
+      "snapshot": {
+        "schema_version": 1,
+        "account_id": "acct_1ToZcNAbMQunT3pr",
+        "livemode": false,
+        "observed_at": 1790935696,
+        "fingerprint": "999cce9f4e24aad70efd50e75cfb2ff5fab68aa6f4038cdc30d5e41b39400174",
+        "settings": {
+          "status": "pending",
+          "provider": "stripe",
+          "head_office_country": null,
+          "head_office_state": null,
+          "missing_fields": [
+            "head_office"
+          ]
+        },
+        "registrations": [],
+        "collecting_states": [],
+        "collecting_retail_fee_states": [],
+        "blockers": [
+          "california_registration_required",
+          "settings_pending",
+          "us_head_office_required"
+        ],
+        "api_ready": false
+      },
+      "policy_confirmed": false,
+      "integration_ready": false,
+      "checkout_ready": false
+    }
+  ],
+  "latest_read_at": "2026-10-02T10:22:57.824Z",
+  "latest_snapshot": {
+    "schema_version": 1,
+    "account_id": "acct_1ToZcNAbMQunT3pr",
+    "livemode": false,
+    "observed_at": 1790936577,
+    "fingerprint": "999cce9f4e24aad70efd50e75cfb2ff5fab68aa6f4038cdc30d5e41b39400174",
+    "settings": {
+      "status": "pending",
+      "provider": "stripe",
+      "head_office_country": null,
+      "head_office_state": null,
+      "missing_fields": [
+        "head_office"
+      ]
+    },
+    "registrations": [],
+    "collecting_states": [],
+    "collecting_retail_fee_states": [],
+    "blockers": [
+      "california_registration_required",
+      "settings_pending",
+      "us_head_office_required"
+    ],
+    "api_ready": false
+  }
+}

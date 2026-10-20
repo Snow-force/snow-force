@@ -1,0 +1,11 @@
+{
+  "testedAt": "2026-10-17T02:25:52.097Z",
+  "environment": "isolated native Medusa/PostgreSQL and Stripe Sandbox Tax",
+  "checks": [
+    "old receiving revision returns native HTTP 409",
+    "newest address, revision and signed quote preserved after rejection",
+    "original address restored with fresh quote",
+    "no payment prepared"
+  ],
+  "productionWrites": 0
+}

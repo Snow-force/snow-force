@@ -1,0 +1,43 @@
+{
+  "verified_at": "2026-10-03T02:08:55.192Z",
+  "review_schema": true,
+  "actual_stripe_posts": 0,
+  "final": "ROLLBACK",
+  "checks": [
+    "Actual native capture and private applied quote SQL agree",
+    "One fenced claimant and immutable original request",
+    "Final update failure rolls back result insertion",
+    "Successful result commits atomically and cannot be deleted or reopened",
+    "Public, customer and service-role Data API privileges remain revoked"
+  ],
+  "before": {
+    "customer": 0,
+    "cart": 0,
+    "payment_collection": 0,
+    "payment_session": 0,
+    "payment": 0,
+    "capture": 0,
+    "order": 0,
+    "order_cart": 0,
+    "order_payment_collection": 0,
+    "snowforce_tax_operations": 0,
+    "snowforce_tax_quotes": 0,
+    "snowforce_tax_quote_applications": 0
+  },
+  "mutation_attempts": 22,
+  "after": {
+    "customer": 0,
+    "cart": 0,
+    "payment_collection": 0,
+    "payment_session": 0,
+    "payment": 0,
+    "capture": 0,
+    "order": 0,
+    "order_cart": 0,
+    "order_payment_collection": 0,
+    "snowforce_tax_operations": 0,
+    "snowforce_tax_quotes": 0,
+    "snowforce_tax_quote_applications": 0
+  },
+  "tax_tables_exist_after": false
+}

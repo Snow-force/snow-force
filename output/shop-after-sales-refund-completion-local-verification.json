@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-10-09T23:45:49.439Z",
+  "status": "functional_checks_passed_with_warning",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback PostgreSQL; actual Medusa customer/order/return/payment/user migrations and APIs, real after-sales/funds/allocation/cash/tax migrations and private-role completion SQL; explicit order-payment link and provider responses are fixtures; no real Stripe HTTP or production changes",
+  "checks": [
+    "actual database completion rejects a linked received case without a fresh staff reconciliation",
+    "matching aggregate cents cannot close with a different Stripe/native identity, amount or pending individual refund",
+    "changed raw receipt quantities cannot close even when the ordinary received decimal remains unchanged",
+    "a successful older Stripe observation expires and cannot close a request",
+    "private-role application validation and actual database guards complete the exact request with append-only history; reopening is rejected",
+    "a subsequent fully received two-unit return cannot use the previous case's settled refund to close without its own quantity coverage",
+    "actual equal-value native exchange remains open until replacement delivery, then completes without cash allocation or refund",
+    "completion invoker has no public/browser/service-role execute grants and retains original case immutability"
+  ],
+  "warnings": [
+    {
+      "name": "DeprecationWarning",
+      "message": "Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead."
+    }
+  ],
+  "warning_follow_up": "pg 8.23.1 -> Knex -> MikroORM native transaction query sequencing; investigate a supported Medusa transaction/dependency fix before clean launch acceptance. Warnings remain printed; no dependency patch or suppression applied."
+}

@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-10-10T08:53:45.541Z",
+  "scope": "operator-approved California sales-tax test registration in the independent Snow Force Club Sandbox only",
+  "live_mutation": false,
+  "tax_authority_registration": false,
+  "ongoing_permit_issued_claim": false,
+  "account_id": "acct_1ToZcNAbMQunT3pr",
+  "created_new": true,
+  "registration": {
+    "id": "taxreg_1UOw2HAbMQunT3pre61qoGuJ",
+    "livemode": false,
+    "country": "US",
+    "state": "CA",
+    "type": "state_sales_tax",
+    "status": "active",
+    "active_from": 1791622425,
+    "expires_at": null
+  },
+  "status": "verified"
+}

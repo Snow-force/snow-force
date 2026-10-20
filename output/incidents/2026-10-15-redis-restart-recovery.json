@@ -1,0 +1,140 @@
+{
+  "verifiedAt": "2026-10-15T07:03:47Z",
+  "sourceCommit": "45d852a28c52029fd96d61e297db56c26a60f3fc",
+  "deployment": "e970f8ae-cb8d-4fe3-b723-1c33c6b20b17",
+  "sameDeploymentRestarted": true,
+  "firstAttemptDiscovered": "Existing TLS directory stopped the old start script",
+  "repair": "Create the private runtime TLS directory idempotently and enforce mode 0700",
+  "databaseQueuesBeforeRestart": {
+    "cashRefunds": 0,
+    "taxRefunds": 0,
+    "taxSales": 0,
+    "persistedWorkflows": 0
+  },
+  "aofFsyncBeforeShutdown": true,
+  "finalSnapshotSaved": true,
+  "baseRdbKeysLoaded": 1030,
+  "aofReloaded": true,
+  "tlsReadyAfterRestart": true,
+  "backendHealthAfterRestart": 200,
+  "liveCartQuantityRoundTrip": {
+    "verifiedAt": "2026-10-15T07:12:00Z",
+    "quantities": [1, 2, 1],
+    "nativeMutationStatuses": [200, 200],
+    "restoredSubtotalUsd": 499,
+    "formalPaymentsCreated": 0,
+    "evidence": "2026-10-15-live-cart-restored-after-redis.jpg"
+  },
+  "backgroundRdbSaveAfterRestart": {
+    "startedAt": "2026-10-15T07:09:02.059Z",
+    "completedAt": "2026-10-15T07:09:02.160Z",
+    "status": "success"
+  },
+  "nonemptyFinancialQueueResumptionTested": false,
+  "logs": [
+    {
+      "at": "2026-10-15T07:02:59.867953706Z",
+      "message": "Mounting volume on: /var/lib/containers/railwayapp/bind-mounts/da46b6dc-bf73-48c4-b856-a5caccf04853/vol_vt5j59llab327pg1"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823575038Z",
+      "message": "1:signal-handler (1792047778) Received SIGTERM scheduling shutdown..."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823583073Z",
+      "message": "1:M 15 Oct 2026 07:02:58.407 * User requested shutdown..."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823587916Z",
+      "message": "1:M 15 Oct 2026 07:02:58.407 * Calling fsync() on the AOF file."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823591624Z",
+      "message": "1:M 15 Oct 2026 07:02:58.407 * Saving the final RDB snapshot before exiting."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823595484Z",
+      "message": "1:M 15 Oct 2026 07:02:58.428 * DB saved on disk"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823599090Z",
+      "message": "1:M 15 Oct 2026 07:02:58.428 # Redis is now ready to exit, bye bye..."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823602797Z",
+      "message": "1:C 15 Oct 2026 07:03:00.065 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823605816Z",
+      "message": "1:C 15 Oct 2026 07:03:00.065 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823609343Z",
+      "message": "1:C 15 Oct 2026 07:03:00.065 * Redis version=7.4.11, bits=64, commit=00000000, modified=0, pid=1, just started"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823612852Z",
+      "message": "1:C 15 Oct 2026 07:03:00.065 * Configuration loaded"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823616696Z",
+      "message": "1:M 15 Oct 2026 07:03:00.066 * monotonic clock: POSIX clock_gettime"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823620471Z",
+      "message": "1:M 15 Oct 2026 07:03:00.066 * Running mode=standalone, port=6379."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823624467Z",
+      "message": "1:M 15 Oct 2026 07:03:00.068 * Server initialized"
+    },
+    {
+      "at": "2026-10-15T07:03:05.823629979Z",
+      "message": "1:M 15 Oct 2026 07:03:00.070 * Reading RDB base file on AOF loading..."
+    },
+    {
+      "at": "2026-10-15T07:03:05.823633146Z",
+      "message": "1:M 15 Oct 2026 07:03:00.070 * Loading RDB produced by version 7.4.11"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825115816Z",
+      "message": "1:M 15 Oct 2026 07:03:00.070 * RDB age 256079 seconds"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825120076Z",
+      "message": "1:M 15 Oct 2026 07:03:00.070 * RDB memory usage when created 5.30 Mb"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825123162Z",
+      "message": "1:M 15 Oct 2026 07:03:00.070 * RDB is base AOF"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825126562Z",
+      "message": "1:M 15 Oct 2026 07:03:00.080 * Done loading RDB, keys loaded: 1030, keys expired: 0."
+    },
+    {
+      "at": "2026-10-15T07:03:05.825132863Z",
+      "message": "1:M 15 Oct 2026 07:03:00.081 * DB loaded from base file appendonly.aof.2.base.rdb: 0.012 seconds"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825136542Z",
+      "message": "1:M 15 Oct 2026 07:03:02.529 * DB loaded from incr file appendonly.aof.2.incr.aof: 2.448 seconds"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825139471Z",
+      "message": "1:M 15 Oct 2026 07:03:02.529 * DB loaded from append only file: 2.460 seconds"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825142302Z",
+      "message": "1:M 15 Oct 2026 07:03:02.529 * Opening AOF incr file appendonly.aof.2.incr.aof on server start"
+    },
+    {
+      "at": "2026-10-15T07:03:05.825145055Z",
+      "message": "1:M 15 Oct 2026 07:03:02.529 * Ready to accept connections tls"
+    }
+  ],
+  "limitations": [
+    "AOF/RDB are on the existing persistent Railway volume; no automatic independent Redis backup was added.",
+    "Redis reports a host vm.overcommit_memory warning; the Railway host setting is outside this application configuration."
+  ]
+}

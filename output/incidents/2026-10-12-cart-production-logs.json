@@ -1,0 +1,109 @@
+{
+  "checkedAt": "2026-10-13T05:48:26.059Z",
+  "backendDeployment": "86275b29-76e8-412a-b17c-2c0834308203",
+  "window": {
+    "start": "2026-10-13T05:30:00Z",
+    "end": "2026-10-13T05:45:00Z"
+  },
+  "requests": [
+    {
+      "timestamp": "2026-10-13T05:33:35.132795486Z",
+      "method": "POST",
+      "path": "/auth/customer/supabase",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-13T05:33:35.310271594Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 400
+    },
+    {
+      "timestamp": "2026-10-13T05:33:56.161357128Z",
+      "method": "POST",
+      "path": "/auth/customer/supabase",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-13T05:33:56.299847324Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 400
+    },
+    {
+      "timestamp": "2026-10-13T05:36:38.459906655Z",
+      "method": "POST",
+      "path": "/auth/customer/supabase",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-13T05:36:38.590713392Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 400
+    },
+    {
+      "timestamp": "2026-10-13T05:36:59.277638028Z",
+      "method": "POST",
+      "path": "/auth/customer/supabase",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-13T05:36:59.414095248Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 400
+    },
+    {
+      "timestamp": "2026-10-13T05:39:10.149392891Z",
+      "method": "POST",
+      "path": "/auth/customer/supabase",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-13T05:39:10.289484152Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 400
+    },
+    {
+      "timestamp": "2026-10-13T05:41:54.293181445Z",
+      "method": "POST",
+      "path": "/auth/customer/supabase",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-13T05:41:54.426658924Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 400
+    }
+  ],
+  "runtimeErrors": [
+    {
+      "timestamp": "2026-10-13T05:33:37.656079409Z",
+      "message": "The shop is open for administration only. Sales and payment operations are disabled."
+    },
+    {
+      "timestamp": "2026-10-13T05:33:56.468337012Z",
+      "message": "The shop is open for administration only. Sales and payment operations are disabled."
+    },
+    {
+      "timestamp": "2026-10-13T05:36:38.816801898Z",
+      "message": "The shop is open for administration only. Sales and payment operations are disabled."
+    },
+    {
+      "timestamp": "2026-10-13T05:37:09.835560791Z",
+      "message": "The shop is open for administration only. Sales and payment operations are disabled."
+    },
+    {
+      "timestamp": "2026-10-13T05:39:14.933013951Z",
+      "message": "The shop is open for administration only. Sales and payment operations are disabled."
+    },
+    {
+      "timestamp": "2026-10-13T05:41:58.646091449Z",
+      "message": "The shop is open for administration only. Sales and payment operations are disabled."
+    }
+  ],
+  "cartRequestsInWindow": 0
+}

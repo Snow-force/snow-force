@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-10T00:02:06.189Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback PostgreSQL; actual Medusa refund and order-transaction records; known fixture provider identity and injected Sandbox-only GET recovery; no real Stripe HTTP, production mutation or configured provider replacement",
+  "checks": [
+    "authenticated queue SQL recovers one exact original allocation without replacing its request",
+    "unregistered Sandbox callback uses actual native refund association and GET-only proof; callback amount or claim-token mismatch is rejected",
+    "concurrent claims have one winner; successful provider evidence alone cannot complete without native order bookkeeping",
+    "saved provider identity recovers through GET, actual Medusa books exact negative USD cents, and repeated workers do no further work",
+    "database guards retain immutable original requests and completed state; history only appends through its ledger trigger",
+    "runtime role executes queue and claims; RLS and invoker guards retain absent browser/service-role privileges"
+  ]
+}

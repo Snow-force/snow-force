@@ -1,0 +1,51 @@
+{
+  "verified_at": "2026-10-02T21:22:44.455Z",
+  "checks": [
+    {
+      "name": "shop",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "policies",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "checkout",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "member_orders",
+      "status": 200,
+      "redirect": null,
+      "anonymous_login_fields": true
+    },
+    {
+      "name": "backend_health",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "admin_login",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "missing_store_key_normalize",
+      "status": 400,
+      "redirect": null
+    },
+    {
+      "name": "anonymous_normalize_with_store_key",
+      "status": 401,
+      "redirect": null
+    }
+  ],
+  "scope": "Read-only HTTP availability and anonymous access; no browser visual, authenticated shopping or real purchase acceptance",
+  "notes": [
+    "Anonymous member/orders returns the existing member login panel with HTTP 200, matching the route implementation",
+    "Missing store key rejected 400 before customer authentication; valid store key plus no customer token rejected 401"
+  ]
+}

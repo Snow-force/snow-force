@@ -1,0 +1,14 @@
+{
+  "testedAt": "2026-10-17T02:25:45.397Z",
+  "environment": "isolated native receiving-details workflows, PostgreSQL and Stripe Sandbox Tax",
+  "checks": [
+    "versioned native pickup selection and zero shipping",
+    "owned SQL snapshot computes a current pickup quote",
+    "switch back to delivery with fresh revision and native shipping workflow",
+    "original delivery address and 5197-cent total restored",
+    "no payment prepared"
+  ],
+  "pickupTotalCents": 4202,
+  "deliveryTotalCents": 5197,
+  "productionWrites": 0
+}

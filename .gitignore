@@ -1,5 +1,7 @@
 .data/
 .codex/
+.codex-remote-attachments/
+.pnpm-store/
 .claude/
 .claudian/
 .obsidian/

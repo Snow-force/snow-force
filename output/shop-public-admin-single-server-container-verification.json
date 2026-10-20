@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-03T08:08:17.9985957Z",
+  "realProductDatabaseConnected": false,
+  "linuxRedisTLS": true,
+  "redisAuthentication": true,
+  "redisRestartPersistence": true,
+  "medusaImageRedisClientTLS": true,
+  "caddyOfflineValidation": true,
+  "redisMemorySample": "3.926MiB / 384MiB",
+  "publicBackendDeployed": false,
+  "fullMedusaStackVerified": false
+}

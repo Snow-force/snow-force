@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-10T00:02:05.042Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback PostgreSQL; actual Medusa migrations and native refund API; explicit fixture provider responses, committed sale and after-sales data; no production changes or Stripe HTTP",
+  "checks": [
+    "actual Medusa refund raw USD cents and original full capture bind to a specific succeeded provider fixture",
+    "funds and task commit atomically; insertion failure rolls back funds, and duplicate observations recover one task",
+    "concurrent claimers cannot both acquire work; unknown create response retries the fixed request and idempotency key",
+    "saved provider identity recovers with GET and commits exactly one immutable specific-item tax reversal result",
+    "database guards reject editing or deleting money evidence and reopening completed tax work",
+    "application role executes actual queue SQL; RLS, invoker guards and absent browser/service-role grants protect all three tables"
+  ]
+}

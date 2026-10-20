@@ -24,10 +24,10 @@ export async function withdrawCartTaxQuote(scope: MedusaContainer, auth: AuthCon
     lease(signals);
     return await withCheckoutCartLease(scope,id.data,async leases=>{
       lease(leases);
-      const query=scope.resolve(ContainerRegistrationKeys.QUERY);
-      const {data:owners}=await query.graph({entity:"cart",fields:["id","customer_id","completed_at","payment_collection.payment_sessions.id"],filters:{id:id.data}});
-      z.array(z.object({id:z.literal(id.data),customer_id:z.literal(auth.actor_id),completed_at:z.null(),payment_collection:z.object({payment_sessions:z.array(z.unknown()).length(0)}).nullable().default(null)})).length(1).parse(owners);
       const db=scope.resolve<TaxQuoteConnection>(ContainerRegistrationKeys.PG_CONNECTION);
+      // This fresh SQL snapshot is owner-bound and includes even retired
+      // sessions on the active collection. A preceding graph read adds no
+      // permission: transaction row locks and financial checks still follow.
       const initial=checkoutCartSchema.parse(await readOwnedTaxCartSnapshot(db,id.data,auth.actor_id));
       if(expectedDetailsVersion!==undefined && checkoutDetailsVersion(initial)!==detailsVersionSchema.parse(expectedDetailsVersion))throw conflict();
       if(initial.customer_id!==auth.actor_id||initial.id!==id.data||initial.completed_at||initial.payment_collection?.payment_sessions.length)throw conflict();

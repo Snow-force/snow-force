@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-02T04:27:35.276Z",
+  "results": [
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/admin/snowforce/after-sales",
+      "status": 401
+    },
+    {
+      "path": "/shop",
+      "status": 200
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200
+    },
+    {
+      "path": "/admin/snowforce/after-sales",
+      "authenticated": true,
+      "status": 200,
+      "count": 0
+    },
+    {
+      "path": "/admin/snowforce/after-sales/missing",
+      "authenticated": true,
+      "status": 404
+    }
+  ]
+}

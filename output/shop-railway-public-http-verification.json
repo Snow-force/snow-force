@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-10-04T05:33:35.536Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "results": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "name": "admin_login",
+      "method": "GET",
+      "path": "/app/login",
+      "status": 200
+    },
+    {
+      "name": "admin_products_unauthenticated",
+      "method": "GET",
+      "path": "/admin/products",
+      "status": 401,
+      "managementBlocked": false
+    },
+    {
+      "name": "admin_inventory_unauthenticated",
+      "method": "GET",
+      "path": "/admin/inventory-items",
+      "status": 401,
+      "managementBlocked": false
+    },
+    {
+      "name": "published_catalog",
+      "method": "GET",
+      "path": "/store/products?limit=100",
+      "status": 200,
+      "productCount": 0
+    },
+    {
+      "name": "published_policies",
+      "method": "GET",
+      "path": "/store/snowforce/policies",
+      "status": 200
+    },
+    {
+      "name": "checkout_disabled",
+      "method": "GET",
+      "path": "/store/snowforce/checkout/acceptance_nonexistent",
+      "status": 400,
+      "errorType": "not_allowed",
+      "managementBlocked": true
+    },
+    {
+      "name": "cart_writes_disabled",
+      "method": "POST",
+      "path": "/store/carts",
+      "status": 400,
+      "errorType": "not_allowed",
+      "managementBlocked": true
+    },
+    {
+      "name": "stripe_webhook_disabled",
+      "method": "POST",
+      "path": "/hooks/payment/stripe_stripe",
+      "status": 400,
+      "errorType": "not_allowed",
+      "managementBlocked": true
+    }
+  ]
+}

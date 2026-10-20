@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-10-14T02:58:56.169Z",
+  "scope": "No customer token supplied; verify authentication remains required and payment routes stay closed. No body or credentials recorded.",
+  "results": [
+    {
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/store/carts",
+      "status": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/store/snowforce/checkout/cart_fixture",
+      "status": 400,
+      "expected": 400,
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/store/carts/cart_fixture/complete",
+      "status": 400,
+      "expected": 400,
+      "passed": true
+    }
+  ]
+}

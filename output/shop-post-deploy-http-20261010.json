@@ -1,0 +1,177 @@
+{
+  "checkedAt": "2026-10-10T20:57:25.933Z",
+  "sourceCommit": "c6f3ba3e61f1c64bf3c0e17a3f5422c500c2e01d",
+  "pages": [
+    {
+      "path": "/",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 5886
+    },
+    {
+      "path": "/events",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/events",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 1693
+    },
+    {
+      "path": "/recaps",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/recaps",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 694
+    },
+    {
+      "path": "/faq",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/faq",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 692
+    },
+    {
+      "path": "/about",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/about",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 810
+    },
+    {
+      "path": "/partner",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/partner",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 808
+    },
+    {
+      "path": "/member",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/member",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 814
+    },
+    {
+      "path": "/staff-login",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/staff-login",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 692
+    },
+    {
+      "path": "/admin",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/staff-login",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 2791
+    },
+    {
+      "path": "/shop",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop",
+      "title": "Gear Shop · 装备商城 | SnowForce",
+      "serverError": false,
+      "ms": 6193
+    },
+    {
+      "path": "/shop/categories/skis",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/categories/skis",
+      "title": "Skis · Skis | SnowForce",
+      "serverError": false,
+      "ms": 6138
+    },
+    {
+      "path": "/shop/categories/ski-suits",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/categories/ski-suits",
+      "title": "Ski Suits · Ski Suits | SnowForce",
+      "serverError": false,
+      "ms": 6304
+    },
+    {
+      "path": "/shop/categories/hats",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/categories/hats",
+      "title": "Hats · Hats | SnowForce",
+      "serverError": false,
+      "ms": 6305
+    },
+    {
+      "path": "/shop/categories/bags-backpacks",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/categories/bags-backpacks",
+      "title": "Bag &amp; Backpacks · Bag &amp; Backpacks | SnowForce",
+      "serverError": false,
+      "ms": 6346
+    },
+    {
+      "path": "/shop/featured",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/featured",
+      "title": "Featured · 精选 | SnowForce",
+      "serverError": false,
+      "ms": 6325
+    },
+    {
+      "path": "/shop/brands",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/brands",
+      "title": "Brands · 品牌 | SnowForce",
+      "serverError": false,
+      "ms": 6424
+    },
+    {
+      "path": "/shop/sale",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/sale",
+      "title": "Sale · 优惠 | SnowForce",
+      "serverError": false,
+      "ms": 6421
+    },
+    {
+      "path": "/shop/policies",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/policies",
+      "title": "Shipping &amp; Returns · 商城配送与退换政策 | SnowForce",
+      "serverError": false,
+      "ms": 6347
+    },
+    {
+      "path": "/refund-policy",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/refund-policy",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 2426
+    },
+    {
+      "path": "/privacy-policy",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/privacy-policy",
+      "title": "SnowForce - Community Snow Sports",
+      "serverError": false,
+      "ms": 2307
+    },
+    {
+      "path": "/shop/checkout",
+      "status": 200,
+      "finalUrl": "https://snow-force.com/shop/checkout",
+      "title": "Checkout · 结账 | SnowForce",
+      "serverError": false,
+      "ms": 6380
+    }
+  ],
+  "commerceHealth": {
+    "status": 200
+  }
+}

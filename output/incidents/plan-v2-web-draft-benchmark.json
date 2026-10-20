@@ -1,0 +1,212 @@
+{
+  "testedAt": "2026-10-17T23:18:07.563Z",
+  "environment": "isolated local Next production build and Medusa/PostgreSQL, real synthetic-member authentication and independent Stripe Sandbox Tax",
+  "measurement": "First two operations include real Next server-action HTTP and member authentication; final native review excludes payment preparation and browser rendering. Not production latency.",
+  "n": 30,
+  "operations": [
+    {
+      "operation": "newPreviewIncludingAuthMs",
+      "p50Ms": 1310,
+      "p95Ms": 1621
+    },
+    {
+      "operation": "reusedPreviewIncludingAuthMs",
+      "p50Ms": 1046,
+      "p95Ms": 1284
+    },
+    {
+      "operation": "nativeFinalReviewMs",
+      "p50Ms": 1537,
+      "p95Ms": 1768
+    }
+  ],
+  "checks": [
+    "30 new receiving drafts and exact evidence reuse",
+    "each draft committed through guarded native final review",
+    "original receiving address and total restored",
+    "zero orders and active payment sessions"
+  ],
+  "productionWrites": 0,
+  "samples": [
+    {
+      "sample": 1,
+      "newPreviewIncludingAuthMs": 1354,
+      "reusedPreviewIncludingAuthMs": 1115,
+      "nativeFinalReviewMs": 1639
+    },
+    {
+      "sample": 2,
+      "newPreviewIncludingAuthMs": 1368,
+      "reusedPreviewIncludingAuthMs": 1010,
+      "nativeFinalReviewMs": 1613
+    },
+    {
+      "sample": 3,
+      "newPreviewIncludingAuthMs": 1282,
+      "reusedPreviewIncludingAuthMs": 1062,
+      "nativeFinalReviewMs": 1526
+    },
+    {
+      "sample": 4,
+      "newPreviewIncludingAuthMs": 1542,
+      "reusedPreviewIncludingAuthMs": 1063,
+      "nativeFinalReviewMs": 1487
+    },
+    {
+      "sample": 5,
+      "newPreviewIncludingAuthMs": 1393,
+      "reusedPreviewIncludingAuthMs": 1021,
+      "nativeFinalReviewMs": 1644
+    },
+    {
+      "sample": 6,
+      "newPreviewIncludingAuthMs": 1270,
+      "reusedPreviewIncludingAuthMs": 990,
+      "nativeFinalReviewMs": 1577
+    },
+    {
+      "sample": 7,
+      "newPreviewIncludingAuthMs": 1282,
+      "reusedPreviewIncludingAuthMs": 1075,
+      "nativeFinalReviewMs": 1669
+    },
+    {
+      "sample": 8,
+      "newPreviewIncludingAuthMs": 1264,
+      "reusedPreviewIncludingAuthMs": 1284,
+      "nativeFinalReviewMs": 1493
+    },
+    {
+      "sample": 9,
+      "newPreviewIncludingAuthMs": 1312,
+      "reusedPreviewIncludingAuthMs": 1059,
+      "nativeFinalReviewMs": 1467
+    },
+    {
+      "sample": 10,
+      "newPreviewIncludingAuthMs": 1339,
+      "reusedPreviewIncludingAuthMs": 1035,
+      "nativeFinalReviewMs": 1636
+    },
+    {
+      "sample": 11,
+      "newPreviewIncludingAuthMs": 1257,
+      "reusedPreviewIncludingAuthMs": 1058,
+      "nativeFinalReviewMs": 1537
+    },
+    {
+      "sample": 12,
+      "newPreviewIncludingAuthMs": 1621,
+      "reusedPreviewIncludingAuthMs": 1040,
+      "nativeFinalReviewMs": 1505
+    },
+    {
+      "sample": 13,
+      "newPreviewIncludingAuthMs": 1381,
+      "reusedPreviewIncludingAuthMs": 1146,
+      "nativeFinalReviewMs": 1591
+    },
+    {
+      "sample": 14,
+      "newPreviewIncludingAuthMs": 1311,
+      "reusedPreviewIncludingAuthMs": 1110,
+      "nativeFinalReviewMs": 1483
+    },
+    {
+      "sample": 15,
+      "newPreviewIncludingAuthMs": 1310,
+      "reusedPreviewIncludingAuthMs": 1316,
+      "nativeFinalReviewMs": 1519
+    },
+    {
+      "sample": 16,
+      "newPreviewIncludingAuthMs": 1314,
+      "reusedPreviewIncludingAuthMs": 1028,
+      "nativeFinalReviewMs": 1655
+    },
+    {
+      "sample": 17,
+      "newPreviewIncludingAuthMs": 1395,
+      "reusedPreviewIncludingAuthMs": 1069,
+      "nativeFinalReviewMs": 1768
+    },
+    {
+      "sample": 18,
+      "newPreviewIncludingAuthMs": 1354,
+      "reusedPreviewIncludingAuthMs": 1015,
+      "nativeFinalReviewMs": 1441
+    },
+    {
+      "sample": 19,
+      "newPreviewIncludingAuthMs": 1356,
+      "reusedPreviewIncludingAuthMs": 1043,
+      "nativeFinalReviewMs": 2933
+    },
+    {
+      "sample": 20,
+      "newPreviewIncludingAuthMs": 1781,
+      "reusedPreviewIncludingAuthMs": 1046,
+      "nativeFinalReviewMs": 1491
+    },
+    {
+      "sample": 21,
+      "newPreviewIncludingAuthMs": 1305,
+      "reusedPreviewIncludingAuthMs": 1013,
+      "nativeFinalReviewMs": 1581
+    },
+    {
+      "sample": 22,
+      "newPreviewIncludingAuthMs": 1263,
+      "reusedPreviewIncludingAuthMs": 1102,
+      "nativeFinalReviewMs": 1458
+    },
+    {
+      "sample": 23,
+      "newPreviewIncludingAuthMs": 1337,
+      "reusedPreviewIncludingAuthMs": 1014,
+      "nativeFinalReviewMs": 1536
+    },
+    {
+      "sample": 24,
+      "newPreviewIncludingAuthMs": 1280,
+      "reusedPreviewIncludingAuthMs": 1026,
+      "nativeFinalReviewMs": 1591
+    },
+    {
+      "sample": 25,
+      "newPreviewIncludingAuthMs": 1207,
+      "reusedPreviewIncludingAuthMs": 1020,
+      "nativeFinalReviewMs": 1491
+    },
+    {
+      "sample": 26,
+      "newPreviewIncludingAuthMs": 1227,
+      "reusedPreviewIncludingAuthMs": 1066,
+      "nativeFinalReviewMs": 1626
+    },
+    {
+      "sample": 27,
+      "newPreviewIncludingAuthMs": 1225,
+      "reusedPreviewIncludingAuthMs": 990,
+      "nativeFinalReviewMs": 1595
+    },
+    {
+      "sample": 28,
+      "newPreviewIncludingAuthMs": 1284,
+      "reusedPreviewIncludingAuthMs": 1061,
+      "nativeFinalReviewMs": 1553
+    },
+    {
+      "sample": 29,
+      "newPreviewIncludingAuthMs": 1245,
+      "reusedPreviewIncludingAuthMs": 1091,
+      "nativeFinalReviewMs": 1464
+    },
+    {
+      "sample": 30,
+      "newPreviewIncludingAuthMs": 1303,
+      "reusedPreviewIncludingAuthMs": 1016,
+      "nativeFinalReviewMs": 1420
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "actual private PostgreSQL rollback verification",
+  "provider": "injected isolated read-only fixtures; no Stripe requests",
+  "checks": {
+    "unconfirmed_draft_and_exact_retry": true,
+    "activation_native_address_row_locks_and_replay": true,
+    "unrelated_metadata_preserved": true,
+    "full_metadata_restored_after_rollback": true
+  },
+  "tls_verified": true,
+  "database_role": "snowforce_commerce",
+  "current": {
+    "published_products": 0,
+    "orders": 0,
+    "tax_quotes": 0
+  }
+}

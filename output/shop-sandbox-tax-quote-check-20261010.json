@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-10-10T08:55:07.006Z",
+  "run_id": "96ebacfa-e6ee-4011-bda5-1d600ee67a68",
+  "scope": "actual application tax-writer factory and quote validator with real Sandbox Tax API; synthetic cart and generic tangible-goods test fixture only, no merchant product classification changes",
+  "live_mutation": false,
+  "checks": [
+    "real calculation and every line-item page pass the actual application quote validator",
+    "taxability_reason confirms tax collection is active, rather than not_collecting",
+    "same Calculation request and creation key replay the original calculation"
+  ],
+  "canonical_test_codes": {
+    "goods": {
+      "id": "txcd_99999999",
+      "name": "General - Tangible Goods"
+    },
+    "shipping": {
+      "id": "txcd_92010001",
+      "name": "Shipping"
+    }
+  },
+  "calculation_id": "taxcalc_1UOw3bAbMQunT3prFgOdHs7K",
+  "tax_reasons": [
+    "standard_rated",
+    "product_exempt"
+  ],
+  "validator_passed": true,
+  "amounts": {
+    "gross_cents": 3000,
+    "discount_cents": 0,
+    "merchandise_cents": 3000,
+    "shipping_cents": 0,
+    "sales_tax_cents": 233,
+    "government_fee_cents": 0,
+    "total_cents": 3233
+  },
+  "status": "passed"
+}

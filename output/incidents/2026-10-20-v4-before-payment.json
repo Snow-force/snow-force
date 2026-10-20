@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-20T18:53:55.375Z",
+  "sourceRevision": "ab573fc31138f9f7e2cc3e6126650f1119433696",
+  "sandboxAccountVerified": true,
+  "prewarmEnabled": true,
+  "noPaymentBeforeAgreement": true,
+  "manualCaptureConfiguration": true,
+  "productionAdminWritesDisabled": true,
+  "productionFinancialActions": 0,
+  "owned_carts": 1,
+  "payment_sessions": 0,
+  "orders": 0
+}

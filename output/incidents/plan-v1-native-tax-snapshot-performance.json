@@ -1,0 +1,17 @@
+{
+  "testedAt": "2026-10-16T17:48:13.815Z",
+  "environment": "isolated native Medusa/PostgreSQL and Stripe Sandbox Tax",
+  "quoteEndpointSamplesMs": [
+    3338,
+    2320,
+    2312
+  ],
+  "measurement": "HTTP completion only; local database/in-memory locks; cannot predict production speed",
+  "checks": [
+    "full withdrawal, normalization, calculation and atomic application complete without nested-lock deadlock",
+    "latest native amount equals signed tax quote 5197 cents",
+    "no active payment session or order created"
+  ],
+  "productionWrites": 0,
+  "source": "unreleased owned SQL snapshot batch on base 36da11e"
+}

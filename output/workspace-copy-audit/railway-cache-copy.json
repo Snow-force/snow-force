@@ -1,0 +1,79 @@
+{
+  "Source": "C:\\Project\\snow-force\\.cache\\railway-production",
+  "Destination": "C:\\Users\\taiyu\\OneDrive\\Project\\snow-force\\.cache\\railway-production",
+  "Files": 14,
+  "AllByteIdentical": true,
+  "AccessRulesPreserved": true,
+  "Checks": [
+    {
+      "Path": "commerce.variables.json",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "prepare.mjs",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis.variables.json",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "verify-public.mjs",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/ca-key.pem",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/ca.pem",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/ca.srl",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/password",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/redis.env",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/server-key.pem",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/server.csr",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/server.ext",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/server.pem",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    },
+    {
+      "Path": "redis/users.acl",
+      "ByteIdentical": true,
+      "AccessRulesIdentical": true
+    }
+  ]
+}

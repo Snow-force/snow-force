@@ -1,0 +1,235 @@
+{
+  "queriedThrough": "2026-10-20T08:56:31Z",
+  "mainRevision": "ab573fc31138f9f7e2cc3e6126650f1119433696",
+  "productionServices": [
+    {
+      "name": "snowforce-web",
+      "deployment": {
+        "id": "b0ad5943-fd41-4d4f-b4fa-72cf2c755293",
+        "status": "SUCCESS",
+        "createdAt": "2026-10-18T20:50:49.647Z",
+        "url": null
+      },
+      "revision": "1f97bee42fdd3ef179bc0e78245d5921223bb1d8",
+      "regionConfigIncludesStagedChanges": true,
+      "stagedChanges": [
+        {
+          "path": "services.6fda6b39-d34b-4fb1-8457-e67f52a52ab3.deploy.multiRegionConfig.sfo",
+          "displayName": "Sfo",
+          "type": "removed",
+          "from": "",
+          "to": "",
+          "destructive": false
+        },
+        {
+          "path": "services.6fda6b39-d34b-4fb1-8457-e67f52a52ab3.deploy.multiRegionConfig.us-east4-eqdc4a.numReplicas",
+          "displayName": "Num Replicas",
+          "type": "added",
+          "from": "",
+          "to": "1",
+          "destructive": false
+        },
+        {
+          "path": "services.6fda6b39-d34b-4fb1-8457-e67f52a52ab3.variables.SHOP_CHECKOUT_OPTIMIZED_READS.encryptedValue",
+          "displayName": "SHOP_CHECKOUT_OPTIMIZED_READS",
+          "type": "added",
+          "from": "",
+          "to": "<redacted>",
+          "destructive": false
+        }
+      ],
+      "volumes": []
+    },
+    {
+      "name": "snowforce-commerce",
+      "deployment": {
+        "id": "7fd342bb-bf9a-4c3c-ad06-954d1923c305",
+        "status": "SUCCESS",
+        "createdAt": "2026-10-18T20:33:56.832Z",
+        "url": null
+      },
+      "revision": "c420c2c93a3ffc3f89e890cacb24b122cb98dd28",
+      "regionConfigIncludesStagedChanges": true,
+      "stagedChanges": [],
+      "volumes": []
+    },
+    {
+      "name": "snowforce-redis",
+      "deployment": {
+        "id": "e970f8ae-cb8d-4fe3-b723-1c33c6b20b17",
+        "status": "SUCCESS",
+        "createdAt": "2026-10-15T07:01:12.250Z",
+        "url": null
+      },
+      "revision": "45d852a28c52029fd96d61e297db56c26a60f3fc",
+      "regionConfigIncludesStagedChanges": true,
+      "stagedChanges": [],
+      "volumes": [
+        {
+          "id": "93488860-141b-41d4-927e-7a7a2e6941cd",
+          "name": "snowforce-redis-data",
+          "mountPath": "/data",
+          "sizeMB": 512,
+          "region": "sfo",
+          "state": "live"
+        }
+      ]
+    }
+  ],
+  "deployments": [
+    {
+      "id": "b0ad5943-fd41-4d4f-b4fa-72cf2c755293",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-18T20:50:49.647Z",
+      "updatedAt": "2026-10-18T20:51:12.066Z",
+      "serviceId": "6fda6b39-d34b-4fb1-8457-e67f52a52ab3",
+      "environmentId": "1245a65e-0f62-4182-8c85-1858aa98c634",
+      "url": null,
+      "snapshotId": "8e0c226a-c616-4444-9dd5-6e4d3e4eb549",
+      "canRollback": true,
+      "canRedeploy": true,
+      "regions": [
+        "sfo"
+      ],
+      "meta": {
+        "reason": "deploy",
+        "commitMessage": "Merge pull request #37 from Snow-force/codex/shop-v3-observe-build\n\nInclude v3 observation summary in the web Docker build",
+        "commitHash": "1f97bee42fdd3ef179bc0e78245d5921223bb1d8",
+        "branch": "main"
+      }
+    },
+    {
+      "id": "7fd342bb-bf9a-4c3c-ad06-954d1923c305",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-18T20:33:56.832Z",
+      "updatedAt": "2026-10-18T20:36:52.223Z",
+      "serviceId": "ecc29173-f680-4ed5-a6e9-b69bffe8d17a",
+      "environmentId": "1245a65e-0f62-4182-8c85-1858aa98c634",
+      "url": null,
+      "snapshotId": "0e1ea1dc-9181-4551-80e9-5f163b5a8a73",
+      "canRollback": true,
+      "canRedeploy": true,
+      "regions": [
+        "us-east4-eqdc4a"
+      ],
+      "meta": {
+        "reason": "deploy",
+        "commitMessage": "Merge pull request #36 from Snow-force/codex/shop-v3-observe\n\nObserve cart and payment readiness across browser, web and commerce (v3 PR-A)",
+        "commitHash": "c420c2c93a3ffc3f89e890cacb24b122cb98dd28",
+        "branch": "main"
+      }
+    }
+  ],
+  "staged": {
+    "project": {
+      "id": "026e1ce6-a125-422c-b29f-a44ee11bdac1",
+      "name": "SnowForce Commerce"
+    },
+    "environment": {
+      "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+      "name": "production"
+    },
+    "staged": {
+      "patchId": "b2de2a43-2321-441f-91c2-d7a0550ff591",
+      "status": "STAGED",
+      "changeCount": 3,
+      "message": null,
+      "createdAt": "2026-10-15T22:13:27.999Z",
+      "updatedAt": "2026-10-15T22:13:32.315Z"
+    },
+    "destructive": false,
+    "resources": [
+      {
+        "kind": "service",
+        "id": "6fda6b39-d34b-4fb1-8457-e67f52a52ab3",
+        "name": "snowforce-web",
+        "action": "update",
+        "changes": [
+          {
+            "path": "services.6fda6b39-d34b-4fb1-8457-e67f52a52ab3.deploy.multiRegionConfig.sfo",
+            "displayName": "Sfo",
+            "type": "removed",
+            "from": "",
+            "to": "",
+            "destructive": false
+          },
+          {
+            "path": "services.6fda6b39-d34b-4fb1-8457-e67f52a52ab3.deploy.multiRegionConfig.us-east4-eqdc4a.numReplicas",
+            "displayName": "Num Replicas",
+            "type": "added",
+            "from": "",
+            "to": "1",
+            "destructive": false
+          },
+          {
+            "path": "services.6fda6b39-d34b-4fb1-8457-e67f52a52ab3.variables.SHOP_CHECKOUT_OPTIMIZED_READS.encryptedValue",
+            "displayName": "SHOP_CHECKOUT_OPTIMIZED_READS",
+            "type": "added",
+            "from": "",
+            "to": "<redacted>",
+            "destructive": false
+          }
+        ]
+      }
+    ],
+    "sharedVariables": [],
+    "privateNetworkDisabled": null
+  },
+  "traces": [
+    {
+      "traceId": "a7e7232031aa10952c14b77924727cc2",
+      "truncated": false,
+      "spanCount": 182,
+      "edgeMs": 3900.540442,
+      "handlerMs": 3824.864314,
+      "dbSpanCounts": {
+        "postgresql": 151,
+        "redis": 26
+      }
+    },
+    {
+      "traceId": "a416453b0743834fb44ec1fa0a829d75",
+      "truncated": false,
+      "spanCount": 17,
+      "edgeMs": 21916.112656,
+      "handlerMs": 21880.674313,
+      "dbSpanCounts": {}
+    },
+    {
+      "traceId": "f2bc575fd7ceba44ec7c64915a44b385",
+      "truncated": false,
+      "spanCount": 465,
+      "edgeMs": 12818.132313,
+      "handlerMs": 12742.153716,
+      "dbSpanCounts": {
+        "postgresql": 387,
+        "redis": 56
+      }
+    },
+    {
+      "traceId": "98328f7da4d09e4d72b110e8f39913f3",
+      "truncated": false,
+      "spanCount": 208,
+      "edgeMs": 7693.507126,
+      "handlerMs": 7619.810197,
+      "dbSpanCounts": {
+        "postgresql": 161,
+        "redis": 26
+      }
+    }
+  ],
+  "performanceLogs": {
+    "filter": "snowforce.shop_performance",
+    "start": "2026-10-18T20:51:00Z",
+    "end": "2026-10-20T08:56:31Z",
+    "webCount": 0,
+    "commerceCount": 0
+  },
+  "limitations": [
+    "Read-only audit; no production change or payment action.",
+    "Supabase region was not independently verified.",
+    "Single samples are not p95.",
+    "No successful browser telemetry event submitted.",
+    "Local tests apply to older workspace revision, not current main."
+  ]
+}

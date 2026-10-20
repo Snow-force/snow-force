@@ -1,0 +1,97 @@
+{
+  "verifiedAt": "2026-10-14 04:07:48 UTC",
+  "commit": "903c96151bcf9b7b7c309960b09baacd02ccdfae",
+  "parent": "9dcca8f8db03d2a454ab04dee8f6cd2c42500290",
+  "tree": "0dfda229d016d977947bea7c6e415d359a03e406",
+  "changedFiles": [
+    "src/lib/shop/checkout-repository.ts",
+    "src/lib/shop/checkout-actions.test.ts"
+  ],
+  "issue": "Absent native shipping_address made storefront checkout reads and first-address saves return unavailable before ownership/address handling.",
+  "fix": "Normalize only an absent native shipping address to null; retain native address validation and server-owned cart identity.",
+  "regression": {
+    "before": "Two focused regressions failed with unavailable; other 26 checkout tests passed.",
+    "afterFocusedTestsPassed": 31,
+    "rootTestsPassed": 1022,
+    "rootTestFilesPassed": 167,
+    "rootFullCoveragePassed": true,
+    "changedRepositoryCoverage": {
+      "linesPercent": 100,
+      "statementsPercent": 100,
+      "functionsPercent": 100,
+      "branchesPercent": 87.5
+    },
+    "eslintPassed": true,
+    "nextBuildPassed": true
+  },
+  "githubCi": {
+    "id": 38509157505,
+    "status": "completed",
+    "conclusion": "success",
+    "sha": "903c96151bcf9b7b7c309960b09baacd02ccdfae"
+  },
+  "railway": {
+    "deploymentId": "196e5933-375e-4297-b8cb-81e8208042b8",
+    "status": "SUCCESS",
+    "service": "snowforce-web",
+    "backendUnchanged": true,
+    "backendDeploymentId": "fa2cc871-4ae4-45e8-bdec-6ae4df86371e"
+  },
+  "liveVerification": {
+    "refreshedCheckoutShowsPreparation": true,
+    "cartPreserved": true,
+    "variant": "155cm",
+    "quantity": 1,
+    "unitPriceUsd": 499,
+    "subtotalUsd": 499,
+    "browserRelevantErrors": [],
+    "paymentEnablementChanges": 0,
+    "stockOrPriceChanges": 0,
+    "productionFirstAddressFlow": "Pending formal checkout configuration; validated with checkout regression tests, not a production payment."
+  },
+  "taxReviewReport": "2026-10-13-approved-tax-reviews-saved.json",
+  "runtimeVariablePresence": {
+    "valuesRedacted": true,
+    "controls": {
+      "COMMERCE_OPERATING_MODE": "present, value unavailable",
+      "COMMERCE_CART_ENABLED": "present, value unavailable",
+      "COMMERCE_TAX_POLICY_CONFIRMED": "present, value unavailable",
+      "COMMERCE_REFUND_EXECUTION_ENABLED": "absent"
+    },
+    "credentialsPresent": [
+      {
+        "name": "COMMERCE_STRIPE_API_KEY",
+        "present": true,
+        "sealed": false
+      },
+      {
+        "name": "COMMERCE_STRIPE_WEBHOOK_SECRET",
+        "present": true,
+        "sealed": false
+      },
+      {
+        "name": "REDIS_URL",
+        "present": true,
+        "sealed": false
+      },
+      {
+        "name": "DATABASE_URL",
+        "present": true,
+        "sealed": false
+      }
+    ]
+  },
+  "remainingLaunchWork": [
+    "Temporary permit dates/confirmation",
+    "Review and publish current seller policy",
+    "Confirm pickup checkout workflow and finish its integration",
+    "Activate reviewed business tax configuration",
+    "Verify complete storefront purchase flow and operational recovery",
+    "Enable and verify formal checkout, webhook and refund execution after prerequisites"
+  ],
+  "screenshots": [
+    "2026-10-13-checkout-address-web-deployed.jpg",
+    "2026-10-13-cart-after-checkout-update.jpg",
+    "2026-10-13-business-tax-review-saved.jpg"
+  ]
+}

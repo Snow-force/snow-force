@@ -1,0 +1,87 @@
+{
+  "verifiedAt": "2026-10-14 03:53:59 UTC",
+  "scope": "Production Medusa staff UI and official Stripe read-only API; no stock, price, sales enablement or Stripe registration changes.",
+  "productReviews": [
+    {
+      "product": "PSN Éclat 68 All-Mountain Skis – Nacre Pink",
+      "productId": "prod_01M4A7N9A0MM81XZZP1MXC3BH0",
+      "code": "txcd_99999999",
+      "version": 1,
+      "savedAt": "2026-10-14T03:38:29.933Z",
+      "variants": 2
+    },
+    {
+      "product": "Le Corset Women's One-Piece Ski Suit",
+      "productId": "prod_01M4FVYYMATXE6HQ11HW9PYGD1",
+      "code": "txcd_30021000",
+      "version": 1,
+      "savedAt": "2026-10-14T03:39:57.920Z",
+      "variants": 6
+    },
+    {
+      "product": "PSN Cream White Faux Fur Backpack – Gold Chain & Charm Detail",
+      "productId": "prod_01M4EYTE8DJGDAHD8SY0NW6BRE",
+      "code": "txcd_30060001",
+      "version": 1,
+      "savedAt": "2026-10-14T03:40:43.993Z",
+      "variants": 5
+    },
+    {
+      "product": "PSN Polar Faux Fur Trapper Hat",
+      "productId": "prod_01M4F14RS3C80NY6FSDPPABABH",
+      "code": "txcd_30060006",
+      "version": 1,
+      "savedAt": "2026-10-14T03:42:20.356Z",
+      "variants": 7
+    }
+  ],
+  "merchantFacts": {
+    "companyOnlyInCalifornia": true,
+    "noPreviousOtherOnlineGoodsSales": true,
+    "noPreviousOfflineGoodsSales": true,
+    "noOtherStateSalesStaffOrWarehouse": true,
+    "pickupByAppointmentFree": true,
+    "charged995DeliveryActualThirdPartyCarrierCostAtLeast995": true,
+    "keepIndividualTransportationReceipts": true
+  },
+  "businessTaxDraft": {
+    "revision": 3,
+    "legalSeller": "CLN GLOBAL LLC",
+    "shippingCode": "txcd_92010001",
+    "obligationsReviewed": true,
+    "shippingTaxTreatmentReviewed": true,
+    "permitConfirmed": false,
+    "permitType": "temporary",
+    "proposedValidFrom": "2026-10-07",
+    "proposedValidThrough": "2027-01-04",
+    "activeRevision": null
+  },
+  "stripeSetup": {
+    "checkedAt": "2026-10-14T03:47:23.000Z",
+    "accountId": "acct_1ToZcEAItQQT9la8",
+    "livemode": true,
+    "taxSettings": "active",
+    "headOfficeCountry": "US",
+    "headOfficeState": "CA",
+    "activeSalesTaxStates": [
+      "CA"
+    ],
+    "activeRetailFeeStates": [],
+    "californiaRegistrationExpiresAtUtc": "2027-01-05T08:00:00.000Z",
+    "additionalRegistrationsCreated": 0
+  },
+  "nexusConclusion": "No additional state sales-tax registration indicated by currently declared California-only goods operations, no historical other-channel goods sales, and the available below-threshold Stripe monitoring records. Reassess upon new out-of-state presence, channels or sales thresholds; actual filing remains the merchant's responsibility.",
+  "sources": [
+    "https://docs.stripe.com/tax/registering",
+    "https://docs.stripe.com/tax/monitoring",
+    "https://www.cdtfa.ca.gov/formspubs/pub100/",
+    "https://www.cdtfa.ca.gov/lawguides/vol1/sutr/sales-and-use-tax-regulations-art12-all.html"
+  ],
+  "pending": [
+    "Temporary permit dates and final permit confirmation",
+    "Sales-policy draft publication confirmation",
+    "Choice of website pickup checkout versus customer-service arrangement",
+    "Complete storefront/browser payment and operational release verification"
+  ],
+  "formalCheckoutEnabled": false
+}

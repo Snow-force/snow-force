@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-10-18T20:44:52.543Z",
+  "sourceRevision": "4f5025c19573d840f1fb2b4dccef86c77812cc2b",
+  "environment": "Isolated local production build / Medusa / Stripe Sandbox",
+  "checks": [
+    "Prewarm SDK script loaded without Elements or active payment before agreement; mobile form later reached ready state",
+    "Real Stripe Payment Element onReady and usable SDK/Elements; language switching retained iframe identities",
+    "Unconfirmed test PaymentIntent canceled through product recovery workflow; no payment data entered or authorization submitted"
+  ],
+  "state": {
+    "quantity": 1,
+    "orders": 0,
+    "active_payments": 0
+  },
+  "testIntentStatus": "canceled",
+  "receivedCents": 0,
+  "capturableCents": 0,
+  "productionWrites": 0,
+  "limitations": [
+    "One local mobile viewport sample is not production p95 or p99; real slow-network, 3DS and wallet acceptance remain incomplete",
+    "No 3DS or wallet confirmation was performed in this readiness-only check",
+    "No SQL or Redis durations inferred from aggregate request time"
+  ]
+}

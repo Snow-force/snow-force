@@ -1,0 +1,59 @@
+{
+  "testedAt": "2026-10-15T20:08:40.592Z",
+  "database": "isolated local commerce fixture",
+  "stripeMode": "test",
+  "paymentCreated": false,
+  "orderCreated": false,
+  "report": [
+    {
+      "path": "/store/products",
+      "status": 200,
+      "durationMs": 156
+    },
+    {
+      "path": "/store/carts",
+      "status": 200,
+      "durationMs": 357
+    },
+    {
+      "path": "/store/carts/cart_01M50JWHHRZKEB653SVA011MHV/line-items",
+      "status": 200,
+      "durationMs": 283
+    },
+    {
+      "path": "/store/carts/cart_01M50JWHHRZKEB653SVA011MHV",
+      "status": 200,
+      "durationMs": 251
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_01M50JWHHRZKEB653SVA011MHV/shipping-options",
+      "status": 200,
+      "durationMs": 190
+    },
+    {
+      "path": "/store/carts/cart_01M50JWHHRZKEB653SVA011MHV/shipping-methods",
+      "status": 200,
+      "durationMs": 283
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_01M50JWHHRZKEB653SVA011MHV/quote",
+      "status": 200,
+      "durationMs": 2308
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_01M50JWHHRZKEB653SVA011MHV/pickup",
+      "status": 200,
+      "durationMs": 398
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_01M50JWHHRZKEB653SVA011MHV/quote",
+      "status": 200,
+      "durationMs": 2291
+    },
+    {
+      "path": "/store/snowforce/checkout/cart_01M50JWHHRZKEB653SVA011MHV",
+      "status": 200,
+      "durationMs": 321
+    }
+  ]
+}

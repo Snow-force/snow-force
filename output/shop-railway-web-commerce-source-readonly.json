@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-10-04T20:58:41.4997774+00:00",
+  "backendOrigin": "https://snowforce-commerce-production.up.railway.app",
+  "scope": "Existing local storefront publishable key used only for read-only production store API; no account, cart, order or payment writes",
+  "results": [
+    {
+      "path": "/store/regions?limit=100&fields=id,currency_code,*countries",
+      "status": 200
+    },
+    {
+      "path": "/store/products?limit=1&fields=id,status",
+      "publicProductCount": 0,
+      "status": 200,
+      "returnedDrafts": 0
+    },
+    {
+      "path": "/store/snowforce/policies",
+      "publishedPolicyPresent": false,
+      "status": 200
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "testedAt": "2026-10-17T23:11:52.305Z",
+  "environment": "isolated real native HTTP workflows and Stripe Sandbox",
+  "checks": [
+    "browser amount rejected",
+    "foreign owner cannot preview or commit",
+    "tampered encrypted token rejected",
+    "another tab contact edit rejects old token with changed-revision code",
+    "rejected commit preserves newer native contact and revision",
+    "fresh preview restores contact and payable native 5197-cent quote",
+    "no orders or active sessions"
+  ],
+  "productionWrites": 0
+}

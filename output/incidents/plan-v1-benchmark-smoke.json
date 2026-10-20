@@ -1,0 +1,49 @@
+{
+  "testedAt": "2026-10-16T06:53:03.826Z",
+  "environment": "isolated local Next production build + local Medusa/PostgreSQL + Stripe Sandbox Tax; synthetic Supabase member",
+  "measurement": "HTTP server-action completion including real member authentication; excludes browser render and human input",
+  "optimizedReads": false,
+  "mode": "smoke",
+  "source": "00ab9c3e669a1cfc289b94cebbdc6b5e712b7bfc",
+  "productionFinancialWrites": 0,
+  "operations": [
+    {
+      "operation": "cart-update",
+      "n": 1,
+      "p50Ms": 1616,
+      "p95Ms": 1616,
+      "failures": 0
+    },
+    {
+      "operation": "checkout-read",
+      "n": 1,
+      "p50Ms": 1452,
+      "p95Ms": 1452,
+      "failures": 0
+    },
+    {
+      "operation": "address-shipping-tax",
+      "n": 1,
+      "p50Ms": 4605,
+      "p95Ms": 4605,
+      "failures": 0
+    }
+  ],
+  "samples": [
+    {
+      "operation": "cart-update",
+      "durationMs": 1616,
+      "status": "ready"
+    },
+    {
+      "operation": "checkout-read",
+      "durationMs": 1452,
+      "status": "review"
+    },
+    {
+      "operation": "address-shipping-tax",
+      "durationMs": 4605,
+      "status": "review"
+    }
+  ]
+}

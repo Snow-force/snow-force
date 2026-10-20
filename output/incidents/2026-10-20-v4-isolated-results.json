@@ -1,0 +1,67 @@
+{
+  "recordCount": 284,
+  "cartBrowserSamples": [
+    {
+      "scenario": "new",
+      "viewport": "desktop",
+      "durationMs": 1821,
+      "outcome": "ok"
+    },
+    {
+      "scenario": "existing",
+      "viewport": "desktop",
+      "durationMs": 1190,
+      "outcome": "ok"
+    },
+    {
+      "scenario": "new",
+      "viewport": "mobile",
+      "durationMs": 1768,
+      "outcome": "ok"
+    }
+  ],
+  "readinessSamples": [
+    {
+      "viewport": "desktop",
+      "durationMs": 6090,
+      "outcome": "ok",
+      "variant": "prewarm"
+    },
+    {
+      "viewport": "mobile",
+      "durationMs": 5740,
+      "outcome": "ok",
+      "variant": "prewarm"
+    }
+  ],
+  "cartCorrelations": [
+    {
+      "sources": [
+        "browser",
+        "commerce",
+        "web"
+      ],
+      "browserOutcome": "ok"
+    },
+    {
+      "sources": [
+        "browser",
+        "commerce",
+        "web"
+      ],
+      "browserOutcome": "ok"
+    },
+    {
+      "sources": [
+        "browser",
+        "commerce",
+        "web"
+      ],
+      "browserOutcome": "ok"
+    }
+  ],
+  "productionP95Established": false,
+  "productionTargetsMet": false,
+  "noRealSlowNetworkEmulation": true,
+  "localRedisNotConfigured": true
+}

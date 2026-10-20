@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-10-04T10:34:36.7931039Z",
+  "rootTest": {
+    "exit": 0,
+    "files": 153,
+    "tests": 954
+  },
+  "rootBuild": {
+    "exit": 0,
+    "log": "output/shop-onedrive-root-build.log"
+  },
+  "commerceTest": {
+    "exit": 0,
+    "tests": 397
+  },
+  "commerceTypecheck": {
+    "exit": 0
+  },
+  "commerceBuild": {
+    "exit": 0,
+    "note": "Initial sandbox build could not read existing user Medusa CLI config; user-context production build passed without permission changes or server startup.",
+    "log": "output/shop-onedrive-commerce-build-final.log"
+  },
+  "uiWritesAndCleanup": {
+    "passed": true,
+    "draftsRemaining": 14,
+    "stock": 4,
+    "image": true,
+    "priceUsd": 38.5
+  },
+  "paymentEnabled": false
+}

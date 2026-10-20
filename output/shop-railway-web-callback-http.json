@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-04T20:51:17.5309430+00:00",
+  "deploymentId": "8504b08b-a819-43f0-a854-64f7e4b53037",
+  "commit": "1ee6e23223c7199d968338eda4f5c41aff167cf7",
+  "callbacks": [
+    {
+      "path": "/auth/callback?next=https%3A%2F%2Fexample.invalid",
+      "status": 307,
+      "location": "/member?error=callback",
+      "resolvedOrigin": "https://snowforce-web-production-5cbf.up.railway.app",
+      "cacheControl": "no-store"
+    },
+    {
+      "path": "/auth/callback?next=%2Fmerchant%2Fdashboard",
+      "status": 307,
+      "location": "/merchant?error=callback",
+      "resolvedOrigin": "https://snowforce-web-production-5cbf.up.railway.app",
+      "cacheControl": "no-store"
+    },
+    {
+      "path": "/registrations/confirm?token=migration-readonly",
+      "status": 307,
+      "location": "/member?registration=member-only",
+      "resolvedOrigin": "https://snowforce-web-production-5cbf.up.railway.app",
+      "cacheControl": "no-store"
+    }
+  ]
+}

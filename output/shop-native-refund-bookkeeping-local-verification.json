@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-10T00:02:06.181Z",
+  "status": "passed",
+  "postgres": "17.11",
+  "medusa": "2.21.2",
+  "scope": "disposable loopback PostgreSQL; actual native refund/order APIs, duplicate/parallel attempts and candidate existing-record recovery; provider responses are fixtures; initial native workflow and real Stripe Sandbox are not verified",
+  "checks": [
+    "a repeated native refund for the same allocation is rejected by the unique index before the fixture provider callback",
+    "concurrent actual native order debit attempts have one winner; incorrect cents are rejected before booking",
+    "actual candidate recovery validates current native payment/refund/capture and reuses the one existing correct debit without further Stripe funds requests",
+    "settled native refund money/association/deletion and order-debit deletion/soft deletion are rejected without rewriting historical records",
+    "both bookkeeping guards remain private invokers with no browser/service-role execute grants"
+  ]
+}

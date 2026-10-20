@@ -1,0 +1,13 @@
+{
+  "fix": "Classify the exact Medusa administration-only response separately from stock/price rejections; show bilingual shopping-paused copy and safe server log context. Checkout maps this guard to preparation state.",
+  "fullTests": { "files": 167, "tests": 1020, "passed": 1020, "exitCode": 0 },
+  "lint": { "exitCode": 0 },
+  "productionBuild": { "exitCode": 0, "warnings": 0 },
+  "coverage": { "exitCode": 0, "lines": 60.48, "shopLines": 98.63, "cartActionsLines": 100, "commerceClientLines": 96.96, "note": "New sales-disabled paths covered; uncovered checkout action lines 68-71 are existing concurrent payment recovery paths, not modified by this fix." },
+  "execution": "Project package scripts were run with the installed Vitest, ESLint and Next CLI entrypoints because npm was not installed in this shell. An attempted bundled pnpm runner moved 32 dependency packages into node_modules/.ignored; all were restored before successful validation. No package or lockfile changes.",
+  "productionReadiness": { "stripeLiveTaxSetup": "passed", "californiaRegistration": "active", "shopPolicyPublished": false, "businessTaxActive": false, "publishedProductsWithReviewedTaxClassification": 0, "publishedProducts": 4, "customerCartCreation": "blocked by management mode" },
+  "pendingFacts": ["Whether buyers can collect goods or arrange collection instead of paid delivery", "Current California permit type and validity dates", "Operator or accountant review of registration and filing obligations"],
+  "deployment": "not deployed",
+  "inventoryAndPriceChanges": false,
+  "productionConfigurationChanges": false
+}

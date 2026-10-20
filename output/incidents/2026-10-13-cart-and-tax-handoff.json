@@ -1,0 +1,172 @@
+{
+  "verifiedAt": "2026-10-14 03:22:58 UTC",
+  "product": {
+    "sku": "PSN-ECLAT68-NACRE-155",
+    "priceUsd": 499,
+    "availableQuantity": 15,
+    "reservedQuantity": 0
+  },
+  "fix": {
+    "commit": "9dcca8f8db03d2a454ab04dee8f6cd2c42500290",
+    "backendDeployment": "fa2cc871-4ae4-45e8-bdec-6ae4df86371e",
+    "deploymentStatus": "SUCCESS",
+    "underlyingErrors": [
+      "Management-only mode rejected customer/cart operations with not_allowed 400",
+      "New unpaid cart's native empty US address caused checkout edit schema validation to return 409 before adding a line item"
+    ],
+    "sourceChanges": [
+      "Allow explicitly enabled authenticated cart editing while management payment guard remains active",
+      "Normalize an absent or completely unfilled native US address to null for cart editing; retain complete address and signed quote checks",
+      "Surface sales-disabled failures accurately in storefront server actions"
+    ]
+  },
+  "verification": {
+    "storefrontTestsPassed": 1020,
+    "commerceTestsPassed": 639,
+    "focusedCoverageTestsPassed": 44,
+    "eslintPassed": true,
+    "storefrontBuildPassed": true,
+    "commerceBuildPassed": true,
+    "liveFlows": {
+      "addOneAt499": true,
+      "increaseTwoAt998": true,
+      "removeToEmpty": true,
+      "readdOneAt499": true
+    },
+    "activeCart": {
+      "region": "US",
+      "currency": "USD",
+      "salesChannel": "Default Sales Channel",
+      "lineItems": 1,
+      "quantity": 1,
+      "subtotalUsd": 499
+    },
+    "unauthenticatedCustomerLink": 401,
+    "unauthenticatedCartCreate": 401,
+    "formalCheckoutGuard": 400,
+    "cartCompletionGuard": 400,
+    "formalPaymentEnabled": false,
+    "inventoryOrPriceChanges": 0,
+    "apiKey": "Default publishable key is active and matches the verified channel; value not recorded"
+  },
+  "successfulMutations": [
+    {
+      "time": "2026-10-14T02:58:19.953886780Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T02:58:25.163576324Z",
+      "method": "POST",
+      "path": "/store/snowforce/checkout/cart_01M4T3EW71590C0S1DPJS3DJZ2/edit",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T02:58:31.018395320Z",
+      "method": "POST",
+      "path": "/store/carts/cart_01M4T3EW71590C0S1DPJS3DJZ2/line-items",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T02:59:24.303861411Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T02:59:27.567268643Z",
+      "method": "POST",
+      "path": "/store/snowforce/checkout/cart_01M4T3EW71590C0S1DPJS3DJZ2/edit",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T02:59:32.788281830Z",
+      "method": "POST",
+      "path": "/store/carts/cart_01M4T3EW71590C0S1DPJS3DJZ2/line-items/cali_01M4W5HMGG0YZ2QP9VJKB12XVR",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T03:02:45.614374798Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T03:02:49.288037538Z",
+      "method": "POST",
+      "path": "/store/snowforce/checkout/cart_01M4T3EW71590C0S1DPJS3DJZ2/edit",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T03:02:52.902434173Z",
+      "method": "POST",
+      "path": "/store/carts/cart_01M4T3EW71590C0S1DPJS3DJZ2/line-items/cali_01M4W5HMGG0YZ2QP9VJKB12XVR",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T03:10:25.909498466Z",
+      "method": "POST",
+      "path": "/store/snowforce/customer",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T03:10:31.159798742Z",
+      "method": "POST",
+      "path": "/store/snowforce/checkout/cart_01M4T3EW71590C0S1DPJS3DJZ2/edit",
+      "status": 200
+    },
+    {
+      "time": "2026-10-14T03:10:37.175484862Z",
+      "method": "POST",
+      "path": "/store/carts/cart_01M4T3EW71590C0S1DPJS3DJZ2/line-items",
+      "status": 200
+    }
+  ],
+  "merchantFacts": {
+    "companyLocation": "California",
+    "appointmentPickupDeliveryChargeUsd": 0,
+    "productTaxCandidatesApproved": true,
+    "permitDatesConfirmed": false,
+    "otherChannelsAndOutOfStatePresenceReviewed": false,
+    "policyDraftPublished": false
+  },
+  "pendingProductTaxReviews": [
+    {
+      "productId": "prod_01M4A7N9A0MM81XZZP1MXC3BH0",
+      "code": "txcd_99999999"
+    },
+    {
+      "productId": "prod_01M4FVYYMATXE6HQ11HW9PYGD1",
+      "code": "txcd_30021000"
+    },
+    {
+      "productId": "prod_01M4EYTE8DJGDAHD8SY0NW6BRE",
+      "code": "txcd_30060001"
+    },
+    {
+      "productId": "prod_01M4F14RS3C80NY6FSDPPABABH",
+      "code": "txcd_30060006"
+    }
+  ],
+  "tax": {
+    "monitoringReport": "2026-10-13-stripe-nexus-monitoring.json",
+    "additionalStateRegistrationsCreated": 0,
+    "determination": "Reported Stripe monitoring jurisdictions did not cross economic thresholds. No definitive all-channel/physical-presence nexus conclusion until remaining merchant facts are supplied.",
+    "monitoringComputedAtUtc": "2026-10-12T00:00:00Z"
+  },
+  "screenshots": [
+    "2026-10-13-cart-restored-success.jpg",
+    "2026-10-13-cart-quantity-success.jpg",
+    "2026-10-13-cart-remove-success.jpg",
+    "2026-10-13-checkout-preparation.jpg",
+    "2026-10-13-backend-deployment-success.jpg"
+  ],
+  "remainingDependencies": [
+    "Medusa staff login expired; pending login to save approved classifications",
+    "Current and prior-year sales through other channels and any out-of-state presence",
+    "Temporary permit date confirmation",
+    "Final sales-policy approval and fulfillment/pickup readiness",
+    "Tax setup activation and final payment launch validation"
+  ]
+}

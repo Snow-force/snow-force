@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-02T06:05:49.661Z",
+  "anonymous": {
+    "list": 401,
+    "detail": 401,
+    "inspect": 401
+  },
+  "administrators": [
+    {
+      "identity": 200,
+      "list": 200,
+      "missing": 404,
+      "records": 0,
+      "policy": 200
+    },
+    {
+      "identity": 200,
+      "list": 200,
+      "missing": 404,
+      "records": 0,
+      "policy": 200
+    }
+  ],
+  "financialMutations": false,
+  "supportEmail": "Shop@snow-force.com"
+}

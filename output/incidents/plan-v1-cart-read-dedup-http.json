@@ -1,0 +1,53 @@
+{
+  "testedAt": "2026-10-18T07:08:27.769Z",
+  "environment": "Isolated real Medusa HTTP routes and PostgreSQL, synthetic existing customer JWT, memory locks",
+  "checks": [
+    "owner GET200; anonymous401; foreign owner GET404 and edit409",
+    "edit followed by native add quantity1 to2",
+    "edit followed by native update restores original quantity1 and total",
+    "zero order or active-linked payment sessions"
+  ],
+  "samples": [
+    {
+      "pathKind": "native-read",
+      "status": 200,
+      "ms": 222
+    },
+    {
+      "pathKind": "native-read",
+      "status": 401,
+      "ms": 18
+    },
+    {
+      "pathKind": "native-read",
+      "status": 404,
+      "ms": 19
+    },
+    {
+      "pathKind": "edit",
+      "status": 409,
+      "ms": 47
+    },
+    {
+      "pathKind": "edit",
+      "status": 200,
+      "ms": 42
+    },
+    {
+      "pathKind": "native-item-write",
+      "status": 200,
+      "ms": 545
+    },
+    {
+      "pathKind": "edit",
+      "status": 200,
+      "ms": 42
+    },
+    {
+      "pathKind": "native-item-write",
+      "status": 200,
+      "ms": 390
+    }
+  ],
+  "productionWrites": 0
+}

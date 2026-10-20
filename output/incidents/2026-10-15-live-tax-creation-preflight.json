@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-15T07:21:20.126Z",
+  "account": "acct_1ToZcEAItQQT9la8",
+  "livemode": true,
+  "writer": "Installed application createStripeTaxQuoteWriter",
+  "calculationId": "taxcalc_1UQiyYAItQQT9la8NVLHLled",
+  "merchandiseCents": 49900,
+  "shippingCents": 0,
+  "taxCents": 3867,
+  "totalCents": 53767,
+  "address": "Existing business Irvine warehouse, California",
+  "newCustomerCreated": false,
+  "paymentCreated": false,
+  "chargeCreated": false,
+  "taxTransactionCreated": false,
+  "productionCommerceDatabaseWrites": 0,
+  "scope": "Provisional Stripe Tax calculation only; not a customer order or native cart quote"
+}

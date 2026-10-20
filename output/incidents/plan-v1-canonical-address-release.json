@@ -1,0 +1,80 @@
+{
+  "verifiedAt": "2026-10-17T09:23:54.642Z",
+  "pr": "https://github.com/Snow-force/snow-force/pull/32",
+  "revision": "06dd2364010466c1632af62a768e2ca204fd516a",
+  "deployment": {
+    "id": "0f547ce9-5bfa-4731-9977-19cd671fb415",
+    "status": "SUCCESS",
+    "regions": [
+      "sfo"
+    ]
+  },
+  "source": {
+    "repo": "Snow-force/snow-force",
+    "branch": "main",
+    "commitSha": "06dd2364010466c1632af62a768e2ca204fd516a",
+    "rootDirectory": "/"
+  },
+  "webRegion": {
+    "sfo": {
+      "numReplicas": 1
+    }
+  },
+  "resources": {
+    "containers": {
+      "cpu": 1,
+      "memoryBytes": 1000000000
+    }
+  },
+  "checks": {
+    "focused": 61,
+    "root": 1132,
+    "coverage": "passed; checkout draft helper covered, existing incomplete payment/UI paths remain tracked",
+    "productionBuild": "passed",
+    "sourceHashes": 1027,
+    "githubCI": "success"
+  },
+  "health": [
+    {
+      "name": "snowforce-web",
+      "state": "online",
+      "replicas": {
+        "running": 1,
+        "crashed": 0,
+        "total": 1
+      },
+      "issues": false
+    },
+    {
+      "name": "snowforce-commerce",
+      "state": "online",
+      "replicas": {
+        "running": 1,
+        "crashed": 0,
+        "total": 1
+      },
+      "issues": false
+    },
+    {
+      "name": "snowforce-redis",
+      "state": "online",
+      "replicas": {
+        "running": 1,
+        "crashed": 0,
+        "total": 1
+      },
+      "issues": false
+    }
+  ],
+  "browserVerification": {
+    "status": "pending",
+    "reason": "Computer-use inventory returned browsers:[]; no accessible checkout tab. Component behavior tests passed but are not production browser verification."
+  },
+  "limits": [
+    "First-address tax calculation remains above target; last measured real sample 19.403s.",
+    "No-op deduplication reduces redundant work; it is not a new first-address performance measurement.",
+    "Existing admin translation tests produce act environment warnings on CI; follow-up recorded without suppression.",
+    "No payment, inventory, pricing, registrations or backend flags changed in PR32."
+  ],
+  "stagedRailwayChangesApplied": false
+}

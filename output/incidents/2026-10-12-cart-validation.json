@@ -1,0 +1,9 @@
+{
+  "sourceChanges": false,
+  "inventoryOrPriceChanges": false,
+  "productionConfigurationChanges": false,
+  "storefrontFocusedTests": { "files": 4, "tests": 19, "passed": 19 },
+  "backendManagementBoundaryTests": { "tests": 8, "passed": 8 },
+  "fullBuildRun": false,
+  "scope": "Read-only diagnosis and existing focused tests; no application source, configuration, migration, or dependency changes"
+}

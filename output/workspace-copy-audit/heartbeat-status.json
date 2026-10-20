@@ -1,0 +1,18 @@
+{
+  "checkedAtUtc": "2026-10-04T19:51:23.5346452Z",
+  "automationId": "snowforce",
+  "ordinaryUsageAllowed": true,
+  "fiveHourUsedPercent": 0,
+  "weeklyUsedPercent": 54,
+  "goalStatus": "blocked",
+  "migrationAuditRead": true,
+  "deploymentAcceptanceRead": true,
+  "pending": [
+    "Explicit permission to restart private Redis for recovery acceptance",
+    "User decision on Vercel hosting plan for private organization repository",
+    "Personal administrator login with current password"
+  ],
+  "stateChanged": false,
+  "notificationSent": false,
+  "action": "Waiting for pending human decisions; preserved existing files and deployments; no billing, permission, password, or Git changes"
+}

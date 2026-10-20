@@ -1,0 +1,146 @@
+{
+  "verifiedAt": "2026-10-04T10:38:06.324Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "checks": [
+    {
+      "name": "HTTPS health",
+      "passed": true
+    },
+    {
+      "name": "Unauthenticated admin rejected",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "name": "Unknown storefront key rejected",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Existing club administrator login",
+      "passed": true
+    },
+    {
+      "name": "Secure HttpOnly SameSite session",
+      "passed": true
+    },
+    {
+      "name": "Original fourteen drafts retained",
+      "passed": true
+    },
+    {
+      "name": "Drafts hidden in public catalog",
+      "passed": true
+    },
+    {
+      "name": "Draft detail hidden",
+      "passed": true,
+      "status": 404
+    },
+    {
+      "name": "Administrator reads /admin/stock-locations",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/inventory-items",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/snowforce/shipping",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/snowforce/policies",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/snowforce/tax/configuration",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/snowforce/tax/sales",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/snowforce/payments",
+      "passed": true
+    },
+    {
+      "name": "Administrator reads /admin/snowforce/after-sales",
+      "passed": true
+    },
+    {
+      "name": "Management guard /store/carts",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Management guard /store/payment-collections",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Management guard /store/snowforce/checkout/acceptance_nonexistent",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Management guard /hooks/payment/stripe_stripe",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/orders/acceptance_nonexistent/fulfillments",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/draft-orders",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/payments/acceptance_nonexistent/capture",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/payment-collections/acceptance_nonexistent",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/returns",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/exchanges",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/claims",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/snowforce/after-sales/acceptance_nonexistent/funds",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Financial writes closed /admin/snowforce/tax/sales/acceptance_nonexistent",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "Storefront CORS permits existing HTTPS website",
+      "passed": true
+    },
+    {
+      "name": "CORS refuses unrelated origin",
+      "passed": true
+    }
+  ]
+}

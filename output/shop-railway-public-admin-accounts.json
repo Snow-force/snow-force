@@ -1,0 +1,56 @@
+{
+  "verifiedAt": "2026-10-04T11:15:25.708Z",
+  "base": "https://snowforce-commerce-production.up.railway.app",
+  "accounts": [
+    {
+      "email": "snowforceclub@gmail.com",
+      "checks": [
+        {
+          "name": "Public login maps to the specified administrator",
+          "passed": true
+        },
+        {
+          "name": "Original fourteen product drafts readable",
+          "passed": true,
+          "count": 14
+        },
+        {
+          "name": "Authorized management read /admin/inventory-items",
+          "passed": true
+        },
+        {
+          "name": "Authorized management read /admin/stock-locations",
+          "passed": true
+        },
+        {
+          "name": "Authorized management read /admin/snowforce/shipping",
+          "passed": true
+        },
+        {
+          "name": "Authorized management read /admin/snowforce/policies",
+          "passed": true
+        },
+        {
+          "name": "Secure native browser session retains the correct identity",
+          "passed": true
+        },
+        {
+          "name": "Only this verification session removed; its old cookie rejected",
+          "passed": true,
+          "status": 401
+        }
+      ],
+      "sessionCleanup": true
+    },
+    {
+      "email": "taiyuanmei0824@gmail.com",
+      "checks": [],
+      "sessionCleanup": false
+    }
+  ],
+  "passed": false,
+  "failure": {
+    "category": "AssertionError",
+    "message": "Existing administrator login must succeed\n\n401 !== 200\n"
+  }
+}

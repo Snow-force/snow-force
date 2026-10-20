@@ -1,0 +1,26 @@
+{
+  "capturedAt": "2026-10-04T21:29:30.133Z",
+  "provider": "Cloudflare",
+  "account": "Snowforceclub@gmail.com",
+  "records": [
+    {
+      "id": "97282bd71aea8985dc72a92f9b3c1b16",
+      "name": "snow-force.com",
+      "type": "CNAME",
+      "before": "2f583a945b1214e5.vercel-dns-017.com",
+      "after": "yms0edov.up.railway.app",
+      "proxied": false,
+      "ttl": "Auto"
+    },
+    {
+      "id": "a2c17eb4f15952f6e443182239496be9",
+      "name": "www.snow-force.com",
+      "type": "CNAME",
+      "before": "2f583a945b1214e5.vercel-dns-017.com",
+      "after": "vpb9mqhe.up.railway.app",
+      "proxied": false,
+      "ttl": "Auto"
+    }
+  ],
+  "instructions": "If rollback is needed, edit only these two existing CNAME targets back to before. Preserve all mail and verification records."
+}

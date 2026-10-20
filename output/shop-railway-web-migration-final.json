@@ -1,0 +1,281 @@
+{
+  "completedAt": "2026-10-04",
+  "workspace": "C:/Users/taiyu/OneDrive/Project/snow-force",
+  "status": "migration_complete",
+  "sourceCommit": "1ee6e23223c7199d968338eda4f5c41aff167cf7",
+  "documentationCommit": "4f4a71a02bb63fb114830142263e92cd255da84b",
+  "gitPush": {
+    "atomic": true,
+    "main": "4f4a71a02bb63fb114830142263e92cd255da84b",
+    "branch": "codex/commerce-public-admin",
+    "branchCommit": "4f4a71a02bb63fb114830142263e92cd255da84b"
+  },
+  "validation": {
+    "testFiles": 154,
+    "testsPassed": 959,
+    "productionBuild": "passed",
+    "formalHttpCases": 20,
+    "memberExistingSession": "verified_on_Railway",
+    "commercePayment": "disabled",
+    "drafts": "preserved",
+    "mailDelivery": "not_exercised",
+    "financialWrites": "none"
+  },
+  "servicesAndMetrics": [
+    {
+      "environment": {
+        "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+        "name": "production"
+      },
+      "services": [
+        {
+          "serviceId": "6fda6b39-d34b-4fb1-8457-e67f52a52ab3",
+          "serviceName": "snowforce-web",
+          "state": "online",
+          "statusText": "Online",
+          "activeDeployments": [
+            {
+              "id": "377adb0c-cd7c-47ce-8656-edc9bbedb197",
+              "status": "SUCCESS",
+              "createdAt": "2026-10-04T21:21:10.679Z",
+              "statusUpdatedAt": "2026-10-04T21:21:27.692Z"
+            }
+          ],
+          "replicaStatus": {
+            "running": 1,
+            "crashed": 0,
+            "total": 1
+          },
+          "cronJob": null,
+          "issues": {
+            "warningCount": 0,
+            "criticalCount": 0
+          },
+          "recentFailures": 0,
+          "recentFailedDeployments": [],
+          "hasIssues": false,
+          "isCronJob": false,
+          "hasVolume": false
+        },
+        {
+          "serviceId": "ecc29173-f680-4ed5-a6e9-b69bffe8d17a",
+          "serviceName": "snowforce-commerce",
+          "state": "online",
+          "statusText": "Online",
+          "activeDeployments": [
+            {
+              "id": "3aaa96c7-db51-4b21-aa17-99f3f9cff43d",
+              "status": "SUCCESS",
+              "createdAt": "2026-10-04T05:28:17.337Z",
+              "statusUpdatedAt": "2026-10-04T05:41:38.919Z"
+            }
+          ],
+          "replicaStatus": {
+            "running": 1,
+            "crashed": 0,
+            "total": 1
+          },
+          "cronJob": null,
+          "issues": {
+            "warningCount": 0,
+            "criticalCount": 0
+          },
+          "recentFailures": 0,
+          "recentFailedDeployments": [],
+          "hasIssues": false,
+          "isCronJob": false,
+          "hasVolume": false
+        },
+        {
+          "serviceId": "c8a53cb7-dac1-4c36-839c-6b429c22d5d1",
+          "serviceName": "snowforce-redis",
+          "state": "online",
+          "statusText": "Online",
+          "activeDeployments": [
+            {
+              "id": "ffda895e-6d7f-4f51-be8c-45a3c15edc2d",
+              "status": "SUCCESS",
+              "createdAt": "2026-10-04T05:25:11.795Z",
+              "statusUpdatedAt": "2026-10-04T05:25:34.869Z"
+            }
+          ],
+          "replicaStatus": {
+            "running": 1,
+            "crashed": 0,
+            "total": 1
+          },
+          "cronJob": null,
+          "issues": {
+            "warningCount": 0,
+            "criticalCount": 0
+          },
+          "recentFailures": 0,
+          "recentFailedDeployments": [],
+          "hasIssues": false,
+          "isCronJob": false,
+          "hasVolume": true
+        }
+      ],
+      "pendingWork": [],
+      "summary": {
+        "totalServices": 3,
+        "servicesWithIssues": 0,
+        "totalFailures": 0
+      }
+    },
+    {
+      "service": {
+        "id": "6fda6b39-d34b-4fb1-8457-e67f52a52ab3",
+        "name": "snowforce-web"
+      },
+      "environment": {
+        "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+        "name": "production"
+      },
+      "metrics": [
+        {
+          "measurement": "CPU_USAGE",
+          "current": 0.0000018333333333333333,
+          "average": 0.00591318087431694,
+          "min": 0.0000016499999999999999,
+          "max": 0.0699769,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_USAGE_GB",
+          "current": 0.21645312,
+          "average": 0.12759852485245904,
+          "min": 0.052559872,
+          "max": 0.216457216,
+          "sampleCount": 61
+        }
+      ]
+    },
+    {
+      "service": {
+        "id": "ecc29173-f680-4ed5-a6e9-b69bffe8d17a",
+        "name": "snowforce-commerce"
+      },
+      "environment": {
+        "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+        "name": "production"
+      },
+      "metrics": [
+        {
+          "measurement": "CPU_USAGE",
+          "current": 0.0004540833333333333,
+          "average": 0.0025458106557377045,
+          "min": 0.0003553,
+          "max": 0.02562335,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_USAGE_GB",
+          "current": 0.388825088,
+          "average": 0.36227515173770497,
+          "min": 0.356524032,
+          "max": 0.38885376,
+          "sampleCount": 61
+        }
+      ]
+    },
+    {
+      "service": {
+        "id": "c8a53cb7-dac1-4c36-839c-6b429c22d5d1",
+        "name": "snowforce-redis"
+      },
+      "environment": {
+        "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+        "name": "production"
+      },
+      "metrics": [
+        {
+          "measurement": "CPU_USAGE",
+          "current": 0.0022200500000000003,
+          "average": 0.0038375467213114757,
+          "min": 0.0021531333333333334,
+          "max": 0.004936766666666667,
+          "sampleCount": 61
+        },
+        {
+          "measurement": "MEMORY_USAGE_GB",
+          "current": 0.013074432,
+          "average": 0.012979619672131149,
+          "min": 0.012750848,
+          "max": 0.01332224,
+          "sampleCount": 61
+        }
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "service": {
+        "id": "6fda6b39-d34b-4fb1-8457-e67f52a52ab3",
+        "name": "snowforce-web"
+      },
+      "environment": {
+        "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+        "name": "production"
+      },
+      "domain": {
+        "id": "4ea5ec32-dd52-43d3-8344-ef1bbb371788",
+        "domain": "snow-force.com",
+        "kind": "custom",
+        "targetPort": 3000
+      },
+      "railwayManaged": false,
+      "verified": true,
+      "certificate": {
+        "status": "CERTIFICATE_STATUS_TYPE_VALID",
+        "errorMessage": null,
+        "retryable": null
+      },
+      "dnsRecords": [
+        {
+          "hostLabel": "",
+          "fqdn": "snow-force.com",
+          "recordType": "DNS_RECORD_TYPE_CNAME",
+          "purpose": "DNS_RECORD_PURPOSE_TRAFFIC_ROUTE",
+          "requiredValue": "yms0edov.up.railway.app",
+          "currentValue": "",
+          "status": "DNS_RECORD_STATUS_PROPAGATED"
+        }
+      ]
+    },
+    {
+      "service": {
+        "id": "6fda6b39-d34b-4fb1-8457-e67f52a52ab3",
+        "name": "snowforce-web"
+      },
+      "environment": {
+        "id": "1245a65e-0f62-4182-8c85-1858aa98c634",
+        "name": "production"
+      },
+      "domain": {
+        "id": "893856ea-2eff-4d81-a6a8-b01ff0a5a241",
+        "domain": "www.snow-force.com",
+        "kind": "custom",
+        "targetPort": 3000
+      },
+      "railwayManaged": false,
+      "verified": true,
+      "certificate": {
+        "status": "CERTIFICATE_STATUS_TYPE_VALID",
+        "errorMessage": null,
+        "retryable": null
+      },
+      "dnsRecords": [
+        {
+          "hostLabel": "www",
+          "fqdn": "www.snow-force.com",
+          "recordType": "DNS_RECORD_TYPE_CNAME",
+          "purpose": "DNS_RECORD_PURPOSE_TRAFFIC_ROUTE",
+          "requiredValue": "vpb9mqhe.up.railway.app",
+          "currentValue": "vpb9mqhe.up.railway.app",
+          "status": "DNS_RECORD_STATUS_PROPAGATED"
+        }
+      ]
+    }
+  ]
+}

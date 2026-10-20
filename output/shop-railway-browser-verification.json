@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-10-04T06:14:36Z",
+  "backend": "https://snowforce-commerce-production.up.railway.app",
+  "userConfirmedBrowserLogin": true,
+  "productList": {
+    "count": 14,
+    "status": "draft"
+  },
+  "productDetail": true,
+  "usdVariantForm": true,
+  "unsavedFormDiscarded": true,
+  "inventoryPageLoaded": true,
+  "inventoryPageEmpty": true,
+  "shipping": {
+    "baseUsd": 9.95,
+    "freeFromUsd": 100
+  },
+  "policyDraftLoaded": true,
+  "publication": "not published",
+  "existingProductsModified": false,
+  "paymentsEnabled": false,
+  "partnerTraining": "pending"
+}

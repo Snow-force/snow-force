@@ -1,0 +1,54 @@
+{
+  "testedAt": "2026-10-17T02:12:00.429Z",
+  "backendVersion": "ea4139c2fb1e847038ad8deb68ad98edbc2ad1d6",
+  "backendDeployment": "594f05b6-e11f-4db0-b58b-ac5525cce0a0",
+  "webVersion": "6276a0c313e79b420fcb6a515eb4dcc1af4a0421",
+  "requests": {
+    "action": {
+      "traceId": "fcedb3ee13d7739f6b4a070cc8e2096f",
+      "httpDurationMs": 21220.993588,
+      "startedAt": "2026-10-17T02:07:23.270324078Z",
+      "observedDatabaseSpanCounts": {},
+      "spansOutlivingHttpResponse": 0
+    },
+    "quote": {
+      "traceId": "d5f3c9d163d5d54dca459a211c9f3c12",
+      "httpDurationMs": 7850.0573,
+      "startedAt": "2026-10-17T02:07:34.162837690Z",
+      "observedDatabaseSpanCounts": {
+        "postgresql": 147,
+        "redis": 8
+      },
+      "spansOutlivingHttpResponse": 1
+    },
+    "details": {
+      "traceId": "cf1e77e1a34f2c4ad2e33305e558b1bc",
+      "httpDurationMs": 5152.110012,
+      "startedAt": "2026-10-17T02:07:26.159641808Z",
+      "observedDatabaseSpanCounts": {
+        "redis": 25,
+        "postgresql": 108
+      },
+      "spansOutlivingHttpResponse": 2
+    },
+    "shipping": {
+      "traceId": "5d2611f7a0f64b0c14509292a54a77b6",
+      "httpDurationMs": 2392.98365,
+      "startedAt": "2026-10-17T02:07:31.754906906Z",
+      "observedDatabaseSpanCounts": {
+        "postgresql": 85,
+        "redis": 8
+      },
+      "spansOutlivingHttpResponse": 2
+    }
+  },
+  "ui": {
+    "taxCents": 3867,
+    "totalCents": 53767,
+    "quoteReady": true,
+    "policyAccepted": false,
+    "paymentPrepared": false
+  },
+  "targetMet": false,
+  "limitations": "One original-address normalized save, not p95 or a controlled comparison. Request durations use root HTTP edge spans; complete trace envelopes include asynchronous spans that outlive the response. Span duration sums are not critical-path latency."
+}

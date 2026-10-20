@@ -1,0 +1,18 @@
+{
+  "commit": "48a87b9ca05ca8cd1785df7a0874812a8be82c2f",
+  "tree": "5a1766bb2f3558b91d233d7330047c7c8f94f86b",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/25",
+  "checks": {
+    "commerceTests": {"passed": 693, "failed": 0, "skipped": 0},
+    "commerceTypecheck": "passed",
+    "commerceBackendAndAdminBuild": "passed",
+    "websiteTests": {"passed": 1124, "failed": 0},
+    "websiteCoverage": "passed",
+    "websiteProductionBuild": "passed",
+    "unchangedSourceHashesDuringBuild": 1022,
+    "leaseHelperCoverage": {"lines": 100, "branches": 100},
+    "taxSourceCoverage": {"lines": 100, "branches": 96.43}
+  },
+  "productionPerformanceVerified": false,
+  "productionFinancialWrites": 0
+}

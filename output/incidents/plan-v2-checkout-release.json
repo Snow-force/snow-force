@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-10-18T05:56:00Z",
+  "pullRequest": "https://github.com/Snow-force/snow-force/pull/33",
+  "revision": "c799ecb5f3c83f48a299dcabf2661f52015f117c",
+  "migration": "20261017232618_shop_checkout_quote_drafts",
+  "deployments": {
+    "backend": {
+      "id": "89c478b4-a763-453f-aa39-1556916a5620",
+      "status": "SUCCESS",
+      "region": "us-east4-eqdc4a",
+      "flag": "COMMERCE_CHECKOUT_DRAFTS=true"
+    },
+    "frontend": {
+      "id": "5c5898d9-1ee2-4b0d-b99f-96fd2b21cb6e",
+      "status": "SUCCESS",
+      "region": "sfo",
+      "flag": "SHOP_CHECKOUT_DRAFTS=true"
+    }
+  },
+  "health": {
+    "backendHTTP": 200,
+    "servicesOnline": 3,
+    "replicasPerService": 1,
+    "issues": 0,
+    "unrelatedStagedPatchApplied": false
+  },
+  "formal": {
+    "sampleCount": 1,
+    "estimateBackendMs": 2644,
+    "estimateServerActionMs": 3877,
+    "initialReviewServerActionMs": 4041,
+    "subtotalUSD": 499,
+    "shippingUSD": 0,
+    "taxUSD": 38.67,
+    "totalUSD": 537.67,
+    "addressEditable": true,
+    "policyChecked": false,
+    "nativeCartBeforeHash": "7a2b7f6a552a988be7fb44e0f0f588e4",
+    "nativeCartAfterHash": "7a2b7f6a552a988be7fb44e0f0f588e4",
+    "orders": 0,
+    "activePaymentSessions": 0,
+    "note": "No address edits, policy consent, native final commit or payment performed in production. Measurements are one post-deployment sample, not production p95. Older baseline differs before activation; cart updated at 2026-10-17T23:36:23Z, well before activation."
+  },
+  "validation": {
+    "rootTests": 1147,
+    "commerceTests": 741,
+    "finalFocusedTests": 40,
+    "rootBuild": "passed",
+    "commerceBuild": "passed",
+    "CI": "passed",
+    "sandboxPaymentPreparation": "passed; unconfirmed test payment canceled, no order or funds",
+    "localProductionBuildBenchmark": {
+      "samples": 30,
+      "estimateP95Ms": 1621,
+      "finalReviewP95Ms": 1768,
+      "note": "Local isolated environment only; final review excludes payment preparation."
+    }
+  },
+  "screenshot": "output/incidents/plan-v2-formal-estimate-ready.png",
+  "limitations": [
+    "Production final payment is intentionally not exercised.",
+    "No production p95/SLA claim.",
+    "Remaining checkout initial loading and sub-2-second production target need further measurement."
+  ]
+}

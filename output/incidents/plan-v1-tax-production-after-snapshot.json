@@ -1,0 +1,32 @@
+{
+  "testedAt": "2026-10-16T18:20:44.932Z",
+  "environment": "production",
+  "version": "99b32de50bcaec24436899073044972793299b73",
+  "deployment": "ded63ff2-8bc5-4c38-876d-536faac08019",
+  "traceId": "c2c7410ebedc5de38c3ea08a07ea27b6",
+  "quoteDurationMs": 9511.448539,
+  "counts": {
+    "postgresql": {
+      "count": 221,
+      "sumDurationMs": 4483.0786290000015
+    },
+    "redis": {
+      "count": 11,
+      "sumDurationMs": 710.143864
+    }
+  },
+  "limitations": "Single natural-expiration quote, not p95 or controlled comparison; spans overlap and sums are not critical-path durations.",
+  "additionalAddressFlow": {
+    "traceId": "d2b7bff23b8a71822bd1c2db9ae33469",
+    "durationMs": 20961,
+    "quoteDurationMs": 8911
+  },
+  "ui": {
+    "taxCents": 3867,
+    "totalCents": 53767,
+    "quoteReady": true,
+    "policyAccepted": false,
+    "paymentPrepared": false
+  },
+  "targetMet": false
+}

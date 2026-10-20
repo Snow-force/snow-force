@@ -1,0 +1,64 @@
+{
+  "checked_at": "2026-10-10T08:53:46.372Z",
+  "scope": "provided Sandbox credentials; read-only Stripe API; no deployment or live mutation",
+  "headquarters_confirmed_by_operator": "Irvine, CA",
+  "backend_is_test": true,
+  "frontend_is_test": true,
+  "checks": [
+    "backend key belongs to the expected independent Snow Force Club sandbox"
+  ],
+  "account_id": "acct_1ToZcNAbMQunT3pr",
+  "account_matches": true,
+  "tax_settings": {
+    "livemode": false,
+    "status": "active",
+    "headquarters": {
+      "city": "Irvine",
+      "state": "CA",
+      "country": "US",
+      "postal_code": "92614"
+    },
+    "missing_fields": [],
+    "defaults": {
+      "provider": "stripe",
+      "tax_behavior": null,
+      "tax_code": null
+    }
+  },
+  "tax_registrations": {
+    "has_more": false,
+    "registrations": [
+      {
+        "id": "taxreg_1UOw2HAbMQunT3pre61qoGuJ",
+        "livemode": false,
+        "country": "US",
+        "state": "CA",
+        "type": "state_sales_tax",
+        "status": "active",
+        "active_from": 1791622425,
+        "expires_at": null
+      }
+    ]
+  },
+  "payment_read_and_public_key": {
+    "id": "pi_3UOvboAbMQunT3pr1AuxvpCu",
+    "livemode": false,
+    "status": "succeeded",
+    "public_key_matches": true
+  },
+  "refund_read": {
+    "id": "re_3UOvboAbMQunT3pr1LUTH6i7",
+    "status": "succeeded",
+    "amount": 1052
+  },
+  "application_tax_setup": {
+    "account_id": "acct_1ToZcNAbMQunT3pr",
+    "livemode": false,
+    "settings_status": "active",
+    "collecting_states": [
+      "CA"
+    ],
+    "api_ready": true,
+    "blockers": []
+  }
+}
