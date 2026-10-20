@@ -187,7 +187,7 @@ function CheckoutFlow({ completing, warmup }: { completing: boolean; warmup?: St
     setCancelUncertain(true);
     await perform(async () => {
       const next = await cancelUnpaidCartPaymentAction({ token: prompt.token, confirmed: true });
-      if (next.status === "ready") { setCancelPrompt(null); setCancelUncertain(false); return getShopCheckoutAction(); }
+      if (next.status === "ready") { automaticAttempt.current = ""; setCancelPrompt(null); setCancelUncertain(false); return getShopCheckoutAction(); }
       if (next.status === "checkout-locked" && next.cancellation?.status === "blocked") { setCancelPrompt(null); setCancelNotice("blocked"); }
       return { status: "processing" };
     }, true, "checking");

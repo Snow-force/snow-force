@@ -224,6 +224,30 @@ describe("checkout interface", () => {
     await waitFor(() => { expect(screen.getByLabelText("Recipient name")).toBeEnabled(); expect(screen.queryByRole("dialog")).not.toBeInTheDocument(); });
     expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
+  it("recalculates the same saved details after each verified payment cancellation", async () => {
+    vi.useFakeTimers();
+    const initial = { ...review, draftsEnabled: true, detailsVersion: "a".repeat(64), taxQuote: null };
+    mocks.get.mockResolvedValue(initial);
+    mocks.change.mockImplementation(async input => input.kind === "preview" ? previewResult("Test Rider") : { status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd", review: { ...initial, paymentStarted: true, policyAccepted: true } });
+    mocks.preview.mockResolvedValue({ status: "checkout-locked", cancellation: { status: "confirmation-required", token: "a".repeat(64), amountCents: 8990, currency: "usd" } });
+    mocks.cancel.mockResolvedValue({ status: "ready", cart: review.cart });
+    await act(async () => { view(); });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+      expect(screen.getByRole("checkbox")).toBeEnabled();
+      fireEvent.click(screen.getByRole("checkbox"));
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Review & continue to payment" })); });
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Cancel unfinished payment & edit checkout" })); });
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Cancel unpaid payment & edit" })); });
+      expect(screen.getByRole("checkbox")).not.toBeChecked();
+      expect(screen.queryByText("Secure Stripe form")).not.toBeInTheDocument();
+    }
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+    expect(mocks.change.mock.calls.filter(([input]) => input.kind === "preview")).toHaveLength(3);
+    expect(screen.getByRole("checkbox")).toBeEnabled();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    expect(mocks.cancel).toHaveBeenCalledTimes(2);
+  });
   it("keeps compact help and policy links on the focused checkout surface", async () => {
     view();
     const help = await screen.findByRole("navigation", { name: "Checkout help and policies" });
