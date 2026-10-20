@@ -11,6 +11,11 @@ it("requires explicit bounded sampling and creates no request while disabled", (
   expect(sampledOperation("pi_secret", 1)).toBe(false); expect(sampledOperation(operationId, 0)).toBe(false);
   expect(beginShopTiming(0, "cart.add")).toBeUndefined(); expect(fetcher).not.toHaveBeenCalled();
 });
+it("labels the checkout rollout cohort without transmitting SDK or checkout credentials", () => {
+  beginShopTiming(1, "checkout.prepare", "unknown", undefined, "prewarm")?.report("payment.interactive");
+  expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({variant:"prewarm"});
+  expect(browserTimingSchema.safeParse({...JSON.parse(fetcher.mock.calls[0][1].body),variant:"arbitrary"}).success).toBe(false);
+});
 it("sends only bounded primitive observations outside the mutation queue", async () => {
   const timing = beginShopTiming(1, "cart.add", "existing"); expect(timing).toBeDefined();
   const result = { status: "ready", clientSecret: "private-payment", address: "private-address" };

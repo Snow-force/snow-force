@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js/pure";
+import { loadCheckoutStripe } from "@/lib/shop/stripe-loader";
 import Link from "next/link";
 import { useLanguage } from "@/lib/language";
 import { formatStorePrice } from "@/lib/shop/storefront";
@@ -10,7 +11,7 @@ import { LoadingSpinner, LoadingStatus } from "./loading-status";
 import { PendingFeedback } from "./pending-feedback";
 import type { ShopClientTiming } from "@/lib/shop/performance-browser";
 
-type Props = { clientSecret: string; publishableKey: string; total: number; validate: () => Promise<boolean>; complete: () => Promise<void>; onBusyChange?: (busy: boolean) => void; timing?: ShopClientTiming };
+type Props = { clientSecret: string; publishableKey: string; total: number; validate: () => Promise<boolean>; complete: () => Promise<void>; onBusyChange?: (busy: boolean) => void; timing?: ShopClientTiming; prewarm?: boolean };
 function PaymentForm({ total, validate, complete, onBusyChange, retry, timing }: Omit<Props, "clientSecret" | "publishableKey"> & { retry: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -93,7 +94,7 @@ export default function StripeCheckoutForm(props: Props) {
   return <StripeCheckoutAttempt key={`${props.clientSecret}:${props.publishableKey}:${attempt}`} {...props} retry={() => setAttempt(previous => previous + 1)} />;
 }
 
-function StripeCheckoutAttempt({ clientSecret, publishableKey, total, validate, complete, onBusyChange, retry, timing }: Props & { retry: () => void }) {
+function StripeCheckoutAttempt({ clientSecret, publishableKey, total, validate, complete, onBusyChange, retry, timing, prewarm = false }: Props & { retry: () => void }) {
   const { lang } = useLanguage();
   // Keep the same Elements instance during confirmation or an uncertain result.
   // A language change must not reset the duplicate-payment guard.
@@ -103,7 +104,7 @@ function StripeCheckoutAttempt({ clientSecret, publishableKey, total, validate, 
   useEffect(() => { diagnostic.current?.report("payment.mount"); }, []);
   // Resolve a failed SDK load to null, then show a recoverable error instead of
   // leaving a spinner indefinitely or creating an unhandled rejected promise.
-  const stripe = useMemo(() => loadStripe(publishableKey).catch(() => null), [publishableKey]);
+  const stripe = useMemo(() => prewarm ? loadCheckoutStripe(publishableKey) : loadStripe(publishableKey).catch(() => null), [publishableKey, prewarm]);
   useEffect(() => {
     let current = true;
     const started = performance.now();

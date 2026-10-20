@@ -11,7 +11,7 @@ export function summarizeShopPerformance(input) {
     if (!value || typeof value !== "object") continue;
     const row = /** @type {Record<string, unknown>} */ (value);
     if (row.event !== "snowforce.shop_performance" || !["web", "commerce", "browser"].includes(String(row.source)) || typeof row.operationId !== "string" || !/^[a-f0-9-]{36}$/i.test(row.operationId) || typeof row.durationMs !== "number" || !Number.isFinite(row.durationMs) || row.durationMs < 0 || row.durationMs > 1_800_000) continue;
-    const dimensions = ["source", "operation", "phase", "scenario", "revision", "viewport", "network", "visit"];
+    const dimensions = ["source", "operation", "phase", "scenario", "revision", "viewport", "network", "visit", "variant"];
     const tags = Object.fromEntries(dimensions.map(key => [key, typeof row[key] === "string" && /^[a-z0-9_.-]{1,64}$/i.test(row[key]) ? row[key] : "unknown"]));
     const key = JSON.stringify(tags), identity = JSON.stringify([key, row.operationId, row.sequence ?? row.startedAt, row.outcome]);
     if (seen.has(identity)) continue;

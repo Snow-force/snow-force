@@ -5,7 +5,7 @@ type Phase = BrowserTiming["phase"];
 type Outcome = BrowserTiming["outcome"];
 export type ShopClientTiming = { operationId: string; report: (phase: Phase, outcome?: Outcome, since?: number) => void; observeActionSend?: () => void; measure: <T>(phase: Phase, work: () => Promise<T>) => Promise<T> };
 const visits = new Set<ShopOperation>();
-export function beginShopTiming(rate: number | undefined, operation: ShopOperation, scenario: BrowserTiming["scenario"] = "unknown", revision?: string): ShopClientTiming | undefined {
+export function beginShopTiming(rate: number | undefined, operation: ShopOperation, scenario: BrowserTiming["scenario"] = "unknown", revision?: string, variant?: BrowserTiming["variant"]): ShopClientTiming | undefined {
   if (!rate || typeof window === "undefined") return;
   try {
     const operationId = crypto.randomUUID();
@@ -20,7 +20,7 @@ export function beginShopTiming(rate: number | undefined, operation: ShopOperati
     let sequence = 0;
     const emit = (phase: Phase, outcome: Outcome, durationMs: number) => {
       try {
-        const parsed = browserTimingSchema.safeParse({ operationId, operation, scenario, ...(revision ? { revision } : {}), phase, outcome, sequence: ++sequence, durationMs: Math.max(0, Math.round(durationMs)), viewport, network, visit });
+        const parsed = browserTimingSchema.safeParse({ operationId, operation, scenario, ...(revision ? { revision } : {}), ...(variant ? { variant } : {}), phase, outcome, sequence: ++sequence, durationMs: Math.max(0, Math.round(durationMs)), viewport, network, visit });
         if (!parsed.success) return;
         // A separate bounded collector never joins Next's mutation action queue.
         void fetch("/api/shop/performance", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "omit", keepalive: true, body: JSON.stringify(parsed.data) }).catch(() => undefined);

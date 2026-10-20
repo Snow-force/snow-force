@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), sync: vi.fn(), validation: vi.fn(), preview: vi.fn(), cancel: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), reload: vi.fn(), sync: vi.fn(), validation: vi.fn(), preview: vi.fn(), cancel: vi.fn(), warm: vi.fn(), selectWarm: vi.fn() }));
+vi.mock("@/lib/shop/stripe-loader", () => ({ loadCheckoutStripe: mocks.warm, selectStripeWarmup: mocks.selectWarm }));
+vi.mock("./stripe-checkout-form", () => ({ default: () => null }));
 vi.mock("@/lib/shop/cart-actions", () => ({ previewShopPaymentCancellationAction: mocks.preview, cancelUnpaidCartPaymentAction: mocks.cancel }));
 vi.mock("@/lib/shop/checkout-actions", () => ({ getShopCheckoutAction: mocks.get, changeShopCheckoutAction: mocks.change }));
 vi.mock("./shop-provider", () => ({ useShopCart: () => ({ reload: mocks.reload, syncCheckout: mocks.sync }) }));
@@ -34,6 +36,21 @@ beforeEach(() => {
 const view = (lang: "en" | "zh" = "en", completing = false) => render(<LanguageProvider initialLang={lang}><CheckoutView completing={completing} /></LanguageProvider>);
 afterEach(() => vi.useRealTimers());
 describe("checkout interface", () => {
+  it("warms only selected checkout visits while server reads are pending, without preparing a payment", async () => {
+    mocks.selectWarm.mockReturnValue(true); mocks.warm.mockResolvedValue({}); mocks.get.mockReturnValue(new Promise(() => undefined));
+    const rendered = render(<LanguageProvider initialLang="en"><CheckoutView warmup={{publishableKey:"pk_test_fixture",sampleRate:.1}} /></LanguageProvider>);
+    await waitFor(() => expect(mocks.warm).toHaveBeenCalledExactlyOnceWith("pk_test_fixture")); expect(mocks.get).toHaveBeenCalledOnce(); expect(mocks.change).not.toHaveBeenCalled();
+    rendered.rerender(<LanguageProvider initialLang="en"><CheckoutView warmup={{publishableKey:"pk_test_fixture",sampleRate:.1}} /></LanguageProvider>);
+    expect(mocks.warm).toHaveBeenCalledOnce(); expect(screen.queryByText("Secure Stripe form")).not.toBeInTheDocument();
+  });
+  it("leaves the old loading path for unselected visits and never prewarms a payment return", async () => {
+    mocks.selectWarm.mockReturnValue(false); view(); await screen.findByLabelText("Recipient name"); expect(mocks.warm).not.toHaveBeenCalled();
+  });
+  it("does not prewarm on payment return even when the rollout selects every checkout", async () => {
+    mocks.selectWarm.mockReturnValue(true); mocks.change.mockResolvedValue({status:"processing"});
+    render(<LanguageProvider initialLang="en"><CheckoutView completing warmup={{publishableKey:"pk_test_fixture",sampleRate:1}} /></LanguageProvider>);
+    await waitFor(() => expect(mocks.change).toHaveBeenCalled()); expect(mocks.warm).not.toHaveBeenCalled();
+  });
   const previewResult = (name="Draft Rider",expiresAt=2000000000):CheckoutPreview => ({status:"preview",cart:review.cart,token:"draft1."+"a".repeat(20)+"."+"b".repeat(20)+"."+"c".repeat(20),fingerprint:"d".repeat(64),version:"a".repeat(64),taxQuote:{...review.taxQuote!,ready:false,expiresAt},options:review.options,selectedOptionId:review.selectedOptionId!,address:{...review.address!,name},pickupSelected:false,policy});
   it("uses an unapplied estimate for edited details and only prepares payment after explicit agreement",async()=>{
     vi.useFakeTimers();const initial={...review,draftsEnabled:true,detailsVersion:"a".repeat(64)};mocks.get.mockResolvedValue(initial);
@@ -206,6 +223,30 @@ describe("checkout interface", () => {
     mocks.get.mockResolvedValue(review); fireEvent.click(screen.getByRole("button", { name: "Check cancellation & retry" }));
     await waitFor(() => { expect(screen.getByLabelText("Recipient name")).toBeEnabled(); expect(screen.queryByRole("dialog")).not.toBeInTheDocument(); });
     expect(screen.getByRole("checkbox")).not.toBeChecked();
+  });
+  it("recalculates the same saved details after each verified payment cancellation", async () => {
+    vi.useFakeTimers();
+    const initial = { ...review, draftsEnabled: true, detailsVersion: "a".repeat(64), taxQuote: null };
+    mocks.get.mockResolvedValue(initial);
+    mocks.change.mockImplementation(async input => input.kind === "preview" ? previewResult("Test Rider") : { status: "payment", clientSecret: "pi_fixture_secret_fixture", totalCents: 8990, currency: "usd", review: { ...initial, paymentStarted: true, policyAccepted: true } });
+    mocks.preview.mockResolvedValue({ status: "checkout-locked", cancellation: { status: "confirmation-required", token: "a".repeat(64), amountCents: 8990, currency: "usd" } });
+    mocks.cancel.mockResolvedValue({ status: "ready", cart: review.cart });
+    await act(async () => { view(); });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+      expect(screen.getByRole("checkbox")).toBeEnabled();
+      fireEvent.click(screen.getByRole("checkbox"));
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Review & continue to payment" })); });
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Cancel unfinished payment & edit checkout" })); });
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Cancel unpaid payment & edit" })); });
+      expect(screen.getByRole("checkbox")).not.toBeChecked();
+      expect(screen.queryByText("Secure Stripe form")).not.toBeInTheDocument();
+    }
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+    expect(mocks.change.mock.calls.filter(([input]) => input.kind === "preview")).toHaveLength(3);
+    expect(screen.getByRole("checkbox")).toBeEnabled();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    expect(mocks.cancel).toHaveBeenCalledTimes(2);
   });
   it("keeps compact help and policy links on the focused checkout surface", async () => {
     view();
