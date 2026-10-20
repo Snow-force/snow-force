@@ -24,6 +24,8 @@ Each selected operation carries a random UUID through the diagnostic-only Server
 
 ## Privacy, load and provenance
 
+Behind the production reverse proxy the request URL can contain an internal host. Keep `NEXT_PUBLIC_SITE_URL=https://snow-force.com` and explicitly set the collector's alternate origin `SITE_URL=https://www.snow-force.com` so both served domains can report. `SITE_URL` is used only by this collector in the web source. Forwarded/Host headers never extend this allow-list; `Sec-Fetch-Site: cross-site` is still rejected. Verify both domains with an invalid-schema POST (400) and a foreign-origin POST (403), without recording synthetic timing samples.
+
 The browser collector accepts only a strict finite schema, same-origin JSON POSTs, at most 2,048 bytes, and at most 600 candidate requests per process per minute. Unknown fields (including addresses, tokens and client secrets) are rejected. Browser collection uses `credentials: omit`, so it neither transmits member cookies nor triggers Supabase session refresh in the current proxy. The collector makes no database calls and returns an empty response.
 
 Diagnostic logs contain fixed operation/phase names, random IDs, bounded dimensions, duration, outcome and optional revision/trace ID. They do not contain cart/customer/product IDs, JWTs, addresses, amounts, URLs, request/response bodies or exception messages. Logging/collection/tracing outages cannot change transaction outcomes. Browser observations and correlation headers are untrusted telemetry, never payment evidence. The collector's rate bound is per process, not a distributed quota.
