@@ -6,6 +6,19 @@ beforeEach(async () => { vi.resetModules(); vi.stubEnv("SHOP_PERFORMANCE_TIMING"
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 it("disables collection without reading or logging request bodies", async () => { vi.stubEnv("SHOP_PERFORMANCE_TIMING", "false"); expect((await POST(request({ secret: "never" }))).status).toBe(204); expect(console.info).not.toHaveBeenCalled(); });
 it("accepts same-origin typed observations without cookies or user identifiers", async () => { expect((await POST(request())).status).toBe(204); expect(JSON.parse(vi.mocked(console.info).mock.calls[0][0])).toMatchObject({ ...event, source: "browser", event: "snowforce.shop_performance" }); });
+it("accepts both explicitly configured public origins behind an internal reverse-proxy URL", async () => {
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://snow-force.com"); vi.stubEnv("SITE_URL", "https://www.snow-force.com");
+  for (const origin of ["https://snow-force.com", "https://www.snow-force.com"]) {
+    const proxied = new Request("http://0.0.0.0:3000/api/shop/performance", {method:"POST",headers:{origin,"content-type":"application/json","sec-fetch-site":"same-origin"},body:JSON.stringify(event)});
+    expect((await POST(proxied)).status).toBe(204);
+  }
+});
+it("keeps the cross-site boundary when the alternate origin is configured and ignores forged forwarding headers", async () => {
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://snow-force.com"); vi.stubEnv("SITE_URL", "https://www.snow-force.com");
+  expect((await POST(request(event,{origin:"https://www.snow-force.com","sec-fetch-site":"cross-site"}))).status).toBe(403);
+  expect((await POST(request(event,{origin:"https://attacker.invalid","x-forwarded-host":"attacker.invalid",host:"attacker.invalid"}))).status).toBe(403);
+  expect(console.info).not.toHaveBeenCalled();
+});
 it("rejects cross-origin, free-form fields, secrets, unbounded times and forged labels", async () => {
   expect((await POST(request(event, { origin: "https://attacker.invalid" }))).status).toBe(403);
   expect((await POST(request(event, { "sec-fetch-site": "cross-site" }))).status).toBe(403);
