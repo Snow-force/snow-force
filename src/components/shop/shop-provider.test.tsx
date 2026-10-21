@@ -4,6 +4,8 @@ import type { CartResult } from "@/lib/shop/commerce-cart";
 import { LanguageProvider } from "@/lib/language";
 
 const actions = vi.hoisted(() => ({ get: vi.fn(), change: vi.fn(), promotion: vi.fn() }));
+const timings = vi.hoisted(() => ({ begin: vi.fn() }));
+vi.mock("@/lib/shop/performance-browser", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/shop/performance-browser")>(), beginShopTiming: timings.begin }));
 const route = vi.hoisted(() => ({ pathname: "/shop" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 vi.mock("@/lib/shop/cart-actions", () => ({ getShopCartAction: actions.get, changeShopCartAction: actions.change, applyShopPromotionAction: actions.promotion }));
@@ -35,6 +37,64 @@ beforeEach(() => {
 });
 
 describe("cart request loading", () => {
+  it("shows an existing quantity above the edit limit faithfully and allows one valid reduction", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 120, unitPrice: 39, total: 4680 }], subtotal: 4680, total: 4680, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    actions.change.mockResolvedValue({ status: "ready", cart: { ...cart, items: [{ ...cart.items[0], quantity: 99, total: 3861 }], subtotal: 3861, total: 3861 } });
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    const quantity = await screen.findByRole("combobox", { name: "Quantity for Test hat" });
+    expect(quantity).toHaveValue("120"); expect(screen.getByRole("option", { name: "120" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Increase quantity for Test hat" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decrease quantity for Test hat" })).toBeDisabled();
+    expect(actions.change).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.change(quantity, { target: { value: "99" } }); });
+    expect(actions.change).toHaveBeenCalledExactlyOnceWith({ kind: "update", itemId: "cali_fixture", quantity: 99 });
+    expect(quantity).toHaveValue("99"); expect(screen.queryByRole("option", { name: "120" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Decrease quantity for Test hat" })).toBeEnabled();
+  });
+  it("can decrement an existing quantity of 100 to the permitted 99", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 100, unitPrice: 39, total: 3900 }], subtotal: 3900, total: 3900, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    const decrease = await screen.findByRole("button", { name: "Decrease quantity for Test hat" });
+    await act(async () => { fireEvent.click(decrease); });
+    expect(actions.change).toHaveBeenCalledExactlyOnceWith({ kind: "update", itemId: "cali_fixture", quantity: 99 });
+  });
+  it("sets a target quantity in one request and keeps confirmed prices until the server responds", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 39, total: 39 }], subtotal: 39, total: 39, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    const pending = deferred<CartResult>(); actions.change.mockReturnValue(pending.promise);
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    const quantity = await screen.findByRole("combobox", { name: "Quantity for Test hat" });
+    fireEvent.change(quantity, { target: { value: "5" } });
+    fireEvent.change(quantity, { target: { value: "6" } });
+    expect(actions.change).toHaveBeenCalledExactlyOnceWith({ kind: "update", itemId: "cali_fixture", quantity: 5 });
+    expect(quantity).toBeDisabled(); expect(quantity).toHaveValue("1");
+    expect(screen.queryByText("$195.00")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("aria-disabled", "true");
+    await act(async () => { pending.resolve({ status: "ready", cart: { ...cart, items: [{ ...cart.items[0], quantity: 5, total: 195 }], subtotal: 195, total: 195 } }); });
+    expect(quantity).toBeEnabled(); expect(quantity).toHaveValue("5");
+    expect(screen.getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("aria-disabled", "false");
+  });
+  it("correlates update and remove without duplicate requests, preserving the last confirmed cart on rejection", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 39, total: 39 }], subtotal: 39, total: 39, taxTotal: 0, shippingTotal: 0, discountTotal: 0, promotionCodes: ["SAVE"] };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    const report = vi.fn(); timings.begin.mockReturnValue({ operationId: "11223344-1234-4123-8123-112233445566", report });
+    const pending = deferred<CartResult>(); actions.change.mockReturnValueOnce(pending.promise).mockResolvedValue({ status: "rejected" });
+    render(<LanguageProvider initialLang="zh"><ShopProvider timingSampleRate={1} timingRevision="fixture"><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    const quantity = await screen.findByRole("combobox", { name: "Test hat数量" });
+    fireEvent.change(quantity, { target: { value: "5" } });
+    fireEvent.change(quantity, { target: { value: "7" } });
+    expect(timings.begin).toHaveBeenCalledExactlyOnceWith(1, "cart.update", "coupon", "fixture");
+    expect(actions.change).toHaveBeenCalledExactlyOnceWith({ kind: "update", itemId: "cali_fixture", quantity: 5 }, { operationId: "11223344-1234-4123-8123-112233445566" });
+    await act(async () => { pending.resolve({ status: "rejected" }); });
+    expect(quantity).toHaveValue("1"); expect(quantity).toBeEnabled();
+    expect(report).toHaveBeenCalledWith("action.return", "rejected");
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "移除Test hat" })); });
+    expect(timings.begin).toHaveBeenLastCalledWith(1, "cart.remove", "coupon", "fixture");
+    expect(actions.change).toHaveBeenLastCalledWith({ kind: "remove", itemId: "cali_fixture" }, { operationId: "11223344-1234-4123-8123-112233445566" });
+    expect(screen.getByText("Test hat")).toBeVisible();
+  });
   it("keeps merchandise prices consistent when returning from a cart with quoted tax", async () => {
     actions.get.mockResolvedValue({ status: "ready", cart: { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 39, total: 42.02 }], subtotal: 39, total: 42.02, taxTotal: 3.02, shippingTotal: 0, discountTotal: 0 } });
     render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);

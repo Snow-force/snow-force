@@ -55,9 +55,10 @@ async function changeCart(input: unknown): Promise<CartResult> {
     const change = parsed.data;
     // Start independent cart and selected-variant reads together. Every native
     // ownership, edit, stock and payment fence still runs before the mutation.
-    const [initialCart, catalog] = await timeShopPhase("read_validate", () => Promise.all([
+    const [initialCart, catalog, regionId] = await timeShopPhase("read_validate", () => Promise.all([
       cartId ? repository.get(cartId) : Promise.resolve(null),
       change.kind === "add" ? loadPurchasableVariant(customer.request, change.variantId) : Promise.resolve(null),
+      change.kind !== "add" && cartId ? getUsCommerceRegion(customer.request) : Promise.resolve(null),
     ]));
     let cart = initialCart;
     setShopTimingScenario(!cart ? "new" : cart.promotions?.length ? "coupon" : "existing");
@@ -74,7 +75,6 @@ async function changeCart(input: unknown): Promise<CartResult> {
       cart = await repository.add(cart.id, change.variantId, change.quantity);
     } else {
       if (!cart || !cart.items.some((item) => item.id === change.itemId)) return { status: "invalid" };
-      const regionId = await getUsCommerceRegion(customer.request);
       if (!regionId || cart.region_id !== regionId) return { status: "not-configured" };
       cart = change.kind === "update" ? await repository.update(cart.id, change.itemId, change.quantity) : await repository.remove(cart.id, change.itemId);
     }

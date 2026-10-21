@@ -96,6 +96,34 @@ describe("authenticated cart server actions", () => {
     mocks.catalog.mockResolvedValue({ variant: null, regionId: null });
     expect(await changeShopCartAction({ kind: "add", variantId: "variant_pink", quantity: 1 })).toEqual({ status: "not-configured" });
   });
+  it.each(["update", "remove"] as const)("reads cart and region concurrently for %s, but waits for both before editing", async kind => {
+    mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) });
+    let finishCart!: (value: { cart: typeof fixtureCart }) => void;
+    let finishRegion!: (value: string) => void;
+    mocks.request.mockReturnValueOnce(new Promise(resolve => { finishCart = resolve; }));
+    mocks.region.mockReturnValueOnce(new Promise(resolve => { finishRegion = resolve; }));
+    const operation = changeShopCartAction(kind === "update" ? { kind, itemId: "cali_fixture", quantity: 2 } : { kind, itemId: "cali_fixture" });
+    await vi.waitFor(() => expect(mocks.region).toHaveBeenCalledOnce());
+    expect(mocks.request).toHaveBeenCalledOnce();
+    finishCart({ cart: fixtureCart });
+    await Promise.resolve();
+    expect(mocks.request).toHaveBeenCalledOnce();
+    finishRegion("reg_us");
+    expect((await operation).status).toBe("ready");
+    expect(mocks.request.mock.calls[1][0]).toContain("/checkout/cart_fixture/edit");
+    expect(mocks.request.mock.calls[2][0]).toContain("/line-items/cali_fixture");
+  });
+  it.each(["update", "remove"] as const)("never writes %s when a parallel preflight fails", async kind => {
+    mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) });
+    const input = kind === "update" ? { kind, itemId: "cali_fixture", quantity: 2 } : { kind, itemId: "cali_fixture" };
+    mocks.region.mockRejectedValueOnce(new Error("Region unavailable"));
+    expect(await changeShopCartAction(input)).toEqual({ status: "unavailable" });
+    mocks.region.mockResolvedValue("reg_us");
+    mocks.request.mockResolvedValueOnce({ cart: { ...fixtureCart, customer: { id: "cus_other" } } });
+    expect(await changeShopCartAction(input)).toEqual({ status: "signed-out" });
+    expect(await changeShopCartAction({ ...input, itemId: "cali_foreign" })).toEqual({ status: "invalid" });
+    expect(mocks.request.mock.calls.every(([, , options]) => !options?.method || options.method === "GET")).toBe(true);
+  });
   it("checks backend ownership and line membership before updating or deleting", async () => {
     mocks.cookieGet.mockReturnValue({ value: signCartCookie("cart_fixture", fixtureUserId, secret) });
     expect((await changeShopCartAction({ kind: "update", itemId: "cali_fixture", quantity: 2 })).status).toBe("ready");
