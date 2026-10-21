@@ -37,6 +37,29 @@ beforeEach(() => {
 });
 
 describe("cart request loading", () => {
+  it("shows an existing quantity above the edit limit faithfully and allows one valid reduction", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 120, unitPrice: 39, total: 4680 }], subtotal: 4680, total: 4680, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    actions.change.mockResolvedValue({ status: "ready", cart: { ...cart, items: [{ ...cart.items[0], quantity: 99, total: 3861 }], subtotal: 3861, total: 3861 } });
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    const quantity = await screen.findByRole("combobox", { name: "Quantity for Test hat" });
+    expect(quantity).toHaveValue("120"); expect(screen.getByRole("option", { name: "120" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Increase quantity for Test hat" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decrease quantity for Test hat" })).toBeDisabled();
+    expect(actions.change).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.change(quantity, { target: { value: "99" } }); });
+    expect(actions.change).toHaveBeenCalledExactlyOnceWith({ kind: "update", itemId: "cali_fixture", quantity: 99 });
+    expect(quantity).toHaveValue("99"); expect(screen.queryByRole("option", { name: "120" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Decrease quantity for Test hat" })).toBeEnabled();
+  });
+  it("can decrement an existing quantity of 100 to the permitted 99", async () => {
+    const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 100, unitPrice: 39, total: 3900 }], subtotal: 3900, total: 3900, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
+    actions.get.mockResolvedValue({ status: "ready", cart });
+    render(<LanguageProvider initialLang="en"><ShopProvider><CartContents presentation="page" /></ShopProvider></LanguageProvider>);
+    const decrease = await screen.findByRole("button", { name: "Decrease quantity for Test hat" });
+    await act(async () => { fireEvent.click(decrease); });
+    expect(actions.change).toHaveBeenCalledExactlyOnceWith({ kind: "update", itemId: "cali_fixture", quantity: 99 });
+  });
   it("sets a target quantity in one request and keeps confirmed prices until the server responds", async () => {
     const cart = { items: [{ id: "cali_fixture", name: "Test hat", variant: "Ivory", slug: null, image: "/shop/product-placeholder.svg", quantity: 1, unitPrice: 39, total: 39 }], subtotal: 39, total: 39, taxTotal: 0, shippingTotal: 0, discountTotal: 0 };
     actions.get.mockResolvedValue({ status: "ready", cart });
