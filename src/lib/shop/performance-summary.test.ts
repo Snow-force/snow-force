@@ -13,3 +13,22 @@ it("keeps prewarm and baseline cohorts separate even on the same revision", () =
   const groups = summarizeShopPerformance([{...base,variant:"baseline"},{...base,variant:"prewarm",durationMs:20}]);
   expect(groups).toHaveLength(2); expect(groups[0]).toMatchObject({variant:"baseline",p50Ms:100}); expect(groups[1]).toMatchObject({variant:"prewarm",p50Ms:20});
 });
+
+it("reads Railway promoted attributes and deduplicates them against raw observations", () => {
+  const row = { event: "snowforce.shop_performance", source: "browser", operation: "cart.add", phase: "action.return", operationId: "11111111-1111-4111-8111-000000000001", sequence: 1, durationMs: 1234, outcome: "ok" };
+  const railway = { message: "", timestamp: "2026-10-23T00:13:51Z", attributes: [...Object.entries(row).map(([key, value]) => ({ key, value: JSON.stringify(value) })), { key: "customerEmail", value: '"private@example.invalid"' }] };
+  const groups = summarizeShopPerformance([railway, row]);
+  expect(groups).toHaveLength(1);
+  expect(groups[0]).toMatchObject({ source: "browser", operation: "cart.add", n: 1, p50Ms: 1234, sufficientForP95: false });
+  expect(JSON.stringify(groups)).not.toContain("private@example.invalid");
+});
+
+it("rejects ambiguous and invalid Railway duration attributes while preserving valid failures", () => {
+  const attributes = Object.entries({ event: "snowforce.shop_performance", source: "web", operation: "checkout.read", phase: "action", operationId: "11111111-1111-4111-8111-000000000001", durationMs: 10, outcome: "rejected" }).map(([key, value]) => ({ key, value: JSON.stringify(value) }));
+  const duplicate = { attributes: [...attributes, { key: "durationMs", value: "1" }] };
+  const invalid = { attributes: attributes.map(a => a.key === "durationMs" ? { ...a, value: '"10"' } : a) };
+  const unrelated = { attributes: [{ key: "message", value: '"snowforce.shop_performance"' }] };
+  const groups = summarizeShopPerformance([duplicate, invalid, unrelated, { attributes }]);
+  expect(groups).toHaveLength(1);
+  expect(groups[0]).toMatchObject({ n: 1, p50Ms: 10, rejectedRate: 1 });
+});
