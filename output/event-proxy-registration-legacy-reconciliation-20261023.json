@@ -1,0 +1,36 @@
+{
+  "checkedAt": "2026-10-23T22:23:04.249Z",
+  "source": "Stripe live read-only session verification; no new charges or refunds",
+  "results": [
+    {
+      "pendingId": "a267bd43-73e6-4ac9-afdc-b14004afaf75",
+      "status": "expired_hold_released"
+    },
+    {
+      "pendingId": "8d7142a9-abb1-47e5-a180-8c2c03a07193",
+      "status": "expired_hold_released"
+    },
+    {
+      "pendingId": "473c2a11-b757-4ff2-a42c-5b342a6bfd19",
+      "status": "expired_hold_released"
+    },
+    {
+      "pendingId": "905fb9d2-f3d3-4826-a261-db5f4544fa6f",
+      "status": "expired_hold_released"
+    },
+    {
+      "pendingId": "b934c722-22b7-4bd5-8601-faecec73cacf",
+      "status": "confirmed",
+      "registrationId": "bedf6a00-7a56-4537-92b2-de18a3041d61"
+    },
+    {
+      "pendingId": "44673b05-355d-432c-9f18-eeb3eada4d56",
+      "status": "confirmed",
+      "registrationId": "68eff375-3630-4b38-b97d-f94a3f0bf4a8"
+    },
+    {
+      "pendingId": "b3c87180-368c-4a31-adc6-93558d83f213",
+      "status": "expired_hold_released"
+    }
+  ]
+}

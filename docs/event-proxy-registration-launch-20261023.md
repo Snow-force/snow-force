@@ -23,7 +23,11 @@
 
 ## 生产操作
 
-状态：代码验证完成，生产迁移和发布待执行。完成后补记部署与活动开关证据。
+状态：代码验证、生产迁移及旧付款对账完成；主站发布与活动开关待执行。
+
+生产 migration 记录由 MCP 写入，实际版本分别为 `20261023222235`（优惠券前置）、`20261023222237`（代理报名 V1）、`20261023222238`（代理审批）。对应本地已有 SQL 文件，不重复推送旧文件版本。
+
+旧 Checkout 对账结果：5 笔已过期席位已释放，2 笔原有付款已补全独立报名；未发起新扣款或退款。见 [对账记录](../output/event-proxy-registration-legacy-reconciliation-20261023.json)。
 
 迁移前业务备份位于 Git 忽略的 `.cache/event-proxy-private-backups/pre-launch-20261023.json`，包含 12 活动、257 报名、133 pending、150 waiver、146 webhook receipt。SHA-256：`caaa36097eb75d8b4cf1d9af73ab0aaf5735f2e3dfb11c6bd28401c66509a863`。明文资料不提交 Git。
 
