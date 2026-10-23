@@ -1,0 +1,8 @@
+{
+  "verifiedAt": "2026-10-23T22:39:12.270Z",
+  "privilegedGuestTableReadable": true,
+  "approvalRpcPresent": true,
+  "anonymousApprovalDenied": true,
+  "anonymousGuestDataDenied": true,
+  "probeWrites": 0
+}

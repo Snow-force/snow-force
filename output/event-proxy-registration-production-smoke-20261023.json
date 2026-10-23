@@ -1,0 +1,36 @@
+{
+  "verifiedAt": "2026-10-23T22:38:17.887Z",
+  "target": "https://snow-force.com",
+  "events": [
+    {
+      "slug": "metroslopes-indoor-ski-snowboard-1107",
+      "status": 200,
+      "proxyEnabled": true,
+      "paymentModel": "full_prepay",
+      "requiresApproval": true
+    },
+    {
+      "slug": "mammoth-opening-weekend-2026",
+      "status": 200,
+      "proxyEnabled": true,
+      "paymentModel": "deposit",
+      "requiresApproval": true
+    },
+    {
+      "slug": "mammoth-thanksgiving-trip-2026",
+      "status": 200,
+      "proxyEnabled": true,
+      "paymentModel": "deposit",
+      "requiresApproval": false
+    }
+  ],
+  "health": 200,
+  "guestInvalid": 200,
+  "guestNoindex": true,
+  "guestNoReferrer": true,
+  "unsignedWebhookRejected": 400,
+  "mobilePages": 3,
+  "pageErrors": [],
+  "productionTestCharges": 0,
+  "productionTestRegistrations": 0
+}

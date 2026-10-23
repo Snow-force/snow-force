@@ -1,0 +1,100 @@
+{
+  "verifiedAt": "2026-10-23T22:39:12.270Z",
+  "status": "SUCCESS",
+  "url": "https://snow-force.com",
+  "commit": "89294beda8ad5c25e0539b48994dc84f58f937f4",
+  "branch": "codex/event-proxy-launch-20261023",
+  "deploymentId": "ff2743eb-dfcd-4719-8e74-cdf1314918ce",
+  "sameCommitDeployment": "7af2263f-6068-4965-a399-2414769bdb9d",
+  "region": "sfo",
+  "node": "24.22.1",
+  "validation": {
+    "testFiles": 198,
+    "tests": 1314,
+    "build": "passed",
+    "coverage": "passed",
+    "lineCoveragePercent": 63.91,
+    "branchCoveragePercent": 59.55,
+    "localPostgresBrowserGroups": 16,
+    "productionMobilePages": 3,
+    "productionPageErrors": 0,
+    "anonymousApprovalAndGuestData": "denied",
+    "unsignedWebhookHttp": 400
+  },
+  "events": [
+    {
+      "slug": "metroslopes-indoor-ski-snowboard-1107",
+      "proxyEnabled": true,
+      "maxFriends": 5,
+      "paymentModel": "full_prepay",
+      "amount": 118,
+      "currency": "usd",
+      "requiresApproval": true,
+      "capacity": 50,
+      "activeRegistrations": 48
+    },
+    {
+      "slug": "mammoth-opening-weekend-2026",
+      "proxyEnabled": true,
+      "maxFriends": 5,
+      "paymentModel": "deposit",
+      "amount": 99,
+      "currency": "usd",
+      "requiresApproval": true,
+      "capacity": 150,
+      "activeRegistrations": 35
+    },
+    {
+      "slug": "mammoth-thanksgiving-trip-2026",
+      "proxyEnabled": true,
+      "maxFriends": 5,
+      "paymentModel": "deposit",
+      "amount": 99,
+      "currency": "usd",
+      "requiresApproval": false,
+      "capacity": 100,
+      "activeRegistrations": 4
+    }
+  ],
+  "migrations": [
+    {
+      "version": "20261023222235",
+      "name": "allow_configurable_coupon_redemptions"
+    },
+    {
+      "version": "20261023222237",
+      "name": "event_proxy_registration_v1"
+    },
+    {
+      "version": "20261023222238",
+      "name": "event_proxy_approval"
+    }
+  ],
+  "legacyPayments": {
+    "expiredHoldsReleased": 5,
+    "previouslyPaidBookingsRecovered": 2,
+    "newCharges": 0,
+    "refunds": 0
+  },
+  "webhook": {
+    "events": 7,
+    "secretRotated": false
+  },
+  "runtimeReview": {
+    "scope": "startup logs and post-deployment smoke only",
+    "applicationErrors": 0,
+    "inspectorStderrMessages": 3,
+    "inspectorContext": "Railway tracing debugger startup notices; not application failures"
+  },
+  "stagedPatch": {
+    "id": "b2de2a43-2321-441f-91c2-d7a0550ff591",
+    "status": "STAGED",
+    "changeCount": 3,
+    "preserved": true
+  },
+  "limitations": [
+    "No synthetic live charge or registration was created.",
+    "Public production smoke complements local authenticated signature/approval acceptance.",
+    "No new recurring monitoring, reminder delivery, or full legal review was performed."
+  ]
+}
