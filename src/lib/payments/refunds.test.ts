@@ -206,6 +206,19 @@ function createHarness(refundResult = stripeRefund()) {
 describe("refund payment service", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it("cannot link a different friend’s payment just because their contact email and booker match", async () => {
+    const { deps, stripe } = createHarness();
+    const proxy = registration({ memberId: null, bookerMemberId: "member-1", registrationKind: "proxy", pendingRegistrationId: "friend-1" });
+    vi.mocked(stripe.checkout.sessions.list).mockResolvedValue(checkoutSessionsResponse([
+      checkoutSession({ metadata: { eventSlug: proxy.eventSlug, memberId: "member-1", pendingRegistrationId: "friend-2" } }),
+    ]));
+    expect(await verifyPaymentIntentForRegistration(deps, proxy, "pi_test_1")).toEqual({ success: false, error: "The Stripe payment belongs to a different attendee." });
+    vi.mocked(stripe.checkout.sessions.list).mockResolvedValue(checkoutSessionsResponse([
+      checkoutSession({ metadata: { eventSlug: proxy.eventSlug, memberId: "member-1", pendingRegistrationId: "friend-1" } }),
+    ]));
+    expect(await verifyPaymentIntentForRegistration(deps, proxy, "pi_test_1")).toMatchObject({ success: true });
+  });
+
   it("handles zero-decimal and two-decimal currencies", () => {
     expect(toSmallestCurrencyUnit(12.34, "usd")).toBe(1234);
     expect(toSmallestCurrencyUnit(1234, "jpy")).toBe(1234);

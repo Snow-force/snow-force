@@ -30,6 +30,8 @@ export type EventCoreRow = {
   requires_approval: boolean;
   allow_waitlist: boolean;
   allow_cancellation: boolean;
+  allow_proxy_registrations?: boolean;
+  max_proxy_registrations?: number;
   fee_amount: string;
   payment_model: Event["paymentModel"];
   deposit_amount: number | null;
@@ -238,6 +240,8 @@ export function rowsToEvent(
     requiresApproval: core.requires_approval,
     allowWaitlist: core.allow_waitlist,
     allowCancellation: core.allow_cancellation,
+    allowProxyRegistrations: core.allow_proxy_registrations ?? false,
+    maxProxyRegistrations: core.max_proxy_registrations ?? 5,
     feeAmount: core.fee_amount,
     paymentModel: core.payment_model ?? "free",
     depositAmount: core.deposit_amount ?? null,
@@ -307,6 +311,8 @@ export function eventAggregateToWriteRows(event: Event): EventAggregateWriteRows
       requires_approval: event.requiresApproval,
       allow_waitlist: event.allowWaitlist,
       allow_cancellation: event.allowCancellation,
+      allow_proxy_registrations: event.allowProxyRegistrations ?? false,
+      max_proxy_registrations: event.maxProxyRegistrations ?? 5,
       fee_amount: event.feeAmount,
       payment_model: event.paymentModel,
       deposit_amount: event.depositAmount,

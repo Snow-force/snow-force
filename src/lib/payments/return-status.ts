@@ -4,6 +4,7 @@ import { fulfillCheckoutSession } from "./fulfillment";
 import { getPendingRegistrationById } from "@/lib/registrations/pending-repository";
 import { getRegistrations } from "@/lib/registrations/repository";
 import type { VerifiedPaymentStatus } from "./checkout-attempt";
+import { belongsToBooker } from "@/lib/registrations/participation";
 
 export type { VerifiedPaymentStatus } from "./checkout-attempt";
 export type ReturnStatusDeps = {
@@ -22,7 +23,7 @@ export async function resolvePaymentReturnStatus(
     if (session.metadata?.memberId !== memberId || !session.metadata.pendingRegistrationId || !session.metadata.eventSlug) return "invalid";
     const pending = await deps.getPending(session.metadata.pendingRegistrationId);
     if (pending ? pending.memberId !== memberId : !(await deps.getRegistrations(session.metadata.eventSlug)).some(
-      (r) => r.memberId === memberId && r.finance?.stripeCheckoutSessionId === session.id,
+      (r) => belongsToBooker(r, memberId) && r.finance?.stripeCheckoutSessionId === session.id,
     )) return "review";
     return (await deps.fulfill(session)).status;
   } catch {

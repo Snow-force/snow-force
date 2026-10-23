@@ -48,6 +48,20 @@ export function EventRegistrationSettingsStep({ event, activeLang, onChange }: E
   return (
     <section className="card space-y-4">
       <h3 className="text-base font-semibold text-gray-900">{t(adminCopy.editor.registrationSettings)}</h3>
+      <div className="grid gap-4 rounded border border-gray-200 p-4 md:grid-cols-2">
+        <label className="flex min-h-11 items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" checked={event.allowProxyRegistrations ?? false}
+            onChange={(e) => updateEventValue("allowProxyRegistrations", e.currentTarget.checked)} />
+          {t({ en: "Allow friend registrations", zh: "允许代朋友报名" })}
+        </label>
+        <label className="text-sm text-gray-700">
+          {t({ en: "Friends per booker (1–20)", zh: "每位会员可代报朋友数（1–20）" })}
+          <input type="number" min={1} max={20} value={event.maxProxyRegistrations ?? 5}
+            onChange={(e) => updateEventValue("maxProxyRegistrations", Number(e.currentTarget.value))}
+            className="mt-1 w-full rounded border border-gray-200 px-3 py-2" />
+        </label>
+        <p className="text-xs leading-5 text-gray-500 md:col-span-2">{t({ en: "One attendee per payment. Friends sign separately before staff check-in. For approval events, each friend also needs staff approval; payment reserves their place while under review.", zh: "每人独立付款、独立签署。需审批活动中，每位朋友还须经工作人员审核；付款后审核期间预留名额。" })}</p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block text-sm text-gray-600">
           {t(adminCopy.editor.capacity)}

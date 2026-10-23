@@ -5,7 +5,8 @@ import type Stripe from "stripe";
 import type { Event } from "@/lib/types";
 import type { PendingRegistration } from "@/lib/registrations/pending-repository";
 import { getStripeServer } from "@/lib/payments/stripe-server";
-import { comparePendingCheckout, deletePendingRegistration, getPendingRegistrationById } from "@/lib/registrations/pending-repository";
+import { comparePendingCheckout, completePendingCheckout, getPendingRegistrationById } from "@/lib/registrations/pending-repository";
+import { hasActiveSelfRegistration, pendingParticipantIdentity } from "@/lib/registrations/participation";
 import { getEvent } from "@/lib/events/repository";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getCoupon, getCouponRedemptionCount } from "@/lib/coupons/repository";
@@ -17,6 +18,7 @@ import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
 import { revalidatePath } from "next/cache";
 import type { CheckoutAttempt } from "./checkout-attempt";
 import { fulfillCheckoutSession } from "./fulfillment";
+import { releaseExpiredCheckoutHold } from "./checkout-reconciliation";
 
 export type CheckoutResult =
   | { success: true; url: string; completed?: boolean }
@@ -32,6 +34,7 @@ export type CheckoutDeps = {
   fulfill?: typeof fulfillCheckoutSession;
   getCoupon?: typeof getCoupon;
   getCouponRedemptionCount?: typeof getCouponRedemptionCount;
+  releaseExpiredHold?: typeof releaseExpiredCheckoutHold;
 };
 
 export type CheckoutOptions = {
@@ -59,7 +62,7 @@ export async function createCheckoutSessionResult(
   const now = options.now ?? new Date();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const existing = await (deps.getRegistrations ?? getRegistrations)(pending.eventSlug) ?? [];
-  if (existing.some((registration) => registration.memberId === pending.memberId && registration.status !== "cancelled") || pending.fulfilledRegistrationId) {
+  if ((pending.registrationKind !== "proxy" && hasActiveSelfRegistration(existing, pending.memberId)) || pending.fulfilledRegistrationId) {
     return { success: false, error: "You are already registered for this event" };
   }
   const compare = deps.compareCheckout ?? comparePendingCheckout;
@@ -90,7 +93,8 @@ export async function createCheckoutSessionResult(
     }
     if (session.status === "expired") {
       // Only Stripe's authoritative expired state permits a new attempt. Never a timer alone.
-      await compare(pendingRegistrationId, pending!.tokenHash, attempt.id, null);
+      if (attempt.sessionId) await (deps.releaseExpiredHold ?? releaseExpiredCheckoutHold)(pendingRegistrationId, attempt.id, attempt.sessionId);
+      else await compare(pendingRegistrationId, pending!.tokenHash, attempt.id, null);
       return { success: false, error: "This checkout expired. Please submit your registration again to refresh it." };
     }
     if (session.status !== "open" || !session.url) return { success: false, error: "Stripe did not return a checkout URL" };
@@ -135,6 +139,7 @@ export async function createCheckoutSessionResult(
   const attemptId = crypto.randomUUID();
   const params: Stripe.Checkout.SessionCreateParams = {
     mode: "payment",
+    locale: pending.preferredLanguage ?? "en",
     integration_identifier: "snowforce_checkout_qjvmsrta",
     line_items: [
       {
@@ -167,7 +172,8 @@ export async function createCheckoutSessionResult(
         memberId: pending.memberId ?? "",
       },
     },
-    // Omit expires_at so retries carry identical params; Stripe defaults to 24h.
+    // Stored with the attempt so retries carry exactly the same expiration.
+    expires_at: Math.floor(now.getTime() / 1000) + 31 * 60,
   };
   const attempt: CheckoutAttempt = { id: attemptId, createdAt: now.toISOString(), params,
     amount: checkoutAmount, currency, paymentModel: event.paymentModel, couponCode, discountAmount };
@@ -187,6 +193,23 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
   const account = await getCurrentMemberAccount();
   if (!account?.profile) return { success: false, error: "Authentication required" };
   if (!account.emailConfirmed) return { success: false, error: "Verify your email before paying" };
+
+  const recoverablePending = await getPendingRegistrationById(pendingRegistrationId);
+  if (recoverablePending?.memberId === account.profile.id) {
+    const committed = (await getRegistrations(recoverablePending.eventSlug)).find((row) => row.pendingRegistrationId === recoverablePending.id &&
+      (row.bookerMemberId ?? row.memberId) === account.profile!.id && row.finance?.paymentMethod === "coupon");
+    if (committed) {
+      if (committed.status === "cancelled") return { success: false,error: "This registration has been cancelled. Submit a new registration." };
+      if (recoverablePending.registrationKind !== "proxy" && recoverablePending.waiverTextEn && recoverablePending.waiverTextSha && recoverablePending.typedName) {
+        await createWaiverAcceptance({ registrationId: committed.id,legalTextSnapshot: recoverablePending.waiverTextEn,waiverTextSha: recoverablePending.waiverTextSha,
+          typedName: recoverablePending.typedName,handwrittenSignatureDataUrl: recoverablePending.handwrittenSignatureDataUrl ?? null,acceptedAt: new Date().toISOString() });
+      }
+      await completePendingCheckout(recoverablePending.id,committed.id);
+      revalidatePath("/member");
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+      return { success: true,url: `${siteUrl}/member?registration=${committed.approvalStatus === "pending" ? "approval-pending" : "confirmed"}`,completed: true };
+    }
+  }
 
   let result: CheckoutResult;
   try {
@@ -210,7 +233,7 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
   if (amount === null) return { success: false, error: "Invalid payment amount" };
   const quote = quoteCoupon(coupon, amount, await getCouponRedemptionCount(coupon.code), event.slug);
   if ("error" in quote || quote.finalAmount !== 0) return { success: false, error: "Coupon is no longer valid" };
-  if ((await getRegistrations(event.slug)).some((registration) => registration.memberId === pending.memberId && registration.status !== "cancelled")) {
+  if (pending.registrationKind !== "proxy" && hasActiveSelfRegistration(await getRegistrations(event.slug), pending.memberId!)) {
     return { success: false, error: "You are already registered for this event" };
   }
   const registrationCount = await getRegistrationCountForEvent(event.slug);
@@ -220,7 +243,7 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
   try {
     const created = await createRegistration({
       eventSlug: event.slug,
-      memberId: pending.memberId,
+      ...pendingParticipantIdentity(pending),
       answers: pending.answers,
       consentGiven: pending.consentGiven,
       contactEmail: pending.contactEmail,
@@ -239,7 +262,7 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
       },
     });
     registrationId = created.registration.id;
-    if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+    if (pending.registrationKind !== "proxy" && pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
       await createWaiverAcceptance({ registrationId: created.registration.id, legalTextSnapshot: pending.waiverTextEn, waiverTextSha: pending.waiverTextSha, typedName: pending.typedName, handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null, acceptedAt: new Date().toISOString() });
     }
   } catch (error) {
@@ -250,9 +273,9 @@ export async function createCheckoutSessionAction(formData: FormData): Promise<C
     return { success: false, error: "Could not complete coupon registration" };
   }
 
-  await deletePendingRegistration(pending.id);
+  await completePendingCheckout(pending.id, registrationId);
   revalidatePath("/member");
   revalidatePath(`/events/${event.slug}`);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  return { success: true, url: `${siteUrl}/member?registration=confirmed`, completed: true };
+  return { success: true, url: `${siteUrl}/member?registration=${pending.registrationKind === "proxy" && event.requiresApproval ? "approval-pending" : "confirmed"}`, completed: true };
 }

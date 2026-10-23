@@ -47,6 +47,7 @@ export default async function MemberPage(
   return (
     <MemberDashboard
       dashboard={dashboard}
+      proxyRegistrations={registrations.filter((row) => row.registrationKind === "proxy")}
       orders={orders}
       profile={account.profile}
       searchParams={searchParams}

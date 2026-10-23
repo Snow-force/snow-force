@@ -15,6 +15,7 @@ import { getRegistrationCountForEvent, getRegistrations } from "@/lib/registrati
 import { validateRegistrationAnswers } from "@/lib/registrations/validation";
 import { getActiveWaiverForEvent } from "@/lib/registrations/waiver-repository";
 import { computeWaiverSha } from "@/lib/registrations/waiver";
+import { hasActiveSelfRegistration } from "./participation";
 import type { PaymentCurrency, RegistrationAnswers } from "@/lib/types";
 
 type RegisterInput = {
@@ -26,6 +27,9 @@ type RegisterInput = {
   typedName?: string;
   handwrittenSignatureDataUrl?: string;
   couponCode?: string;
+  registrationKind?: "self" | "proxy";
+  clientRequestKey?: string;
+  proxyConsent?: boolean;
 };
 
 export type RegisterForEventResult =
@@ -42,6 +46,7 @@ export type RegisterForEventResult =
         finalAmount: number;
         currency: PaymentCurrency;
       };
+      duplicateWarning?: boolean;
     }
   | { success: false; error: string };
 
@@ -71,6 +76,9 @@ export async function registerForEvent(
   input: RegisterInput,
 ): Promise<RegisterForEventResult> {
   try {
+  const kind = input.registrationKind ?? "self";
+  if (input.lang !== "en" && input.lang !== "zh") return { success: false, error: "Invalid language" };
+  if (kind !== "self" && kind !== "proxy") return { success: false, error: "Invalid registration kind" };
   if (!input.consentGiven) {
     return { success: false, error: "Consent is required" };
   }
@@ -78,6 +86,19 @@ export async function registerForEvent(
   const event = await getEvent(eventSlug);
   if (!event) {
     return { success: false, error: "Event not found" };
+  }
+
+  if (kind === "proxy") {
+    if (!event.allowProxyRegistrations) {
+      return { success: false, error: "Friend registration is not available for this event." };
+    }
+    if (!input.proxyConsent) return { success: false, error: "Your friend’s permission to submit their details is required." };
+    if (!input.clientRequestKey || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(input.clientRequestKey)) {
+      return { success: false, error: "Invalid registration request. Please reload the form." };
+    }
+    if (input.typedName || input.handwrittenSignatureDataUrl) {
+      return { success: false, error: "Your friend must sign their own waiver using the invitation link." };
+    }
   }
 
   if (!isEventOpen(event)) {
@@ -89,7 +110,7 @@ export async function registerForEvent(
     return { success: false, error: "Event is not open for registration" };
   }
 
-  const answerValidation = validateRegistrationAnswers(event.registrationQuestions, input.answers);
+  const answerValidation = validateRegistrationAnswers(event.registrationQuestions, input.answers, kind);
   if (!answerValidation.success) {
     const [error] = Object.values(answerValidation.errors);
     return { success: false, error: error ?? "Invalid registration answers" };
@@ -102,7 +123,7 @@ export async function registerForEvent(
   let resolvedHandwrittenSignatureDataUrl: string | undefined;
 
   if (event.waiverTextEn) {
-    if (!input.typedName?.trim()) {
+    if (kind === "self" && !input.typedName?.trim()) {
       return { success: false, error: "Electronic signature is required" };
     }
     if (input.handwrittenSignatureDataUrl && !isValidHandwrittenSignature(input.handwrittenSignatureDataUrl)) {
@@ -135,7 +156,10 @@ export async function registerForEvent(
   }
 
   const contactName = getStringAnswer(answers, "name");
-  const contactEmail = getStringAnswer(answers, "email");
+  const attendeeEmail = normalizeEmail(getStringAnswer(answers, "email"));
+  const contactEmail = kind === "proxy"
+    ? account?.user?.email ?? account?.profile?.email ?? ""
+    : attendeeEmail;
   const contactPhone = getStringAnswer(answers, "phone");
   const normalizedContactEmail = normalizeEmail(contactEmail);
 
@@ -148,11 +172,10 @@ export async function registerForEvent(
   }
 
   const existingRegistrations = await getRegistrations(event.slug);
-  if (
-    existingRegistrations.some(
-      (registration) => registration.memberId === memberDecision.memberId,
-    )
-  ) {
+  const duplicateWarning = kind === "proxy" && existingRegistrations.some((row) => row.status !== "cancelled" &&
+    row.contactName.trim().toLowerCase() === contactName.toLowerCase() &&
+    ((contactPhone && row.contactPhone === contactPhone) || (attendeeEmail && row.attendeeEmail?.toLowerCase() === attendeeEmail)));
+  if (kind === "self" && hasActiveSelfRegistration(existingRegistrations, memberDecision.memberId)) {
     return { success: false, error: "You are already registered for this event." };
   }
 
@@ -194,6 +217,11 @@ export async function registerForEvent(
   const pending = await createOrRefreshPendingRegistration({
     eventSlug,
     memberId: memberDecision.memberId,
+    registrationKind: kind,
+    preferredLanguage: input.lang,
+    participantKey: kind === "proxy" ? input.clientRequestKey!.toLowerCase() : "self",
+    attendeeEmail: attendeeEmail || null,
+    holdExpiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     answers,
     consentGiven: input.consentGiven,
     contactEmail: normalizedContactEmail,
@@ -203,7 +231,7 @@ export async function registerForEvent(
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     waiverTextEn: resolvedWaiverTextEn ?? null,
     waiverTextSha: resolvedWaiverTextSha ?? null,
-    typedName: input.typedName?.trim() ?? null,
+    typedName: kind === "self" ? input.typedName?.trim() ?? null : null,
     handwrittenSignatureDataUrl: resolvedHandwrittenSignatureDataUrl ?? null,
     couponCode: normalizedCouponCode || null,
   });
@@ -222,9 +250,13 @@ export async function registerForEvent(
     confirmation: "member",
     pendingRegistrationId: pending.id,
     ...(paymentQuote ? { paymentQuote } : {}),
+    ...(duplicateWarning ? { duplicateWarning: true } : {}),
   };
   } catch (e) {
-    console.error("registerForEvent failed:", e);
+    const message = e instanceof Error ? e.message : "";
+    if (message.includes("proxy_registration_limit")) return { success: false, error: "You have reached this event’s friend registration limit." };
+    if (message.includes("registration_capacity_exceeded")) return { success: false, error: "No unreserved places remain. Please try again later." };
+    console.error("registerForEvent failed");
     return { success: false, error: "Something went wrong. Please try again later." };
   }
 }

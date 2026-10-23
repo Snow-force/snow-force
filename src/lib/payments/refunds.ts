@@ -160,12 +160,17 @@ export async function verifyPaymentIntentForRegistration(
     if (session.metadata?.eventSlug !== registration.eventSlug) {
       return { success: false, error: "The Stripe payment belongs to a different event." };
     }
-    if (registration.memberId && session.metadata?.memberId !== registration.memberId) {
+    const bookerId = registration.bookerMemberId ?? registration.memberId;
+    if (bookerId && session.metadata?.memberId !== bookerId) {
       return { success: false, error: "The Stripe payment belongs to a different member." };
+    }
+    if (registration.registrationKind === "proxy" && (!registration.pendingRegistrationId ||
+      session.metadata?.pendingRegistrationId !== registration.pendingRegistrationId)) {
+      return { success: false, error: "The Stripe payment belongs to a different attendee." };
     }
 
     const stripeEmail = normalizeEmail(session.customer_details?.email);
-    if (stripeEmail && stripeEmail !== normalizeEmail(registration.contactEmail)) {
+    if (registration.registrationKind !== "proxy" && stripeEmail && stripeEmail !== normalizeEmail(registration.contactEmail)) {
       return { success: false, error: "The Stripe customer email does not match this registration." };
     }
 

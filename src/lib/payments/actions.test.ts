@@ -107,6 +107,18 @@ function fakeStripeFactory(sessionsCreate: ReturnType<typeof vi.fn>) {
 }
 
 describe("createCheckoutSessionResult", () => {
+  it.each(["not_required","pending"] as const)("recovers a committed 100% coupon friend ticket with %s approval without redeeming the coupon again", async (approvalStatus) => {
+    const pending = createPendingRegistration({ registrationKind: "proxy",couponCode: "FREE100" });
+    actionMocks.getCurrentMemberAccount.mockResolvedValue({ profile: { id: MEMBER_ID },emailConfirmed: true });
+    actionMocks.getPendingRegistrationById.mockResolvedValue(pending);
+    actionMocks.getRegistrations.mockResolvedValue([{ id: "ticket",pendingRegistrationId: pending.id,bookerMemberId: MEMBER_ID,memberId: null,
+      approvalStatus,finance: { paymentMethod: "coupon" } }]);
+    const form = new FormData(); form.set("pendingRegistrationId",pending.id);
+    expect(await createCheckoutSessionAction(form)).toMatchObject({ success: true,completed: true });
+    expect((await createCheckoutSessionAction(form))).toMatchObject({ url: expect.stringContaining(`registration=${approvalStatus === "pending" ? "approval-pending" : "confirmed"}`) });
+    expect(actionMocks.completePendingCheckout).toHaveBeenCalledWith(pending.id,"ticket");
+    expect(actionMocks.createRegistration).not.toHaveBeenCalled(); expect(actionMocks.getCoupon).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.resetAllMocks();
     actionMocks.comparePendingCheckout.mockResolvedValue({ id: "p1" });
@@ -378,7 +390,7 @@ describe("createCheckoutSessionResult", () => {
       completed: true,
     });
 
-    expect(actionMocks.getPendingRegistrationById).toHaveBeenCalledTimes(2);
+    expect(actionMocks.getPendingRegistrationById).toHaveBeenCalledTimes(3);
     expect(actionMocks.createRegistration).toHaveBeenCalledWith(expect.objectContaining({
       eventSlug: event.slug,
       memberId: MEMBER_ID,
@@ -390,7 +402,7 @@ describe("createCheckoutSessionResult", () => {
         settlementStatus: "settled",
       }),
     }));
-    expect(actionMocks.deletePendingRegistration).toHaveBeenCalledWith(pending.id);
+    expect(actionMocks.completePendingCheckout).toHaveBeenCalledWith(pending.id, "registration-1");
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/member");
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith(`/events/${event.slug}`);
   });

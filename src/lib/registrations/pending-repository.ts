@@ -8,6 +8,12 @@ export type PendingRegistration = {
   id: string;
   eventSlug: string;
   memberId: string | null;
+  registrationKind?: "self" | "proxy";
+  preferredLanguage?: "en" | "zh";
+  participantKey?: string;
+  attendeeEmail?: string | null;
+  holdExpiresAt?: string;
+  fulfillmentState?: "pending" | "paid_requires_review";
   answers: RegistrationAnswers;
   consentGiven: boolean;
   contactEmail: string;
@@ -43,6 +49,12 @@ type PendingRegistrationRow = {
   id: string;
   event_slug: string;
   member_id: string | null;
+  registration_kind?: "self" | "proxy";
+  preferred_language?: "en" | "zh";
+  participant_key?: string;
+  attendee_email?: string | null;
+  hold_expires_at?: string;
+  fulfillment_state?: "pending" | "paid_requires_review";
   answers: RegistrationAnswers;
   consent_given: boolean;
   contact_email: string;
@@ -99,6 +111,12 @@ function rowToPendingRegistration(row: PendingRegistrationRow): PendingRegistrat
     id: row.id,
     eventSlug: row.event_slug,
     memberId: row.member_id,
+    registrationKind: row.registration_kind ?? "self",
+    preferredLanguage: row.preferred_language ?? "en",
+    participantKey: row.participant_key ?? "self",
+    attendeeEmail: row.attendee_email ?? null,
+    holdExpiresAt: row.hold_expires_at,
+    fulfillmentState: row.fulfillment_state ?? "pending",
     answers: row.answers,
     consentGiven: row.consent_given,
     contactEmail: row.contact_email,
@@ -121,6 +139,11 @@ function pendingRegistrationToRow(data: NewPendingRegistration) {
   return {
     event_slug: data.eventSlug,
     member_id: data.memberId,
+    registration_kind: data.registrationKind ?? "self",
+    preferred_language: data.preferredLanguage ?? "en",
+    participant_key: data.participantKey ?? "self",
+    attendee_email: data.attendeeEmail ?? null,
+    hold_expires_at: data.holdExpiresAt ?? data.expiresAt,
     answers: data.answers,
     consent_given: data.consentGiven,
     contact_email: data.contactEmail,
@@ -154,6 +177,8 @@ export function createPendingRegistrationStore(filePath: string): PendingRegistr
       const existing = rows.find(
         (row) =>
           row.eventSlug === data.eventSlug &&
+          !row.fulfilledRegistrationId &&
+          (row.participantKey ?? "self") === (data.participantKey ?? "self") &&
           (data.memberId
             ? row.memberId === data.memberId
             : normalizeEmail(row.contactEmail) === normalizedEmail),
@@ -238,7 +263,8 @@ function createSupabasePendingRegistrationSource(): PendingRegistrationSource {
       const client = createAdminPendingRegistrationClient();
       const normalizedEmail = normalizeEmail(data.contactEmail);
       const findExisting = async () => {
-        let query = client.from("pending_registrations").select("*").eq("event_slug", data.eventSlug);
+        let query = client.from("pending_registrations").select("*").eq("event_slug", data.eventSlug)
+          .eq("participant_key", data.participantKey ?? "self").is("fulfilled_registration_id", null);
         query = data.memberId ? query.eq("member_id", data.memberId) : query.eq("contact_email", normalizedEmail);
         const result = await query.order("created_at", { ascending: false }).limit(1).maybeSingle();
         throwSupabaseError(result.error);

@@ -7,9 +7,11 @@ import { hasRemainingCapacity, isEventOpen } from "@/lib/events/availability";
 import { getEvent } from "@/lib/events/repository";
 import { buildStaffNotificationEmail, sendEmail } from "@/lib/email/adapter";
 import {
+  completePendingCheckout,
   deletePendingRegistration,
   getPendingRegistrationsByMember,
 } from "@/lib/registrations/pending-repository";
+import { hasActiveSelfRegistration, pendingParticipantIdentity } from "@/lib/registrations/participation";
 import {
   createRegistration,
   getRegistrationCountForEvent,
@@ -482,6 +484,21 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
   if (!pending) redirect("/member?registration=invalid");
   if (!account.emailConfirmed) redirect("/member?registration=member-only");
 
+  // Recover a confirmation whose ticket was committed before the response or
+  // waiver/pending finalization failed. Its seat is already counted.
+  const committed = (await getRegistrations(pending.eventSlug)).find((row) => row.pendingRegistrationId === pending.id &&
+    (row.bookerMemberId ?? row.memberId) === profile.id);
+  if (committed) {
+    if (committed.status === "cancelled") redirect("/member?registration=duplicate");
+    if (pending.registrationKind !== "proxy" && pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+      await createWaiverAcceptance({ registrationId: committed.id,legalTextSnapshot: pending.waiverTextEn,waiverTextSha: pending.waiverTextSha,
+        typedName: pending.typedName,handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null,acceptedAt: new Date().toISOString() });
+    }
+    await completePendingCheckout(pending.id, committed.id);
+    revalidatePath("/member");
+    redirect(`/member?registration=${committed.approvalStatus === "pending" ? "approval-pending" : "confirmed"}`);
+  }
+
   const event = await getEvent(pending.eventSlug);
   if (!event || !isEventOpen(event)) {
     redirect("/member?registration=unavailable");
@@ -498,13 +515,9 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     redirect("/member?registration=payment-required");
   }
   const existingRegistrations = await getRegistrations(event.slug);
-  if (
-    existingRegistrations.some(
-      (registration) => registration.memberId === profile.id,
-    )
-  ) {
+  if (pending.registrationKind !== "proxy" && hasActiveSelfRegistration(existingRegistrations, profile.id)) {
     const existingRegistration = existingRegistrations.find(
-      (registration) => registration.memberId === profile.id,
+      (registration) => registration.memberId === profile.id && registration.status !== "cancelled",
     );
     if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName && existingRegistration) {
       await createWaiverAcceptance({
@@ -523,7 +536,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
 
   const result = await createRegistration({
     eventSlug: pending.eventSlug,
-    memberId: profile.id,
+    ...pendingParticipantIdentity(pending),
     answers: pending.answers,
     consentGiven: pending.consentGiven,
     contactEmail: normalizedEmail,
@@ -531,7 +544,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     contactPhone: pending.contactPhone,
   });
 
-  if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName && result.registration) {
+  if (pending.registrationKind !== "proxy" && pending.waiverTextEn && pending.waiverTextSha && pending.typedName && result.registration) {
     await createWaiverAcceptance({
       registrationId: result.registration.id,
       legalTextSnapshot: pending.waiverTextEn,
@@ -542,7 +555,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
     });
   }
 
-  await deletePendingRegistration(pending.id);
+  await completePendingCheckout(pending.id, result.registration.id);
 
   const eventTitle = event.title.en || event.title.zh || event.slug;
   await sendEmail(buildStaffNotificationEmail(eventTitle, pending.contactName)).catch(() => {});
@@ -550,7 +563,7 @@ export async function confirmMemberPendingRegistrationAction(formData: FormData)
   revalidatePath("/member");
   revalidatePath("/member/trips");
   revalidatePath(`/events/${event.slug}`);
-  redirect("/member?registration=confirmed");
+  redirect(`/member?registration=${pending.registrationKind === "proxy" && event.requiresApproval ? "approval-pending" : "confirmed"}`);
 }
 
 export async function logoutMember() {

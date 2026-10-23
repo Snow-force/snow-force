@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RegistrationFinanceControl } from "@/components/admin/registration-finance-control";
 import { RegistrationCancellationControl } from "@/components/admin/registration-cancellation-control";
 import { RegistrationRefundControl } from "@/components/admin/registration-refund-control";
+import { GuestRegistrationControl } from "@/components/admin/guest-registration-control";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
   linkLegacyPaymentAction,
@@ -13,7 +14,7 @@ import { getRegistrationRefunds } from "@/lib/payments/refund-repository";
 import { getAllEvents, getEventAdmin } from "@/lib/events/repository";
 import { manualFinanceUpdate } from "@/lib/registrations/manual-finance";
 import { normalizeRegistrationFinance } from "@/lib/registrations/finance";
-import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "@/lib/registrations/admin-view";
+import { buildAdminRegistrationEventView, filterAdminRegistrations, registrationDisplayEmail, registrationDisplayName } from "@/lib/registrations/admin-view";
 import {
   createRegistration,
   getRegistration,
@@ -22,6 +23,7 @@ import {
   updateRegistrationStatus,
 } from "@/lib/registrations/repository";
 import type { Event } from "@/lib/types";
+import { getPaidPendingReviews } from "@/lib/registrations/payment-review";
 
 async function updateFinance(formData: FormData) {
   "use server";
@@ -72,9 +74,9 @@ async function createManualRegistration(formData: FormData) {
   if (!event || event.status === "archived") returnPath("The selected event is unavailable.");
 
   const registrations = await getRegistrations(eventSlug);
-  if (registrations.some((registration) => registration.contactEmail.trim().toLowerCase() === contactEmail)) {
-    returnPath("This email already has a registration for the selected event.");
-  }
+  const possibleDuplicate = registrations.some((registration) => registration.status !== "cancelled" &&
+    registration.contactName.trim().toLowerCase() === contactName.toLowerCase() &&
+    (registration.contactPhone === contactPhone || registration.attendeeEmail?.toLowerCase() === contactEmail));
 
   await createRegistration({
     eventSlug,
@@ -88,10 +90,13 @@ async function createManualRegistration(formData: FormData) {
     contactEmail,
     contactName,
     contactPhone,
+    attendeeEmail: contactEmail,
+    creationSource: "admin",
+    clientRequestKey: String(formData.get("clientRequestKey") ?? "") || crypto.randomUUID(),
   });
 
   revalidatePath("/admin/registrations");
-  redirect(registrationReturnPath(eventSlug, "Registration added."));
+  redirect(registrationReturnPath(eventSlug, possibleDuplicate ? "Registration added. Review a possible attendee duplicate." : "Registration added."));
 }
 
 async function cancelRegistration(formData: FormData) {
@@ -114,15 +119,16 @@ async function cancelRegistration(formData: FormData) {
 
 export default async function AdminRegistrationsPage(
   props: {
-    searchParams?: Promise<{ event?: string | string[]; financeSaved?: string | string[]; notice?: string | string[] }>;
+    searchParams?: Promise<{ event?: string | string[]; financeSaved?: string | string[]; notice?: string | string[]; q?: string; booker?: string; payment?: string; approval?: string }>;
   }
 ) {
   const searchParams = await props.searchParams ?? {};
   const staff = await requireAdmin();
-  const [registrations, activeEvents, refunds] = await Promise.all([
+  const [registrations, activeEvents, refunds, paymentReviews] = await Promise.all([
     getRegistrations(),
     getAllEvents(),
     getRegistrationRefunds(),
+    getPaidPendingReviews(),
   ]);
   const eventsBySlug = new Map<string, Event>(activeEvents.map((event) => [event.slug, event]));
   const refundsByRegistration = new Map<string, typeof refunds>();
@@ -142,9 +148,15 @@ export default async function AdminRegistrationsPage(
     eventsBySlug,
     requestedEventSlug: eventQueryValue(searchParams?.event),
   });
-  const exportHref = view.selectedEventSlug
-    ? `/admin/registrations/export?event=${encodeURIComponent(view.selectedEventSlug)}`
-    : "/admin/registrations/export";
+  const filters = { query: searchParams.q, booker: searchParams.booker, payment: searchParams.payment, approval: searchParams.approval };
+  const visibleRegistrations = filterAdminRegistrations(view.selectedRegistrations, filters);
+  const exportQuery = new URLSearchParams();
+  if (view.selectedEventSlug) exportQuery.set("event", view.selectedEventSlug);
+  if (filters.query) exportQuery.set("q", filters.query);
+  if (filters.booker) exportQuery.set("booker", filters.booker);
+  if (filters.payment) exportQuery.set("payment", filters.payment);
+  if (filters.approval) exportQuery.set("approval", filters.approval);
+  const exportHref = `/admin/registrations/export?${exportQuery}`;
   const financeSavedId = eventQueryValue(searchParams?.financeSaved);
   const notice = eventQueryValue(searchParams?.notice);
 
@@ -161,7 +173,13 @@ export default async function AdminRegistrationsPage(
           {notice}
         </p>
       ) : null}
+      {paymentReviews.length > 0 && <section className="mt-5 rounded border border-red-200 bg-red-50 p-4 text-sm" aria-label="Paid requires review">
+        <h3 className="font-semibold">Paid requires review / 已付款待核对</h3>
+        <p className="mt-2">Verify the existing Stripe payment before issuing a ticket or an individual refund. Do not collect another payment.</p>
+        <ul className="mt-3 space-y-2">{paymentReviews.map((row) => <li key={row.id}>{row.event_slug} · pending: {row.id} · booker: {row.member_id}</li>)}</ul>
+      </section>}
       <form action={createManualRegistration} className="mt-6 grid gap-3 rounded border border-gray-200 bg-gray-50 p-4 md:grid-cols-4 md:items-end">
+        <input type="hidden" name="clientRequestKey" value={crypto.randomUUID()} />
         <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
           Event
           <select name="eventSlug" required className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm">
@@ -205,6 +223,10 @@ export default async function AdminRegistrationsPage(
               ))}
             </select>
           </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">Attendee / 参加者<input name="q" defaultValue={filters.query} className="rounded border px-3 py-2" /></label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">Booker ID / 代报名会员<input name="booker" defaultValue={filters.booker} className="rounded border px-3 py-2" /></label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">Payment / 付款状态<select name="payment" defaultValue={filters.payment ?? ""} className="rounded border px-3 py-2"><option value="">All / 全部</option>{["pending","paid","waived","refunded"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">Approval / 审批<select name="approval" defaultValue={filters.approval ?? ""} className="rounded border px-3 py-2"><option value="">All / 全部</option>{["pending","approved","rejected","not_required"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
           <button className="btn-primary px-4 py-2 text-sm">View</button>
         </form>
       ) : null}
@@ -213,7 +235,7 @@ export default async function AdminRegistrationsPage(
           <thead>
             <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-400">
               <th className="py-3 pr-4">Registrant</th>
-              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Booker / Contact</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Deposit</th>
               <th className="px-4 py-3">Deposit Status</th>
@@ -225,16 +247,18 @@ export default async function AdminRegistrationsPage(
           <tbody className="divide-y divide-gray-100">
             {registrations.length === 0 ? (
               <tr><td colSpan={8} className="py-8 text-center text-gray-400">No registrations found.</td></tr>
-            ) : view.selectedRegistrations.length === 0 ? (
+            ) : visibleRegistrations.length === 0 ? (
               <tr><td colSpan={8} className="py-8 text-center text-gray-400">No registrations for this event.</td></tr>
-            ) : view.selectedRegistrations.map((registration) => {
+            ) : visibleRegistrations.map((registration) => {
               const finance = normalizeRegistrationFinance(registration.finance);
               return (
                 <tr key={registration.id}>
                   <td className="py-3 pr-4">
                     <p className="font-medium text-gray-900">{registrationDisplayName(registration)}</p>
+                    <p className="mt-1 text-xs text-gray-500">{registration.registrationKind ?? "self"} · {registration.creationSource ?? "legacy"} · {registration.attendeeEmail ?? ""}</p>
+                    <GuestRegistrationControl registration={registration} />
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{registrationDisplayEmail(registration)}</td>
+                  <td className="px-4 py-3 text-gray-500">{registrationDisplayEmail(registration)}<p className="mt-1 text-xs">{registration.bookerMemberId ?? registration.memberId ?? "Staff entry"}</p></td>
                   <td className="px-4 py-3">
                     <p>{registration.status}</p>
                     {registration.status === "cancelled" ? (

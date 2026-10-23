@@ -125,6 +125,7 @@ export function buildMemberDashboard({
 }: BuildMemberDashboardInput): MemberDashboardData {
   const eventsBySlug = new Map(events.map((event) => [event.slug, event]));
   const trips = registrations
+    .filter((registration) => registration.registrationKind !== "proxy" || registration.memberId === profile.id)
     .map((registration) => {
       const event = eventsBySlug.get(registration.eventSlug);
       return event ? { event, registration } : undefined;

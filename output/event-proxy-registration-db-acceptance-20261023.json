@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-10-23T22:19:21.417Z",
+  "target": "isolated localhost PostgreSQL",
+  "productionWrites": 0,
+  "checks": [
+    "migration blocks obsolete production coupon semantics before writing schema",
+    "migration does not revive abandoned legacy forms; trip invitations cover the event week",
+    "current open event pricing and approval matrix preserves payment, consent and review separately",
+    "rejecting a paid approval releases its place, retains finance, revokes invitations and forbids reactivation",
+    "transactional editor RPC persists rollout settings",
+    "legacy identity backfill and default-off flag",
+    "cancelled self can rebook; active self cannot duplicate",
+    "one payer can book same-name friends sharing a contact email",
+    "last seat concurrency and manual writer use the same lock",
+    "proxy cap includes active holds and confirmed friends, not self",
+    "expired unused holds release; uncertain Stripe checkout retains the seat",
+    "invitation rotation, adult and guardian signatures, replay and guest check-in",
+    "booker RLS isolates records and guest RPCs deny anonymous/authenticated callers",
+    "single-use and multi-use coupons share the atomic capacity guard",
+    "turning the event flag off stops new friends while existing checkout holds can complete",
+    "real local Next approval journey and bilingual ticket gating"
+  ]
+}

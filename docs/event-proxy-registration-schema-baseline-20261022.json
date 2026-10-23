@@ -1,0 +1,1093 @@
+{
+  "columns": [
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "slug",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "status",
+      "is_nullable": "NO",
+      "column_default": "'draft'::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "registration_state",
+      "is_nullable": "NO",
+      "column_default": "'closed'::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "title_zh",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "title_en",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "date",
+      "data_type": "date",
+      "table_name": "events",
+      "column_name": "event_date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "time",
+      "data_type": "time without time zone",
+      "table_name": "events",
+      "column_name": "meet_time",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "meet_location_zh",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "meet_location_en",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "activity_location_zh",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "activity_location_en",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "location_url",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "cover_image",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "int4",
+      "data_type": "integer",
+      "table_name": "events",
+      "column_name": "capacity",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "events",
+      "column_name": "registration_close_at",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "bool",
+      "data_type": "boolean",
+      "table_name": "events",
+      "column_name": "requires_approval",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "udt_name": "bool",
+      "data_type": "boolean",
+      "table_name": "events",
+      "column_name": "allow_waitlist",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "udt_name": "bool",
+      "data_type": "boolean",
+      "table_name": "events",
+      "column_name": "allow_cancellation",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "fee_amount",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "payment_instructions_zh",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "payment_instructions_en",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "seo_title_zh",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "seo_title_en",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "seo_description_zh",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "seo_description_en",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "events",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "events",
+      "column_name": "updated_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "payment_model",
+      "is_nullable": "NO",
+      "column_default": "'free'::text"
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "events",
+      "column_name": "deposit_amount",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "deposit_currency",
+      "is_nullable": "NO",
+      "column_default": "'usd'::text"
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "events",
+      "column_name": "full_payment_amount",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "waiver_text_en",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "events",
+      "column_name": "waiver_text_sha",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "jsonb",
+      "data_type": "jsonb",
+      "table_name": "events",
+      "column_name": "review_config",
+      "is_nullable": "NO",
+      "column_default": "'{}'::jsonb"
+    },
+    {
+      "udt_name": "uuid",
+      "data_type": "uuid",
+      "table_name": "pending_registrations",
+      "column_name": "id",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "event_slug",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "uuid",
+      "data_type": "uuid",
+      "table_name": "pending_registrations",
+      "column_name": "member_id",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "jsonb",
+      "data_type": "jsonb",
+      "table_name": "pending_registrations",
+      "column_name": "answers",
+      "is_nullable": "NO",
+      "column_default": "'{}'::jsonb"
+    },
+    {
+      "udt_name": "bool",
+      "data_type": "boolean",
+      "table_name": "pending_registrations",
+      "column_name": "consent_given",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "contact_email",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "contact_name",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "contact_phone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "token_hash",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "pending_registrations",
+      "column_name": "expires_at",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "pending_registrations",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "waiver_text_en",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "waiver_text_sha",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "typed_name",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "coupon_code",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "pending_registrations",
+      "column_name": "handwritten_signature_data_url",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "jsonb",
+      "data_type": "jsonb",
+      "table_name": "pending_registrations",
+      "column_name": "checkout_attempt",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "uuid",
+      "data_type": "uuid",
+      "table_name": "pending_registrations",
+      "column_name": "fulfilled_registration_id",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "uuid",
+      "data_type": "uuid",
+      "table_name": "registrations",
+      "column_name": "id",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "event_slug",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "uuid",
+      "data_type": "uuid",
+      "table_name": "registrations",
+      "column_name": "member_id",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "jsonb",
+      "data_type": "jsonb",
+      "table_name": "registrations",
+      "column_name": "answers",
+      "is_nullable": "NO",
+      "column_default": "'{}'::jsonb"
+    },
+    {
+      "udt_name": "bool",
+      "data_type": "boolean",
+      "table_name": "registrations",
+      "column_name": "consent_given",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "contact_email",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "contact_name",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "contact_phone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "status",
+      "is_nullable": "NO",
+      "column_default": "'confirmed'::text"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "registrations",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "registrations",
+      "column_name": "updated_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "registrations",
+      "column_name": "deposit_amount",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "deposit_status",
+      "is_nullable": "NO",
+      "column_default": "'pending'::text"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "registrations",
+      "column_name": "deposit_paid_at",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "payment_method",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "payment_note",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "lodging_assignment",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "registrations",
+      "column_name": "final_amount",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "registrations",
+      "column_name": "settlement_amount",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "settlement_status",
+      "is_nullable": "NO",
+      "column_default": "'not_started'::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "settlement_note",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "coupon_code",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "registrations",
+      "column_name": "discount_amount",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "attendance_status",
+      "is_nullable": "NO",
+      "column_default": "'unmarked'::text"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "attendance_source",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "registrations",
+      "column_name": "attendance_marked_at",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "payment_currency",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "stripe_checkout_session_id",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "registrations",
+      "column_name": "stripe_payment_intent_id",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "udt_name": "numeric",
+      "data_type": "numeric",
+      "table_name": "registrations",
+      "column_name": "refunded_amount",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "udt_name": "int8",
+      "data_type": "bigint",
+      "table_name": "waiver_acceptances",
+      "column_name": "id",
+      "is_nullable": "NO",
+      "column_default": "nextval('waiver_acceptances_id_seq'::regclass)"
+    },
+    {
+      "udt_name": "uuid",
+      "data_type": "uuid",
+      "table_name": "waiver_acceptances",
+      "column_name": "registration_id",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "waiver_acceptances",
+      "column_name": "legal_text_snapshot",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "waiver_acceptances",
+      "column_name": "waiver_text_sha",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "waiver_acceptances",
+      "column_name": "typed_name",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "waiver_acceptances",
+      "column_name": "accepted_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "timestamptz",
+      "data_type": "timestamp with time zone",
+      "table_name": "waiver_acceptances",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "udt_name": "text",
+      "data_type": "text",
+      "table_name": "waiver_acceptances",
+      "column_name": "handwritten_signature_data_url",
+      "is_nullable": "YES",
+      "column_default": null
+    }
+  ],
+  "indexes": [
+    {
+      "indexdef": "CREATE UNIQUE INDEX events_pkey ON public.events USING btree (slug)",
+      "indexname": "events_pkey",
+      "tablename": "events"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_events_payment_model ON public.events USING btree (payment_model)",
+      "indexname": "idx_events_payment_model",
+      "tablename": "events"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_events_status_event_date ON public.events USING btree (status, event_date DESC)",
+      "indexname": "idx_events_status_event_date",
+      "tablename": "events"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX pending_registrations_pkey ON public.pending_registrations USING btree (id)",
+      "indexname": "pending_registrations_pkey",
+      "tablename": "pending_registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX pending_registrations_token_hash_key ON public.pending_registrations USING btree (token_hash)",
+      "indexname": "pending_registrations_token_hash_key",
+      "tablename": "pending_registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_pending_registrations_event_email ON public.pending_registrations USING btree (event_slug, lower(contact_email), expires_at DESC)",
+      "indexname": "idx_pending_registrations_event_email",
+      "tablename": "pending_registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_pending_registrations_expires ON public.pending_registrations USING btree (expires_at)",
+      "indexname": "idx_pending_registrations_expires",
+      "tablename": "pending_registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX pending_registrations_one_member_per_event ON public.pending_registrations USING btree (event_slug, member_id) WHERE (member_id IS NOT NULL)",
+      "indexname": "pending_registrations_one_member_per_event",
+      "tablename": "pending_registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_pkey ON public.registrations USING btree (id)",
+      "indexname": "registrations_pkey",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_coupon_code ON public.registrations USING btree (coupon_code) WHERE (coupon_code IS NOT NULL)",
+      "indexname": "idx_registrations_coupon_code",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_deposit_status ON public.registrations USING btree (deposit_status)",
+      "indexname": "idx_registrations_deposit_status",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_event ON public.registrations USING btree (event_slug)",
+      "indexname": "idx_registrations_event",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_event_attendance ON public.registrations USING btree (event_slug, attendance_status)",
+      "indexname": "idx_registrations_event_attendance",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_event_status_created ON public.registrations USING btree (event_slug, status, created_at DESC)",
+      "indexname": "idx_registrations_event_status_created",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_member ON public.registrations USING btree (member_id)",
+      "indexname": "idx_registrations_member",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_settlement_status ON public.registrations USING btree (settlement_status)",
+      "indexname": "idx_registrations_settlement_status",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_registrations_status ON public.registrations USING btree (status)",
+      "indexname": "idx_registrations_status",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_coupon_code_used_once ON public.registrations USING btree (coupon_code) WHERE (coupon_code IS NOT NULL)",
+      "indexname": "registrations_coupon_code_used_once",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_one_active_member_per_event ON public.registrations USING btree (event_slug, member_id) WHERE ((member_id IS NOT NULL) AND (status <> 'cancelled'::text))",
+      "indexname": "registrations_one_active_member_per_event",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_one_email_per_event ON public.registrations USING btree (event_slug, lower(contact_email))",
+      "indexname": "registrations_one_email_per_event",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_one_member_per_event ON public.registrations USING btree (event_slug, member_id) WHERE (member_id IS NOT NULL)",
+      "indexname": "registrations_one_member_per_event",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_stripe_checkout_session_id_unique ON public.registrations USING btree (stripe_checkout_session_id) WHERE (stripe_checkout_session_id IS NOT NULL)",
+      "indexname": "registrations_stripe_checkout_session_id_unique",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX registrations_stripe_payment_intent_id_unique ON public.registrations USING btree (stripe_payment_intent_id) WHERE (stripe_payment_intent_id IS NOT NULL)",
+      "indexname": "registrations_stripe_payment_intent_id_unique",
+      "tablename": "registrations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX waiver_acceptances_pkey ON public.waiver_acceptances USING btree (id)",
+      "indexname": "waiver_acceptances_pkey",
+      "tablename": "waiver_acceptances"
+    },
+    {
+      "indexdef": "CREATE INDEX idx_waiver_acceptances_registration ON public.waiver_acceptances USING btree (registration_id)",
+      "indexname": "idx_waiver_acceptances_registration",
+      "tablename": "waiver_acceptances"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX waiver_acceptances_one_per_registration ON public.waiver_acceptances USING btree (registration_id)",
+      "indexname": "waiver_acceptances_one_per_registration",
+      "tablename": "waiver_acceptances"
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "tablename": "events",
+      "policyname": "Staff can insert events",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((status = 'published'::text) OR private.is_staff())",
+      "tablename": "events",
+      "policyname": "Public can read published events or staff can read events",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "private.is_staff()",
+      "tablename": "events",
+      "policyname": "Staff can delete events",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "private.is_staff()",
+      "tablename": "events",
+      "policyname": "Staff can update events",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "tablename": "pending_registrations",
+      "policyname": "Staff can insert pending registrations",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "private.is_staff()",
+      "tablename": "pending_registrations",
+      "policyname": "Staff can delete pending registrations",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "private.is_staff()",
+      "tablename": "pending_registrations",
+      "policyname": "Staff can read pending registrations",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "private.is_staff()",
+      "tablename": "pending_registrations",
+      "policyname": "Staff can update pending registrations",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(private.is_staff() OR (member_id IN ( SELECT member_profiles.id\n   FROM member_profiles\n  WHERE (member_profiles.user_id = ( SELECT auth.uid() AS uid)))))",
+      "tablename": "registrations",
+      "policyname": "Members can read own registrations or staff can read registrati",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "private.is_staff()",
+      "tablename": "registrations",
+      "policyname": "Staff can delete registrations",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "tablename": "registrations",
+      "policyname": "Staff can insert registrations",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "private.is_staff()",
+      "tablename": "registrations",
+      "policyname": "Staff can update registrations",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(private.is_staff() OR (registration_id IN ( SELECT registrations.id\n   FROM registrations\n  WHERE (registrations.member_id IN ( SELECT member_profiles.id\n           FROM member_profiles\n          WHERE (member_profiles.user_id = ( SELECT auth.uid() AS uid)))))))",
+      "tablename": "waiver_acceptances",
+      "policyname": "Members can read own waiver acceptances or staff can read waive",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "private.is_staff()",
+      "tablename": "waiver_acceptances",
+      "policyname": "Staff can delete waiver acceptances",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "tablename": "waiver_acceptances",
+      "policyname": "Staff can insert waiver acceptances",
+      "with_check": "private.is_staff()"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "private.is_staff()",
+      "tablename": "waiver_acceptances",
+      "policyname": "Staff can update waiver acceptances",
+      "with_check": "private.is_staff()"
+    }
+  ],
+  "captured_at": "2026-10-22T19:56:53.324171+00:00",
+  "constraints": [
+    {
+      "conname": "events_capacity_check",
+      "definition": "CHECK ((capacity >= 0))",
+      "table_name": "events"
+    },
+    {
+      "conname": "events_deposit_currency_check",
+      "definition": "CHECK ((deposit_currency = ANY (ARRAY['usd'::text, 'cny'::text, 'eur'::text, 'gbp'::text, 'jpy'::text])))",
+      "table_name": "events"
+    },
+    {
+      "conname": "events_payment_model_check",
+      "definition": "CHECK ((payment_model = ANY (ARRAY['free'::text, 'deposit'::text, 'full_prepay'::text])))",
+      "table_name": "events"
+    },
+    {
+      "conname": "events_pkey",
+      "definition": "PRIMARY KEY (slug)",
+      "table_name": "events"
+    },
+    {
+      "conname": "events_registration_state_check",
+      "definition": "CHECK ((registration_state = ANY (ARRAY['open'::text, 'closed'::text, 'full'::text])))",
+      "table_name": "events"
+    },
+    {
+      "conname": "events_status_check",
+      "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'archived'::text])))",
+      "table_name": "events"
+    },
+    {
+      "conname": "registrations_attendance_source_check",
+      "definition": "CHECK (((attendance_source IS NULL) OR (attendance_source = ANY (ARRAY['checkin_qr'::text, 'admin'::text]))))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_attendance_status_check",
+      "definition": "CHECK ((attendance_status = ANY (ARRAY['unmarked'::text, 'attended'::text, 'no_show'::text])))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_deposit_status_check",
+      "definition": "CHECK ((deposit_status = ANY (ARRAY['pending'::text, 'paid'::text, 'refunded'::text, 'waived'::text])))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_event_slug_fkey",
+      "definition": "FOREIGN KEY (event_slug) REFERENCES events(slug) ON DELETE CASCADE",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_member_id_fkey",
+      "definition": "FOREIGN KEY (member_id) REFERENCES member_profiles(id)",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_payment_currency_check",
+      "definition": "CHECK (((payment_currency IS NULL) OR (payment_currency = ANY (ARRAY['usd'::text, 'cny'::text, 'eur'::text, 'gbp'::text, 'jpy'::text]))))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_pkey",
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_refunded_amount_check",
+      "definition": "CHECK ((refunded_amount >= (0)::numeric))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_settlement_status_check",
+      "definition": "CHECK ((settlement_status = ANY (ARRAY['not_started'::text, 'pending_balance'::text, 'pending_refund'::text, 'settled'::text])))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "registrations_status_check",
+      "definition": "CHECK ((status = ANY (ARRAY['confirmed'::text, 'cancelled'::text, 'waitlist'::text])))",
+      "table_name": "registrations"
+    },
+    {
+      "conname": "pending_checkout_attempt_object",
+      "definition": "CHECK (((checkout_attempt IS NULL) OR ((jsonb_typeof(checkout_attempt) = 'object'::text) AND (checkout_attempt ? 'id'::text) AND (checkout_attempt ? 'params'::text))))",
+      "table_name": "pending_registrations"
+    },
+    {
+      "conname": "pending_registrations_event_slug_fkey",
+      "definition": "FOREIGN KEY (event_slug) REFERENCES events(slug) ON DELETE CASCADE",
+      "table_name": "pending_registrations"
+    },
+    {
+      "conname": "pending_registrations_fulfilled_registration_id_fkey",
+      "definition": "FOREIGN KEY (fulfilled_registration_id) REFERENCES registrations(id)",
+      "table_name": "pending_registrations"
+    },
+    {
+      "conname": "pending_registrations_member_id_fkey",
+      "definition": "FOREIGN KEY (member_id) REFERENCES member_profiles(id)",
+      "table_name": "pending_registrations"
+    },
+    {
+      "conname": "pending_registrations_pkey",
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "pending_registrations"
+    },
+    {
+      "conname": "pending_registrations_token_hash_key",
+      "definition": "UNIQUE (token_hash)",
+      "table_name": "pending_registrations"
+    },
+    {
+      "conname": "waiver_acceptances_pkey",
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "waiver_acceptances"
+    },
+    {
+      "conname": "waiver_acceptances_registration_id_fkey",
+      "definition": "FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE",
+      "table_name": "waiver_acceptances"
+    }
+  ]
+}

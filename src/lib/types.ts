@@ -173,6 +173,8 @@ export interface Event {
   requiresApproval: boolean;
   allowWaitlist: boolean;
   allowCancellation: boolean;
+  allowProxyRegistrations?: boolean;
+  maxProxyRegistrations?: number;
   feeAmount: string;
   paymentModel: "free" | "deposit" | "full_prepay";
   depositAmount: number | null;
@@ -204,6 +206,14 @@ export interface Registration {
   id: string;
   eventSlug: string;
   memberId: string | null;
+  bookerMemberId?: string | null;
+  registrationKind?: "self" | "proxy";
+  attendeeEmail?: string | null;
+  attendeeConfirmationStatus?: "not_required" | "pending" | "accepted" | "declined";
+  approvalStatus?: "not_required" | "pending" | "approved" | "rejected";
+  clientRequestKey?: string | null;
+  pendingRegistrationId?: string | null;
+  creationSource?: "member" | "admin" | "legacy";
   answers: RegistrationAnswers;
   consentGiven: boolean;
   contactEmail: string;

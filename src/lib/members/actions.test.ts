@@ -26,6 +26,7 @@ const mockSaveEvent = vi.hoisted(() => vi.fn());
 const mockUnsaveEvent = vi.hoisted(() => vi.fn());
 const mockUpsertMemberEquipment = vi.hoisted(() => vi.fn());
 const mockDeletePendingRegistration = vi.hoisted(() => vi.fn());
+const mockCompletePendingCheckout = vi.hoisted(() => vi.fn());
 const mockGetPendingRegistrationsByMember = vi.hoisted(() => vi.fn());
 const mockCreateRegistration = vi.hoisted(() => vi.fn());
 const mockGetRegistrationCountForEvent = vi.hoisted(() => vi.fn());
@@ -109,6 +110,7 @@ vi.mock("@/lib/email/adapter", () => ({
 
 vi.mock("@/lib/registrations/pending-repository", () => ({
   deletePendingRegistration: mockDeletePendingRegistration,
+  completePendingCheckout: mockCompletePendingCheckout,
   getPendingRegistrationsByMember: mockGetPendingRegistrationsByMember,
 }));
 
@@ -533,6 +535,15 @@ describe("member security and supporting actions", () => {
 });
 
 describe("confirmMemberPendingRegistrationAction", () => {
+  it.each(["not_required","pending"] as const)("recovers an already-committed friend ticket with %s approval without consuming a second seat or accepting a booker signature", async (approvalStatus) => {
+    const profile = signedInProfile();
+    mockGetPendingRegistrationsByMember.mockResolvedValue([{ id: "pending",memberId: profile.id,eventSlug: "ride",registrationKind: "proxy",typedName: "Booker",waiverTextEn: "Terms",waiverTextSha: "sha" }]);
+    mockGetRegistrations.mockResolvedValue([{ id: "ticket",pendingRegistrationId: "pending",bookerMemberId: profile.id,memberId: null,status: "confirmed",approvalStatus }]);
+    const form = new FormData(); form.set("pendingId","pending");
+    await expect(confirmMemberPendingRegistrationAction(form)).rejects.toThrow(`REDIRECT:/member?registration=${approvalStatus === "pending" ? "approval-pending" : "confirmed"}`);
+    expect(mockCompletePendingCheckout).toHaveBeenCalledWith("pending","ticket");
+    expect(mockCreateRegistration).not.toHaveBeenCalled(); expect(mockCreateWaiverAcceptance).not.toHaveBeenCalled();
+  });
   function signedInProfile() {
     const profile = { id: "profile-1", userId: "auth-user-1" };
     mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
@@ -541,10 +552,10 @@ describe("confirmMemberPendingRegistrationAction", () => {
     return profile;
   }
 
-  it("creates a registration, captures the waiver, and removes only the member pending record", async () => {
+  it("creates a registration, captures the waiver, and retains a fulfilled pending audit record", async () => {
     const profile = signedInProfile();
     const pending = {
-      id: "pending-1", eventSlug: "mammoth-weekend", answers: { level: "intermediate" }, consentGiven: true,
+      id: "pending-1", memberId: profile.id, eventSlug: "mammoth-weekend", answers: { level: "intermediate" }, consentGiven: true,
       contactEmail: " RIDER@EXAMPLE.COM ", contactName: "Rider", contactPhone: "555-0100",
       waiverTextEn: "Waiver", waiverTextSha: "sha-1", typedName: "Rider", handwrittenSignatureDataUrl: null,
     };
@@ -566,7 +577,7 @@ describe("confirmMemberPendingRegistrationAction", () => {
     expect(mockGetPendingRegistrationsByMember).toHaveBeenCalledWith(profile.id);
     expect(mockCreateRegistration).toHaveBeenCalledWith(expect.objectContaining({ memberId: profile.id, contactEmail: "rider@example.com" }));
     expect(mockCreateWaiverAcceptance).toHaveBeenCalledWith(expect.objectContaining({ registrationId: "registration-1", typedName: "Rider" }));
-    expect(mockDeletePendingRegistration).toHaveBeenCalledWith(pending.id);
+    expect(mockCompletePendingCheckout).toHaveBeenCalledWith(pending.id, "registration-1");
   });
 
   it("does not create another registration when this member is already registered", async () => {

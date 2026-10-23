@@ -8,6 +8,7 @@ import type { Bilingual, Event, EventRegistrationQuestion, MemberProfile } from 
 import { registerForEvent } from "@/lib/registrations/actions";
 import { createCheckoutSessionAction } from "@/lib/payments/actions";
 import { WaiverSignaturePad } from "./waiver-signature-pad";
+import { participantQuestions } from "@/lib/registrations/participation";
 
 type Props = {
   event: Event;
@@ -271,6 +272,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const searchParams = useSearchParams();
   const [isSubmitting, startTransition] = useTransition();
   const [formData, setFormData] = useState<FormDataState>({});
+  const [registrationKind, setRegistrationKind] = useState<"self" | "proxy">("self");
+  const requestKey = useRef<string | undefined>(undefined);
+  const questions = participantQuestions(event.registrationQuestions, registrationKind);
   const [consent, setConsent] = useState(false);
   const [waiverScrolled, setWaiverScrolled] = useState(false);
   const [waiverAccepted, setWaiverAccepted] = useState(false);
@@ -283,6 +287,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   const [pendingRegistrationId, setPendingRegistrationId] = useState("");
   const [paymentQuote, setPaymentQuote] = useState<PaymentQuote>(undefined);
   const [registrationCompleted, setRegistrationCompleted] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [couponCode, setCouponCode] = useState("");
@@ -315,6 +320,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         consentGiven: input.consentGiven,
         lang,
         couponCode,
+        registrationKind,
+        clientRequestKey: requestKey.current ??= crypto.randomUUID(),
+        proxyConsent: registrationKind === "proxy" && consent,
         ...(input.waiverTextEn && {
           waiverTextEn: input.waiverTextEn,
           waiverTextSha: input.waiverTextSha,
@@ -328,6 +336,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           setPendingConfirmation(result.confirmation);
           setPendingRegistrationId(result.pendingRegistrationId);
           setPaymentQuote(result.paymentQuote);
+          setDuplicateWarning(result.duplicateWarning ?? false);
         } else {
           setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
         }
@@ -343,7 +352,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
 
     const newErrors: FormErrors = {};
 
-    for (const question of event.registrationQuestions) {
+    for (const question of questions) {
       const value = formData[question.key];
       const missing =
         value === undefined ||
@@ -378,7 +387,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
       return;
     }
 
-    if (event.waiverTextEn) {
+    if (event.waiverTextEn && registrationKind === "self") {
       setShowWaiverModal(true);
     } else {
       if (!consent) {
@@ -431,6 +440,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
               zh: `${t(event.title)} 的报名已提交到会员主页，请在那里点击确认完成报名。`,
             })}
           </p>
+          {duplicateWarning && <p role="status" className="mt-3 text-sm text-amber-800">{t({ en: "A similar attendee already has a ticket. Check your friends’ registrations before confirming another ticket.", zh: "已有资料相近的参加者，请先核对朋友的报名，再确认新票据。" })}</p>}
           <p className="mt-2 text-xs text-green-600">
             {t({
               en: "No second email verification is needed while you are logged in.",
@@ -504,6 +514,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
 
     return (
       <div className="card border-blue-200 bg-blue-50 text-center">
+        {duplicateWarning && <p role="status" className="mb-3 text-sm text-amber-800">{t({ en: "A similar attendee already has a ticket. Check your friends’ registrations before paying for another ticket.", zh: "已有资料相近的参加者，请先核对朋友的报名，再支付新票据。" })}</p>}
         <h3 className="text-lg font-semibold text-blue-950">
           {isFree ? t({ en: "Coupon applied", zh: "优惠码已应用" }) : t({ en: "Payment required", zh: "需要支付" })}
         </h3>
@@ -609,6 +620,25 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           {t({ en: "Register for this Event", zh: "报名参加此活动" })}
         </h3>
 
+        {event.allowProxyRegistrations ? (
+          <fieldset className="space-y-3">
+            <legend className="label">{t({ en: "Who is attending?", zh: "谁参加活动？" })}</legend>
+            <div className="flex flex-wrap gap-4">
+              {(["self", "proxy"] as const).map((kind) => <label key={kind} className="flex min-h-11 items-center gap-2 text-sm">
+                <input type="radio" name="registrationKind" value={kind} checked={registrationKind === kind}
+                  disabled={isSubmitting}
+                  onChange={() => { setRegistrationKind(kind); setFormData({}); setConsent(false); setTypedName(""); setHandwrittenSignatureDataUrl(""); setErrors({}); requestKey.current = undefined; }} />
+                {t(kind === "self" ? { en: "Myself", zh: "为自己报名" } : { en: "A friend", zh: "替朋友报名" })}
+              </label>)}
+            </div>
+            {registrationKind === "proxy" && <p className="text-sm leading-6 text-gray-600">
+              {t({ en: `Order contact: ${memberProfile.email}. Enter your friend’s own answers. Each friend has a separate payment and must personally accept their invitation before check-in.`, zh: `订单联系人：${memberProfile.email}。请填写这位朋友自己的答案。每位朋友独立付款，并须亲自通过邀请确认授权后才能核销。` })}
+            </p>}
+          </fieldset>
+        ) : null}
+
+        {event.requiresApproval && registrationKind === "proxy" && <p role="note" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{t({ en: "Each friend’s payment reserves a place for staff review. Payment alone does not approve attendance. Your friend must also accept their personal invitation. If declined, contact staff for a refund under the event terms.", zh: "每位朋友付款后预留名额并等待工作人员审核，付款不代表获准参加。朋友还需亲自确认邀请。如未获批准，请按活动条款联系工作人员退款。" })}</p>}
+
         {paymentCancelled && event.paymentModel !== "free" ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             {t({
@@ -618,7 +648,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           </div>
         ) : null}
 
-        {event.registrationQuestions.map((question) =>
+        {questions.map((question) =>
           renderQuestion(question, formData[question.key], (v) => updateField(question.key, v), errors[question.key], lang),
         )}
 
@@ -642,7 +672,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           </div>
         ) : null}
 
-        {!event.waiverTextEn && (
+        {(!event.waiverTextEn || registrationKind === "proxy") && (
           <div>
             <label className="flex items-start gap-3">
               <input
@@ -655,7 +685,10 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
                 }}
               />
               <span className="text-sm text-gray-600">
-                {t({
+                {t(registrationKind === "proxy" ? {
+                  en: "My friend has permitted me to submit these details. They will accept the event terms and sign their own waiver separately. This does not opt them into marketing or photo consent.",
+                  zh: "朋友已同意我代为提交这些资料。朋友将独立接受活动条款并签署免责；这不代表同意营销订阅或肖像授权。",
+                } : {
                   en: "I agree to the event terms and understand that SnowForce will use my contact information for event communications only.",
                   zh: "我同意活动条款，并了解 SnowForce 仅会将我的联系信息用于本次活动沟通。",
                 })}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { MemberDashboardData } from "@/lib/members/dashboard";
 import type { MemberProfile, Registration } from "@/lib/types";
 import { RegistrationHistory } from "./registration-history";
+import { ProxyRegistrationList } from "./proxy-registration-list";
 import { MemberSecondaryShell } from "./member-secondary-shell";
 
 type MemberTripsViewProps = {
@@ -78,7 +79,8 @@ export function MemberTripsView({ dashboard, profile, registrations, user }: Mem
         )}
       </section>
 
-      <RegistrationHistory registrations={registrations} />
+      <ProxyRegistrationList registrations={registrations} />
+      <RegistrationHistory registrations={registrations.filter((row) => row.registrationKind !== "proxy")} />
     </MemberSecondaryShell>
   );
 }

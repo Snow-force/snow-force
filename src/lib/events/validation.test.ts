@@ -21,6 +21,13 @@ const draftInput = {
 };
 
 describe("event editor validation", () => {
+  it("validates the event-scoped proxy limit and defaults existing payloads off", () => {
+    expect(parseEventEditorInput(draftInput)).toMatchObject({ success: true, data: { allowProxyRegistrations: false, maxProxyRegistrations: 5 } });
+    expect(parseEventEditorInput({ ...draftInput, maxProxyRegistrations: 0 }).success).toBe(false);
+    expect(parseEventEditorInput({ ...draftInput, maxProxyRegistrations: 21 }).success).toBe(false);
+    expect(parseEventEditorInput({ ...draftInput, allowProxyRegistrations: true, requiresApproval: true }).success).toBe(true);
+    expect(parseEventEditorInput({ ...draftInput, allowProxyRegistrations: true, maxProxyRegistrations: 3 })).toMatchObject({ success: true, data: { allowProxyRegistrations: true, maxProxyRegistrations: 3 } });
+  });
   it("parses a modular editor payload into an event aggregate", () => {
     const result = parseEventEditorInput({
       slug: "big-bear-day",

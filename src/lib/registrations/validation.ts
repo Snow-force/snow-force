@@ -1,5 +1,5 @@
 import type { EventRegistrationQuestion, RegistrationAnswers } from "@/lib/types";
-import { ensureRequiredRegistrationQuestions } from "../events/required-registration-questions";
+import { participantQuestions } from "./participation";
 export type { RegistrationAnswerValue, RegistrationAnswers } from "@/lib/types";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -7,11 +7,12 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function validateRegistrationAnswers(
   questions: EventRegistrationQuestion[],
   answers: RegistrationAnswers,
+  kind: "self" | "proxy" = "self",
 ) {
   const errors: Record<string, string> = {};
   const data: RegistrationAnswers = {};
 
-  for (const question of ensureRequiredRegistrationQuestions(questions)) {
+  for (const question of participantQuestions(questions, kind)) {
     const value = answers[question.key];
     const missing =
       value === undefined ||

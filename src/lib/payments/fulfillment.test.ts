@@ -68,6 +68,31 @@ function dependencies(registrations: Registration[]): FulfillmentDeps {
 }
 
 describe("fulfillCheckoutSession", () => {
+  it("reports paid proxy tickets awaiting approval without declaring attendance confirmed",async () => {
+    const row = { ...registration(),registrationKind: "proxy" as const,memberId: null,bookerMemberId: "member-1",pendingRegistrationId: pending.id,approvalStatus: "pending" as const };
+    const deps = dependencies([row]);
+    vi.mocked(deps.getPending).mockResolvedValue({ ...pending,registrationKind: "proxy" });
+    expect(await fulfillCheckoutSession(paidSession(),deps)).toMatchObject({ status: "approval_pending" });
+    expect(deps.createRegistration).not.toHaveBeenCalled();
+  });
+  it("fulfills a friend’s separate payment after the booker has already registered and never accepts the booker’s signature", async () => {
+    const own = registration(); own.finance.stripeCheckoutSessionId = "cs_own"; own.finance.stripePaymentIntentId = "pi_own";
+    const deps = dependencies([own]);
+    vi.mocked(deps.getPending).mockResolvedValue({ ...pending, registrationKind: "proxy", attendeeEmail: "friend@example.test",
+      waiverTextEn: "Terms", waiverTextSha: "sha", typedName: "Forged Booker Signature" });
+    await expect(fulfillCheckoutSession(paidSession(), deps)).resolves.toMatchObject({ status: "confirmed" });
+    expect(deps.createRegistration).toHaveBeenCalledWith(expect.objectContaining({ memberId: null, bookerMemberId: "member-1",
+      registrationKind: "proxy", attendeeConfirmationStatus: "pending", pendingRegistrationId: pending.id }));
+    expect(deps.createWaiver).not.toHaveBeenCalled();
+  });
+
+  it("persists a review marker for a verified paid checkout that loses capacity", async () => {
+    const deps = dependencies([]); deps.flagPaidReview = vi.fn();
+    vi.mocked(deps.countRegistrations).mockResolvedValue(20);
+    await expect(fulfillCheckoutSession(paidSession(), deps)).rejects.toThrow("paid_checkout_capacity_requires_review");
+    expect(deps.flagPaidReview).toHaveBeenCalledWith(pending.id);
+    expect(deps.createRegistration).not.toHaveBeenCalled();
+  });
   it("creates one registration when the same signed Stripe session is delivered twice", async () => {
     const registrations: Registration[] = [];
     const deps = dependencies(registrations);

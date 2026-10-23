@@ -15,4 +15,4 @@ export type CheckoutAttempt = {
 };
 
 /** Result shown after the signed Stripe session is verified for its owner. */
-export type VerifiedPaymentStatus = "confirmed" | "processing" | "review" | "invalid";
+export type VerifiedPaymentStatus = "confirmed" | "approval_pending" | "processing" | "review" | "invalid";

@@ -51,4 +51,28 @@ describe("admin registrations export route", () => {
     expect(body).toContain('"second","smoke-draft-event-2"');
     expect(body).not.toContain('"first","smoke-draft-event-1"');
   });
+
+  it("exports attendee, booker, authorization and attendance independently", async () => {
+    getRegistrationsMock.mockResolvedValue([{ ...registration("friend", "event"), bookerMemberId: "booker", registrationKind: "proxy",
+      attendeeEmail: "friend@example.test", attendeeConfirmationStatus: "pending" }]);
+    const { GET } = await import("./route");
+    const body = await (await GET(new Request("http://snowforce.test/admin/registrations/export"))).text();
+    expect(body).toContain('"booker_member_id","attendee_email","registration_kind","attendee_confirmation_status","approval_status","attendance_status"');
+    expect(body).toContain('"booker","friend@example.test","proxy","pending","not_required","unmarked"');
+  });
+
+  it("applies approval filters to the same independently recorded CSV status",async () => {
+    getRegistrationsMock.mockResolvedValue([{ ...registration("review","event"),approvalStatus: "pending" },{ ...registration("approved","event"),approvalStatus: "approved" }]);
+    const { GET } = await import("./route");
+    const body = await (await GET(new Request("http://snowforce.test/admin/registrations/export?approval=pending"))).text();
+    expect(body).toContain('"review","event"'); expect(body).not.toContain('"approved","event"');
+  });
+
+  it("uses the selected booker filter and escapes spreadsheet formulas in attendee names", async () => {
+    getRegistrationsMock.mockResolvedValue([{ ...registration("first","event"),bookerMemberId: "one",contactName: "=HYPERLINK(\"bad\")" },
+      { ...registration("second","event"),bookerMemberId: "two" }]);
+    const { GET } = await import("./route");
+    const body = await (await GET(new Request("http://snowforce.test/admin/registrations/export?booker=one"))).text();
+    expect(body).toContain("'=HYPERLINK"); expect(body).not.toContain('"second"');
+  });
 });

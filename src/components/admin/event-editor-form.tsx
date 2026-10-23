@@ -22,7 +22,7 @@ type ActiveLang = "zh" | "en";
 
 type BilingualEventKey = {
   [Key in keyof Event]: Event[Key] extends { en: string; zh: string } ? Key : never;
-}[keyof Event];
+}[keyof Event] & string;
 
 function normalizeQuestionKey(value: string) {
   const normalized = value.toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");

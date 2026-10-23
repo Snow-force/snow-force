@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-10-23T00:13:49.189Z",
+  "stripeMode": "test",
+  "productionDatabaseWrites": 0,
+  "distinctSessions": [
+    "cs_test_a16TQW5KPivOTUTu3wcVUY3xV41PagBe7mONtGWYX7HKhxRfYNrrnky6bk",
+    "cs_test_a1feGWo8xMKjmcJYSRLjvRtbVFoO7oEKRgT7tCiDOzOCSQN82rLL4RqMcJ"
+  ],
+  "distinctPaymentIntents": [
+    "pi_3UTW71AItQQT9la82vkh6eKS",
+    "pi_3UTW74AItQQT9la83npGt9yY"
+  ],
+  "registrations": [
+    "cae0a293-df4f-4915-b7ac-99bd38ad476a",
+    "6fac300c-97bd-429b-a4cc-12637c40c04b"
+  ],
+  "signedWebhookDeliveries": 4,
+  "duplicateRegistrations": 0,
+  "refunds": "both test payments fully refunded",
+  "guestNextBrowser": "passed mobile EN and desktop ZH; no page errors or mobile overflow"
+}

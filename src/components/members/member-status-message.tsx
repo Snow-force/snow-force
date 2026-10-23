@@ -75,6 +75,9 @@ function memberMessage(searchParams: Record<string, string | undefined>): Messag
   if (searchParams.payment === "success") {
     return { tone: "success", text: { en: "Payment received - your trip is confirmed. Find it under My Trips.", zh: "付款已收到，行程已确认。请在“我的行程”中查看。" } };
   }
+  if (searchParams.registration === "approval-pending") {
+    return { tone: "success", text: { en: "Your friend’s registration is saved and awaits staff approval. See Friends I registered below.", zh: "朋友报名已保存，等待工作人员审批。请查看下方“我替朋友的报名”。" } };
+  }
   if (searchParams.registration === "confirmed") {
     return { tone: "success", text: { en: "Registration confirmed. It now appears in your trips and the staff list.", zh: "报名已确认，现已显示在你的行程和工作人员列表中。" } };
   }
@@ -264,6 +267,7 @@ export function MemberStatusMessage({
 }: MemberStatusMessageProps) {
   const { t } = useLanguage();
   const paymentMessages: Record<VerifiedPaymentStatus, Message> = {
+    approval_pending: { tone: "success", text: { en: "Payment received. This friend’s place is reserved for staff review; attendance is not yet approved. See Friends I registered below.", zh: "付款已核实，已为这位朋友预留名额等待工作人员审核，尚未获准参加。请查看下方“我替朋友的报名”。" } },
     confirmed: { tone: "success", text: { en: "Payment received. Your trip is confirmed below.", zh: "付款已核实，行程已确认，可在下方查看。" } },
     processing: { tone: "success", text: { en: "Your payment is processing. Please refresh to check its status. Do not pay again.", zh: "付款正在处理中，请刷新查看状态，不要再次付款。" } },
     review: { tone: "error", text: { en: "We could not confirm your trip yet. Please refresh or contact SnowForce. Do not pay again.", zh: "暂时无法确认行程，请刷新或联系 SnowForce，不要再次付款。" } },

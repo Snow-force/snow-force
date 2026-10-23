@@ -30,6 +30,12 @@ beforeEach(() => {
   mockLocation.href = "";
 });
 
+it("exposes friend registration for approval events and explains that payment does not approve attendance",async () => {
+  renderWithLanguage(<RegistrationForm event={createEvent({ allowProxyRegistrations: true,requiresApproval: true,paymentModel: "full_prepay",fullPaymentAmount: 118 })} memberProfile={createMemberProfile()} emailConfirmed />);
+  await userEvent.setup().click(screen.getByRole("radio",{ name: "A friend" }));
+  expect(screen.getByRole("note")).toHaveTextContent("Payment alone does not approve attendance");
+});
+
 function renderWithLanguage(ui: React.ReactNode) {
   document.cookie = "lang=en;path=/";
   return render(<LanguageProvider>{ui}</LanguageProvider>);
@@ -112,6 +118,23 @@ function createEvent(overrides: Partial<Event> = {}): Event {
 }
 
 describe("RegistrationForm payment model branching", () => {
+  it("clears previous answers and lets a friend skip email without signing for them", async () => {
+    const user = userEvent.setup();
+    vi.mocked(registerForEvent).mockResolvedValue({ success: true, pending: true, email: "test@test.com", confirmation: "member", pendingRegistrationId: "friend" });
+    renderWithLanguage(<RegistrationForm event={createEvent({ allowProxyRegistrations: true, waiverTextEn: "Adult waiver" })} memberProfile={createMemberProfile()} emailConfirmed />);
+    await user.type(screen.getByLabelText(/^Name/), "Booker");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
+    await user.click(screen.getByRole("radio", { name: "A friend" }));
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("");
+    expect(screen.getByLabelText(/Friend’s email/)).toHaveValue("");
+    await user.type(screen.getByLabelText(/^Name/), "Friend");
+    await user.click(screen.getByRole("checkbox", { name: /My friend has permitted/ }));
+    await user.click(screen.getByRole("button", { name: /Submit Registration/ }));
+    expect(await screen.findByText(/Confirm in your member home/)).toBeInTheDocument();
+    expect(registerForEvent).toHaveBeenCalledWith("test-event", expect.objectContaining({ registrationKind: "proxy", proxyConsent: true,
+      answers: { name: "Friend" }, clientRequestKey: expect.stringMatching(/^[a-f0-9-]{36}$/) }));
+    expect(vi.mocked(registerForEvent).mock.calls[0][1].typedName).toBeUndefined();
+  });
   it("free event keeps the signed-in member confirmation flow", async () => {
     const user = userEvent.setup();
     vi.mocked(registerForEvent).mockResolvedValueOnce({
@@ -130,6 +153,8 @@ describe("RegistrationForm payment model branching", () => {
       />,
     );
 
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
@@ -160,6 +185,8 @@ describe("RegistrationForm payment model branching", () => {
       />,
     );
 
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
@@ -193,6 +220,8 @@ describe("RegistrationForm payment model branching", () => {
       />,
     );
 
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
@@ -234,6 +263,8 @@ describe("RegistrationForm payment model branching", () => {
     );
 
     await user.type(screen.getByLabelText(/coupon code/i), "snow20");
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
@@ -282,6 +313,8 @@ describe("RegistrationForm payment model branching", () => {
     );
 
     await user.type(screen.getByLabelText(/coupon code/i), "free100");
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
@@ -319,6 +352,8 @@ describe("RegistrationForm payment model branching", () => {
       />,
     );
 
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 
@@ -357,6 +392,8 @@ describe("RegistrationForm payment model branching", () => {
       />,
     );
 
+    await user.type(screen.getByLabelText(/^Name/), "Test Member");
+    await user.type(screen.getByLabelText(/^Email/), "test@test.com");
     await user.click(screen.getByLabelText(/agree/i));
     await user.click(screen.getByRole("button", { name: /submit registration/i }));
 

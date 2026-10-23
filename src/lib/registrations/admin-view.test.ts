@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Event, Registration } from "@/lib/types";
-import { buildAdminRegistrationEventView, registrationDisplayEmail, registrationDisplayName } from "./admin-view";
+import { buildAdminRegistrationEventView, filterAdminRegistrations, registrationDisplayEmail, registrationDisplayName } from "./admin-view";
 import { createDefaultReviewConfig } from "@/lib/reviews/config";
 
 function registration(
@@ -64,6 +64,12 @@ function event(slug: string, titleEn: string, titleZh = ""): Event {
 }
 
 describe("buildAdminRegistrationEventView", () => {
+  it("combines attendee search, booker and payment filters without confusing shared contact emails", () => {
+    const rows = [{ ...registration("Friend One","ride","2026-10-22"),bookerMemberId: "booker-1",attendeeEmail: "one@example.test" },
+      { ...registration("Friend Two","ride","2026-10-22"),bookerMemberId: "booker-2",attendeeEmail: "two@example.test" }];
+    expect(filterAdminRegistrations(rows,{ query: "ONE@EXAMPLE",booker: "booker-1",payment: "pending" }).map((r) => r.contactName)).toEqual(["Friend One"]);
+    expect(filterAdminRegistrations(rows,{ query: "Friend",booker: "booker-1",payment: "paid" })).toEqual([]);
+  });
   it("filters registrations to the requested event", () => {
     const view = buildAdminRegistrationEventView({
       registrations: [

@@ -217,6 +217,47 @@ beforeEach(() => {
 });
 
 describe("registerForEvent member persistence", () => {
+  it.each(["deposit", "full_prepay"] as const)("accepts friends for approval events with %s pricing", async (paymentModel) => {
+    mockGetEvent.mockResolvedValue({ ...openEvent, allowProxyRegistrations: true, requiresApproval: true, paymentModel,
+      depositAmount: 99, fullPaymentAmount: 118 });
+    mockGetCurrentMemberAccount.mockResolvedValue({ user: { email: "rider@example.com" },profile,emailConfirmed: true });
+    const result = await registerForEvent(openEvent.slug, { ...validInput(),registrationKind: "proxy",proxyConsent: true,
+      clientRequestKey: "11111111-1111-4111-8111-111111111111",answers: { name: "Friend" } });
+    expect(result.success).toBe(true);
+    expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledWith(expect.objectContaining({ registrationKind: "proxy",memberId: profile.id }));
+  });
+  it("allows a verified already-registered member to book a friend without binding the friend’s email", async () => {
+    mockGetEvent.mockResolvedValue({ ...openEvent, allowProxyRegistrations: true });
+    mockGetCurrentMemberAccount.mockResolvedValue({ user: { email: "rider@example.com" }, profile, emailConfirmed: true });
+    mockGetRegistrations.mockResolvedValue([registration]);
+    const result = await registerForEvent(openEvent.slug, { ...validInput(), registrationKind: "proxy", proxyConsent: true,
+      clientRequestKey: "11111111-1111-4111-8111-111111111111", answers: { name: "Friend", phone: "555-1111" } });
+    expect(result.success).toBe(true);
+    expect(mockCreateOrRefreshPendingRegistration).toHaveBeenCalledWith(expect.objectContaining({
+      registrationKind: "proxy", memberId: profile.id, attendeeEmail: null, contactEmail: "rider@example.com",
+      participantKey: "11111111-1111-4111-8111-111111111111", typedName: null,
+      answers: { name: "Friend", phone: "555-1111" },
+    }));
+  });
+
+  it("rejects disabled proxies, missing friend permission, invalid keys, and booker signatures", async () => {
+    const input = { ...validInput(), registrationKind: "proxy" as const, proxyConsent: true, clientRequestKey: "11111111-1111-4111-8111-111111111111" };
+    expect((await registerForEvent(openEvent.slug, input)).success).toBe(false);
+    mockGetEvent.mockResolvedValue({ ...openEvent, allowProxyRegistrations: true });
+    for (const invalid of [{ proxyConsent: false }, { clientRequestKey: "bad" }, { typedName: "Booker" }]) {
+      expect((await registerForEvent(openEvent.slug, { ...input, ...invalid })).success).toBe(false);
+    }
+    expect(mockCreateOrRefreshPendingRegistration).not.toHaveBeenCalled();
+  });
+
+  it("requires a verified booker even if a friend supplies their own email", async () => {
+    mockGetEvent.mockResolvedValue({ ...openEvent, allowProxyRegistrations: true });
+    const input = { ...validInput(), registrationKind: "proxy" as const, proxyConsent: true, clientRequestKey: "11111111-1111-4111-8111-111111111111" };
+    expect((await registerForEvent(openEvent.slug, input)).success).toBe(false);
+    mockGetCurrentMemberAccount.mockResolvedValue({ profile, emailConfirmed: false });
+    expect((await registerForEvent(openEvent.slug, input)).success).toBe(false);
+    expect(mockCreateOrRefreshPendingRegistration).not.toHaveBeenCalled();
+  });
   it("S4-verified-member-registration-persists-member-id-to-Supabase-repository", async () => {
     mockGetCurrentMemberAccount.mockResolvedValue({
       user: { id: "user-1", email: "rider@example.com" },
@@ -432,7 +473,7 @@ describe("registerForEvent member persistence", () => {
     }));
   });
 
-  it("rejects duplicate member registrations for the same event even when the previous row is cancelled", async () => {
+  it("allows re-registration after a previous registration is cancelled", async () => {
     mockGetCurrentMemberAccount.mockResolvedValue({
       user: { id: "user-1", email: "rider@example.com" },
       profile,
@@ -448,10 +489,7 @@ describe("registerForEvent member persistence", () => {
 
     const result = await registerForEvent("mammoth-weekend", validInput());
 
-    expect(result).toEqual({
-      success: false,
-      error: "You are already registered for this event.",
-    });
+    expect(result).toMatchObject({ success: true, pending: true });
     expect(mockCreateRegistration).not.toHaveBeenCalled();
   });
 });

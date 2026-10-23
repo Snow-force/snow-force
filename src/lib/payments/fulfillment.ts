@@ -6,6 +6,8 @@ import { createRegistration, getRegistrations, getRegistrationCountForEvent } fr
 import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
 import { defaultRegistrationFinance } from "@/lib/registrations/finance";
 import type { Registration } from "@/lib/types";
+import { belongsToBooker, hasActiveSelfRegistration, pendingParticipantIdentity } from "@/lib/registrations/participation";
+import { flagPaidPendingForReview } from "@/lib/registrations/payment-review";
 
 export type PaidCheckoutSession = Pick<Stripe.Checkout.Session,
   "id" | "payment_status" | "status" | "amount_total" | "currency" | "payment_intent" | "metadata">;
@@ -17,12 +19,19 @@ export type FulfillmentDeps = {
   createRegistration: typeof createRegistration;
   createWaiver: typeof createWaiverAcceptance;
   completePending: typeof completePendingCheckout;
+  flagPaidReview?: typeof flagPaidPendingForReview;
 };
 export const fulfillmentDeps: FulfillmentDeps = {
   getPending: getPendingRegistrationById, getEvent: getEventAdmin, getRegistrations,
   countRegistrations: getRegistrationCountForEvent, createRegistration,
   createWaiver: createWaiverAcceptance, completePending: completePendingCheckout,
+  flagPaidReview: flagPaidPendingForReview,
 };
+
+function registrationPaymentStatus(registration: Registration) {
+  return registration.status === "cancelled" ? "review" as const
+    : registration.approvalStatus === "pending" ? "approval_pending" as const : "confirmed" as const;
+}
 
 /** Called by both signed webhooks and the authenticated return page. Never overwrites a payment. */
 export async function fulfillCheckoutSession(session: PaidCheckoutSession, deps = fulfillmentDeps) {
@@ -39,7 +48,7 @@ export async function fulfillCheckoutSession(session: PaidCheckoutSession, deps 
   let registration = registrations.find(samePayment);
   if (!pending) {
     if (!registration) throw new Error("paid_checkout_pending_missing");
-    return { status: registration.status === "cancelled" ? "review" as const : "confirmed" as const, registrationId: registration.id };
+    return { status: registrationPaymentStatus(registration), registrationId: registration.id };
   }
   if (!pending.memberId || session.metadata?.memberId !== pending.memberId || session.metadata?.eventSlug !== pending.eventSlug) {
     throw new Error("checkout_owner_mismatch");
@@ -60,17 +69,20 @@ export async function fulfillCheckoutSession(session: PaidCheckoutSession, deps 
   if (attempt ? paid !== attempt.amount : (base === null || base <= 0 || (pending.couponCode ? paid > base : paid !== base))) {
     throw new Error("checkout_amount_mismatch");
   }
-  if (registration && registration.memberId !== pending.memberId) throw new Error("checkout_owner_mismatch");
+  if (registration && (!belongsToBooker(registration, pending.memberId) ||
+    (pending.registrationKind === "proxy" && registration.pendingRegistrationId !== pending.id))) throw new Error("checkout_owner_mismatch");
   if (!registration) {
-    if (registrations.some((r) => r.memberId === pending.memberId) || pending.fulfilledRegistrationId) {
+    if ((pending.registrationKind !== "proxy" && hasActiveSelfRegistration(registrations, pending.memberId)) || pending.fulfilledRegistrationId) {
+      await deps.flagPaidReview?.(pending.id);
       throw new Error("duplicate_payment_requires_review");
     }
     if (event.capacity > 0 && await deps.countRegistrations(event.slug) >= event.capacity) {
+      await deps.flagPaidReview?.(pending.id);
       throw new Error("paid_checkout_capacity_requires_review");
     }
     try {
       registration = (await deps.createRegistration({
-        eventSlug: pending.eventSlug, memberId: pending.memberId, answers: pending.answers,
+        eventSlug: pending.eventSlug, ...pendingParticipantIdentity(pending), answers: pending.answers,
         consentGiven: pending.consentGiven, contactEmail: pending.contactEmail,
         contactName: pending.contactName, contactPhone: pending.contactPhone,
         finance: {
@@ -88,14 +100,17 @@ export async function fulfillCheckoutSession(session: PaidCheckoutSession, deps 
       // The DB's unique member/event constraint may have been won by another delivery.
       // Only the SAME payment is a safe retry; never attach this payment to another order.
       registration = (await deps.getRegistrations(eventSlug)).find(samePayment);
-      if (!registration) throw error;
+      if (!registration) {
+        await deps.flagPaidReview?.(pending.id);
+        throw error;
+      }
     }
   }
-  if (pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
+  if (pending.registrationKind !== "proxy" && pending.waiverTextEn && pending.waiverTextSha && pending.typedName) {
     await deps.createWaiver({ registrationId: registration.id, legalTextSnapshot: pending.waiverTextEn,
       waiverTextSha: pending.waiverTextSha, typedName: pending.typedName,
       handwrittenSignatureDataUrl: pending.handwrittenSignatureDataUrl ?? null, acceptedAt: new Date().toISOString() });
   }
   await deps.completePending(pending.id, registration.id);
-  return { status: registration.status === "cancelled" ? "review" as const : "confirmed" as const, registrationId: registration.id };
+  return { status: registrationPaymentStatus(registration), registrationId: registration.id };
 }

@@ -56,6 +56,8 @@ const modularEvent: Event = {
   requiresApproval: false,
   allowWaitlist: true,
   allowCancellation: true,
+  allowProxyRegistrations: false,
+  maxProxyRegistrations: 5,
   feeAmount: "120",
   paymentModel: "free",
   depositAmount: null,
@@ -255,6 +257,7 @@ describe("event admin action helpers", () => {
   });
 
   it("saves events from modular JSON payloads", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
     actionMocks.createEvent.mockResolvedValue(modularEvent);
 
     const formData = new FormData();
@@ -265,6 +268,8 @@ describe("event admin action helpers", () => {
       message: "Saved in English. Chinese translation could not be refreshed.",
     });
 
+    expect(log).toHaveBeenCalledWith("[saveEventAction] Chinese translation failed", expect.any(Error));
+    log.mockRestore();
     expect(actionMocks.createEvent).toHaveBeenCalledWith({
       ...modularEvent,
       registrationQuestions: [

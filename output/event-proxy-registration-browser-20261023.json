@@ -1,0 +1,11 @@
+{
+  "verifiedAt": "2026-10-23T22:19:21.115Z",
+  "target": "isolated localhost",
+  "productionWrites": 0,
+  "checks": [
+    "mobile EN signature through real server action",
+    "pending approval hides ticket QR",
+    "PostgreSQL approval unlocks desktop ZH ticket on reload",
+    "no page errors or mobile overflow"
+  ]
+}

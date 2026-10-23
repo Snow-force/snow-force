@@ -35,6 +35,14 @@ type RegistrationRow = {
   id: string;
   event_slug: string;
   member_id: string | null;
+  booker_member_id?: string | null;
+  registration_kind?: Registration["registrationKind"];
+  attendee_email?: string | null;
+  attendee_confirmation_status?: Registration["attendeeConfirmationStatus"];
+  approval_status?: Registration["approvalStatus"];
+  client_request_key?: string | null;
+  pending_registration_id?: string | null;
+  creation_source?: Registration["creationSource"];
   answers: RegistrationAnswers;
   consent_given: boolean;
   contact_email: string;
@@ -92,6 +100,14 @@ function rowToRegistration(row: RegistrationRow): Registration {
     id: row.id,
     eventSlug: row.event_slug,
     memberId: row.member_id,
+    bookerMemberId: row.booker_member_id ?? row.member_id,
+    registrationKind: row.registration_kind ?? "self",
+    attendeeEmail: row.attendee_email ?? null,
+    attendeeConfirmationStatus: row.attendee_confirmation_status ?? "not_required",
+    approvalStatus: row.approval_status ?? "not_required",
+    clientRequestKey: row.client_request_key ?? null,
+    pendingRegistrationId: row.pending_registration_id ?? null,
+    creationSource: row.creation_source ?? "legacy",
     answers: row.answers,
     consentGiven: row.consent_given,
     contactEmail: row.contact_email,
@@ -128,6 +144,13 @@ function registrationToInsert(data: NewRegistration) {
   return {
     event_slug: data.eventSlug,
     member_id: data.memberId,
+    booker_member_id: data.bookerMemberId ?? data.memberId,
+    registration_kind: data.registrationKind ?? "self",
+    attendee_email: data.attendeeEmail ?? null,
+    attendee_confirmation_status: data.attendeeConfirmationStatus ?? "not_required",
+    client_request_key: data.clientRequestKey ?? null,
+    pending_registration_id: data.pendingRegistrationId ?? null,
+    creation_source: data.creationSource ?? "member",
     answers: data.answers,
     consent_given: data.consentGiven,
     contact_email: data.contactEmail,
@@ -187,7 +210,8 @@ export function createRegistrationStore(filePath: string): RegistrationSource {
       return (await store.read()).find((registration) => registration.id === id);
     },
     async listForMember(memberId: string) {
-      return (await store.read()).filter((registration) => registration.memberId === memberId);
+      return (await store.read()).filter((registration) =>
+        registration.memberId === memberId || registration.bookerMemberId === memberId);
     },
     async countForEvent(eventSlug: string) {
       return (await store.read()).filter(
@@ -197,6 +221,8 @@ export function createRegistrationStore(filePath: string): RegistrationSource {
     },
     async create(data: NewRegistration) {
       const registrations = await store.read();
+      const existing = registrations.find((row) => data.clientRequestKey && row.clientRequestKey === data.clientRequestKey);
+      if (existing) return existing;
       const now = new Date().toISOString();
       const registration: Registration = {
         ...data,
@@ -275,7 +301,7 @@ function createSupabaseRegistrationSource(): RegistrationSource {
       const { data, error } = await createAdminRegistrationClient()
         .from("registrations")
         .select("*")
-        .eq("member_id", memberId)
+        .or(`member_id.eq.${memberId},booker_member_id.eq.${memberId}`)
         .order("created_at", { ascending: true });
       throwSupabaseError(error);
       return ((data ?? []) as RegistrationRow[]).map(rowToRegistration);
@@ -351,7 +377,17 @@ export function createRegistrationRepository(source: RegistrationSource) {
     updateRegistrationFinance: source.updateFinance,
     deleteCancelledRegistration: source.deleteCancelled,
     async createRegistration(data: NewRegistration) {
-      return { success: true as const, registration: await source.create(data) };
+      try {
+        return { success: true as const, registration: await source.create(data) };
+      } catch (error) {
+        if (!data.pendingRegistrationId && !data.clientRequestKey) throw error;
+        const existing = (await source.list(data.eventSlug)).find((row) =>
+          data.pendingRegistrationId ? row.pendingRegistrationId === data.pendingRegistrationId : row.clientRequestKey === data.clientRequestKey);
+        if (!existing || existing.memberId !== data.memberId ||
+          (existing.bookerMemberId ?? existing.memberId) !== (data.bookerMemberId ?? data.memberId) ||
+          (existing.finance?.stripePaymentIntentId || "") !== (data.finance?.stripePaymentIntentId || "")) throw error;
+        return { success: true as const, registration: existing };
+      }
     },
   };
 }

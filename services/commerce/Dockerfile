@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim AS build
+FROM node:24.22.1-bookworm-slim AS build
 WORKDIR /opt/commerce
 ENV MEDUSA_DISABLE_TELEMETRY=true
 COPY package.json package-lock.json ./
@@ -7,7 +7,7 @@ COPY tsconfig.json medusa-config.ts ./
 COPY src ./src
 RUN npm run build
 
-FROM node:24-bookworm-slim AS runtime
+FROM node:24.22.1-bookworm-slim AS runtime
 WORKDIR /opt/commerce
 ENV NODE_ENV=production \
     MEDUSA_DISABLE_TELEMETRY=true \

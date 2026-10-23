@@ -119,6 +119,12 @@ const recap: EventRecap = {
 };
 
 describe("member dashboard aggregation", () => {
+  it("keeps booker-managed friend tickets out of the booker’s own trip count", () => {
+    const dashboard = buildMemberDashboard({ profile, emailConfirmed: true,
+      registrations: [{ ...registration("friend-trip", "2026-01-01"), memberId: null, bookerMemberId: profile.id, registrationKind: "proxy" }],
+      events: [event("friend-trip", "2099-01-01")], recaps: [], now: new Date("2026-05-01") });
+    expect(dashboard.upcomingTrips).toEqual([]); expect(dashboard.registrationHistory).toEqual([]);
+  });
   it("S4-dashboard-splits-upcoming-and-past-registrations", () => {
     const dashboard = buildMemberDashboard({
       profile,

@@ -1,0 +1,55 @@
+// Local-only approval acceptance. No Stripe API or production database access.
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { createRequire } from "node:module";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { spawn, spawnSync } from "node:child_process";
+import { openSync, closeSync, mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+export async function verifyProxyApprovalBrowser({ root,db,config,directory,booker }) {
+  assert.equal(config.host,"127.0.0.1");
+  const require=createRequire(path.join(root,"package.json"));
+  process.env.PLAYWRIGHT_BROWSERS_PATH=path.join(root,".cache/tooling/playwright-browsers");
+  const { chromium }=require(process.env.EVENT_TEST_PLAYWRIGHT_MODULE ?? path.join(os.homedir(),".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"));
+  const secret=randomBytes(48).toString("hex");
+  const sign=role=>{const body=[Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url"),Buffer.from(JSON.stringify({role,aud:"authenticated",exp:Math.floor(Date.now()/1000)+3600})).toString("base64url")].join(".");return body+"."+createHmac("sha256",secret).update(body).digest("base64url");};
+  const restPort=config.port+1;
+  const restLog=openSync(path.join(directory,"browser-postgrest.log"),"a");
+  const rest=spawn(path.join(root,".cache/tooling/postgrest-16.5/bin/postgrest.exe"),[],{windowsHide:true,stdio:["ignore",restLog,restLog],env:{...process.env,
+    PATH:path.join(root,".cache/tooling/postgresql/pgsql/bin")+path.delimiter+process.env.PATH,
+    PGRST_DB_URI:`postgresql://${config.user}@127.0.0.1:${config.port}/postgres`,PGRST_DB_SCHEMAS:"public",PGRST_DB_ANON_ROLE:"anon",PGRST_JWT_SECRET:secret,PGRST_SERVER_HOST:"127.0.0.1",PGRST_SERVER_PORT:String(restPort)}});
+  const bridge=createServer(async(req,res)=>{try{const chunks=[];for await(const chunk of req)chunks.push(chunk);const upstream=await fetch(`http://127.0.0.1:${restPort}${req.url.replace(/^\/rest\/v1/,"")}`,{method:req.method,headers:{...req.headers,host:`127.0.0.1:${restPort}`},body:["GET","HEAD"].includes(req.method)?undefined:Buffer.concat(chunks)});res.writeHead(upstream.status,Object.fromEntries([...upstream.headers].filter(([name])=>!["content-encoding","transfer-encoding","content-length"].includes(name))));res.end(Buffer.from(await upstream.arrayBuffer()));}catch{res.writeHead(502);res.end();}});
+  await new Promise(resolve=>bridge.listen(0,"127.0.0.1",resolve));
+  const url=`http://127.0.0.1:${bridge.address().port}`,site="http://127.0.0.1:3199";
+  let next,browser; const nextLog=openSync(path.join(directory,"browser-next.log"),"a");
+  try {
+    await db.query("grant usage on schema private to service_role; grant all on all tables in schema public to service_role; grant all on all sequences in schema public to service_role");
+    for(let i=0;i<40;i++){try{if((await fetch(`http://127.0.0.1:${restPort}/`)).ok)break;}catch{}await new Promise(r=>setTimeout(r,200));}
+    await db.query("insert into events(slug,status,registration_state,requires_approval,allow_proxy_registrations) values('browser-approval','published','open',true,true)");
+    const pending=(await db.query("insert into pending_registrations(event_slug,member_id,registration_kind,participant_key,contact_name,contact_email,consent_given,token_hash,expires_at) values('browser-approval',$1,'proxy',$2,'Browser Friend','payer@example.test',true,$3,'2099-01-01') returning *",[booker,randomUUID(),randomUUID()])).rows[0];
+    const ticket=(await db.query("insert into registrations(event_slug,booker_member_id,registration_kind,attendee_confirmation_status,contact_name,contact_email,consent_given,pending_registration_id) values('browser-approval',$1,'proxy','pending','Browser Friend','payer@example.test',true,$2) returning *",[booker,pending.id])).rows[0];
+    const token=randomBytes(32).toString("hex");
+    const {createHash}=await import("node:crypto");
+    await db.query("select issue_registration_guest_invitation($1,$2,'2099-01-01','staff')",[ticket.id,createHash("sha256").update(token).digest("hex")]);
+    next=spawn(process.execPath,[path.join(root,"node_modules/next/dist/bin/next"),"dev","--hostname","127.0.0.1","--port","3199"],{cwd:root,windowsHide:true,stdio:["ignore",nextLog,nextLog],env:{...process.env,NODE_ENV:"development",NEXT_TELEMETRY_DISABLED:"1",MEDUSA_BACKEND_URL:"",NEXT_PUBLIC_SITE_URL:site,NEXT_PUBLIC_SUPABASE_URL:url,SUPABASE_SECRET_KEY:sign("service_role"),NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:sign("anon")} });
+    for(let i=0;i<80;i++){try{if((await fetch(site+"/events/guest/invalid")).ok)break;}catch{}await new Promise(r=>setTimeout(r,400));}
+    browser=await chromium.launch({headless:true}); const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on("pageerror",error=>errors.push(error.message));
+    await page.goto(`${site}/events/guest/${token}`);
+    await page.getByLabel("Your full legal name / electronic signature").fill("Browser Friend");await page.getByRole("checkbox").check();await page.getByRole("button",{name:"Accept and sign"}).click();
+    await page.getByText(/Awaiting staff approval/).waitFor(); assert.equal(await page.getByRole("img",{name:"Your personal event ticket"}).count(),0);
+    assert.equal((await db.query("select attendee_confirmation_status from registrations where id=$1",[ticket.id])).rows[0].attendee_confirmation_status,"accepted");
+    const out=path.join(root,"output/event-proxy-registration");mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,"approval-pending-mobile-en.png"),fullPage:true});
+    assert.equal(await page.locator("body").evaluate(body=>body.scrollWidth<=window.innerWidth),true);
+    await db.query("select review_proxy_registration($1,true,'staff')",[ticket.id]);
+    await page.context().addCookies([{name:"lang",value:"zh",url:site}]);await page.setViewportSize({width:1280,height:900});await page.reload();await page.getByRole("img",{name:"你的个人活动票据"}).waitFor();
+    await page.screenshot({path:path.join(out,"approval-approved-desktop-zh.png"),fullPage:true});assert.deepEqual(errors,[]);
+    writeFileSync(path.join(root,"output/event-proxy-registration-browser-20261023.json"),JSON.stringify({verifiedAt:new Date().toISOString(),target:"isolated localhost",productionWrites:0,checks:["mobile EN signature through real server action","pending approval hides ticket QR","PostgreSQL approval unlocks desktop ZH ticket on reload","no page errors or mobile overflow"]},null,2));
+    console.log("PASS local Next approval journey: mobile signature, approval hold, staff approval and desktop Chinese ticket");
+  } finally {
+    await browser?.close();
+    if(next){if(process.platform==="win32")spawnSync("taskkill",["/PID",String(next.pid),"/T","/F"],{windowsHide:true,stdio:"ignore"});else next.kill();}
+    rest.kill();await new Promise(resolve=>bridge.close(resolve));closeSync(restLog);closeSync(nextLog);
+  }
+}

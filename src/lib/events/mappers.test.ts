@@ -100,6 +100,12 @@ describe("modular event mappers", () => {
     expect(rows.merchantBoothProgram).toBeNull();
   });
 
+  it("defaults old events to proxy disabled and round-trips explicit rollout settings", () => {
+    expect(rowsToEvent(core, [], [], null)).toMatchObject({ allowProxyRegistrations: false, maxProxyRegistrations: 5 });
+    const event = rowsToEvent({ ...core, allow_proxy_registrations: true, max_proxy_registrations: 3 }, [], [], null);
+    expect(eventAggregateToWriteRows(event).core).toMatchObject({ allow_proxy_registrations: true, max_proxy_registrations: 3 });
+  });
+
   it("preserves valid strings from mixed JSON row arrays", () => {
     const event = rowsToEvent(
       core,

@@ -26,6 +26,16 @@ export function registrationDisplayEmail(registration: Registration) {
   return registration.contactEmail.trim();
 }
 
+export function filterAdminRegistrations(rows: Registration[], filters: { query?: string; booker?: string; payment?: string; approval?: string }) {
+  const query = filters.query?.trim().toLowerCase();
+  const booker = filters.booker?.trim().toLowerCase();
+  return rows.filter((row) => (!query || [row.contactName,row.attendeeEmail ?? "",row.contactEmail,row.contactPhone]
+    .some((value) => value.toLowerCase().includes(query))) &&
+    (!booker || (row.bookerMemberId ?? row.memberId ?? "").toLowerCase().includes(booker)) &&
+    (!filters.payment || (row.finance?.depositStatus ?? "pending") === filters.payment) &&
+    (!filters.approval || (row.approvalStatus ?? "not_required") === filters.approval));
+}
+
 function newestRegistrationEventSlug(registrations: Registration[]) {
   return registrations.reduce<Registration | undefined>((newest, registration) => {
     if (!newest) return registration;

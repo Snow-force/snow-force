@@ -33,6 +33,8 @@ const eventColumns = [
   "requires_approval",
   "allow_waitlist",
   "allow_cancellation",
+  "allow_proxy_registrations",
+  "max_proxy_registrations",
   "fee_amount",
   "payment_model",
   "deposit_amount",

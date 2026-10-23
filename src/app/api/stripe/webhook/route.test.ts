@@ -8,6 +8,8 @@ const fulfillCheckoutSession = vi.hoisted(() => vi.fn());
 const reconcileStripeRefund = vi.hoisted(() => vi.fn());
 const revalidatePath = vi.hoisted(() => vi.fn());
 const insertMaybeSingle = vi.hoisted(() => vi.fn());
+const reconcileExpiredCheckout = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/payments/checkout-reconciliation", () => ({ reconcileExpiredCheckout }));
 
 vi.mock("@/lib/payments/stripe-server", () => ({ verifyStripeWebhookSignature: verifySignature }));
 vi.mock("@/lib/payments/fulfillment", () => ({ fulfillCheckoutSession }));
@@ -117,6 +119,18 @@ describe("Stripe webhook route", () => {
 
     expect(response.status).toBe(200);
     expect(fulfillCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it("reconciles a signed expiration before releasing any seat", async () => {
+    verifySignature.mockReturnValue({ id: "evt_expired", type: "checkout.session.expired", data: { object: {
+      id: "cs_test_expired", metadata: { pendingRegistrationId: "pending-1" },
+    } } });
+    reconcileExpiredCheckout.mockResolvedValue(true);
+    expect((await POST(request())).status).toBe(200);
+    expect(reconcileExpiredCheckout).toHaveBeenCalledWith("cs_test_expired", "pending-1");
+    expect(fulfillCheckoutSession).not.toHaveBeenCalled();
+    reconcileExpiredCheckout.mockRejectedValue(new Error("Stripe unavailable"));
+    expect((await POST(request())).status).toBe(500);
   });
 
   it("reconciles refunds through the existing refund ledger", async () => {

@@ -18,6 +18,24 @@ afterEach(async () => {
 });
 
 describe("pending registration repository", () => {
+  it("keeps each friend separate, retries the same key, and retains checkout snapshots", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "snowforce-friends-")); tempDirs.push(dir);
+    const store = createPendingRegistrationStore(path.join(dir, "pending.json"));
+    const data = { eventSlug: "ride", memberId: "booker", registrationKind: "proxy" as const,
+      participantKey: "11111111-1111-4111-8111-111111111111", answers: { name: "Friend One" }, consentGiven: true,
+      contactEmail: "payer@example.test", contactName: "Friend One", contactPhone: "", tokenHash: "one", expiresAt: "2099-01-01" };
+    const first = await store.createOrRefresh(data);
+    const second = await store.createOrRefresh({ ...data, participantKey: "22222222-2222-4222-8222-222222222222", contactName: "Friend Two", tokenHash: "two" });
+    expect(second.id).not.toBe(first.id);
+    expect((await store.createOrRefresh(data)).id).toBe(first.id);
+    const attempt = { id: "attempt", createdAt: "2026-10-22", amount: 10, currency: "usd" as const,
+      paymentModel: "deposit" as const, couponCode: "", discountAmount: 0, params: {} };
+    await store.compareCheckout(first.id, first.tokenHash, null, attempt);
+    expect(await store.createOrRefresh({ ...data, contactName: "Replacement" })).toMatchObject({ contactName: "Friend One", checkoutAttempt: attempt });
+    await store.complete(first.id, "ticket");
+    expect((await store.listForMember("booker")).map((row) => row.id)).toEqual([second.id]);
+    expect((await store.createOrRefresh({ ...data, tokenHash: "new" })).id).not.toBe(first.id);
+  });
   it("recognizes Supabase schema-cache errors for missing pending table", () => {
     expect(
       isMissingPendingRegistrationsTableError({

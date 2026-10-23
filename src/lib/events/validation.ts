@@ -178,6 +178,8 @@ const editorSchema = z.object({
   requiresApproval: z.boolean().default(false),
   allowWaitlist: z.boolean().default(false),
   allowCancellation: z.boolean().default(false),
+  allowProxyRegistrations: z.boolean().default(false),
+  maxProxyRegistrations: z.number().int().min(1).max(20).default(5),
   feeAmount: z.string().default(""),
   paymentModel: z.enum(["free", "deposit", "full_prepay"]).default("free"),
   depositAmount: z.coerce.number().min(0).nullable().default(null),
