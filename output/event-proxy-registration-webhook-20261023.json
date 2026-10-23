@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-23T22:26:35.914Z",
+  "account": "acct_1ToZcEAItQQT9la8",
+  "id": "we_1Tv2PpAItQQT9la8pAH6xLlv",
+  "url": "https://snow-force.com/api/stripe/webhook",
+  "status": "enabled",
+  "enabledEvents": [
+    "checkout.session.completed",
+    "checkout.session.async_payment_succeeded",
+    "checkout.session.expired",
+    "refund.created",
+    "refund.updated",
+    "refund.failed"
+  ],
+  "allRequiredPresent": true,
+  "secretRotated": false,
+  "connectorFallback": "existing authenticated server SDK; connector lacked webhook_write"
+}

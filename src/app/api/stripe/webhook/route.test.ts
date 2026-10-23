@@ -9,7 +9,8 @@ const reconcileStripeRefund = vi.hoisted(() => vi.fn());
 const revalidatePath = vi.hoisted(() => vi.fn());
 const insertMaybeSingle = vi.hoisted(() => vi.fn());
 const reconcileExpiredCheckout = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/payments/checkout-reconciliation", () => ({ reconcileExpiredCheckout }));
+const reconcileFailedAsyncCheckout = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/payments/checkout-reconciliation", () => ({ reconcileExpiredCheckout, reconcileFailedAsyncCheckout }));
 
 vi.mock("@/lib/payments/stripe-server", () => ({ verifyStripeWebhookSignature: verifySignature }));
 vi.mock("@/lib/payments/fulfillment", () => ({ fulfillCheckoutSession }));
@@ -121,15 +122,16 @@ describe("Stripe webhook route", () => {
     expect(fulfillCheckoutSession).not.toHaveBeenCalled();
   });
 
-  it("reconciles a signed expiration before releasing any seat", async () => {
-    verifySignature.mockReturnValue({ id: "evt_expired", type: "checkout.session.expired", data: { object: {
+  it.each(["checkout.session.expired","checkout.session.async_payment_failed"])("reconciles signed %s before releasing any seat", async (type) => {
+    verifySignature.mockReturnValue({ id: "evt_expired", type, data: { object: {
       id: "cs_test_expired", metadata: { pendingRegistrationId: "pending-1" },
     } } });
-    reconcileExpiredCheckout.mockResolvedValue(true);
+    const reconcile = type === "checkout.session.expired" ? reconcileExpiredCheckout : reconcileFailedAsyncCheckout;
+    reconcile.mockResolvedValue(true);
     expect((await POST(request())).status).toBe(200);
-    expect(reconcileExpiredCheckout).toHaveBeenCalledWith("cs_test_expired", "pending-1");
+    expect(reconcile).toHaveBeenCalledWith("cs_test_expired", "pending-1");
     expect(fulfillCheckoutSession).not.toHaveBeenCalled();
-    reconcileExpiredCheckout.mockRejectedValue(new Error("Stripe unavailable"));
+    reconcile.mockRejectedValue(new Error("Stripe unavailable"));
     expect((await POST(request())).status).toBe(500);
   });
 

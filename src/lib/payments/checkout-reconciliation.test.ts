@@ -3,7 +3,7 @@ vi.mock("server-only", () => ({}));
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/supabase/server", () => ({ createAdminClient: () => ({ rpc }) }));
 import type Stripe from "stripe";
-import { reconcileExpiredCheckout, releaseExpiredCheckoutHold } from "./checkout-reconciliation";
+import { reconcileExpiredCheckout, reconcileFailedAsyncCheckout, releaseExpiredCheckoutHold } from "./checkout-reconciliation";
 import type { PendingRegistration } from "@/lib/registrations/pending-repository";
 
 const pending: PendingRegistration = { id: "pending", memberId: "booker", eventSlug: "event", answers: {}, consentGiven: true,
@@ -17,6 +17,26 @@ function harness(status = "expired", overrides = {}) {
 }
 beforeEach(() => vi.clearAllMocks());
 describe("authoritative checkout expiry", () => {
+  it.each(["requires_payment_method","canceled"])("releases a signed async failure only after re-reading a %s intent",async (status) => {
+    const deps=harness("complete",{payment_intent:"pi_failed"});
+    const stripe=deps.getStripe();
+    stripe.paymentIntents={retrieve:vi.fn().mockResolvedValue({status,metadata:{pendingRegistrationId:"pending",memberId:"booker",checkoutAttemptId:"attempt",eventSlug:"event"}})} as unknown as Stripe["paymentIntents"];
+    deps.getStripe=()=>stripe;
+    expect(await reconcileFailedAsyncCheckout("session","pending",deps)).toBe(true);
+    expect(deps.release).toHaveBeenCalledWith("pending","attempt","session");
+  });
+  it.each(["processing","succeeded","requires_action"])("never releases an async %s intent even when a delayed failure event arrives",async (status) => {
+    const deps=harness("complete",{payment_intent:"pi"}); const stripe=deps.getStripe();
+    stripe.paymentIntents={retrieve:vi.fn().mockResolvedValue({status,metadata:{}})} as unknown as Stripe["paymentIntents"];deps.getStripe=()=>stripe;
+    expect(await reconcileFailedAsyncCheckout("session","pending",deps)).toBe(false);expect(deps.release).not.toHaveBeenCalled();
+  });
+  it("keeps failed intents with mismatched metadata and paid or incomplete sessions held",async () => {
+    for (const override of [{},{payment_status:"paid"},{status:"open"},{metadata:{memberId:"other"}},{payment_intent:null}]) {
+      const deps=harness("complete",{payment_intent:"pi",...override});const stripe=deps.getStripe();
+      stripe.paymentIntents={retrieve:vi.fn().mockResolvedValue({status:"requires_payment_method",metadata:{pendingRegistrationId:"pending",memberId:"other"}})} as unknown as Stripe["paymentIntents"];deps.getStripe=()=>stripe;
+      expect(await reconcileFailedAsyncCheckout("session","pending",deps)).toBe(false);expect(deps.release).not.toHaveBeenCalled();
+    }
+  });
   it.each(["open", "complete"])("does not release %s checkout inventory even after the hold timer expires", async (status) => {
     const deps = harness(status); expect(await reconcileExpiredCheckout("session", "pending", deps)).toBe(false); expect(deps.release).not.toHaveBeenCalled();
   });

@@ -13,7 +13,7 @@ import {
 import { reconcileStripeRefund } from "@/lib/payments/refunds";
 import { getRegistration, getRegistrations, updateRegistrationFinance, updateRegistrationStatus } from "@/lib/registrations/repository";
 import { fulfillCheckoutSession, type PaidCheckoutSession } from "@/lib/payments/fulfillment";
-import { reconcileExpiredCheckout } from "@/lib/payments/checkout-reconciliation";
+import { reconcileExpiredCheckout, reconcileFailedAsyncCheckout } from "@/lib/payments/checkout-reconciliation";
 
 export const runtime = "nodejs";
 
@@ -79,11 +79,12 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  if (event.type === "checkout.session.expired") {
+  if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
     const session = event.data.object;
     if (!session.metadata?.pendingRegistrationId) return new Response("OK", { status: 200 });
     try {
-      await reconcileExpiredCheckout(session.id, session.metadata.pendingRegistrationId);
+      if (event.type === "checkout.session.expired") await reconcileExpiredCheckout(session.id, session.metadata.pendingRegistrationId);
+      else await reconcileFailedAsyncCheckout(session.id, session.metadata.pendingRegistrationId);
       return new Response("OK", { status: 200 });
     } catch { return new Response("Checkout requires reconciliation", { status: 500 }); }
   }
