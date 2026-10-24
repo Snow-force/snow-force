@@ -6,6 +6,8 @@
 > 前置文档：[已上线 V1 记录](event-proxy-registration-launch-20261023.md)、[V1 修复记录](event-proxy-registration-fix-20261023.md)、[旧规划](event-proxy-registration-rollout-plan-20261022.md)
 > 本文保留原设计与验收要求；执行结果见 [V2 实施与上线操作记录](event-group-registration-v2-readiness-20261023.md)。本次已修改业务源码并验证隔离环境，**未修改生产数据库、线上活动参数、部署或生产 Stripe 配置**。
 
+> 2026-10-24 发布更新：用户另行授权后，已完成[默认关闭的代码与数据库扩展发布](event-group-registration-code-deployment-20261024.md)；所有活动仍走 V1，未开放 V2，免责草稿未作为正式政策发布。上段保留的是最初实施阶段的状态。
+
 ## 1. 目标、范围与关键解释
 
 ### 用户最新需求（2026-10-23）

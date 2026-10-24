@@ -2,6 +2,8 @@
 
 Date: 2026-10-23, America/Los_Angeles. This records code and isolated acceptance, **not a production release**.
 
+**2026-10-24 update:** the code and default-off schema expansion are now deployed; [verified production release record](event-group-registration-code-deployment-20261024.md). All events remain on V1. The chronological preparation/hold notes below are retained as history; they do not represent the latest code-deployment state. Draft legal texts and V2 activation remain unapproved.
+
 ## Scope and confirmed rules
 
 Implements P0 from [the V2 plan](event-group-registration-waiver-v2.md). A verified member can add themselves, friends, or friends only in one booking; each participant keeps an independent pending registration, payment, approval, waiver and ticket. Existing per-event friend caps remain authoritative (currently five); the booker does not consume a place unless attending. P1 consolidated Checkout, payment allocation and partial group refund ledgers remain deferred.
