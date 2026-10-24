@@ -1,6 +1,6 @@
 import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LanguageProvider } from "@/lib/language";
 import { RegistrationForm } from "./registration-form";
@@ -118,6 +118,37 @@ function createEvent(overrides: Partial<Event> = {}): Event {
 }
 
 describe("RegistrationForm payment model branching", () => {
+  it.each([
+    ["full_prepay", 118, true, "", /Pay full.*118.*USD/],
+    ["deposit", 99, true, "friend@example.test", /Pay deposit.*99.*USD/],
+    ["deposit", 99, false, "", /Pay deposit.*99.*USD/],
+  ] as const)("keeps the friend submission pending then opens %s payment (approval=%s)", async (paymentModel, amount, requiresApproval, email, paymentLabel) => {
+    const user = userEvent.setup();
+    let resolveRegistration: ((result: Awaited<ReturnType<typeof registerForEvent>>) => void) | undefined;
+    vi.mocked(registerForEvent).mockImplementationOnce(() => new Promise((resolve) => { resolveRegistration = resolve; }));
+    vi.mocked(createCheckoutSessionAction).mockRejectedValueOnce(new Error("Network interrupted"))
+      .mockResolvedValueOnce({ success: true, url: "https://checkout.stripe.com/friend" });
+    renderWithLanguage(<RegistrationForm event={createEvent({ allowProxyRegistrations: true, requiresApproval, paymentModel, fullPaymentAmount: amount, depositAmount: amount, waiverTextEn: "Adult waiver" })} memberProfile={createMemberProfile()} emailConfirmed />);
+    await user.click(screen.getByRole("radio", { name: "A friend" }));
+    expect(screen.getByRole("link", { name: "hello@snow-force.com" })).toHaveAttribute("href", "mailto:hello@snow-force.com");
+    expect(screen.queryByText(/Order contact:/)).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/^Name/), "Friend");
+    if (email) await user.type(screen.getByLabelText(/Friend’s email/), email);
+    await user.click(screen.getByRole("checkbox", { name: /My friend has permitted/ }));
+    await user.click(screen.getByRole("button", { name: /Submit Registration/ }));
+    expect(screen.getByRole("button", { name: /Submitting/ })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Myself" })).toBeDisabled();
+    expect(registerForEvent).toHaveBeenCalledTimes(1);
+    await act(async () => resolveRegistration?.({ success: true, pending: true, email: "test@test.com", confirmation: "member", pendingRegistrationId: "friend-pending" }));
+    await user.click(await screen.findByRole("button", { name: paymentLabel }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your registration is saved");
+    expect(screen.getByRole("button", { name: paymentLabel })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: paymentLabel }));
+    expect(mockLocation.href).toBe("https://checkout.stripe.com/friend");
+    expect(vi.mocked(createCheckoutSessionAction).mock.calls[1][0].get("pendingRegistrationId")).toBe("friend-pending");
+    expect(registerForEvent).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(registerForEvent).mock.calls[0][1].typedName).toBeUndefined();
+  });
   it("clears previous answers and lets a friend skip email without signing for them", async () => {
     const user = userEvent.setup();
     vi.mocked(registerForEvent).mockResolvedValue({ success: true, pending: true, email: "test@test.com", confirmation: "member", pendingRegistrationId: "friend" });

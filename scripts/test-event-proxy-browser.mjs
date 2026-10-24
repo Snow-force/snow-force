@@ -14,13 +14,20 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
   process.env.PLAYWRIGHT_BROWSERS_PATH=path.join(root,".cache/tooling/playwright-browsers");
   const { chromium }=require(process.env.EVENT_TEST_PLAYWRIGHT_MODULE ?? path.join(os.homedir(),".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"));
   const secret=randomBytes(48).toString("hex");
-  const sign=role=>{const body=[Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url"),Buffer.from(JSON.stringify({role,aud:"authenticated",exp:Math.floor(Date.now()/1000)+3600})).toString("base64url")].join(".");return body+"."+createHmac("sha256",secret).update(body).digest("base64url");};
+  const user="20000000-0000-4000-8000-000000000001";
+  const sign=role=>{const body=[Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url"),Buffer.from(JSON.stringify({role,sub:user,aud:"authenticated",exp:Math.floor(Date.now()/1000)+3600})).toString("base64url")].join(".");return body+"."+createHmac("sha256",secret).update(body).digest("base64url");};
   const restPort=config.port+1;
   const restLog=openSync(path.join(directory,"browser-postgrest.log"),"a");
   const rest=spawn(path.join(root,".cache/tooling/postgrest-16.5/bin/postgrest.exe"),[],{windowsHide:true,stdio:["ignore",restLog,restLog],env:{...process.env,
     PATH:path.join(root,".cache/tooling/postgresql/pgsql/bin")+path.delimiter+process.env.PATH,
     PGRST_DB_URI:`postgresql://${config.user}@127.0.0.1:${config.port}/postgres`,PGRST_DB_SCHEMAS:"public",PGRST_DB_ANON_ROLE:"anon",PGRST_JWT_SECRET:secret,PGRST_SERVER_HOST:"127.0.0.1",PGRST_SERVER_PORT:String(restPort)}});
-  const bridge=createServer(async(req,res)=>{try{const chunks=[];for await(const chunk of req)chunks.push(chunk);const upstream=await fetch(`http://127.0.0.1:${restPort}${req.url.replace(/^\/rest\/v1/,"")}`,{method:req.method,headers:{...req.headers,host:`127.0.0.1:${restPort}`},body:["GET","HEAD"].includes(req.method)?undefined:Buffer.concat(chunks)});res.writeHead(upstream.status,Object.fromEntries([...upstream.headers].filter(([name])=>!["content-encoding","transfer-encoding","content-length"].includes(name))));res.end(Buffer.from(await upstream.arrayBuffer()));}catch{res.writeHead(502);res.end();}});
+  // Only authentication/profile reads are emulated. Event validation and pending writes use real PostgREST/PostgreSQL.
+  const bridge=createServer(async(req,res)=>{try{
+    const reply=data=>{res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify(data));};
+    if(req.url.startsWith("/auth/v1/user"))return reply({id:user,email:"payer@example.test",email_confirmed_at:"2026-01-01T00:00:00Z",app_metadata:{},user_metadata:{}});
+    if(req.url.startsWith("/rest/v1/member_profiles"))return reply({id:booker,user_id:user,display_name:"Local Booker",email:"payer@example.test",created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    if(req.url.startsWith("/rest/v1/member_consents"))return reply(null);
+    const chunks=[];for await(const chunk of req)chunks.push(chunk);const upstream=await fetch(`http://127.0.0.1:${restPort}${req.url.replace(/^\/rest\/v1/,"")}`,{method:req.method,headers:{...req.headers,host:`127.0.0.1:${restPort}`},body:["GET","HEAD"].includes(req.method)?undefined:Buffer.concat(chunks)});res.writeHead(upstream.status,Object.fromEntries([...upstream.headers].filter(([name])=>!["content-encoding","transfer-encoding","content-length"].includes(name))));res.end(Buffer.from(await upstream.arrayBuffer()));}catch{res.writeHead(502);res.end();}});
   await new Promise(resolve=>bridge.listen(0,"127.0.0.1",resolve));
   const url=`http://127.0.0.1:${bridge.address().port}`,site="http://127.0.0.1:3199";
   let next,browser; const nextLog=openSync(path.join(directory,"browser-next.log"),"a");
@@ -45,8 +52,24 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
     await db.query("select review_proxy_registration($1,true,'staff')",[ticket.id]);
     await page.context().addCookies([{name:"lang",value:"zh",url:site}]);await page.setViewportSize({width:1280,height:900});await page.reload();await page.getByRole("img",{name:"你的个人活动票据"}).waitFor();
     await page.screenshot({path:path.join(out,"approval-approved-desktop-zh.png"),fullPage:true});assert.deepEqual(errors,[]);
+    const accessToken=sign("authenticated");
+    await page.context().addCookies([{name:"sb-127-auth-token",value:"base64-"+Buffer.from(JSON.stringify({access_token:accessToken,refresh_token:"isolated-refresh",token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user:{id:user,email:"payer@example.test"}})).toString("base64url"),url:site},{name:"lang",value:"en",url:site}]);
+    for(const [slug,model,approval,email] of [["browser-full","full_prepay",true,""],["browser-deposit","deposit",true,"friend@example.test"],["browser-trip","deposit",false,""]]) {
+      await db.query("insert into events(slug,status,registration_state,title_en,title_zh,event_date,capacity,requires_approval,allow_proxy_registrations,payment_model,deposit_amount,full_payment_amount,waiver_text_en) values($1,'published','open','Local event','本地活动','2099-01-01',50,$2,true,$3,99,118,'Local event waiver')",[slug,approval,model]);
+      await page.goto(`${site}/events/${slug}`);
+      await page.getByRole("radio",{name:"A friend",exact:true}).check();
+      await page.getByLabel(/^Name/).fill("Local Friend");
+      if(email)await page.getByLabel(/Friend’s email/).fill(email);
+      await page.getByRole("checkbox",{name:/My friend has permitted/}).check();
+      await page.getByRole("button",{name:"Submit Registration",exact:true}).click();
+      await page.getByRole("button",{name:model==="deposit"?/Pay deposit.*99.*USD/:/Pay full.*118.*USD/}).waitFor();
+      const saved=(await db.query("select * from pending_registrations where event_slug=$1",[slug])).rows;
+      assert.equal(saved.length,1);assert.equal(saved[0].registration_kind,"proxy");assert.equal(saved[0].contact_email,"payer@example.test");assert.equal(saved[0].attendee_email,email||null);assert.equal(saved[0].typed_name,null);assert.equal(saved[0].checkout_attempt,null);
+      await page.screenshot({path:path.join(out,`${slug}-payment.png`),fullPage:true});
+    }
+    assert.deepEqual(errors,[]);
     writeFileSync(path.join(root,"output/event-proxy-registration-browser-20261023.json"),JSON.stringify({verifiedAt:new Date().toISOString(),target:"isolated localhost",productionWrites:0,checks:["mobile EN signature through real server action","pending approval hides ticket QR","PostgreSQL approval unlocks desktop ZH ticket on reload","no page errors or mobile overflow"]},null,2));
-    console.log("PASS local Next approval journey: mobile signature, approval hold, staff approval and desktop Chinese ticket");
+    console.log("PASS local Next approval journey and all three paid friend submission flows through real server actions and PostgreSQL");
   } finally {
     await browser?.close();
     if(next){if(process.platform==="win32")spawnSync("taskkill",["/PID",String(next.pid),"/T","/F"],{windowsHide:true,stdio:"ignore"});else next.kill();}

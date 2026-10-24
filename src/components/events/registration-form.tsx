@@ -314,8 +314,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
   }
 
   function submitRegistration(input: { consentGiven: boolean; waiverTextEn?: string; waiverTextSha?: string; typedName?: string; handwrittenSignatureDataUrl?: string }) {
-    startTransition(() => {
-      registerForEvent(event.slug, {
+    startTransition(async () => {
+      try {
+        const result = await registerForEvent(event.slug, {
         answers: formData,
         consentGiven: input.consentGiven,
         lang,
@@ -329,7 +330,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
           typedName: input.typedName,
           handwrittenSignatureDataUrl: input.handwrittenSignatureDataUrl,
         }),
-      }).then((result) => {
+        });
         if (result.success) {
           setShowWaiverModal(false);
           setPendingEmail(result.email);
@@ -340,9 +341,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         } else {
           setServerError(result.error || t({ en: "Registration failed", zh: "报名失败" }));
         }
-      }).catch(() => {
+      } catch {
         setServerError(t({ en: "Something went wrong. Please try again.", zh: "发生错误，请重试。" }));
-      });
+      }
     });
   }
 
@@ -545,13 +546,14 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
             </div>
           </dl>
         ) : null}
-        {checkoutError && <p className="mt-2 text-sm text-red-700">{checkoutError}</p>}
+        {checkoutError && <p role="alert" className="mt-2 text-sm text-red-700">{checkoutError}</p>}
         <button
           type="button"
           disabled={checkoutLoading}
           onClick={async () => {
             setCheckoutLoading(true);
             setCheckoutError("");
+            try {
             const formData = new FormData();
             formData.append("pendingRegistrationId", pendingRegistrationId);
             const result = await createCheckoutSessionAction(formData);
@@ -568,6 +570,10 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
             } else {
               setCheckoutLoading(false);
               setCheckoutError(result.error);
+            }
+            } catch {
+              setCheckoutLoading(false);
+              setCheckoutError(t({ en: "Could not open payment. Your registration is saved. Please try again or resume payment from your member home.", zh: "暂时无法打开付款页面。报名资料已保存，请重试或前往会员主页继续支付。" }));
             }
           }}
           className="mt-4 inline-flex rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
@@ -632,7 +638,9 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
               </label>)}
             </div>
             {registrationKind === "proxy" && <p className="text-sm leading-6 text-gray-600">
-              {t({ en: `Order contact: ${memberProfile.email}. Enter your friend’s own answers. Each friend has a separate payment and must personally accept their invitation before check-in.`, zh: `订单联系人：${memberProfile.email}。请填写这位朋友自己的答案。每位朋友独立付款，并须亲自通过邀请确认授权后才能核销。` })}
+              {t({ en: "Event contact: ", zh: "活动联系方式：" })}
+              <a href="mailto:hello@snow-force.com" className="underline">hello@snow-force.com</a>
+              {t({ en: ". Enter your friend’s own answers. Each friend has a separate payment and must personally accept their invitation before check-in.", zh: "。请填写您朋友的答案。每位朋友需单独付款，且必须在活动签到前亲自接受邀请。" })}
             </p>}
           </fieldset>
         ) : null}
