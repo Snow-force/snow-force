@@ -59,3 +59,11 @@ Approved release sequence:
 Safe rollback: disable the two enrollment flags together (the staff policy form does this). Retain the expanded schema, V2-aware application, email recovery worker, existing assignments and signature evidence. Existing V2 orders still need fulfillment/signing/refund handling. Do not delete tables or restore a binary that cannot interpret V2 while accepting payments.
 
 The plan's release requirement remains: **“所有生产写入、试扣款和真实邮箱通知均需要独立上线审批。”** Code acceptance here does not substitute for that approval or for reviewed legal text.
+
+## Release decision — 2026-10-24
+
+The user explicitly chose **“暂不部署，补齐审定文本后再上线”**. Keep [PR #42](https://github.com/Snow-force/snow-force/pull/42) as a draft; do not merge to main, apply the production migration, change production variables, send real waiver/OTP emails or enroll events until that release hold is lifted. The approved business defaults do not approve legal text or a data-retention period.
+
+Read-only follow-up confirmed the source revision passed GitHub Quality Gate and the PR had no merge conflicts. Production web remained online with one healthy replica and no recent failures; the V2 tables/flags were absent. All three open events still allowed five friends and retained their existing payment/approval models. The unrelated staged Railway region/shop configuration remained untouched.
+
+To resume activation, obtain reviewed event-specific adult and parent/legal guardian text, the minimum-age/guardian verification procedure and child-data retention/access rules, then request approval for the concrete production release and designated internal recipient tests. No deployment or activation was performed in this follow-up.
