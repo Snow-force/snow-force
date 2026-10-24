@@ -14,14 +14,15 @@ const event = { ...seedEvents[0], eventDate: "2026-11-07", registrationQuestions
 beforeEach(() => { create.mockReset(); document.cookie = "lang=en;path=/"; });
 it("lets a non-attending booker add adult and minor friends with separate questionnaire and signer details", async () => {
   const user = userEvent.setup(); let finish: ((result: { success: true; booking: { id: string } }) => void) | undefined;
+  async function pasteInto(field: HTMLElement, value: string) { await user.click(field); await user.paste(value); }
   create.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
   render(<LanguageProvider><GroupRegistrationForm event={event} profile={previewProfile} /></LanguageProvider>);
   await user.click(screen.getByRole("button", { name: "Add a friend" }));
-  await user.type(screen.getByLabelText(/Name/), "Adult Friend"); await user.type(screen.getByLabelText("Participant 1 birth date"), "1990-01-01");
-  await user.type(screen.getByLabelText("Attendee’s own email"), "friend@example.test");
+  await pasteInto(screen.getByLabelText(/Name/), "Adult Friend"); await user.type(screen.getByLabelText("Participant 1 birth date"), "1990-01-01");
+  await pasteInto(screen.getByLabelText("Attendee’s own email"), "friend@example.test");
   await user.click(screen.getByRole("button", { name: "Add a friend" }));
-  await user.type(screen.getAllByLabelText(/Name/)[1], "Child Friend"); await user.type(screen.getByLabelText("Participant 2 birth date"), "2015-01-01");
-  await user.type(screen.getByLabelText("Guardian’s legal name"), "Legal Parent"); await user.type(screen.getByLabelText("Guardian’s email"), "parent@example.test");
+  await pasteInto(screen.getAllByLabelText(/Name/)[1], "Child Friend"); await user.type(screen.getByLabelText("Participant 2 birth date"), "2015-01-01");
+  await pasteInto(screen.getByLabelText("Guardian’s legal name"), "Legal Parent"); await pasteInto(screen.getByLabelText("Guardian’s email"), "parent@example.test");
   expect(screen.getByRole("note")).toHaveTextContent("Under 18"); expect(screen.queryByRole("button", { name: "Add a friend" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("checkbox", { name: /I have permission/ }));
   await user.click(screen.getByRole("button", { name: "Save and continue to individual payments" }));

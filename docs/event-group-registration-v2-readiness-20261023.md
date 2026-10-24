@@ -73,3 +73,9 @@ To resume activation, obtain reviewed event-specific adult and parent/legal guar
 The user confirmed the event organizer is **Snow Force LLC**, most events are in California, there is **no uniform minimum participation age**, attendees **under 14 require a parent/legal guardian accompanying them throughout**, and attendees **under 18 require a guardian signature**. This resolves the organizer and base age-policy questions, not jurisdiction-specific enforceability or child-data retention.
 
 The [adult bilingual review draft](event-waivers-20261024/adult-en-zh.review-draft.txt), [guardian bilingual review draft](event-waivers-20261024/guardian-en-zh.review-draft.txt), and [review / integration notes](event-waivers-20261024/REVIEW-NOTES.txt) are prepared for review. They are not approved policies and have not been loaded into production. The notes identify the remaining under-14 accompaniment enforcement, signing-date adult-capacity edge case, child privacy/retention review and per-state checks. No application source or production setting was changed by this drafting work; the release hold remains in force.
+
+## Code deployment authorization — 2026-10-24
+
+The user's subsequent **“部署”** lifts the earlier hold for deploying the verified code and its default-off schema expansion. The deployment scope explicitly keeps V2 disabled for every event, retains the existing V1 registration behavior, and does not approve the draft legal texts, new age/accompaniment controls, child-data retention, real recipient tests or V2 activation. Those activation prerequisites remain open. Do not apply the unrelated staged Railway region/shop settings as part of this release.
+
+Production preflight confirmed main tracking without a commit pin, the existing V1/coupon/approval schema, and a healthy prior web deployment. Deployment verification evidence and the actual release revision will be recorded after the rollout completes.
