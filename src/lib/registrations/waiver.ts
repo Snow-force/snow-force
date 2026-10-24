@@ -42,15 +42,11 @@ This includes negligence to the fullest extent permitted by law.
 6. Personal Property
 SnowForce is not responsible for lost, stolen, or damaged personal belongings during the Event.
 
-7. Media Release
-I understand that photos and videos may be taken during the Event and may be used for marketing, social media, promotional materials, and website content.
-I grant SnowForce permission to use my image without compensation.
-
-8. Refund Policy
+7. Refund Policy
 All bookings are non-refundable unless the event is canceled by SnowForce Club.
 If canceled, participants may receive either a credit toward a future event or a rescheduled date.
 
-9. Minor Participants
+8. Minor Participants
 If registering on behalf of a minor, I confirm that I am the parent/legal guardian and agree to this waiver on their behalf.
 
 Questions / Customer Support

@@ -164,6 +164,7 @@ export default async function AdminRegistrationsPage(
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-semibold text-gray-900">Registration Management</h2>
+        {eventQueryValue(searchParams?.event) && <a href={`/admin/events/${eventQueryValue(searchParams?.event)}/waivers`} className="text-sm text-blue-700 underline">Group bookings & verified waivers / 多人报名与邮箱验证免责</a>}
         <a href={exportHref} className="btn-secondary px-3 py-1.5 text-xs">
           Export CSV
         </a>

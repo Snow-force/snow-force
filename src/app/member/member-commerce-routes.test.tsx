@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/registrations/v2/repository", () => ({ listEventBookings: vi.fn(async () => []) }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error(`redirect:${url}`); }, notFound: () => { throw new Error("not-found"); }, useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/lib/members/actions", () => ({ getCurrentMemberAccount: vi.fn() }));
 vi.mock("@/components/members/member-auth-panel", () => ({ MemberAuthPanel: () => null }));

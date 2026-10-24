@@ -5,12 +5,15 @@ import type { MemberProfile, Registration } from "@/lib/types";
 import { RegistrationHistory } from "./registration-history";
 import { ProxyRegistrationList } from "./proxy-registration-list";
 import { MemberSecondaryShell } from "./member-secondary-shell";
+import { EventBookingList } from "./event-booking-list";
+import type { BookingView } from "@/lib/registrations/v2/repository";
 
 type MemberTripsViewProps = {
   dashboard: MemberDashboardData;
   profile: MemberProfile;
   registrations: Registration[];
   user: User;
+  bookings?: BookingView[];
 };
 
 function display(value: { en: string; zh: string }) {
@@ -25,7 +28,7 @@ function formatDate(value: string) {
   });
 }
 
-export function MemberTripsView({ dashboard, profile, registrations, user }: MemberTripsViewProps) {
+export function MemberTripsView({ dashboard, profile, registrations, user, bookings = [] }: MemberTripsViewProps) {
   const nextTrip = dashboard.upcomingTrips[0];
 
   const aside = (
@@ -80,6 +83,7 @@ export function MemberTripsView({ dashboard, profile, registrations, user }: Mem
       </section>
 
       <ProxyRegistrationList registrations={registrations} />
+      <EventBookingList bookings={bookings} />
       <RegistrationHistory registrations={registrations.filter((row) => row.registrationKind !== "proxy")} />
     </MemberSecondaryShell>
   );

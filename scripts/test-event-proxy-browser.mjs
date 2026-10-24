@@ -9,6 +9,8 @@ import path from "node:path";
 import os from "node:os";
 
 export async function verifyProxyApprovalBrowser({ root,db,config,directory,booker }) {
+  const appRoot = process.env.EVENT_TEST_APP_ROOT ?? root;
+  const encryptionKey = randomBytes(32).toString("hex");
   assert.equal(config.host,"127.0.0.1");
   const require=createRequire(path.join(root,"package.json"));
   process.env.PLAYWRIGHT_BROWSERS_PATH=path.join(root,".cache/tooling/playwright-browsers");
@@ -25,6 +27,7 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
   const bridge=createServer(async(req,res)=>{try{
     const reply=data=>{res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify(data));};
     if(req.url.startsWith("/auth/v1/user"))return reply({id:user,email:"payer@example.test",email_confirmed_at:"2026-01-01T00:00:00Z",app_metadata:{},user_metadata:{}});
+    if(req.url.startsWith("/rest/v1/member_profiles") && req.url.includes("email=eq."))return reply([]);
     if(req.url.startsWith("/rest/v1/member_profiles"))return reply({id:booker,user_id:user,display_name:"Local Booker",email:"payer@example.test",created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
     if(req.url.startsWith("/rest/v1/member_consents"))return reply(null);
     const chunks=[];for await(const chunk of req)chunks.push(chunk);const upstream=await fetch(`http://127.0.0.1:${restPort}${req.url.replace(/^\/rest\/v1/,"")}`,{method:req.method,headers:{...req.headers,host:`127.0.0.1:${restPort}`},body:["GET","HEAD"].includes(req.method)?undefined:Buffer.concat(chunks)});res.writeHead(upstream.status,Object.fromEntries([...upstream.headers].filter(([name])=>!["content-encoding","transfer-encoding","content-length"].includes(name))));res.end(Buffer.from(await upstream.arrayBuffer()));}catch{res.writeHead(502);res.end();}});
@@ -40,7 +43,7 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
     const token=randomBytes(32).toString("hex");
     const {createHash}=await import("node:crypto");
     await db.query("select issue_registration_guest_invitation($1,$2,'2099-01-01','staff')",[ticket.id,createHash("sha256").update(token).digest("hex")]);
-    next=spawn(process.execPath,[path.join(root,"node_modules/next/dist/bin/next"),"dev","--hostname","127.0.0.1","--port","3199"],{cwd:root,windowsHide:true,stdio:["ignore",nextLog,nextLog],env:{...process.env,NODE_ENV:"development",NEXT_TELEMETRY_DISABLED:"1",MEDUSA_BACKEND_URL:"",NEXT_PUBLIC_SITE_URL:site,NEXT_PUBLIC_SUPABASE_URL:url,SUPABASE_SECRET_KEY:sign("service_role"),NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:sign("anon")} });
+    next=spawn(process.execPath,[path.join(appRoot,"node_modules/next/dist/bin/next"),"dev","--hostname","127.0.0.1","--port","3199"],{cwd:appRoot,windowsHide:true,stdio:["ignore",nextLog,nextLog],env:{...process.env,EVENT_WAIVER_ENCRYPTION_KEY:encryptionKey,RESEND_API_KEY:"",STRIPE_SECRET_KEY:"",NODE_ENV:"development",NEXT_TELEMETRY_DISABLED:"1",MEDUSA_BACKEND_URL:"",NEXT_PUBLIC_SITE_URL:site,NEXT_PUBLIC_SUPABASE_URL:url,SUPABASE_SECRET_KEY:sign("service_role"),NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:sign("anon")} });
     for(let i=0;i<80;i++){try{if((await fetch(site+"/events/guest/invalid")).ok)break;}catch{}await new Promise(r=>setTimeout(r,400));}
     browser=await chromium.launch({headless:true}); const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on("pageerror",error=>errors.push(error.message));
     await page.goto(`${site}/events/guest/${token}`);
@@ -69,6 +72,10 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
       await page.screenshot({path:path.join(out,`${slug}-payment.png`),fullPage:true});
     }
     assert.deepEqual(errors,[]);
+    if(process.argv.includes("--v2")) {
+      const {verifyEventGroupBrowser}=await import("./test-event-group-browser.mjs");
+      await verifyEventGroupBrowser({db,browser,page,site,booker,encryptionKey,output:path.join(root,"output"),nextLog:path.join(directory,"browser-next.log")});
+    }
     writeFileSync(path.join(root,"output/event-proxy-registration-browser-20261023.json"),JSON.stringify({verifiedAt:new Date().toISOString(),target:"isolated localhost",productionWrites:0,checks:["mobile EN signature through real server action","pending approval hides ticket QR","PostgreSQL approval unlocks desktop ZH ticket on reload","all three open-event payment/approval combinations submit a friend through the real form and server action","friend email is optional; payer identity remains the authenticated booker","saved friend registration opens the matching payment step without a proxy signature","event contact mailto is hello@snow-force.com","no page errors or mobile overflow"]},null,2));
     console.log("PASS local Next approval journey and all three paid friend submission flows through real server actions and PostgreSQL");
   } catch(error) {
