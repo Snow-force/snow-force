@@ -67,3 +67,9 @@ The user explicitly chose **“暂不部署，补齐审定文本后再上线”*
 Read-only follow-up confirmed the source revision passed GitHub Quality Gate and the PR had no merge conflicts. Production web remained online with one healthy replica and no recent failures; the V2 tables/flags were absent. All three open events still allowed five friends and retained their existing payment/approval models. The unrelated staged Railway region/shop configuration remained untouched.
 
 To resume activation, obtain reviewed event-specific adult and parent/legal guardian text, the minimum-age/guardian verification procedure and child-data retention/access rules, then request approval for the concrete production release and designated internal recipient tests. No deployment or activation was performed in this follow-up.
+
+## Waiver drafting update — 2026-10-24
+
+The user confirmed the event organizer is **Snow Force LLC**, most events are in California, there is **no uniform minimum participation age**, attendees **under 14 require a parent/legal guardian accompanying them throughout**, and attendees **under 18 require a guardian signature**. This resolves the organizer and base age-policy questions, not jurisdiction-specific enforceability or child-data retention.
+
+The [adult bilingual review draft](event-waivers-20261024/adult-en-zh.review-draft.txt), [guardian bilingual review draft](event-waivers-20261024/guardian-en-zh.review-draft.txt), and [review / integration notes](event-waivers-20261024/REVIEW-NOTES.txt) are prepared for review. They are not approved policies and have not been loaded into production. The notes identify the remaining under-14 accompaniment enforcement, signing-date adult-capacity edge case, child privacy/retention review and per-state checks. No application source or production setting was changed by this drafting work; the release hold remains in force.
