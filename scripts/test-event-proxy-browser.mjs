@@ -32,7 +32,7 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
   const url=`http://127.0.0.1:${bridge.address().port}`,site="http://127.0.0.1:3199";
   let next,browser; const nextLog=openSync(path.join(directory,"browser-next.log"),"a");
   try {
-    await db.query("grant usage on schema private to service_role; grant all on all tables in schema public to service_role; grant all on all sequences in schema public to service_role");
+    await db.query("grant usage on schema private to service_role; grant all on all tables in schema public to service_role; grant all on all sequences in schema public to service_role; grant select on events to anon");
     for(let i=0;i<40;i++){try{if((await fetch(`http://127.0.0.1:${restPort}/`)).ok)break;}catch{}await new Promise(r=>setTimeout(r,200));}
     await db.query("insert into events(slug,status,registration_state,requires_approval,allow_proxy_registrations) values('browser-approval','published','open',true,true)");
     const pending=(await db.query("insert into pending_registrations(event_slug,member_id,registration_kind,participant_key,contact_name,contact_email,consent_given,token_hash,expires_at) values('browser-approval',$1,'proxy',$2,'Browser Friend','payer@example.test',true,$3,'2099-01-01') returning *",[booker,randomUUID(),randomUUID()])).rows[0];
@@ -58,6 +58,7 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
       await db.query("insert into events(slug,status,registration_state,title_en,title_zh,event_date,capacity,requires_approval,allow_proxy_registrations,payment_model,deposit_amount,full_payment_amount,waiver_text_en) values($1,'published','open','Local event','本地活动','2099-01-01',50,$2,true,$3,99,118,'Local event waiver')",[slug,approval,model]);
       await page.goto(`${site}/events/${slug}`);
       await page.getByRole("radio",{name:"A friend",exact:true}).check();
+      assert.equal(await page.getByRole("link",{name:"hello@snow-force.com",exact:true}).first().getAttribute("href"),"mailto:hello@snow-force.com");
       await page.getByLabel(/^Name/).fill("Local Friend");
       if(email)await page.getByLabel(/Friend’s email/).fill(email);
       await page.getByRole("checkbox",{name:/My friend has permitted/}).check();
@@ -68,8 +69,14 @@ export async function verifyProxyApprovalBrowser({ root,db,config,directory,book
       await page.screenshot({path:path.join(out,`${slug}-payment.png`),fullPage:true});
     }
     assert.deepEqual(errors,[]);
-    writeFileSync(path.join(root,"output/event-proxy-registration-browser-20261023.json"),JSON.stringify({verifiedAt:new Date().toISOString(),target:"isolated localhost",productionWrites:0,checks:["mobile EN signature through real server action","pending approval hides ticket QR","PostgreSQL approval unlocks desktop ZH ticket on reload","no page errors or mobile overflow"]},null,2));
+    writeFileSync(path.join(root,"output/event-proxy-registration-browser-20261023.json"),JSON.stringify({verifiedAt:new Date().toISOString(),target:"isolated localhost",productionWrites:0,checks:["mobile EN signature through real server action","pending approval hides ticket QR","PostgreSQL approval unlocks desktop ZH ticket on reload","all three open-event payment/approval combinations submit a friend through the real form and server action","friend email is optional; payer identity remains the authenticated booker","saved friend registration opens the matching payment step without a proxy signature","event contact mailto is hello@snow-force.com","no page errors or mobile overflow"]},null,2));
     console.log("PASS local Next approval journey and all three paid friend submission flows through real server actions and PostgreSQL");
+  } catch(error) {
+    if(browser)for(const context of browser.contexts())for(const page of context.pages()) {
+      writeFileSync(path.join(directory,"browser-failure.html"),await page.content());
+      console.error((await page.locator("body").innerText()).slice(-5000));
+    }
+    throw error;
   } finally {
     await browser?.close();
     if(next){if(process.platform==="win32")spawnSync("taskkill",["/PID",String(next.pid),"/T","/F"],{windowsHide:true,stdio:"ignore"});else next.kill();}

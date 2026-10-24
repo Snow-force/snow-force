@@ -317,19 +317,19 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
     startTransition(async () => {
       try {
         const result = await registerForEvent(event.slug, {
-        answers: formData,
-        consentGiven: input.consentGiven,
-        lang,
-        couponCode,
-        registrationKind,
-        clientRequestKey: requestKey.current ??= crypto.randomUUID(),
-        proxyConsent: registrationKind === "proxy" && consent,
-        ...(input.waiverTextEn && {
-          waiverTextEn: input.waiverTextEn,
-          waiverTextSha: input.waiverTextSha,
-          typedName: input.typedName,
-          handwrittenSignatureDataUrl: input.handwrittenSignatureDataUrl,
-        }),
+          answers: formData,
+          consentGiven: input.consentGiven,
+          lang,
+          couponCode,
+          registrationKind,
+          clientRequestKey: requestKey.current ??= crypto.randomUUID(),
+          proxyConsent: registrationKind === "proxy" && consent,
+          ...(input.waiverTextEn && {
+            waiverTextEn: input.waiverTextEn,
+            waiverTextSha: input.waiverTextSha,
+            typedName: input.typedName,
+            handwrittenSignatureDataUrl: input.handwrittenSignatureDataUrl,
+          }),
         });
         if (result.success) {
           setShowWaiverModal(false);
@@ -554,23 +554,23 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
             setCheckoutLoading(true);
             setCheckoutError("");
             try {
-            const formData = new FormData();
-            formData.append("pendingRegistrationId", pendingRegistrationId);
-            const result = await createCheckoutSessionAction(formData);
-            if (result.success) {
-              if (result.completed) {
-                setRegistrationCompleted(true);
-                setCheckoutLoading(false);
-              } else if (result.url) {
-                window.location.href = result.url;
+              const formData = new FormData();
+              formData.append("pendingRegistrationId", pendingRegistrationId);
+              const result = await createCheckoutSessionAction(formData);
+              if (result.success) {
+                if (result.completed) {
+                  setRegistrationCompleted(true);
+                  setCheckoutLoading(false);
+                } else if (result.url) {
+                  window.location.href = result.url;
+                } else {
+                  setCheckoutLoading(false);
+                  setCheckoutError(t({ en: "Could not open payment. Please try again.", zh: "暂时无法打开付款页面，请重试。" }));
+                }
               } else {
                 setCheckoutLoading(false);
-                setCheckoutError("No checkout URL returned");
+                setCheckoutError(result.error);
               }
-            } else {
-              setCheckoutLoading(false);
-              setCheckoutError(result.error);
-            }
             } catch {
               setCheckoutLoading(false);
               setCheckoutError(t({ en: "Could not open payment. Your registration is saved. Please try again or resume payment from your member home.", zh: "暂时无法打开付款页面。报名资料已保存，请重试或前往会员主页继续支付。" }));
@@ -707,7 +707,7 @@ export function RegistrationForm({ event, memberProfile = null, emailConfirmed =
         )}
 
         {serverError && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</div>
+          <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</div>
         )}
 
         <button type="submit" className="btn-primary flex w-full items-center justify-center gap-2" disabled={isSubmitting}>

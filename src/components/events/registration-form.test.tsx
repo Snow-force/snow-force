@@ -122,7 +122,7 @@ describe("RegistrationForm payment model branching", () => {
     ["full_prepay", 118, true, "", /Pay full.*118.*USD/],
     ["deposit", 99, true, "friend@example.test", /Pay deposit.*99.*USD/],
     ["deposit", 99, false, "", /Pay deposit.*99.*USD/],
-  ] as const)("keeps the friend submission pending then opens %s payment (approval=%s)", async (paymentModel, amount, requiresApproval, email, paymentLabel) => {
+  ] as const)("keeps the friend submission pending then opens %s payment at %s", async (paymentModel, amount, requiresApproval, email, paymentLabel) => {
     const user = userEvent.setup();
     let resolveRegistration: ((result: Awaited<ReturnType<typeof registerForEvent>>) => void) | undefined;
     vi.mocked(registerForEvent).mockImplementationOnce(() => new Promise((resolve) => { resolveRegistration = resolve; }));
@@ -148,6 +148,21 @@ describe("RegistrationForm payment model branching", () => {
     expect(vi.mocked(createCheckoutSessionAction).mock.calls[1][0].get("pendingRegistrationId")).toBe("friend-pending");
     expect(registerForEvent).toHaveBeenCalledTimes(1);
     expect(vi.mocked(registerForEvent).mock.calls[0][1].typedName).toBeUndefined();
+  });
+  it("retains friend answers and the request key when retrying a failed submission", async () => {
+    const user = userEvent.setup();
+    vi.mocked(registerForEvent).mockRejectedValueOnce(new Error("Connection lost"))
+      .mockResolvedValueOnce({ success: true, pending: true, email: "test@test.com", confirmation: "member", pendingRegistrationId: "saved-friend" });
+    renderWithLanguage(<RegistrationForm event={createEvent({ allowProxyRegistrations: true, paymentModel: "deposit", depositAmount: 99 })} memberProfile={createMemberProfile()} emailConfirmed />);
+    await user.click(screen.getByRole("radio", { name: "A friend" }));
+    await user.type(screen.getByLabelText(/^Name/), "Friend");
+    await user.click(screen.getByRole("checkbox", { name: /My friend has permitted/ }));
+    await user.click(screen.getByRole("button", { name: /Submit Registration/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Please try again");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("Friend");
+    await user.click(screen.getByRole("button", { name: /Submit Registration/ }));
+    expect(await screen.findByRole("button", { name: /Pay deposit.*99/ })).toBeEnabled();
+    expect(vi.mocked(registerForEvent).mock.calls[1][1].clientRequestKey).toBe(vi.mocked(registerForEvent).mock.calls[0][1].clientRequestKey);
   });
   it("clears previous answers and lets a friend skip email without signing for them", async () => {
     const user = userEvent.setup();
