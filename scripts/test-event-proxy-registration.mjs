@@ -241,6 +241,11 @@ try {
     await db.query("update pending_registrations set checkout_attempt=$1 where id=$2",[{ id: "attempt",params: {} },p.id]);
     assert.equal((await promote(p)).registration_kind,"proxy");
   });
+  if (process.argv.includes("--v2")) {
+    const { verifyEventGroupRegistration } = await import("./test-event-group-registration.mjs");
+    await verifyEventGroupRegistration({ root: process.env.EVENT_TEST_APP_ROOT ?? root, db, booker, other, user });
+    checks.push("V2 booking, email verification, guardian review, immutable waivers and rollout compatibility");
+  }
   if (process.argv.includes("--stripe")) {
     const { verifyStripeSandbox } = await import("./test-event-proxy-stripe.mjs");
     await verifyStripeSandbox({ root, db, config, directory, booker });

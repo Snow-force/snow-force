@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLanguage, type Lang } from "@/lib/language";
 import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
 import { RegistrationForm } from "@/components/events/registration-form";
+import { GroupRegistrationForm } from "./group-registration-form";
 import { EventShareBar } from "./event-share-bar";
 import { MerchantBoothCta } from "./merchant-booth-cta";
 import type { Bilingual, Event, MemberProfile } from "@/lib/types";
@@ -22,11 +23,13 @@ export function EventDetailView({
   loadError = false,
   memberProfile = null,
   emailConfirmed = false,
+  groupRegistrationEnabled = false,
 }: {
   event: Event | undefined;
   loadError?: boolean;
   memberProfile?: MemberProfile | null;
   emailConfirmed?: boolean;
+  groupRegistrationEnabled?: boolean;
 }) {
   const { lang, t } = useLanguage();
   const locale = lang === "zh" ? "zh-CN" : "en-US";
@@ -211,7 +214,9 @@ export function EventDetailView({
           <aside className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
               {open ? (
-                <RegistrationForm event={event} memberProfile={memberProfile} emailConfirmed={emailConfirmed} />
+                groupRegistrationEnabled && memberProfile && emailConfirmed
+                  ? <GroupRegistrationForm event={event} profile={memberProfile} />
+                  : <RegistrationForm event={event} memberProfile={memberProfile} emailConfirmed={emailConfirmed} />
               ) : (
                 <div className="card bg-[#f5f5f7] text-center">
                   <p className="text-[17px] leading-[1.47] tracking-[-0.374px] text-[#333333]">

@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+const v2Policy = vi.hoisted(() => vi.fn(async () => null));
+vi.mock("@/lib/registrations/v2/repository", () => ({ getWaiverPolicy: v2Policy }));
 
 const reads = vi.hoisted(() => ({ events: vi.fn(), event: vi.fn(), recaps: vi.fn(), recap: vi.fn(), reviews: vi.fn(), account: vi.fn() }));
 vi.mock("@/lib/events/repository", () => ({ getPublicDisplayEvents: reads.events, getEvent: reads.event }));
@@ -33,6 +35,13 @@ describe("public routes preserve repository failure states", () => {
   it("keeps recap discovery available during a repository outage", async () => {
     reads.recaps.mockRejectedValue(new Error("database unavailable"));
     expect((await RecapsPage()).props.recaps).toEqual([]);
+  });
+  it("shows a loading error instead of a legacy registration form when waiver configuration fails", async () => {
+    reads.event.mockResolvedValue({ slug: "requested-event" });
+    v2Policy.mockRejectedValue(new Error("waiver configuration unavailable"));
+    const page = await EventPage({ params: Promise.resolve({ slug: "requested-event" }) });
+    expect(page.props).toMatchObject({ event: undefined, loadError: true });
+    expect(page.props.groupRegistrationEnabled).toBeUndefined();
   });
   it("avoids a reviews lookup when a recap cannot be loaded", async () => {
     reads.recap.mockRejectedValue(new Error("database unavailable"));

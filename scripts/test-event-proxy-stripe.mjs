@@ -4,19 +4,23 @@ import { createServer } from "node:http";
 import { createRequire, Module } from "node:module";
 import { readFileSync, writeFileSync, openSync, closeSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import os from "node:os";
 
 export async function verifyStripeSandbox({ root, db, config, directory, booker }) {
-  const require = createRequire(path.join(root, "package.json"));
+  const appRoot = process.env.EVENT_TEST_APP_ROOT ?? root;
+  const v2 = process.argv.includes("--v2");
+  const require = createRequire(path.join(appRoot, "package.json"));
   require("@next/env").loadEnvConfig(root);
   const key = process.env.STRIPE_SECRET_KEY;
-  assert.match(key ?? "", /^(sk|rk)_test_/, "This acceptance runner ONLY permits Stripe test keys");
+  assert.match(key ?? "", /^(sk|rk|rkcs)_test_/, "This acceptance runner ONLY permits Stripe test keys");
+  process.env.RESEND_API_KEY = "";
+  process.env.EVENT_WAIVER_ENCRYPTION_KEY = "";
   const Stripe = require("stripe");
   const stripe = new Stripe(key);
   const externalCallbacks = (await stripe.webhookEndpoints.list({ limit: 100 })).data.filter((endpoint) =>
-    endpoint.status === "enabled" && endpoint.enabled_events.some((type) => type === "*" || type === "checkout.session.completed") &&
+    endpoint.status === "enabled" && (v2 || endpoint.enabled_events.some((type) => type === "*" || type === "checkout.session.completed")) &&
     !["localhost","127.0.0.1"].includes(new URL(endpoint.url).hostname));
   assert.equal(externalCallbacks.length,0,"Use a separate Stripe sandbox without enabled external Checkout webhooks; this runner must not cause callbacks to production");
   const jwtSecret = randomBytes(32).toString("hex");
@@ -72,7 +76,7 @@ export async function verifyStripeSandbox({ root, db, config, directory, booker 
     Module._load = function(request,parent,isMain) {
       if (request === "server-only") return {};
       if (request === "next/cache") return { revalidatePath() {} };
-      if (request.startsWith("@/")) request = path.join(root,"src",request.slice(2));
+      if (request.startsWith("@/")) request = path.join(appRoot,"src",request.slice(2));
       return originalLoad.call(this,request,parent,isMain);
     };
     for (const extension of [".ts",".tsx"]) Module._extensions[extension] = (module,filename) => {
@@ -89,7 +93,16 @@ export async function verifyStripeSandbox({ root, db, config, directory, booker 
     await db.query(`insert into events(slug,status,registration_state,capacity,allow_proxy_registrations,payment_model,deposit_amount,deposit_currency,title_en)
       values('stripe-proxy-acceptance','published','open',2,true,'deposit',1,'usd','SnowForce TEST friend ticket')`);
     const pendingRows = [];
-    for (let i=0;i<2;i++) pendingRows.push(await pendingRepo.createOrRefreshPendingRegistration({
+    if(v2) {
+      const sha=text=>createHash("sha256").update(text).digest("hex");
+      const adult="Sandbox adult risk acknowledgement. The named attendee personally reviews and signs their individual event terms. No marketing or photo permission is included.";
+      const guardian="Sandbox parent or legal guardian acknowledgement. The named guardian signs using their own legal name for one child. No marketing or photo permission is included.";
+      await db.query("update events set event_date='2099-11-07' where slug='stripe-proxy-acceptance'");
+      await db.query("select save_event_waiver_policy('stripe-proxy-acceptance','America/Los_Angeles',$1,$2,$3,$4,'sandbox-staff',true,true)",[adult,guardian,sha(adult),sha(guardian)]);
+      const participants=[1,2].map(i=>({key:randomUUID(),kind:"proxy",name:`Test Friend ${i}`,dateOfBirth:"2080-01-01",attendeeEmail:`test-friend-${i}@example.test`,recipientEmail:`test-friend-${i}@example.test`,identityFingerprint:sha(`Test Friend ${i}|2080-01-01`),answers:{name:`Test Friend ${i}`,email:`test-friend-${i}@example.test`},quotedAmount:1}));
+      const booking=(await db.query("select create_event_booking_v2('stripe-proxy-acceptance',$1,'proxy-acceptance@example.test',$2,$3,'en',$4) as id",[booker,randomUUID(),sha(JSON.stringify(participants)),JSON.stringify(participants)])).rows[0].id;
+      for(const row of (await db.query("select id from pending_registrations where booking_id=$1 order by contact_name",[booking])).rows)pendingRows.push(await pendingRepo.getPendingRegistrationById(row.id));
+    } else for (let i=0;i<2;i++) pendingRows.push(await pendingRepo.createOrRefreshPendingRegistration({
       eventSlug: "stripe-proxy-acceptance", memberId: booker, registrationKind: "proxy", participantKey: randomUUID(), attendeeEmail: null,
       answers: { name: `Test Friend ${i+1}` }, consentGiven: true, contactEmail: "proxy-acceptance@example.test", contactName: `Test Friend ${i+1}`, contactPhone: "",
       tokenHash: randomUUID(), expiresAt: new Date(Date.now()+86400000).toISOString(), holdExpiresAt: new Date(Date.now()+1800000).toISOString(),
@@ -110,7 +123,7 @@ export async function verifyStripeSandbox({ root, db, config, directory, booker 
     const playwright = require(process.env.EVENT_TEST_PLAYWRIGHT_MODULE ?? path.join(os.homedir(),".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"));
     browser = await playwright.chromium.launch({ headless: true });
     for (let i=0;i<sessions.length;i++) {
-      const page = await browser.newPage({ ignoreHTTPSErrors: true, viewport: i === 0 ? { width: 1280,height: 900 } : { width: 390,height: 844 } });
+      const page = await browser.newPage({ viewport: i === 0 ? { width: 1280,height: 900 } : { width: 390,height: 844 } });
       page.on("requestfailed",(request) => console.log(`Stripe test browser resource: ${new URL(request.url()).hostname} ${request.failure()?.errorText}`));
       page.on("pageerror",(error) => console.log(`Stripe test browser: ${error.message.slice(0,120)}`));
       // No production URLs are contacted by the return navigation.
@@ -177,6 +190,7 @@ export async function verifyStripeSandbox({ root, db, config, directory, booker 
     const registrations = await regRepo.getRegistrations("stripe-proxy-acceptance");
     assert.equal(registrations.length,2); assert(registrations.every((r) => r.memberId === null && r.bookerMemberId === booker && r.attendeeConfirmationStatus === "pending"));
     assert.notEqual(registrations[0].finance.stripePaymentIntentId,registrations[1].finance.stripePaymentIntentId);
+    if(!v2) {
     const link = await issueGuestInvitation(registrations[0].id,booker);
     const token = link.split("/").at(-1);
     assert.equal((await getGuestInvitation(token)).attendeeName,registrations[0].contactName);
@@ -211,12 +225,18 @@ export async function verifyStripeSandbox({ root, db, config, directory, booker 
     }
     await db.query("select checkin_registration_guest($1,'sandbox-staff')",[registrations[0].id]);
     await assert.rejects(db.query("select checkin_registration_guest($1,'sandbox-staff')",[registrations[1].id]),/attendee_authorization_required/);
+    } else {
+      const waivers=(await db.query("select registration_id,status from event_waiver_assignments where registration_id=any($1::uuid[])",[registrations.map(r=>r.id)])).rows;
+      assert.equal(waivers.length,2);assert(waivers.every(a=>a.status==="not_sent"));
+      assert.equal(Number((await db.query("select count(*) from event_waiver_signatures where registration_id=any($1::uuid[])",[registrations.map(r=>r.id)])).rows[0].count),0);
+      console.log("PASS V2 real paid webhooks create independent unsigned waiver assignments without allowing payer signatures or sending real mail");
+    }
     for (const intent of paidIntents) {
       const refund = await stripe.refunds.create({ payment_intent: intent },{ idempotencyKey: `proxy-acceptance-cleanup-${intent}` });
       assert.equal(refund.status,"succeeded");
     }
-    console.log("PASS real hosted Checkout desktop/mobile, signed webhook replay, personal acceptance, and separate test refunds");
-    writeFileSync(path.join(root,"output/event-proxy-registration-stripe-acceptance-20261022.json"),JSON.stringify({
+    console.log(v2 ? "PASS V2 real hosted Checkout desktop/mobile, signed webhook replay and separate test refunds; personal signing verified by the local browser suite" : "PASS real hosted Checkout desktop/mobile, signed webhook replay, personal acceptance, and separate test refunds");
+    writeFileSync(path.join(root, v2 ? "output/event-group-registration-v2-stripe-acceptance-20261023.json" : "output/event-proxy-registration-stripe-acceptance-20261022.json"),JSON.stringify({
       generatedAt: new Date().toISOString(),stripeMode: "test",productionDatabaseWrites: 0,
       distinctSessions: sessions.map((s) => s.id),distinctPaymentIntents: paidIntents,registrations: registrations.map((r) => r.id),
       signedWebhookDeliveries: 4,duplicateRegistrations: 0,refunds: "both test payments fully refunded",

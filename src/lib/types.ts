@@ -214,6 +214,8 @@ export interface Registration {
   clientRequestKey?: string | null;
   pendingRegistrationId?: string | null;
   creationSource?: "member" | "admin" | "legacy";
+  bookingId?: string | null;
+  waiverParticipantId?: string | null;
   answers: RegistrationAnswers;
   consentGiven: boolean;
   contactEmail: string;

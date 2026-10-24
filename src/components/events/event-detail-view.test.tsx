@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LanguageProvider } from "@/lib/language";
 import { EventDetailView } from "./event-detail-view";
+vi.mock("./group-registration-form", () => ({ GroupRegistrationForm: () => <div>V2 participant form</div> }));
 
 vi.mock("@/lib/payments/actions", () => ({
   createCheckoutSessionAction: vi.fn(),

@@ -8,6 +8,7 @@ vi.mock("@/lib/shop/member-actions", () => ({ saveShippingAddressAction: vi.fn()
 vi.mock("@/lib/members/actions", () => ({ confirmMemberPendingRegistrationAction: vi.fn(), logoutMember: vi.fn() }));
 vi.mock("@/lib/payments/actions", () => ({ createCheckoutSessionAction: vi.fn() }));
 vi.mock("@/lib/registrations/guest-actions", () => ({ createGuestInvitationAction: vi.fn() }));
+vi.mock("@/lib/registrations/v2/actions", () => ({ manageBookingWaiverAction: vi.fn(), cancelBookingPlaceAction: vi.fn() }));
 vi.mock("@/lib/shop/after-sales-actions",()=>({getAfterSalesAction:vi.fn(),submitAfterSalesAction:vi.fn(),updateAfterSalesAction:vi.fn()}));
 import { saveShippingAddressAction, deleteShippingAddressAction } from "@/lib/shop/member-actions";
 import { MemberOrdersView, OrderStatusBadge } from "./member-orders-view";

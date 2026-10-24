@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { EventDetailView } from "@/components/events/event-detail-view";
 import { getEvent } from "@/lib/events/repository";
 import { getCurrentMemberAccount } from "@/lib/members/actions";
+import { getWaiverPolicy } from "@/lib/registrations/v2/repository";
 
 import { buildEventMetadata } from "./metadata-builder";
 
@@ -26,5 +27,8 @@ export default async function EventDetailPage(props: { params: Promise<{ slug: s
   const result = await getEvent(params.slug)
     .then((event) => ({ event, loadError: false }))
     .catch(() => ({ event: undefined, loadError: true }));
-  return <EventDetailView {...result} memberProfile={account?.profile ?? null} emailConfirmed={account?.emailConfirmed ?? false} />;
+  let policy = null;
+  try { policy = result.event ? await getWaiverPolicy(params.slug) : null; }
+  catch { return <EventDetailView event={undefined} loadError memberProfile={account?.profile ?? null} emailConfirmed={account?.emailConfirmed ?? false} />; }
+  return <EventDetailView {...result} memberProfile={account?.profile ?? null} emailConfirmed={account?.emailConfirmed ?? false} groupRegistrationEnabled={Boolean(policy?.approved && policy.enableGroupForm && policy.requireEmailedWaiver)} />;
 }

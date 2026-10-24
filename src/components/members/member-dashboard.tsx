@@ -8,6 +8,8 @@ import { ArrowRight, ArrowUpRight, CalendarDays, CreditCard, LogOut, MapPin, Pac
 import type { MemberDashboardData } from "@/lib/members/dashboard";
 import type { MemberProfile, Registration } from "@/lib/types";
 import { ProxyRegistrationList } from "./proxy-registration-list";
+import { EventBookingList } from "./event-booking-list";
+import type { BookingView } from "@/lib/registrations/v2/repository";
 import { confirmMemberPendingRegistrationAction, logoutMember } from "@/lib/members/actions";
 import { useLanguage } from "@/lib/language";
 import type { MemberOrderList } from "@/lib/shop/member-order-repository";
@@ -27,6 +29,7 @@ type MemberDashboardProps = {
   user: User;
   preview?: boolean;
   proxyRegistrations?: Registration[];
+  groupBookings?: BookingView[];
 };
 
 function PendingConfirmations({ dashboard, preview }: { dashboard: MemberDashboardData; preview: boolean }) {
@@ -57,7 +60,7 @@ function FreeConfirmationButton() {
   return <button type="submit" disabled={pending} className="min-h-11 rounded-full bg-[#0066cc] px-5 text-sm font-semibold text-white disabled:opacity-50">{t(pending ? { en: "Confirming…", zh: "确认中…" } : { en: "Confirm registration", zh: "确认报名" })}</button>;
 }
 
-export function MemberDashboard({ dashboard, orders, profile, searchParams, verifiedPaymentStatus, user, preview = false, proxyRegistrations = [] }: MemberDashboardProps) {
+export function MemberDashboard({ dashboard, orders, profile, searchParams, verifiedPaymentStatus, user, preview = false, proxyRegistrations = [], groupBookings = [] }: MemberDashboardProps) {
   const { t, lang } = useLanguage();
   const firstName = profile.displayName || user.email?.split("@")[0] || t({ en: "rider", zh: "滑手" });
   const nextTrip = dashboard.upcomingTrips[0];
@@ -95,6 +98,7 @@ export function MemberDashboard({ dashboard, orders, profile, searchParams, veri
     </section>
     <PendingConfirmations dashboard={dashboard} preview={preview} />
     <ProxyRegistrationList registrations={proxyRegistrations} />
+    <EventBookingList bookings={groupBookings} />
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(250px,0.8fr)]">
       <section className="rounded-[18px] border border-[#dce2d7] bg-white p-6">
         <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><CalendarDays size={18} />{t({ en: "Next mountain day", zh: "下一趟雪山行程" })}</h2><Link href="/member/trips" className="min-h-10 content-center text-xs font-semibold text-[#0066cc]">{t({ en: "My trips", zh: "我的活动" })}</Link></div>

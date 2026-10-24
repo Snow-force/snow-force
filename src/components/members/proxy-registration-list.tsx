@@ -10,7 +10,7 @@ export function ProxyRegistrationList({ registrations }: { registrations: Regist
   const [links, setLinks] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
-  const rows = registrations.filter((row) => row.registrationKind === "proxy");
+  const rows = registrations.filter((row) => row.registrationKind === "proxy" && !row.waiverParticipantId);
   if (!rows.length) return null;
   return <section className="rounded-[18px] border border-[#dce2d7] bg-white p-6">
     <h2 className="text-lg font-semibold">{t({ en: "Friends I registered", zh: "我替朋友的报名" })}</h2>

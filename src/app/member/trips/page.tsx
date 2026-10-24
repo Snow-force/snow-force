@@ -7,6 +7,7 @@ import { buildMemberDashboard } from "@/lib/members/dashboard";
 import { getRecaps } from "@/lib/recaps/repository";
 import { getRegistrationsByMember } from "@/lib/registrations/repository";
 import { memberConsentPath } from "@/lib/members/member-consents";
+import { listEventBookings } from "@/lib/registrations/v2/repository";
 
 export default async function MemberTripsPage(
   props: {
@@ -35,5 +36,5 @@ export default async function MemberTripsPage(
     recaps,
   });
 
-  return <MemberTripsView dashboard={dashboard} profile={account.profile} registrations={registrations} user={account.user} />;
+  return <MemberTripsView dashboard={dashboard} profile={account.profile} registrations={registrations} user={account.user} bookings={await listEventBookings(account.profile.id)} />;
 }

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { computeWaiverSha, DEFAULT_WAIVER_TEXT } from "./waiver";
 
 describe("computeWaiverSha", () => {
+  it("keeps optional media/marketing grants out of future default liability waivers", () => {
+    expect(DEFAULT_WAIVER_TEXT).not.toContain("Media Release");
+    expect(DEFAULT_WAIVER_TEXT).not.toContain("permission to use my image");
+  });
   it("directs event questions to the confirmed general mailbox", () => {
     expect(DEFAULT_WAIVER_TEXT).toContain("Email: hello@snow-force.com");
     expect(DEFAULT_WAIVER_TEXT).not.toContain("snowforceclub@gmail.com");

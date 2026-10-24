@@ -43,6 +43,8 @@ type RegistrationRow = {
   client_request_key?: string | null;
   pending_registration_id?: string | null;
   creation_source?: Registration["creationSource"];
+  booking_id?: string | null;
+  waiver_participant_id?: string | null;
   answers: RegistrationAnswers;
   consent_given: boolean;
   contact_email: string;
@@ -108,6 +110,8 @@ function rowToRegistration(row: RegistrationRow): Registration {
     clientRequestKey: row.client_request_key ?? null,
     pendingRegistrationId: row.pending_registration_id ?? null,
     creationSource: row.creation_source ?? "legacy",
+    bookingId: row.booking_id ?? null,
+    waiverParticipantId: row.waiver_participant_id ?? null,
     answers: row.answers,
     consentGiven: row.consent_given,
     contactEmail: row.contact_email,
@@ -404,4 +408,11 @@ export const getRegistrationCountForEvent = repository.getRegistrationCountForEv
 export const updateRegistrationStatus = repository.updateRegistrationStatus;
 export const updateRegistrationFinance = repository.updateRegistrationFinance;
 export const deleteCancelledRegistration = repository.deleteCancelledRegistration;
-export const createRegistration = repository.createRegistration;
+export async function createRegistration(data: NewRegistration) {
+  const result = await repository.createRegistration(data);
+  if (result.registration.waiverParticipantId) {
+    try { const { scheduleRegistrationWaiver } = await import("./v2/schedule"); await scheduleRegistrationWaiver(result.registration.id); }
+    catch { console.error("[waiver] delivery deferred; durable assignment retained"); }
+  }
+  return result;
+}

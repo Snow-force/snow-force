@@ -10,6 +10,7 @@ export function GuestRegistrationControl({ registration }: { registration: Regis
   const [pending, startTransition] = useTransition();
   const [link, setLink] = useState("");
   const [message, setMessage] = useState("");
+  if (registration.waiverParticipantId) return <a className="mt-3 block min-h-11 text-blue-700 underline" href={`/admin/events/${registration.eventSlug}/waivers`}>{t({ en: "Manage verified waiver / guardian / check-in", zh: "管理邮箱验证免责 / 监护人 / 签到" })}</a>;
   if (registration.registrationKind !== "proxy") return null;
   return <div className="mt-3 space-y-2 text-xs">
     <p>{t({ en: "Staff approval", zh: "工作人员审批" })}: {registration.approvalStatus ?? "not_required"}</p>

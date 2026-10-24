@@ -10,6 +10,7 @@ import { getRegistrationsByMember } from "@/lib/registrations/repository";
 import { memberConsentPath } from "@/lib/members/member-consents";
 import { resolvePaymentReturnStatus } from "@/lib/payments/return-status";
 import { memberOrderRepository } from "@/lib/shop/member-order-repository";
+import { listEventBookings } from "@/lib/registrations/v2/repository";
 
 export default async function MemberPage(
   props: {
@@ -53,6 +54,7 @@ export default async function MemberPage(
       searchParams={searchParams}
       user={account.user}
       verifiedPaymentStatus={verifiedPaymentStatus}
+      groupBookings={await listEventBookings(account.profile.id)}
     />
   );
 }

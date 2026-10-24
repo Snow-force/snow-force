@@ -153,7 +153,7 @@ function EventSelect({ id, label, options, placeholder, value, error, onChange }
   );
 }
 
-function renderQuestion(
+export function renderQuestion(
   question: EventRegistrationQuestion,
   value: AnswerValue | undefined,
   onChange: (v: AnswerValue) => void,
