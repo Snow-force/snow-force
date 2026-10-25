@@ -7,7 +7,8 @@ import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getEvent } from "@/lib/events/repository";
 import { createAdminClient } from "@/lib/supabase/server";
 import { isEventOpen } from "@/lib/events/availability";
-import { ageOnDate, localCalendarDate, validateParticipants, uuidPattern } from "./participants";
+import { ageOnDate, localCalendarDate, uuidPattern } from "./participants";
+import { parseAgeDeclaration, validateDeclaredParticipants } from "./age-declaration";
 import { findBookingRequest, getAssignment, getWaiverInvitation, getWaiverPolicy, listEventBookings } from "./repository";
 import { digest, encryptDelivery, randomToken } from "./secrets";
 import { queueWaiverInvitation } from "./delivery";
@@ -26,11 +27,13 @@ export async function loadEventWaiverAction(form: FormData) {
   if (!invitation) return null;
   const { assignment: a, participant: p, registration: r } = invitation;
   const event = await getEvent(String(r.event_slug));
-  const needsAccompaniment = (ageOnDate(p.date_of_birth, p.event_date) ?? 0) < 14;
-  const canSign = p.signer_role === "guardian" || (ageOnDate(p.date_of_birth, localCalendarDate(invitation.timeZone)) ?? 0) >= 18;
+  const declarationMode = p.age_confirmation_method === "declaration";
+  const needsAccompaniment = declarationMode ? a.declared_under14 === true : (ageOnDate(p.date_of_birth ?? "", p.event_date) ?? 0) < 14;
+  const canSign = declarationMode || p.signer_role === "guardian" || (ageOnDate(p.date_of_birth ?? "", localCalendarDate(invitation.timeZone)) ?? 0) >= 18;
   const ready = a.status === "signed" && (!needsAccompaniment || invitation.accompanimentPresent) && ["approved", "not_required"].includes(r.approval_status) && (p.payment_model === "free" || ["paid", "waived"].includes(r.deposit_status));
   const qr = ready ? await buildQrCodeDataUrl(`${process.env.NEXT_PUBLIC_SITE_URL ?? "https://snow-force.com"}/events/waivers#${token}`) : null;
-  return { attendeeName: p.attendee_name, eventSlug: String(r.event_slug), eventTitle: event?.title, eventDate: p.event_date, eventLocation: event?.activityLocation, role: p.signer_role, waiverText: a.waiver_text, status: a.status,
+  return { attendeeName: p.attendee_name, eventSlug: String(r.event_slug), eventTitle: event?.title, eventDate: p.event_date, eventLocation: event?.activityLocation, role: a.declared_signer_role ?? p.signer_role, waiverText: a.waiver_text, status: a.status,
+    declarationMode, adultWaiverText: declarationMode ? invitation.policy.adultText : undefined, guardianWaiverText: declarationMode ? invitation.policy.guardianText : undefined,
     ready, canSign, needsAccompaniment, registrationId: String(r.id), qrDataUrl: qr?.dataUrl, initiallyVerified: await hasWaiverSigningProof(token) };
 }
 
@@ -54,7 +57,7 @@ export async function createEventBookingAction(form: FormData) {
     const event = await getEvent(eventSlug);
     const policy = await getWaiverPolicy(eventSlug);
     if (!event || !isEventOpen(event) || !policy?.approved || !policy.enableGroupForm || !policy.requireEmailedWaiver) return { success: false as const, error: "Group registration is not available" };
-    const validation = validateParticipants(event, input.participants, account.user.email, localCalendarDate(policy.timeZone));
+    const validation = validateDeclaredParticipants(event, input.participants, account.user.email);
     if (!validation.participants) return { success: false as const, error: validation.error ?? "Check each participant’s details" };
     const originalAmount = event.paymentModel === "free" ? 0 : event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
     if (originalAmount === null || originalAmount < 0) return { success: false as const, error: "Event pricing is unavailable" };
@@ -68,9 +71,9 @@ export async function createEventBookingAction(form: FormData) {
         if ("error" in quote) return { success: false as const, error: quote.error };
         quotedAmount = quote.finalAmount;
       }
-      participants.push({ ...p, quotedAmount, identityFingerprint: digest(`${p.name.normalize("NFKC").toLocaleLowerCase()}|${p.dateOfBirth}`) });
+      participants.push({ ...p, quotedAmount, identityFingerprint: digest(`${p.name.normalize("NFKC").toLocaleLowerCase()}|${p.recipientEmail}`) });
     }
-    const { data: bookingId, error } = await createAdminClient().rpc("create_event_booking_v2", { event_slug_input: eventSlug, booker_id_input: account.profile.id,
+    const { data: bookingId, error } = await createAdminClient().rpc("create_declared_event_booking_v2", { event_slug_input: eventSlug, booker_id_input: account.profile.id,
       contact_email_input: account.user.email, request_key_input: input.requestKey, request_hash_input: requestHash, language_input: input.lang, participants_input: participants });
     if (error) return { success: false as const, error: /capacity|limit|registered|duplicate|participant_once/.test(error.message) ? "A participant is already registered, the friend limit was reached, or no places remain. Check your bookings before retrying." : "Could not create this booking. Check the details and retry." };
     refreshBookings();
@@ -125,9 +128,12 @@ export async function signEventWaiverAction(form: FormData) {
     if (!invitation || !proof) return { success: false };
     const accepted = form.get("decision") === "accept";
     const account = await getCurrentMemberAccount();
-    const role = invitation.participant.signer_role;
-    if (accepted && role === "attendee" && (ageOnDate(invitation.participant.date_of_birth, localCalendarDate(invitation.timeZone)) ?? 0) < 18) return { success: false };
-    if (String(form.get("signerRole")) !== role) return { success: false };
+    const declarationMode = invitation.participant.age_confirmation_method === "declaration";
+    const declaration = declarationMode && accepted ? parseAgeDeclaration(form) : null;
+    if (declarationMode && accepted && !declaration) return { success: false };
+    const role = declarationMode && accepted ? declaration?.adultConfirmed ? "attendee" : "guardian" : invitation.participant.signer_role;
+    if (!declarationMode && accepted && role === "attendee" && (ageOnDate(invitation.participant.date_of_birth ?? "", localCalendarDate(invitation.timeZone)) ?? 0) < 18) return { success: false };
+    if (!declarationMode && String(form.get("signerRole")) !== role) return { success: false };
     const sameEmail = account?.emailConfirmed && account.user.email?.toLowerCase() === invitation.assignment.recipient_email;
     if (accepted && form.get("attested") !== "on") return { success: false };
     if (accepted && role === "attendee" && invitation.participant.registration_kind === "proxy" && account?.profile?.id === invitation.registration.booker_member_id) return { success: false };
@@ -136,8 +142,8 @@ export async function signEventWaiverAction(form: FormData) {
       ? sameEmail ? account?.profile?.id ?? null : await resolveVerifiedAttendeeMember(invitation.assignment.recipient_email)
       : null;
     const requestHeaders = await headers();
-    const { error } = await createAdminClient().rpc("respond_event_waiver", { token_hash_input: digest(token), proof_hash_input: digest(proof), accepted_input: accepted,
-      signer_name_input: String(form.get("typedName") ?? "").trim(), signer_role_input: String(form.get("signerRole") ?? ""), guardian_attested_input: role !== "guardian" || form.get("guardianAttested") === "on",
+    const { error } = await createAdminClient().rpc(declarationMode ? "respond_declared_event_waiver" : "respond_event_waiver", { token_hash_input: digest(token), proof_hash_input: digest(proof), accepted_input: accepted,
+      signer_name_input: String(form.get("typedName") ?? "").trim(), ...(declarationMode ? { declaration_input: declaration ?? {} } : { signer_role_input: role }), guardian_attested_input: role !== "guardian" || form.get("guardianAttested") === "on",
       member_id_input: attendeeMember,
       ip_digest_input: digest(requestHeaders.get("x-forwarded-for") ?? "unknown"), ua_digest_input: digest(requestHeaders.get("user-agent") ?? "unknown"),
       receipt_payload_input: encryptDelivery({ kind: accepted ? "signed" : "declined", name: invitation.participant.attendee_name, event: invitation.registration.event_slug, role, lang: invitation.language }) });

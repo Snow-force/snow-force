@@ -8,6 +8,26 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 import { EmailedWaiverForm } from "./emailed-waiver-form";
 const props = { token: "a".repeat(64), attendeeName: "Child", eventSlug: "event", role: "guardian" as const, waiverText: "Reviewed guardian terms", status: "queued", ready: false };
 beforeEach(() => { vi.resetAllMocks(); document.cookie = "lang=en;path=/"; m.request.mockResolvedValue({ success: true }); m.verify.mockResolvedValue({ success: true }); m.sign.mockResolvedValue({ success: true }); });
+it("lets a verified attendee check 18+ and sign without guardian fields, resetting consent when terms change", async () => {
+  const user = userEvent.setup(); render(<LanguageProvider><EmailedWaiverForm {...props} role="unconfirmed" initiallyVerified adultWaiverText="Adult terms" guardianWaiverText="Guardian terms" /></LanguageProvider>);
+  expect(screen.getByText("Guardian terms")).toBeVisible();
+  await user.click(screen.getByRole("checkbox", { name: /I have read and accept/ }));
+  await user.click(screen.getByRole("checkbox", { name: /I confirm I am the attendee/ }));
+  expect(screen.getByText("Adult terms")).toBeVisible(); expect(screen.queryByLabelText("Your legal relationship to the attendee")).not.toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: /I have read and accept/ })).not.toBeChecked();
+  expect(screen.queryByRole("checkbox", { name: /I am this child’s parent/ })).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText("Your full legal name / electronic signature"), "Adult Name");
+  await user.click(screen.getByRole("checkbox", { name: /I have read and accept/ })); await user.click(screen.getByRole("button", { name: "Accept and sign" }));
+  expect(m.sign.mock.calls[0][0].get("adultConfirmed")).toBe("on"); expect(m.sign.mock.calls[0][0].has("guardianAttested")).toBe(false);
+});
+it("keeps guardian signing and under-14 accompaniment when the adult box is unchecked, while allowing a decline without age details", async () => {
+  const user = userEvent.setup(); render(<LanguageProvider><EmailedWaiverForm {...props} role="unconfirmed" initiallyVerified adultWaiverText="Adult terms" guardianWaiverText="Guardian terms" /></LanguageProvider>);
+  await user.selectOptions(screen.getByLabelText("Your legal relationship to the attendee"), "parent");
+  await user.click(screen.getByRole("radio", { name: /^Yes, under 14$/ }));
+  expect(screen.getByLabelText("Accompanying guardian’s phone")).toBeRequired();
+  expect(screen.getByRole("checkbox", { name: /I am this child’s parent/ })).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Decline waiver" })); expect(m.sign.mock.calls[0][0].get("decision")).toBe("decline");
+});
 it("requires email verification before displaying a fixed guardian signature role", async () => {
   const user = userEvent.setup(); render(<LanguageProvider><EmailedWaiverForm {...props} /></LanguageProvider>);
   expect(screen.queryByRole("button", { name: "Accept and sign" })).not.toBeInTheDocument();

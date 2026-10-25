@@ -7,6 +7,12 @@ const data: WaiverEmailData = { kind: "invitation", name: '<img src="x">', event
 beforeEach(() => { mocks.send.mockReset(); vi.stubEnv("RESEND_API_KEY", "isolated-key"); vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://snow-force.com"); });
 afterEach(() => vi.unstubAllEnvs());
 describe("strict private waiver delivery", () => {
+  it("explains age confirmation at signing without requesting a birth date or preassigning a guardian", () => {
+    const email = buildWaiverEmail({ ...data, role: "unconfirmed" });
+    expect(email.html).toContain("Adults check the box and sign personally, without a guardian signature");
+    expect(email.html).toContain("No birth date is required");
+    expect(email.html).toContain("a parent or legal guardian must verify their own email and sign");
+  });
   it("never reports missing configuration or rejected/network sends as successful", async () => {
     vi.stubEnv("RESEND_API_KEY", ""); expect((await sendWaiverEmail("test@example.test", data, "stable-key")).success).toBe(false); expect(mocks.send).not.toHaveBeenCalled();
     vi.stubEnv("RESEND_API_KEY", "key"); mocks.send.mockResolvedValueOnce({ error: { message: "rejected" } }).mockRejectedValueOnce(new Error("network"));

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T05:23:58.133Z",
+  "generatedAt": "2026-10-25T06:08:24.208Z",
   "target": "isolated localhost PostgreSQL",
   "productionWrites": 0,
   "checks": [
