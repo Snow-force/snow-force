@@ -1,11 +1,15 @@
 {
-  "verifiedAt": "2026-10-23T22:19:21.115Z",
+  "verifiedAt": "2026-10-25T05:23:57.946Z",
   "target": "isolated localhost",
   "productionWrites": 0,
   "checks": [
     "mobile EN signature through real server action",
     "pending approval hides ticket QR",
     "PostgreSQL approval unlocks desktop ZH ticket on reload",
+    "all three open-event payment/approval combinations submit a friend through the real form and server action",
+    "friend email is optional; payer identity remains the authenticated booker",
+    "saved friend registration opens the matching payment step without a proxy signature",
+    "event contact mailto is hello@snow-force.com",
     "no page errors or mobile overflow"
   ]
 }

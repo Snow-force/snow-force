@@ -8,15 +8,19 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
   const sha = (s) => createHash("sha256").update(s).digest("hex");
   const adult = "Adult personal risk acknowledgement. I understand and personally accept the event activity risks and terms. Photo and marketing permissions remain separate.";
   const guardian = "Parent or legal guardian acknowledgement. I have legal authority for the named child and accept the event activity risks and terms using my own name. Photo and marketing permissions are separate.";
-  await db.query("insert into events(slug,title_en,title_zh,status,registration_state,event_date,capacity,allow_proxy_registrations,max_proxy_registrations,payment_model,requires_approval) values('browser-group-v2','Local group booking','本地多人报名','published','open','2099-11-07',10,true,5,'free',true)");
+  await db.query("insert into events(slug,title_en,title_zh,status,registration_state,event_date,capacity,allow_proxy_registrations,max_proxy_registrations,payment_model,requires_approval) values('browser-group-v2','Local group booking','本地多人报名','published','open','2027-11-07',10,true,5,'free',true)");
   await db.query("select save_event_waiver_policy('browser-group-v2','America/Los_Angeles',$1,$2,$3,$4,'fixture-staff',true,true)", [adult, guardian, sha(adult), sha(guardian)]);
   await page.goto(`${site}/events/browser-group-v2`);
   await page.getByRole("button", { name: "Add a friend", exact: true }).click();
-  await page.getByLabel(/^Name/).fill("Browser Adult"); await page.getByLabel("Participant 1 birth date").fill("2080-01-01");
+  await page.getByLabel(/^Name/).fill("Browser Adult"); await page.getByLabel("Participant 1 birth date").fill("1990-01-01");
   await page.getByLabel("Attendee’s own email").fill("adult@example.test");
   await page.getByRole("button", { name: "Add a friend", exact: true }).click();
-  await page.getByLabel(/^Name/).nth(1).fill("Browser Child"); await page.getByLabel("Participant 2 birth date").fill("2085-01-01");
+  await page.getByLabel(/^Name/).nth(1).fill("Browser Child"); await page.getByLabel("Participant 2 birth date").fill("2015-01-01");
   await page.getByLabel("Guardian’s legal name").fill("Browser Parent"); await page.getByLabel("Guardian’s email").fill("parent@example.test");
+  await page.getByLabel("Accompanying guardian’s name").fill("Browser Parent");
+  await page.getByLabel("Accompanying guardian’s phone").fill("+1 555 010 0100");
+  await page.getByLabel("Accompanying guardian’s relationship").selectOption("parent");
+  await page.getByRole("checkbox", { name: /This parent or legal guardian will accompany/ }).check();
   await page.getByRole("checkbox", { name: /I have permission/ }).check();
   await page.getByRole("button", { name: "Save and continue to individual payments", exact: true }).click();
   await page.getByRole("heading", { name: "Your participant bookings" }).waitFor();
@@ -62,12 +66,13 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
     await guest.getByRole("status").filter({ hasText: /signature is recorded|waiver is signed/ }).waitFor();
     assert.equal(await guest.getByRole("img", { name: "Your personal event ticket" }).count(), 0);
     if (person.signer_role === "guardian") await db.query("select staff_event_waiver_operation($1,'guardian_verified','fixture-staff')", [ticket.id]);
+    if (person.signer_role === "guardian") await db.query("select staff_event_waiver_operation($1,'accompany_verified','fixture-staff')", [ticket.id]);
     await db.query("select staff_event_waiver_operation($1,'approve','fixture-staff')", [ticket.id]);
     await guest.reload(); await guest.getByRole("img", { name: "Your personal event ticket" }).waitFor();
     assert.equal(await guest.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth), true);
     await guest.screenshot({ path: path.join(screenshots, `${person.signer_role}-signed-mobile.png`), fullPage: true });
     assert.equal(readFileSync(nextLog, "utf8").includes(token), false, "V2 capability must not enter server URL logs");
-    assert.equal(readFileSync(nextLog, "utf8").includes("2085-01-01"), false, "Birth dates must not enter action logs");
+    assert.equal(readFileSync(nextLog, "utf8").includes("2015-01-01"), false, "Birth dates must not enter action logs");
   }
   await guestContext.addCookies([{ name: "lang", value: "zh", url: site }]);
   await guest.setViewportSize({ width: 1280, height: 900 }); await guest.reload();
@@ -75,11 +80,11 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
   await guest.screenshot({ path: path.join(screenshots, "guardian-ticket-desktop-zh.png"), fullPage: true });
   await guestContext.close(); assert.deepEqual(errors, []);
   for (const [slug, model, approval, amount] of [["browser-v2-full", "full_prepay", true, 118], ["browser-v2-opening", "deposit", true, 99], ["browser-v2-thanksgiving", "deposit", false, 99]]) {
-    await db.query("insert into events(slug,title_en,title_zh,status,registration_state,event_date,capacity,allow_proxy_registrations,max_proxy_registrations,payment_model,requires_approval,deposit_amount,full_payment_amount) values($1,'V2 local event','V2 本地活动','published','open','2099-11-07',50,true,5,$2,$3,99,118)", [slug, model, approval]);
+    await db.query("insert into events(slug,title_en,title_zh,status,registration_state,event_date,capacity,allow_proxy_registrations,max_proxy_registrations,payment_model,requires_approval,deposit_amount,full_payment_amount) values($1,'V2 local event','V2 本地活动','published','open','2027-11-07',50,true,5,$2,$3,99,118)", [slug, model, approval]);
     await db.query("select save_event_waiver_policy($1,'America/Los_Angeles',$2,$3,$4,$5,'fixture-staff',true,true)", [slug, adult, guardian, sha(adult), sha(guardian)]);
     await page.goto(`${site}/events/${slug}`);
     await page.getByRole("button", { name: "Add a friend", exact: true }).click();
-    await page.getByLabel(/^Name/).fill("Paid V2 Friend"); await page.getByLabel("Participant 1 birth date").fill("2080-01-01");
+    await page.getByLabel(/^Name/).fill("Paid V2 Friend"); await page.getByLabel("Participant 1 birth date").fill("1990-01-01");
     await page.getByLabel("Attendee’s own email").fill("paid-friend@example.test");
     await page.getByRole("checkbox", { name: /I have permission/ }).check();
     await page.getByRole("button", { name: "Save and continue to individual payments", exact: true }).click();

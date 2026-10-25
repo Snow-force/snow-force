@@ -7,7 +7,7 @@ import { getCurrentMemberAccount } from "@/lib/members/actions";
 import { getEvent } from "@/lib/events/repository";
 import { createAdminClient } from "@/lib/supabase/server";
 import { isEventOpen } from "@/lib/events/availability";
-import { validateParticipants, uuidPattern } from "./participants";
+import { ageOnDate, localCalendarDate, validateParticipants, uuidPattern } from "./participants";
 import { findBookingRequest, getAssignment, getWaiverInvitation, getWaiverPolicy, listEventBookings } from "./repository";
 import { digest, encryptDelivery, randomToken } from "./secrets";
 import { queueWaiverInvitation } from "./delivery";
@@ -25,10 +25,13 @@ export async function loadEventWaiverAction(form: FormData) {
   const invitation = await getWaiverInvitation(token);
   if (!invitation) return null;
   const { assignment: a, participant: p, registration: r } = invitation;
-  const ready = a.status === "signed" && ["approved", "not_required"].includes(r.approval_status) && (p.payment_model === "free" || ["paid", "waived"].includes(r.deposit_status));
+  const event = await getEvent(String(r.event_slug));
+  const needsAccompaniment = (ageOnDate(p.date_of_birth, p.event_date) ?? 0) < 14;
+  const canSign = p.signer_role === "guardian" || (ageOnDate(p.date_of_birth, localCalendarDate(invitation.timeZone)) ?? 0) >= 18;
+  const ready = a.status === "signed" && (!needsAccompaniment || invitation.accompanimentPresent) && ["approved", "not_required"].includes(r.approval_status) && (p.payment_model === "free" || ["paid", "waived"].includes(r.deposit_status));
   const qr = ready ? await buildQrCodeDataUrl(`${process.env.NEXT_PUBLIC_SITE_URL ?? "https://snow-force.com"}/events/waivers#${token}`) : null;
-  return { attendeeName: p.attendee_name, eventSlug: String(r.event_slug), role: p.signer_role, waiverText: a.waiver_text, status: a.status,
-    ready, registrationId: String(r.id), qrDataUrl: qr?.dataUrl, initiallyVerified: await hasWaiverSigningProof(token) };
+  return { attendeeName: p.attendee_name, eventSlug: String(r.event_slug), eventTitle: event?.title, eventDate: p.event_date, eventLocation: event?.activityLocation, role: p.signer_role, waiverText: a.waiver_text, status: a.status,
+    ready, canSign, needsAccompaniment, registrationId: String(r.id), qrDataUrl: qr?.dataUrl, initiallyVerified: await hasWaiverSigningProof(token) };
 }
 
 export async function createEventBookingAction(form: FormData) {
@@ -51,7 +54,7 @@ export async function createEventBookingAction(form: FormData) {
     const event = await getEvent(eventSlug);
     const policy = await getWaiverPolicy(eventSlug);
     if (!event || !isEventOpen(event) || !policy?.approved || !policy.enableGroupForm || !policy.requireEmailedWaiver) return { success: false as const, error: "Group registration is not available" };
-    const validation = validateParticipants(event, input.participants, account.user.email);
+    const validation = validateParticipants(event, input.participants, account.user.email, localCalendarDate(policy.timeZone));
     if (!validation.participants) return { success: false as const, error: validation.error ?? "Check each participant’s details" };
     const originalAmount = event.paymentModel === "free" ? 0 : event.paymentModel === "deposit" ? event.depositAmount : event.fullPaymentAmount;
     if (originalAmount === null || originalAmount < 0) return { success: false as const, error: "Event pricing is unavailable" };
@@ -123,6 +126,7 @@ export async function signEventWaiverAction(form: FormData) {
     const accepted = form.get("decision") === "accept";
     const account = await getCurrentMemberAccount();
     const role = invitation.participant.signer_role;
+    if (accepted && role === "attendee" && (ageOnDate(invitation.participant.date_of_birth, localCalendarDate(invitation.timeZone)) ?? 0) < 18) return { success: false };
     if (String(form.get("signerRole")) !== role) return { success: false };
     const sameEmail = account?.emailConfirmed && account.user.email?.toLowerCase() === invitation.assignment.recipient_email;
     if (accepted && form.get("attested") !== "on") return { success: false };

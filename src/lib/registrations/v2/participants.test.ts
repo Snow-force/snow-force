@@ -1,11 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { seedEvents } from "@/lib/events/seed";
-import { signerRoleOnEventDate, validDate, validateParticipants, type ParticipantInput } from "./participants";
+import { ageOnDate, localCalendarDate, signerRoleOnEventDate, validDate, validateParticipants, type ParticipantInput } from "./participants";
 
 const event = { ...seedEvents[0], eventDate: "2026-11-07", registrationQuestions: [], allowProxyRegistrations: true, maxProxyRegistrations: 5 };
-const friend = (patch: Partial<ParticipantInput> = {}): ParticipantInput => ({ key: crypto.randomUUID(), kind: "proxy", dateOfBirth: "1990-01-01", attendeeEmail: "friend@example.test", guardianName: "", guardianEmail: "", guardianRelationship: "parent", answers: { name: "Friend" }, ...patch });
+const friend = (patch: Partial<ParticipantInput> = {}): ParticipantInput => ({ key: crypto.randomUUID(), kind: "proxy", dateOfBirth: "1990-01-01", attendeeEmail: "friend@example.test", guardianName: "", guardianEmail: "", guardianRelationship: "parent", accompanyingGuardianName: "Legal Parent", accompanyingGuardianPhone: "+1 555 010 0100", accompanyingGuardianRelationship: "parent", guardianWillAttend: true, answers: { name: "Friend" }, ...patch });
 
 describe("event-date age and participant identity", () => {
+  it("uses the event timezone and requires accompaniment only below 14, without imposing a minimum age", () => {
+    expect(localCalendarDate("America/Los_Angeles", new Date("2026-10-25T01:00:00Z"))).toBe("2026-10-24");
+    expect(ageOnDate("2012-11-07", event.eventDate)).toBe(14);
+    const minor = friend({ dateOfBirth: "2012-11-07", guardianName: "Parent", guardianEmail: "parent@example.test", guardianWillAttend: false });
+    expect(validateParticipants(event, [minor], "payer@example.test").error).toBeUndefined();
+    expect(validateParticipants(event, [{ ...minor, dateOfBirth: "2012-11-08" }], "payer@example.test").error).toMatch(/Under 14/);
+    const infant = { ...minor, dateOfBirth: "2026-10-01", guardianWillAttend: true };
+    expect(validateParticipants(event, [infant], "payer@example.test", "2026-10-24").participants).toHaveLength(1);
+    expect(validateParticipants(event, [{ ...infant, dateOfBirth: "2026-10-25" }], "payer@example.test", "2026-10-24").error).toBeTruthy();
+    expect(validateParticipants(event, [{ ...infant, accompanyingGuardianRelationship: "friend" }], "payer@example.test").error).toBeTruthy();
+  });
   it.each([
     ["2008-11-07", "2026-11-07", "attendee"], ["2008-11-08", "2026-11-07", "guardian"],
     ["2008-02-29", "2026-02-28", "guardian"], ["2008-02-29", "2026-03-01", "attendee"],

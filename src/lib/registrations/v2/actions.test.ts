@@ -7,14 +7,15 @@ vi.mock("./repository", () => ({ getWaiverPolicy: m.policy, getWaiverInvitation:
 vi.mock("./verified-attendee", () => ({ resolveVerifiedAttendeeMember: m.resolveMember }));
 vi.mock("./delivery", () => ({ queueWaiverInvitation: m.queue }));
 vi.mock("./schedule", () => ({ scheduleWaiverDelivery: m.schedule }));
+vi.mock("@/lib/events/share-payload", () => ({ buildQrCodeDataUrl: async () => ({ dataUrl: "fixture-ticket-qr" }) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: m.cookieGet, set: m.cookieSet, delete: m.cookieDelete }), headers: async () => new Headers({ "user-agent": "test-agent" }) }));
 vi.mock("@/lib/supabase/server", () => ({ createAdminClient: () => ({ rpc: m.rpc, from: () => { const query = { select: () => query, eq: () => query, single: m.single, maybeSingle: m.proof }; return query; } }) }));
-import { createEventBookingAction, manageBookingWaiverAction, requestWaiverCodeAction, signEventWaiverAction, verifyWaiverCodeAction } from "./actions";
+import { createEventBookingAction, loadEventWaiverAction, manageBookingWaiverAction, requestWaiverCodeAction, signEventWaiverAction, verifyWaiverCodeAction } from "./actions";
 import { decryptDelivery, digest } from "./secrets";
 import { seedEvents } from "@/lib/events/seed";
 const event = { ...seedEvents[0], slug: "v2", status: "published", registrationState: "open", registrationCount: 0, registrationCloseAt: "2099-01-01", eventDate: "2099-11-07", capacity: 0, allowProxyRegistrations: true, maxProxyRegistrations: 5, registrationQuestions: [], paymentModel: "free" };
-const participant = { key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", kind: "proxy", dateOfBirth: "2080-01-01", attendeeEmail: "friend@example.test", guardianName: "", guardianEmail: "", guardianRelationship: "parent", answers: { name: "Friend" } };
+const participant = { key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", kind: "proxy", dateOfBirth: "1990-01-01", attendeeEmail: "friend@example.test", guardianName: "", guardianEmail: "", guardianRelationship: "parent", answers: { name: "Friend" } };
 const input = { requestKey: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", lang: "en" as const, permission: true, participants: [participant] };
 const token = "c".repeat(64);
 function bookingForm(patch: Partial<typeof input> = {}) { const value = { ...input, ...patch }; const form = new FormData(); form.set("eventSlug", "v2"); form.set("requestKey", value.requestKey); form.set("lang", value.lang); form.set("permission", value.permission ? "on" : ""); form.set("participants", JSON.stringify(value.participants)); return form; }
@@ -26,10 +27,25 @@ beforeEach(() => {
   m.event.mockResolvedValue(event); m.policy.mockResolvedValue({ approved: true, enableGroupForm: true, requireEmailedWaiver: true }); m.existing.mockResolvedValue(null);
   m.rpc.mockResolvedValue({ data: "booking", error: null }); m.bookings.mockResolvedValue([{ id: "booking", participants: [] }]);
   m.cookieGet.mockReturnValue({ value: "verified-browser-proof" }); m.proof.mockResolvedValue({ data: { generation: 1, proof_hash: digest("verified-browser-proof"), proof_expires_at: "2099-01-01", consumed_at: null }, error: null }); m.resolveMember.mockResolvedValue(null);
-  m.invitation.mockResolvedValue({ assignment: { id: "assignment", recipient_email: "friend@example.test", generation: 1 }, participant: { attendee_name: "Friend", signer_role: "attendee", registration_kind: "proxy" }, registration: { event_slug: "v2", booker_member_id: "booker" }, language: "zh" });
+  m.invitation.mockResolvedValue({ assignment: { id: "assignment", recipient_email: "friend@example.test", generation: 1 }, participant: { date_of_birth: "1990-01-01", attendee_name: "Friend", signer_role: "attendee", registration_kind: "proxy" }, registration: { event_slug: "v2", booker_member_id: "booker" }, language: "zh" });
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("V2 authenticated command boundaries", () => {
+  it("withholds a child's ticket until accompaniment is verified and never sends their birth date to the browser", async () => {
+    const invitation = { assignment: { id: "assignment", status: "signed", generation: 1 }, participant: { attendee_name: "Child", date_of_birth: "2015-01-01", event_date: "2026-11-07", signer_role: "guardian", payment_model: "free" }, registration: { id: "ticket", event_slug: "v2", approval_status: "approved" }, timeZone: "America/Los_Angeles", accompanimentPresent: false };
+    m.invitation.mockResolvedValue(invitation);
+    const result = await loadEventWaiverAction(tokenForm());
+    expect(result).toMatchObject({ ready: false, canSign: true, needsAccompaniment: true });
+    expect(JSON.stringify(result)).not.toContain("2015-01-01");
+    m.invitation.mockResolvedValue({ ...invitation, accompanimentPresent: true });
+    expect(await loadEventWaiverAction(tokenForm())).toMatchObject({ ready: true, qrDataUrl: "fixture-ticket-qr" });
+  });
+  it("rejects an adult signature before the attendee is actually eighteen, even if adult on the event date", async () => {
+    m.account.mockResolvedValue(null);
+    m.invitation.mockResolvedValue({ assignment: { recipient_email: "friend@example.test" }, participant: { date_of_birth: "2009-01-01", signer_role: "attendee", registration_kind: "proxy" }, registration: {}, timeZone: "America/Los_Angeles" });
+    expect((await signEventWaiverAction(signForm())).success).toBe(false);
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
   it.each([null, { profile: { id: "booker" }, user: { email: "payer@example.test" }, emailConfirmed: false }])("denies missing/unverified accounts before creating a booking", async (account) => {
     m.account.mockResolvedValue(account); expect((await createEventBookingAction(bookingForm())).success).toBe(false); expect(m.rpc).not.toHaveBeenCalled();
   });

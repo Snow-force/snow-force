@@ -10,6 +10,10 @@ export type ParticipantInput = {
   guardianName: string;
   guardianEmail: string;
   guardianRelationship: string;
+  accompanyingGuardianName?: string;
+  accompanyingGuardianPhone?: string;
+  accompanyingGuardianRelationship?: string;
+  guardianWillAttend?: boolean;
   answers: RegistrationAnswers;
   couponCode?: string;
 };
@@ -32,14 +36,24 @@ export function validDate(value: string) {
 }
 
 /** Date-only birth dates are compared with the event's local calendar day, never the visitor's current clock. */
-export function signerRoleOnEventDate(dateOfBirth: string, eventDate: string): SignerRole | null {
+export function ageOnDate(dateOfBirth: string, eventDate: string): number | null {
   if (!validDate(dateOfBirth) || !validDate(eventDate) || dateOfBirth > eventDate) return null;
   const years = Number(eventDate.slice(0, 4)) - Number(dateOfBirth.slice(0, 4));
   if (years > 120) return null;
-  return years - (eventDate.slice(5) < dateOfBirth.slice(5) ? 1 : 0) >= 18 ? "attendee" : "guardian";
+  return years - (eventDate.slice(5) < dateOfBirth.slice(5) ? 1 : 0);
 }
 
-export function validateParticipants(event: Event, input: unknown, bookerEmail: string) {
+export function signerRoleOnEventDate(dateOfBirth: string, eventDate: string): SignerRole | null {
+  const age = ageOnDate(dateOfBirth, eventDate);
+  return age === null ? null : age >= 18 ? "attendee" : "guardian";
+}
+
+export function localCalendarDate(timeZone = "America/Los_Angeles", now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  return ["year", "month", "day"].map((type) => parts.find((p) => p.type === type)?.value).join("-");
+}
+
+export function validateParticipants(event: Event, input: unknown, bookerEmail: string, today = localCalendarDate()) {
   if (!Array.isArray(input) || !input.length || input.length > (event.maxProxyRegistrations ?? 5) + 1) return { error: "Invalid participant count" };
   const participants: Array<ParticipantInput & { signerRole: SignerRole; recipientEmail: string; name: string }> = [];
   const keys = new Set<string>();
@@ -56,7 +70,15 @@ export function validateParticipants(event: Event, input: unknown, bookerEmail: 
     if (selfCount > 1 || proxyCount > (event.maxProxyRegistrations ?? 5) || (proxyCount > 0 && !event.allowProxyRegistrations)) return { error: "Participant limit exceeded" };
     const dateOfBirth = typeof p.dateOfBirth === "string" ? p.dateOfBirth : "";
     const signerRole = signerRoleOnEventDate(dateOfBirth, event.eventDate);
-    if (!signerRole) return { error: "Provide a valid birth date for every participant" };
+    if (!signerRole || dateOfBirth > today) return { error: "Provide an existing, valid birth date for every participant" };
+    const accompanyingGuardianName = typeof p.accompanyingGuardianName === "string" ? p.accompanyingGuardianName.trim() : "";
+    const accompanyingGuardianPhone = typeof p.accompanyingGuardianPhone === "string" ? p.accompanyingGuardianPhone.trim() : "";
+    const accompanyingGuardianRelationship = typeof p.accompanyingGuardianRelationship === "string" ? p.accompanyingGuardianRelationship : "";
+    const needsAccompaniment = ageOnDate(dateOfBirth, event.eventDate)! < 14;
+    if (needsAccompaniment && (p.guardianWillAttend !== true || accompanyingGuardianName.length < 2 || accompanyingGuardianName.length > 200
+      || !/^[+()\d .-]{7,40}$/.test(accompanyingGuardianPhone) || !["parent", "legal_guardian"].includes(accompanyingGuardianRelationship))) {
+      return { error: "Under 14: provide the accompanying parent or legal guardian’s name and phone, and confirm they will stay throughout the activity" };
+    }
     const attendeeEmail = (p.kind === "self" ? bookerEmail : typeof p.attendeeEmail === "string" ? p.attendeeEmail : "").trim().toLowerCase();
     const guardianEmail = (typeof p.guardianEmail === "string" ? p.guardianEmail : "").trim().toLowerCase();
     const guardianName = (typeof p.guardianName === "string" ? p.guardianName : "").trim();
@@ -79,7 +101,8 @@ export function validateParticipants(event: Event, input: unknown, bookerEmail: 
     identities.add(identity);
     const couponCode = typeof p.couponCode === "string" ? p.couponCode.trim().toUpperCase() : "";
     if (couponCode && !/^[A-Z0-9_-]{1,32}$/.test(couponCode)) return { error: "Invalid coupon code" };
-    participants.push({ key: p.key, kind: p.kind as "self" | "proxy", dateOfBirth, attendeeEmail, guardianEmail, guardianName, guardianRelationship, answers: checked.data, signerRole, recipientEmail, name, couponCode });
+    participants.push({ key: p.key, kind: p.kind as "self" | "proxy", dateOfBirth, attendeeEmail, guardianEmail, guardianName, guardianRelationship, answers: checked.data, signerRole, recipientEmail, name, couponCode,
+      ...(needsAccompaniment ? { accompanyingGuardianName, accompanyingGuardianPhone, accompanyingGuardianRelationship, guardianWillAttend: true } : {}) });
   }
   return { participants, duplicateWarning };
 }

@@ -38,10 +38,10 @@ export async function staffWaiverOperationAction(form: FormData) {
   const operation = String(form.get("operation") ?? "");
   let success = false;
   try {
-    if (["checkin", "guardian_verified", "identity_verified"].includes(operation) && form.get("identityChecked") !== "on") throw new Error("Identity verification required");
+    if (["checkin", "guardian_verified", "identity_verified", "accompany_verified"].includes(operation) && form.get("identityChecked") !== "on") throw new Error("Identity verification required");
     if (operation === "resend") { await queueWaiverInvitation(String(form.get("assignmentId") ?? ""), staff.userId); success = true; }
     else if (operation === "dispatch") { await dispatchWaiverOutbox(20); success = true; }
-    else if (["approve", "reject", "guardian_verified", "identity_verified", "checkin", "revoke", "reissue"].includes(operation)) {
+    else if (["approve", "reject", "guardian_verified", "identity_verified", "accompany_verified", "accompany_left", "checkin", "revoke", "reissue"].includes(operation)) {
       const { error } = await createAdminClient().rpc("staff_event_waiver_operation", { registration_id_input: String(form.get("registrationId") ?? ""), operation_input: operation, actor_input: staff.userId });
       success = !error;
     }

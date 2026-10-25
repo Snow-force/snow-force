@@ -7,16 +7,17 @@ import path from "node:path";
 export async function verifyEventGroupRegistration({ root, db, booker, other }) {
   const sha = (s) => createHash("sha256").update(s).digest("hex");
   await db.query(readFileSync(path.join(root, "supabase/migrations/20261024035754_event_group_waiver_v2.sql"), "utf8"));
+  await db.query(readFileSync(path.join(root, "supabase/migrations/20261025050952_event_v2_accompaniment_activation.sql"), "utf8"));
   assert.equal(Number((await db.query("select count(*) from events where enable_group_form or require_emailed_waiver")).rows[0].count), 0);
   const adultText = "Adult event risk acknowledgement. I personally accept the event risks and activity terms. Separate marketing and image consent is optional.";
   const guardianText = "Parent and legal guardian acknowledgement. I have legal authority for the named child and personally accept these activity terms. Separate image and marketing permissions are optional.";
-  async function event(slug, { capacity = 20, approval = false, date = "2099-11-07" } = {}) {
+  async function event(slug, { capacity = 20, approval = false, date = "2027-11-07" } = {}) {
     await db.query("insert into events(slug,status,registration_state,event_date,capacity,allow_proxy_registrations,max_proxy_registrations,payment_model,requires_approval) values($1,'published','open',$2,$3,true,5,'free',$4)", [slug, date, capacity, approval]);
     await db.query("select save_event_waiver_policy($1,'America/Los_Angeles',$2,$3,$4,$5,'staff',true,true)", [slug, adultText, guardianText, sha(adultText), sha(guardianText)]);
   }
-  function person(name, { kind = "proxy", dob = "2080-01-01", email = "adult@example.test", guardian = "Legal Parent" } = {}) {
-    return { key: randomUUID(), kind, dateOfBirth: dob, attendeeEmail: email, recipientEmail: dob > "2081-11-07" ? "parent@example.test" : email,
-      guardianName: guardian, guardianRelationship: "parent", name, identityFingerprint: sha(`${name}|${dob}`), answers: { name, email } };
+  function person(name, { kind = "proxy", dob = "1990-01-01", email = "adult@example.test", guardian = "Legal Parent" } = {}) {
+    return { key: randomUUID(), kind, dateOfBirth: dob, attendeeEmail: email, recipientEmail: dob > "2009-11-07" ? "parent@example.test" : email,
+      guardianName: guardian, guardianRelationship: "parent", accompanyingGuardianName: guardian, accompanyingGuardianPhone: "+1 555 010 0100", accompanyingGuardianRelationship: "parent", guardianWillAttend: true, name, identityFingerprint: sha(`${name}|${dob}`), answers: { name, email } };
   }
   async function book(slug, people, { owner = booker, key = randomUUID(), hash = sha(JSON.stringify(people)) } = {}) {
     return (await db.query("select create_event_booking_v2($1,$2,'payer@example.test',$3,$4,'en',$5) as id", [slug, owner, key, hash, JSON.stringify(people)])).rows[0].id;
@@ -73,6 +74,16 @@ export async function verifyEventGroupRegistration({ root, db, booker, other }) 
   await assert.rejects(db.query("select issue_registration_guest_invitation($1,$2,'2099-12-01','staff')", [second.id, sha("legacy")]), /verified_waiver_flow_required/);
   console.log("PASS V2 friends-only booking is idempotent; verified personal signatures cannot be forged, replayed or overwritten");
 
+  await event("v2-signing-age");
+  const notAdult = person("Eighteen At Event", { dob: "2009-11-01" });
+  const notAdultTicket = await promote((await pending(await book("v2-signing-age", [notAdult])))[0]);
+  const notAdultInvite = await invitation(notAdultTicket);
+  await assert.rejects(sign(notAdultInvite.token, await verify(notAdultInvite.token), "Eighteen At Event"), /adult_signer_not_yet_eighteen/);
+  await assert.rejects(book("v2-signing-age", [person("Future Birth", { dob: "2027-01-01" })]), /participant_birth_date_invalid/);
+  const unaccompanied = { ...person("Unaccompanied Child", { dob: "2015-01-01" }), guardianWillAttend: false };
+  await assert.rejects(book("v2-signing-age", [unaccompanied]), /accompanying_guardian_required/);
+  console.log("PASS V2 database rejects future births, missing accompaniment and adult signatures before the eighteenth birthday");
+
   await event("v2-self"); const self = person("Booker Self", { kind: "self", email: "payer@example.test" });
   const selfPending = (await pending(await book("v2-self", [self])))[0]; await promote(selfPending);
   await assert.rejects(book("v2-self", [person("Booker Again", { kind: "self", email: "payer@example.test" })]), /participant_already_registered/);
@@ -83,7 +94,7 @@ export async function verifyEventGroupRegistration({ root, db, booker, other }) 
   console.log("PASS V2 self has one valid place; expired unused self holds can be replaced without deleting history");
 
   await event("v2-minors", { approval: true });
-  const children = [person("Child One", { dob: "2085-01-01", email: "" }), person("Child Two", { dob: "2087-01-01", email: "" })];
+  const children = [person("Child One", { dob: "2015-01-01", email: "" }), person("Child Two", { dob: "2017-01-01", email: "" })];
   const childPending = await pending(await book("v2-minors", children));
   const child = await promote(childPending[0]); const sibling = await promote(childPending[1]);
   const ci = await invitation(child); const si = await invitation(sibling);
@@ -92,12 +103,17 @@ export async function verifyEventGroupRegistration({ root, db, booker, other }) 
   await assert.rejects(sign(ci.token, cp, "Pretend Parent", "guardian"), /guardian_name_mismatch/);
   await sign(ci.token, cp, "Legal Parent", "guardian");
   assert.equal((await assignment(child)).status, "needs_review");
+  await assert.rejects(db.query("select staff_event_waiver_operation($1,'checkin','staff')", [child.id]), /accompanying_guardian_presence_required/);
+  await db.query("select staff_event_waiver_operation($1,'accompany_verified','staff')", [child.id]);
   await assert.rejects(db.query("select staff_event_waiver_operation($1,'checkin','staff')", [child.id]), /verified_waiver_required|approval_required/);
   await db.query("select staff_event_waiver_operation($1,'guardian_verified','staff')", [child.id]);
   await assert.rejects(db.query("select staff_event_waiver_operation($1,'checkin','staff')", [child.id]), /verified_waiver_required|approval_required/);
   await db.query("select staff_event_waiver_operation($1,'approve','staff')", [child.id]);
   await db.query("select staff_event_waiver_operation($1,'checkin','staff')", [child.id]);
   await assert.rejects(db.query("select staff_event_waiver_operation($1,'checkin','staff')", [child.id]), /already_checked_in/);
+  await db.query("select staff_event_waiver_operation($1,'accompany_left','staff')", [child.id]);
+  assert.equal((await db.query("select attendance_status from registrations where id=$1",[child.id])).rows[0].attendance_status,"unmarked");
+  await assert.rejects(db.query("select staff_event_waiver_operation($1,'checkin','staff')", [child.id]), /accompanying_guardian_presence_required/);
   await assert.rejects(sign(si.token, cp, "Legal Parent", "guardian"), /waiver_verification_required/);
   await sign(si.token, await verify(si.token), "Legal Parent", "guardian");
   assert.equal(Number((await db.query("select count(*) from event_waiver_signatures where registration_id=any($1::uuid[])", [[child.id, sibling.id]])).rows[0].count), 2);
@@ -192,7 +208,7 @@ export async function verifyEventGroupRegistration({ root, db, booker, other }) 
   await db.query("update event_waiver_assignments set status='sent',last_queued_at=clock_timestamp()-interval '2 days',expires_at=clock_timestamp()+interval '30 days' where id=any($1::uuid[])", [[endedAssignment.id, deliveryInvite.a.id]]);
   const dueReminders = (await db.query("select id from event_waiver_due_reminders")).rows.map((row) => row.id);
   assert(!dueReminders.includes(endedAssignment.id)); assert(dueReminders.includes(deliveryInvite.a.id));
-  const protectedTables = ['event_waiver_policies','event_bookings','event_waiver_participants','event_waiver_assignments','event_waiver_signatures','event_waiver_challenges','event_waiver_email_outbox','event_waiver_delivery_events','event_attendee_claims'];
+  const protectedTables = ['event_waiver_policies','event_bookings','event_waiver_participants','event_waiver_assignments','event_waiver_signatures','event_waiver_challenges','event_waiver_email_outbox','event_waiver_delivery_events','event_attendee_claims','event_waiver_accompaniments'];
   assert.equal(Number((await db.query("select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname=any($1) and c.relrowsecurity", [protectedTables])).rows[0].count), protectedTables.length);
   for (const role of ["anon", "authenticated"]) {
     await db.query(`set role ${role}`);

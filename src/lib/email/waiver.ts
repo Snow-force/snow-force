@@ -27,7 +27,7 @@ export function buildWaiverEmail(data: WaiverEmailData) {
 export async function sendWaiverEmail(to: string, data: WaiverEmailData, idempotencyKey: string) {
   if (!process.env.RESEND_API_KEY) return { success: false as const, errorCode: "provider_not_configured" };
   try {
-    const { data: sent, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({ from: "SnowForce <noreply@notifications.snow-force.com>", replyTo: generalContactEmail, to, ...buildWaiverEmail(data) }, { idempotencyKey });
+    const { data: sent, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({ from: "SnowForce <noreply@notifications.snow-force.com>", replyTo: generalContactEmail, to, tags: [{ name: "stream", value: "event-waiver-v2" }], ...buildWaiverEmail(data) }, { idempotencyKey });
     if (error || !sent?.id) return { success: false as const, errorCode: "provider_rejected" };
     return { success: true as const, messageId: sent.id };
   } catch { return { success: false as const, errorCode: "provider_unavailable" }; }

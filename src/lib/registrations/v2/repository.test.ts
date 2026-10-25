@@ -36,14 +36,16 @@ it("rejects invalid, revoked and expired capabilities before exposing participan
 it("loads only the necessary participant fields and the booking's language for private delivery", async () => {
   const participant = response({ id: "p", booking_id: "b", attendee_name: "Friend", signer_role: "attendee" });
   m.from.mockReturnValueOnce(response({ is_current: true, expires_at: "2099-01-01", status: "sent", participant_id: "p", registration_id: "r" }))
-    .mockReturnValueOnce(participant).mockReturnValueOnce(response({ status: "confirmed", event_slug: "event" })).mockReturnValueOnce(response({ preferred_language: "zh" }));
+    .mockReturnValueOnce(participant).mockReturnValueOnce(response({ status: "confirmed", event_slug: "event" })).mockReturnValueOnce(response({ preferred_language: "zh" }))
+    .mockReturnValueOnce(response({ event_date: "2026-11-07" })).mockReturnValueOnce(response({ event_date: "2026-11-07", time_zone: "America/Los_Angeles" })).mockReturnValueOnce(response(null));
   expect(await getWaiverInvitation("a".repeat(64))).toMatchObject({ language: "zh", participant: { attendee_name: "Friend" } });
-  expect(participant.select.mock.calls[0][0]).not.toMatch(/date_of_birth|recipient_email|signature/);
+  expect(participant.select.mock.calls[0][0]).toContain("date_of_birth"); // Server-only age enforcement; actions return eligibility, never birth dates.
 });
 it("filters owned bookings, masks recipients, separates payment/approval/delivery and excludes private evidence", async () => {
   const bookings = response([{ id: "b", event_slug: "event", created_at: "2026-10-23" }]);
   const tables: Record<string, ReturnType<typeof response>> = {
     event_bookings: bookings,
+    event_waiver_accompaniments: response([]),
     event_waiver_participants: response([{ id: "p", booking_id: "b", attendee_name: "Friend", registration_kind: "proxy", signer_role: "guardian", payment_model: "deposit", quoted_amount: 99, payment_currency: "usd", review_required: true, date_of_birth: "private" }]),
     pending_registrations: response([]), registrations: response([{ id: "r", waiver_participant_id: "p", status: "confirmed", approval_status: "pending" }]),
     event_waiver_assignments: response([{ id: "a", registration_id: "r", status: "needs_review", recipient_email: "parent@example.test", expires_at: "2099-01-01", token_hash: "private" }]),

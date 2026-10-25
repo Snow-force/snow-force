@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   try {
     event = new Resend(process.env.RESEND_API_KEY ?? "webhook-verification-only").webhooks.verify({ payload, headers: { id: request.headers.get("svix-id") ?? "", timestamp: request.headers.get("svix-timestamp") ?? "", signature: request.headers.get("svix-signature") ?? "" }, webhookSecret: secret });
   } catch { return new Response(null, { status: 400 }); }
+  if ("tags" in event.data && event.data.tags?.stream === "event-waiver-v2") return Response.json({ received: true });
   if (!["email.delivered", "email.bounced", "email.complained", "email.failed"].includes(event.type)) return Response.json({ received: true });
   try {
     if (!("email_id" in event.data)) return new Response(null, { status: 400 });

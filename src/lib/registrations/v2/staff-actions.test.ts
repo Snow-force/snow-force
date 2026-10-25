@@ -23,6 +23,6 @@ it("can save a reviewed disabled policy without sending any emails or enabling a
 });
 it("requires explicit identity checking for guardian review and check-in", async () => {
   const form = new FormData(); form.set("eventSlug", "event"); form.set("registrationId", "ticket");
-  for (const operation of ["checkin", "guardian_verified", "identity_verified"]) { form.set("operation", operation); await expect(staffWaiverOperationAction(form)).rejects.toThrow("error=operation"); }
+  for (const operation of ["checkin", "guardian_verified", "accompany_verified", "identity_verified"]) { form.set("operation", operation); await expect(staffWaiverOperationAction(form)).rejects.toThrow("error=operation"); }
   expect(m.rpc).not.toHaveBeenCalled(); form.set("identityChecked", "on"); await expect(staffWaiverOperationAction(form)).rejects.toThrow("saved=1"); expect(m.rpc).toHaveBeenCalledWith("staff_event_waiver_operation", { registration_id_input: "ticket", operation_input: "identity_verified", actor_input: "staff" });
 });

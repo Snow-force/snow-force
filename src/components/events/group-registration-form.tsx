@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useLanguage } from "@/lib/language";
 import type { Event, MemberProfile } from "@/lib/types";
 import type { ParticipantInput } from "@/lib/registrations/v2/participants";
-import { signerRoleOnEventDate } from "@/lib/registrations/v2/participants";
+import { ageOnDate, localCalendarDate, signerRoleOnEventDate } from "@/lib/registrations/v2/participants";
 import { createEventBookingAction } from "@/lib/registrations/v2/actions";
 import { participantQuestions } from "@/lib/registrations/participation";
 import { renderQuestion } from "./registration-form";
@@ -41,10 +41,11 @@ export function GroupRegistrationForm({ event, profile }: { event: Event; profil
     <fieldset disabled={pending} className="space-y-6">
       {participants.map((p, index) => {
         const role = signerRoleOnEventDate(p.dateOfBirth, event.eventDate);
+        const age = ageOnDate(p.dateOfBirth, event.eventDate);
         return <fieldset key={p.key} className="space-y-4 rounded-xl border p-4">
           <legend className="px-2 font-semibold">{t({ en: `Participant ${index + 1}`, zh: `参加者 ${index + 1}` })} · {t(p.kind === "self" ? { en: "Myself", zh: "本人" } : { en: "Friend", zh: "朋友" })}</legend>
           {participantQuestions(event.registrationQuestions, "proxy").filter((q) => q.key !== "email").map((q) => renderQuestion({ ...q, key: `${p.key}-${q.key}` }, p.answers[q.key], (value) => update(index, { answers: { ...p.answers, [q.key]: value } }), undefined, lang))}
-          <label className="block text-sm font-medium">{t({ en: "Date of birth", zh: "出生日期" })}<input aria-label={t({ en: `Participant ${index + 1} birth date`, zh: `参加者 ${index + 1} 出生日期` })} type="date" required max={event.eventDate} value={p.dateOfBirth} onChange={(e) => update(index, { dateOfBirth: e.target.value })} className="input-field mt-2" /></label>
+          <label className="block text-sm font-medium">{t({ en: "Date of birth", zh: "出生日期" })}<input aria-label={t({ en: `Participant ${index + 1} birth date`, zh: `参加者 ${index + 1} 出生日期` })} type="date" required max={localCalendarDate()} value={p.dateOfBirth} onChange={(e) => update(index, { dateOfBirth: e.target.value })} className="input-field mt-2" /></label>
           <p className="text-xs text-gray-600">{t({ en: `Age is assessed on the event’s local start date: ${event.eventDate}. Birth dates are not shown on tickets or exports.`, zh: `按活动当地开始日 ${event.eventDate} 判断年龄；出生日期不会出现在票据或导出名单中。` })}</p>
           {role === "attendee" && <label className="block text-sm font-medium">{t({ en: "Attendee’s own email", zh: "参加者本人邮箱" })}<input type="email" required value={p.attendeeEmail} disabled={p.kind === "self"} onChange={(e) => update(index, { attendeeEmail: e.target.value })} className="input-field mt-2" /></label>}
           {role === "guardian" && <>
@@ -52,6 +53,13 @@ export function GroupRegistrationForm({ event, profile }: { event: Event; profil
             <label className="block text-sm">{t({ en: "Guardian’s legal name", zh: "监护人法定全名" })}<input required maxLength={200} value={p.guardianName} onChange={(e) => update(index, { guardianName: e.target.value })} className="input-field mt-2" /></label>
             <label className="block text-sm">{t({ en: "Guardian’s email", zh: "监护人邮箱" })}<input required type="email" value={p.guardianEmail} onChange={(e) => update(index, { guardianEmail: e.target.value })} className="input-field mt-2" /></label>
             <label className="block text-sm">{t({ en: "Legal relationship", zh: "法定关系" })}<select value={p.guardianRelationship} onChange={(e) => update(index, { guardianRelationship: e.target.value })} className="input-field mt-2"><option value="parent">{t({ en: "Parent", zh: "父母" })}</option><option value="legal_guardian">{t({ en: "Legal guardian", zh: "法定监护人" })}</option></select></label>
+          </>}
+          {age !== null && age < 14 && <>
+            <p role="note" className="text-sm">{t({ en: "Under 14: a parent or legal guardian must stay throughout the activity. Staff must verify their presence before check-in. The accompanying adult needs a separate booking if participating.", zh: "14 岁以下须由父母或法定监护人全程陪同，签到前由工作人员核验到场。陪同成人如参加活动，需另行报名。" })}</p>
+            <label className="block text-sm">{t({ en: "Accompanying guardian’s name", zh: "陪同监护人姓名" })}<input required maxLength={200} value={p.accompanyingGuardianName ?? ""} onChange={(e) => update(index, { accompanyingGuardianName: e.target.value })} className="input-field mt-2" /></label>
+            <label className="block text-sm">{t({ en: "Accompanying guardian’s phone", zh: "陪同监护人电话" })}<input required type="tel" maxLength={40} value={p.accompanyingGuardianPhone ?? ""} onChange={(e) => update(index, { accompanyingGuardianPhone: e.target.value })} className="input-field mt-2" /></label>
+            <label className="block text-sm">{t({ en: "Accompanying guardian’s relationship", zh: "陪同监护人关系" })}<select required value={p.accompanyingGuardianRelationship ?? ""} onChange={(e) => update(index, { accompanyingGuardianRelationship: e.target.value })} className="input-field mt-2"><option value="">{t({ en: "Select relationship", zh: "选择关系" })}</option><option value="parent">{t({ en: "Parent", zh: "父母" })}</option><option value="legal_guardian">{t({ en: "Legal guardian", zh: "法定监护人" })}</option></select></label>
+            <label className="flex items-start gap-3 text-sm"><input type="checkbox" required checked={p.guardianWillAttend ?? false} onChange={(e) => update(index, { guardianWillAttend: e.target.checked })} />{t({ en: "This parent or legal guardian will accompany the child throughout. If they leave, the child must stop participating and staff must be notified.", zh: "此父母或法定监护人将全程陪同。如陪同人离开，孩子须停止参加并通知工作人员。" })}</label>
           </>}
           {event.paymentModel !== "free" && <label className="block text-sm">{t({ en: "Coupon for this participant (optional)", zh: "此参加者的优惠码（选填）" })}<input maxLength={32} value={p.couponCode ?? ""} onChange={(e) => update(index, { couponCode: e.target.value.toUpperCase() })} className="input-field mt-2" /></label>}
           <button type="button" className="min-h-11 text-sm text-red-700 underline" onClick={() => setParticipants((current) => current.filter((_, i) => i !== index))}>{t({ en: "Remove participant", zh: "移除此人" })}</button>
