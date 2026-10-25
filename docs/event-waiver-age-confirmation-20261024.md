@@ -1,5 +1,7 @@
 # Waiver age confirmation — 2026-10-24
 
+**2026-10-25 activation:** the operator explicitly requested “开启”; [all three current events are now enabled](event-group-registration-enabled-20261025.md) with published adult/guardian R1 terms. The earlier default-off state below is retained as release history.
+
 The user clarified that age is confirmed when signing the waiver: checking “I am 18 or older” permits personal adult signing without a guardian signature. This supersedes deriving the role for new bookings from a collected birth date.
 
 ## New booking and signing flow

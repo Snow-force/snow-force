@@ -1,0 +1,14 @@
+{
+  "authorizedBy": "operator explicit request: 开启, 2026-10-25",
+  "lawyerReviewClaimed": false,
+  "timeZone": "America/Los_Angeles",
+  "adultVersion": "SF-ADULT-20261025-R1",
+  "guardianVersion": "SF-GUARDIAN-20261025-R1",
+  "adultSha256": "96f693ca60bc85b2dac2b40b4509177e8756a3a63474d0bdc9faa7893296486b",
+  "guardianSha256": "60fb2ff95634f5da84d641e4866f83f09c6a98e348d004668fa673c3e62e1b4c",
+  "events": [
+    "metroslopes-indoor-ski-snowboard-1107",
+    "mammoth-opening-weekend-2026",
+    "mammoth-thanksgiving-trip-2026"
+  ]
+}

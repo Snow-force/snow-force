@@ -1,0 +1,113 @@
+{
+  "verifiedAt": "2026-10-25T07:30:16.680Z",
+  "scope": "V2 enabled on all three current events",
+  "testsCreatedBookings": 0,
+  "testsSentEmails": 0,
+  "testsCreatedPayments": 0,
+  "adultVersion": "SF-ADULT-20261025-R1",
+  "guardianVersion": "SF-GUARDIAN-20261025-R1",
+  "checks": [
+    {
+      "event": "mammoth-opening-weekend-2026",
+      "pageStatus": 200,
+      "routeV2Enabled": true,
+      "policyMatchesPublishedFiles": true,
+      "invalidEmptyBookingRejected": true
+    },
+    {
+      "event": "mammoth-thanksgiving-trip-2026",
+      "pageStatus": 200,
+      "routeV2Enabled": true,
+      "policyMatchesPublishedFiles": true,
+      "invalidEmptyBookingRejected": true
+    },
+    {
+      "event": "metroslopes-indoor-ski-snowboard-1107",
+      "pageStatus": 200,
+      "routeV2Enabled": true,
+      "policyMatchesPublishedFiles": true,
+      "invalidEmptyBookingRejected": true
+    },
+    {
+      "endpoint": "/api/health",
+      "status": 200
+    },
+    {
+      "endpoint": "/events/waivers",
+      "status": 200
+    }
+  ],
+  "events": [
+    {
+      "slug": "mammoth-opening-weekend-2026",
+      "event_date": "2026-11-13",
+      "enable_group_form": true,
+      "require_emailed_waiver": true,
+      "payment_model": "deposit",
+      "deposit_amount": 99,
+      "full_payment_amount": null,
+      "requires_approval": true,
+      "max_proxy_registrations": 5,
+      "capacity": 150,
+      "allow_proxy_registrations": true
+    },
+    {
+      "slug": "mammoth-thanksgiving-trip-2026",
+      "event_date": "2026-11-26",
+      "enable_group_form": true,
+      "require_emailed_waiver": true,
+      "payment_model": "deposit",
+      "deposit_amount": 99,
+      "full_payment_amount": null,
+      "requires_approval": false,
+      "max_proxy_registrations": 5,
+      "capacity": 100,
+      "allow_proxy_registrations": true
+    },
+    {
+      "slug": "metroslopes-indoor-ski-snowboard-1107",
+      "event_date": "2026-11-07",
+      "enable_group_form": true,
+      "require_emailed_waiver": true,
+      "payment_model": "full_prepay",
+      "deposit_amount": null,
+      "full_payment_amount": 118,
+      "requires_approval": true,
+      "max_proxy_registrations": 5,
+      "capacity": 50,
+      "allow_proxy_registrations": true
+    }
+  ],
+  "policies": [
+    {
+      "event_slug": "metroslopes-indoor-ski-snowboard-1107",
+      "event_date": "2026-11-07",
+      "time_zone": "America/Los_Angeles",
+      "version": "c16e9591-9d93-435e-af3d-04f85b3da15e",
+      "adult_sha": "96f693ca60bc85b2dac2b40b4509177e8756a3a63474d0bdc9faa7893296486b",
+      "guardian_sha": "60fb2ff95634f5da84d641e4866f83f09c6a98e348d004668fa673c3e62e1b4c",
+      "approved_at": "2026-10-25T07:28:07.089951+00:00",
+      "approved_by": "operator-request:enable-v2:2026-10-25"
+    },
+    {
+      "event_slug": "mammoth-opening-weekend-2026",
+      "event_date": "2026-11-13",
+      "time_zone": "America/Los_Angeles",
+      "version": "c568103e-ba19-4b3a-8f62-07c7fe7ffff3",
+      "adult_sha": "96f693ca60bc85b2dac2b40b4509177e8756a3a63474d0bdc9faa7893296486b",
+      "guardian_sha": "60fb2ff95634f5da84d641e4866f83f09c6a98e348d004668fa673c3e62e1b4c",
+      "approved_at": "2026-10-25T07:28:07.188919+00:00",
+      "approved_by": "operator-request:enable-v2:2026-10-25"
+    },
+    {
+      "event_slug": "mammoth-thanksgiving-trip-2026",
+      "event_date": "2026-11-26",
+      "time_zone": "America/Los_Angeles",
+      "version": "36cd9dc9-c24b-4eac-ae5c-2d08574e0d9b",
+      "adult_sha": "96f693ca60bc85b2dac2b40b4509177e8756a3a63474d0bdc9faa7893296486b",
+      "guardian_sha": "60fb2ff95634f5da84d641e4866f83f09c6a98e348d004668fa673c3e62e1b4c",
+      "approved_at": "2026-10-25T07:28:07.26565+00:00",
+      "approved_by": "operator-request:enable-v2:2026-10-25"
+    }
+  ]
+}
