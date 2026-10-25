@@ -23,7 +23,11 @@ it("lets a non-attending booker add adult and minor friends with separate questi
   await user.click(screen.getByRole("button", { name: "Add a friend" }));
   await pasteInto(screen.getAllByLabelText(/Name/)[1], "Child Friend"); await user.type(screen.getByLabelText("Participant 2 birth date"), "2015-01-01");
   await pasteInto(screen.getByLabelText("Guardian’s legal name"), "Legal Parent"); await pasteInto(screen.getByLabelText("Guardian’s email"), "parent@example.test");
-  expect(screen.getByRole("note")).toHaveTextContent("Under 18"); expect(screen.queryByRole("button", { name: "Add a friend" })).not.toBeInTheDocument();
+  await pasteInto(screen.getByLabelText("Accompanying guardian’s name"), "Legal Parent");
+  await pasteInto(screen.getByLabelText("Accompanying guardian’s phone"), "+1 555 010 0100");
+  await user.selectOptions(screen.getByLabelText("Accompanying guardian’s relationship"), "parent");
+  await user.click(screen.getByRole("checkbox", { name: /This parent or legal guardian will accompany/ }));
+  expect(screen.getAllByRole("note")[0]).toHaveTextContent("Under 18"); expect(screen.queryByRole("button", { name: "Add a friend" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("checkbox", { name: /I have permission/ }));
   await user.click(screen.getByRole("button", { name: "Save and continue to individual payments" }));
   expect(screen.getByRole("button", { name: "Saving participants…" })).toBeDisabled();

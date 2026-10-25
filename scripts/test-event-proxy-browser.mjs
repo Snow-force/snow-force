@@ -10,18 +10,19 @@ import os from "node:os";
 
 export async function verifyProxyApprovalBrowser({ root,db,config,directory,booker }) {
   const appRoot = process.env.EVENT_TEST_APP_ROOT ?? root;
+  const toolingRoot = process.env.EVENT_TEST_TOOLING_ROOT ?? root;
   const encryptionKey = randomBytes(32).toString("hex");
   assert.equal(config.host,"127.0.0.1");
   const require=createRequire(path.join(root,"package.json"));
-  process.env.PLAYWRIGHT_BROWSERS_PATH=path.join(root,".cache/tooling/playwright-browsers");
+  process.env.PLAYWRIGHT_BROWSERS_PATH=path.join(toolingRoot,".cache/tooling/playwright-browsers");
   const { chromium }=require(process.env.EVENT_TEST_PLAYWRIGHT_MODULE ?? path.join(os.homedir(),".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"));
   const secret=randomBytes(48).toString("hex");
   const user="20000000-0000-4000-8000-000000000001";
   const sign=role=>{const body=[Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url"),Buffer.from(JSON.stringify({role,sub:user,aud:"authenticated",exp:Math.floor(Date.now()/1000)+3600})).toString("base64url")].join(".");return body+"."+createHmac("sha256",secret).update(body).digest("base64url");};
   const restPort=config.port+1;
   const restLog=openSync(path.join(directory,"browser-postgrest.log"),"a");
-  const rest=spawn(path.join(root,".cache/tooling/postgrest-16.5/bin/postgrest.exe"),[],{windowsHide:true,stdio:["ignore",restLog,restLog],env:{...process.env,
-    PATH:path.join(root,".cache/tooling/postgresql/pgsql/bin")+path.delimiter+process.env.PATH,
+  const rest=spawn(path.join(toolingRoot,".cache/tooling/postgrest-16.5/bin/postgrest.exe"),[],{windowsHide:true,stdio:["ignore",restLog,restLog],env:{...process.env,
+    PATH:path.join(toolingRoot,".cache/tooling/postgresql/pgsql/bin")+path.delimiter+process.env.PATH,
     PGRST_DB_URI:`postgresql://${config.user}@127.0.0.1:${config.port}/postgres`,PGRST_DB_SCHEMAS:"public",PGRST_DB_ANON_ROLE:"anon",PGRST_JWT_SECRET:secret,PGRST_SERVER_HOST:"127.0.0.1",PGRST_SERVER_PORT:String(restPort)}});
   // Only authentication/profile reads are emulated. Event validation and pending writes use real PostgREST/PostgreSQL.
   const bridge=createServer(async(req,res)=>{try{

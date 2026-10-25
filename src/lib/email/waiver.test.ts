@@ -16,7 +16,7 @@ describe("strict private waiver delivery", () => {
   it("keeps a stable provider idempotency key and returns accepted message ID without claiming delivery", async () => {
     mocks.send.mockResolvedValue({ data: { id: "mail-1" }, error: null });
     expect(await sendWaiverEmail("friend@example.test", data, "waiver/assignment/1")).toEqual({ success: true, messageId: "mail-1" });
-    expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ to: "friend@example.test", replyTo: "hello@snow-force.com" }), { idempotencyKey: "waiver/assignment/1" });
+    expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ to: "friend@example.test", replyTo: "hello@snow-force.com", tags: [{ name: "stream", value: "event-waiver-v2" }] }), { idempotencyKey: "waiver/assignment/1" });
   });
   it("escapes attendee content and uses a private official link with no other group members", () => {
     const email = buildWaiverEmail(data); expect(email.html).toContain("&lt;img"); expect(email.html).not.toContain('<img src="x">');

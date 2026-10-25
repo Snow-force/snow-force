@@ -23,3 +23,26 @@ it("never shows a ticket QR while a signed guardian waiver is waiting for review
   render(<LanguageProvider><EmailedWaiverForm {...props} status="needs_review" qrDataUrl="data:image/png;base64,abc" /></LanguageProvider>);
   expect(screen.getByRole("status")).toHaveTextContent("verify identity or guardian authority"); expect(screen.queryByRole("img")).not.toBeInTheDocument();
 });
+it("explains the birthday gate without offering an adult signature early", () => {
+  render(<LanguageProvider><EmailedWaiverForm {...props} role="attendee" canSign={false} /></LanguageProvider>);
+  expect(screen.getByRole("status")).toHaveTextContent("18th birthday");
+  expect(screen.queryByRole("button", { name: "Email me a verification code" })).not.toBeInTheDocument();
+});
+it("shows accompaniment requirements and makes the signed terms available for saving", async () => {
+  const user = userEvent.setup();
+  render(<LanguageProvider><EmailedWaiverForm {...props} status="signed" needsAccompaniment eventDate="2026-11-07" eventTitle={{ en: "Snow activity", zh: "滑雪活动" }} eventLocation={{ en: "Burlingame, CA", zh: "加州" }} /></LanguageProvider>);
+  expect(screen.getByText(/Staff must verify their presence/)).toBeInTheDocument();
+  expect(screen.getByText(/2026-11-07/)).toHaveTextContent("Burlingame, CA");
+  await user.click(screen.getByText("View your waiver terms"));
+  expect(screen.getByText("Reviewed guardian terms")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Print or save this record" })).toBeInTheDocument();
+});
+it("expands the complete saved terms before opening the print dialog", async () => {
+  const user = userEvent.setup();
+  render(<LanguageProvider><EmailedWaiverForm {...props} status="signed" /></LanguageProvider>);
+  const print = vi.spyOn(window, "print").mockImplementation(() => {
+    expect(screen.getByText("Reviewed guardian terms")).toBeVisible();
+  });
+  await user.click(screen.getByRole("button", { name: "Print or save this record" }));
+  expect(print).toHaveBeenCalledOnce(); print.mockRestore();
+});

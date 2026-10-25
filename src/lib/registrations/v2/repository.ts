@@ -27,7 +27,7 @@ export type AssignmentRow = {
 };
 export type ParticipantRow = {
   id: string; booking_id: string; attendee_name: string; event_date: string; signer_role: SignerRole; guardian_relationship: string | null;
-  registration_kind: "self" | "proxy"; payment_model: string;
+  registration_kind: "self" | "proxy"; payment_model: string; date_of_birth: string;
 };
 export async function getAssignment(id: string) {
   const { data, error } = await createAdminClient().from("event_waiver_assignments").select("*").eq("id", id).maybeSingle<AssignmentRow>();
@@ -41,14 +41,17 @@ export async function getWaiverInvitation(token: string) {
   if (error) throw new Error("Waiver invitation unavailable");
   if (!assignment?.is_current || !assignment.expires_at || Date.parse(assignment.expires_at) <= Date.now() || ["invalidated", "expired", "bounced"].includes(assignment.status)) return null;
   const [{ data: participant, error: participantError }, { data: registration, error: registrationError }] = await Promise.all([
-    client.from("event_waiver_participants").select("id,booking_id,attendee_name,event_date,signer_role,guardian_relationship,registration_kind,payment_model").eq("id", assignment.participant_id).single<ParticipantRow>(),
+    client.from("event_waiver_participants").select("id,booking_id,attendee_name,date_of_birth,event_date,signer_role,guardian_relationship,registration_kind,payment_model").eq("id", assignment.participant_id).single<ParticipantRow>(),
     client.from("registrations").select("id,event_slug,status,approval_status,deposit_status,attendance_status,booker_member_id,member_id").eq("id", assignment.registration_id).single(),
   ]);
   if (participantError || registrationError) throw new Error("Waiver invitation unavailable");
   if (!participant || !registration || registration.status !== "confirmed") return null;
   const { data: booking, error: bookingError } = await client.from("event_bookings").select("preferred_language").eq("id", participant.booking_id).single<{ preferred_language: "en" | "zh" }>();
   if (bookingError || !booking) throw new Error("Waiver language unavailable");
-  return { assignment, participant, registration, language: booking.preferred_language };
+  const policy = await getWaiverPolicy(String(registration.event_slug));
+  const { data: accompaniment, error: accompanimentError } = await client.from("event_waiver_accompaniments").select("present").eq("participant_id", participant.id).maybeSingle<{ present: boolean }>();
+  if (!policy || accompanimentError) throw new Error("Waiver entry requirements unavailable");
+  return { assignment, participant, registration, language: booking.preferred_language, timeZone: policy.timeZone, accompanimentPresent: accompaniment?.present ?? false };
 }
 
 export type BookingParticipantView = {
@@ -57,6 +60,7 @@ export type BookingParticipantView = {
   assignmentId: string | null; paymentModel: string;
   quotedAmount: number; currency: string; reviewRequired: boolean;
   deliveryStatus: string;
+  accompanyingGuardian?: string; accompanimentPresent?: boolean;
 };
 export type BookingView = { id: string; eventSlug: string; createdAt: string; participants: BookingParticipantView[] };
 export function maskRecipient(email: string) {
@@ -86,6 +90,8 @@ export async function listEventBookings(bookerId?: string, eventSlug?: string): 
     client.from("registrations").select("id,waiver_participant_id,status,approval_status,deposit_status").in("booking_id", ids),
   ]);
   if (participants.error || pending.error || registrations.error) throw new Error("Booking participants unavailable");
+  const accompaniments = await client.from("event_waiver_accompaniments").select("participant_id,guardian_name,present").in("participant_id", (participants.data ?? []).map((p) => String(p.id)));
+  if (accompaniments.error) throw new Error("Accompaniment status unavailable");
   const registrationIds = (registrations.data ?? []).map((r) => String(r.id));
   const assignments = registrationIds.length ? await client.from("event_waiver_assignments").select("id,registration_id,status,recipient_email,expires_at").in("registration_id", registrationIds).eq("is_current", true) : { data: [], error: null };
   if (assignments.error) throw new Error("Booking waivers unavailable");
@@ -97,8 +103,10 @@ export async function listEventBookings(bookerId?: string, eventSlug?: string): 
     const hold = pending.data?.find((hold) => hold.waiver_participant_id === p.id);
     const a = assignments.data?.find((a) => a.registration_id === r?.id);
     const delivery = deliveries.data?.find((d) => d.assignment_id === a?.id);
+    const accompaniment = accompaniments.data?.find((a) => a.participant_id === p.id);
     const expired = hold && Date.parse(hold.expires_at) <= Date.now() && !hold.checkout_attempt;
     return { id: String(p.id), name: String(p.attendee_name), kind: String(p.registration_kind), pendingId: hold && !r && !expired ? String(hold.id) : null,
+      accompanyingGuardian: accompaniment ? String(accompaniment.guardian_name) : undefined, accompanimentPresent: accompaniment?.present ?? false,
       registrationId: r ? String(r.id) : null, status: r?.status ?? (hold?.fulfillment_state === "paid_requires_review" ? "paid_requires_review" : expired ? "expired" : "pending_payment"),
       waiverStatus: a?.expires_at && Date.parse(a.expires_at) <= Date.now() && !["signed", "declined", "needs_review"].includes(a.status) ? "expired" : a?.status ?? "not_sent",
       signerRole: String(p.signer_role), recipient: maskRecipient(String(a?.recipient_email ?? "")), approvalStatus: String(r?.approval_status ?? "not_required"), assignmentId: a ? String(a.id) : null, paymentModel: String(p.payment_model), quotedAmount: Number(p.quoted_amount), currency: String(p.payment_currency), reviewRequired: Boolean(p.review_required), deliveryStatus: delivery?.status === "queued" && delivery.error_code ? "retrying" : delivery?.status ?? "not_sent" };
