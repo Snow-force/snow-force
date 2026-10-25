@@ -15,7 +15,7 @@ import { createEventBookingAction, loadEventWaiverAction, manageBookingWaiverAct
 import { decryptDelivery, digest } from "./secrets";
 import { seedEvents } from "@/lib/events/seed";
 const event = { ...seedEvents[0], slug: "v2", status: "published", registrationState: "open", registrationCount: 0, registrationCloseAt: "2099-01-01", eventDate: "2099-11-07", capacity: 0, allowProxyRegistrations: true, maxProxyRegistrations: 5, registrationQuestions: [], paymentModel: "free" };
-const participant = { key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", kind: "proxy", dateOfBirth: "1990-01-01", attendeeEmail: "friend@example.test", guardianName: "", guardianEmail: "", guardianRelationship: "parent", answers: { name: "Friend" } };
+const participant = { key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", kind: "proxy", signerEmail: "friend@example.test", answers: { name: "Friend" } };
 const input = { requestKey: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", lang: "en" as const, permission: true, participants: [participant] };
 const token = "c".repeat(64);
 function bookingForm(patch: Partial<typeof input> = {}) { const value = { ...input, ...patch }; const form = new FormData(); form.set("eventSlug", "v2"); form.set("requestKey", value.requestKey); form.set("lang", value.lang); form.set("permission", value.permission ? "on" : ""); form.set("participants", JSON.stringify(value.participants)); return form; }
@@ -31,6 +31,22 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("V2 authenticated command boundaries", () => {
+  it("uses the verified signer's explicit adult declaration and needs no guardian signature", async () => {
+    m.account.mockResolvedValue(null);
+    m.invitation.mockResolvedValue({ assignment: { id: "assignment", recipient_email: "friend@example.test", generation: 1 }, participant: { age_confirmation_method: "declaration", date_of_birth: null, signer_role: "unconfirmed", registration_kind: "proxy" }, registration: { booker_member_id: "booker" } });
+    const form = signForm(); form.set("adultConfirmed", "on"); form.set("signerRole", "guardian");
+    expect((await signEventWaiverAction(form)).success).toBe(true);
+    expect(m.rpc).toHaveBeenCalledWith("respond_declared_event_waiver", expect.objectContaining({ declaration_input: { adultConfirmed: true, under14: false }, guardian_attested_input: true }));
+    expect(m.rpc.mock.calls[0][1]).not.toHaveProperty("signer_role_input");
+  });
+  it("an unchecked adult box cannot bypass guardian signing through a forged role field", async () => {
+    m.account.mockResolvedValue(null);
+    m.invitation.mockResolvedValue({ assignment: { id: "assignment", generation: 1 }, participant: { age_confirmation_method: "declaration", signer_role: "unconfirmed" }, registration: {} });
+    const form = signForm(); expect((await signEventWaiverAction(form)).success).toBe(false); expect(m.rpc).not.toHaveBeenCalled();
+    for (const [key, value] of Object.entries({ typedName: "Legal Parent", guardianAttested: "on", guardianRelationship: "parent", minorUnder14: "no" })) form.set(key, value);
+    expect((await signEventWaiverAction(form)).success).toBe(true);
+    expect(m.rpc).toHaveBeenCalledWith("respond_declared_event_waiver", expect.objectContaining({ declaration_input: { adultConfirmed: false, under14: false, guardianRelationship: "parent" }, signer_name_input: "Legal Parent" }));
+  });
   it("withholds a child's ticket until accompaniment is verified and never sends their birth date to the browser", async () => {
     const invitation = { assignment: { id: "assignment", status: "signed", generation: 1 }, participant: { attendee_name: "Child", date_of_birth: "2015-01-01", event_date: "2026-11-07", signer_role: "guardian", payment_model: "free" }, registration: { id: "ticket", event_slug: "v2", approval_status: "approved" }, timeZone: "America/Los_Angeles", accompanimentPresent: false };
     m.invitation.mockResolvedValue(invitation);
@@ -51,12 +67,12 @@ describe("V2 authenticated command boundaries", () => {
   });
   it("takes the payer identity from auth and keeps age/guardian details out of questionnaire answers", async () => {
     expect((await createEventBookingAction(bookingForm())).success).toBe(true);
-    expect(m.rpc).toHaveBeenCalledWith("create_event_booking_v2", expect.objectContaining({ booker_id_input: "booker", contact_email_input: "payer@example.test", participants_input: [expect.objectContaining({ signerRole: "attendee", recipientEmail: "friend@example.test", answers: { name: "Friend", email: "friend@example.test" } })] }));
+    expect(m.rpc).toHaveBeenCalledWith("create_declared_event_booking_v2", expect.objectContaining({ booker_id_input: "booker", contact_email_input: "payer@example.test", participants_input: [expect.objectContaining({ recipientEmail: "friend@example.test", answers: { name: "Friend" } })] }));
     expect(m.bookings).toHaveBeenCalledWith("booker");
   });
-  it("blocks disabled rollout, missing permission, invalid DOB and forged request keys", async () => {
+  it("blocks disabled rollout, missing permission, invalid signing email and forged request keys", async () => {
     m.policy.mockResolvedValueOnce({ approved: true, enableGroupForm: false, requireEmailedWaiver: true }); expect((await createEventBookingAction(bookingForm())).success).toBe(false);
-    for (const patch of [{ permission: false }, { requestKey: "wrong" }, { participants: [{ ...participant, dateOfBirth: "future" }] }]) expect((await createEventBookingAction(bookingForm(patch))).success).toBe(false);
+    for (const patch of [{ permission: false }, { requestKey: "wrong" }, { participants: [{ ...participant, signerEmail: "invalid" }] }]) expect((await createEventBookingAction(bookingForm(patch))).success).toBe(false);
     expect(m.rpc).not.toHaveBeenCalled();
   });
   it("recovers an identical owned request without reopening enrollment or re-quoting coupons", async () => {

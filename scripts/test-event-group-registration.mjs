@@ -8,6 +8,7 @@ export async function verifyEventGroupRegistration({ root, db, booker, other }) 
   const sha = (s) => createHash("sha256").update(s).digest("hex");
   await db.query(readFileSync(path.join(root, "supabase/migrations/20261024035754_event_group_waiver_v2.sql"), "utf8"));
   await db.query(readFileSync(path.join(root, "supabase/migrations/20261025050952_event_v2_accompaniment_activation.sql"), "utf8"));
+  await db.query(readFileSync(path.join(root, "supabase/migrations/20261025055638_event_waiver_age_declaration.sql"), "utf8"));
   assert.equal(Number((await db.query("select count(*) from events where enable_group_form or require_emailed_waiver")).rows[0].count), 0);
   const adultText = "Adult event risk acknowledgement. I personally accept the event risks and activity terms. Separate marketing and image consent is optional.";
   const guardianText = "Parent and legal guardian acknowledgement. I have legal authority for the named child and personally accept these activity terms. Separate image and marketing permissions are optional.";
@@ -219,4 +220,6 @@ export async function verifyEventGroupRegistration({ root, db, booker, other }) 
   }
   assert.equal(Number((await db.query("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prosecdef and p.proname like '%waiver%'")).rows[0].count), 0);
   console.log("PASS V2 DOB, signatures, tokens and privileged RPCs are denied to anonymous and member Data API roles");
+  const { verifyWaiverAgeDeclaration } = await import("./test-event-waiver-age-declaration.mjs");
+  await verifyWaiverAgeDeclaration({ db, booker, other });
 }

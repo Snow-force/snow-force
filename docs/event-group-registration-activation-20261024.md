@@ -2,6 +2,8 @@
 
 The user requested “配置 v2” after authorizing deployment. This record distinguishes infrastructure preparation from opening public V2 bookings.
 
+Later clarification: [age confirmation at waiver signing](event-waiver-age-confirmation-20261024.md) replaces birth-date collection/role derivation for new bookings. An explicit 18+ checkbox permits adult signing without a guardian; under-18 guardian signing and under-14 accompaniment remain. Historical birthday-based descriptions below document the preceding release.
+
 ## Current event scope
 
 | Event | Local start date | Payment | Staff approval | Target time zone |

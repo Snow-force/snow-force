@@ -11,6 +11,7 @@ describe("PrivacyPolicyPage", () => {
     expect(screen.getByRole("heading", { name: /Marketing email choices/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Event photos and videos/ })).toBeInTheDocument();
     expect(screen.getByText(/We do not sell personal information/i)).toBeInTheDocument();
+    expect(screen.getByText(/new event bookings do not request a birth date/i)).toBeInTheDocument();
     expect(screen.getByText(/under-14 participants need a parent or legal guardian present throughout/i)).toBeInTheDocument();
     expect(screen.getByText(/hello@snow-force.com/i)).toBeInTheDocument();
   });

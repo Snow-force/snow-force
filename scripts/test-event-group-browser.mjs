@@ -12,15 +12,11 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
   await db.query("select save_event_waiver_policy('browser-group-v2','America/Los_Angeles',$1,$2,$3,$4,'fixture-staff',true,true)", [adult, guardian, sha(adult), sha(guardian)]);
   await page.goto(`${site}/events/browser-group-v2`);
   await page.getByRole("button", { name: "Add a friend", exact: true }).click();
-  await page.getByLabel(/^Name/).fill("Browser Adult"); await page.getByLabel("Participant 1 birth date").fill("1990-01-01");
-  await page.getByLabel("Attendee’s own email").fill("adult@example.test");
+  await page.getByLabel(/^Name/).fill("Browser Adult");
+  await page.getByLabel("Waiver signing email").fill("adult@example.test");
   await page.getByRole("button", { name: "Add a friend", exact: true }).click();
-  await page.getByLabel(/^Name/).nth(1).fill("Browser Child"); await page.getByLabel("Participant 2 birth date").fill("2015-01-01");
-  await page.getByLabel("Guardian’s legal name").fill("Browser Parent"); await page.getByLabel("Guardian’s email").fill("parent@example.test");
-  await page.getByLabel("Accompanying guardian’s name").fill("Browser Parent");
-  await page.getByLabel("Accompanying guardian’s phone").fill("+1 555 010 0100");
-  await page.getByLabel("Accompanying guardian’s relationship").selectOption("parent");
-  await page.getByRole("checkbox", { name: /This parent or legal guardian will accompany/ }).check();
+  await page.getByLabel(/^Name/).nth(1).fill("Browser Child");
+  await page.getByLabel("Waiver signing email").nth(1).fill("parent@example.test");
   await page.getByRole("checkbox", { name: /I have permission/ }).check();
   await page.getByRole("button", { name: "Save and continue to individual payments", exact: true }).click();
   await page.getByRole("heading", { name: "Your participant bookings" }).waitFor();
@@ -59,18 +55,31 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
     await guest.getByLabel("Your full legal name / electronic signature").waitFor();
     assert.equal(guest.url().split("#")[1] === token, true, "Verification must retain the current person's private capability");
     await guest.reload(); await guest.getByLabel("Your full legal name / electronic signature").waitFor(); // httpOnly proof survives refresh.
-    assert.equal(await guest.getByRole("combobox").count(), 0);
-    await guest.getByLabel("Your full legal name / electronic signature").fill(person.signer_role === "guardian" ? "Browser Parent" : hold.contact_name);
-    for (const checkbox of await guest.getByRole("checkbox").all()) await checkbox.check();
+    assert.equal(await guest.getByRole("checkbox", { name: /I confirm I am the attendee/ }).isChecked(), false);
+    const signerRole = hold.contact_name === "Browser Child" ? "guardian" : "attendee";
+    if (signerRole === "attendee") { await guest.getByRole("checkbox", { name: /I confirm I am the attendee/ }).check(); assert.equal(await guest.getByRole("combobox").count(), 0); }
+    else {
+      await guest.getByLabel("Your legal relationship to the attendee").selectOption("parent");
+      await guest.getByRole("radio", { name: "Yes, under 14", exact: true }).check();
+      await guest.getByLabel("Accompanying guardian’s name").fill("Browser Parent");
+      await guest.getByLabel("Accompanying guardian’s phone").fill("+1 555 010 0100");
+      await guest.getByLabel("Accompanying guardian’s relationship").selectOption("parent");
+      await guest.getByRole("checkbox", { name: /This parent or legal guardian will stay/ }).check();
+      await guest.getByRole("checkbox", { name: /I am this child’s parent/ }).check();
+    }
+    await guest.getByLabel("Your full legal name / electronic signature").fill(signerRole === "guardian" ? "Browser Parent" : hold.contact_name);
+    await guest.getByRole("checkbox", { name: /I have read and accept/ }).check();
+    await guest.evaluate(() => window.scrollTo(0, 0));
+    await guest.screenshot({ path: path.join(screenshots, `${signerRole}-age-confirmation-mobile.png`), fullPage: true });
     await guest.getByRole("button", { name: "Accept and sign", exact: true }).click();
     await guest.getByRole("status").filter({ hasText: /signature is recorded|waiver is signed/ }).waitFor();
     assert.equal(await guest.getByRole("img", { name: "Your personal event ticket" }).count(), 0);
-    if (person.signer_role === "guardian") await db.query("select staff_event_waiver_operation($1,'guardian_verified','fixture-staff')", [ticket.id]);
-    if (person.signer_role === "guardian") await db.query("select staff_event_waiver_operation($1,'accompany_verified','fixture-staff')", [ticket.id]);
+    if (signerRole === "guardian") await db.query("select staff_event_waiver_operation($1,'guardian_verified','fixture-staff')", [ticket.id]);
+    if (signerRole === "guardian") await db.query("select staff_event_waiver_operation($1,'accompany_verified','fixture-staff')", [ticket.id]);
     await db.query("select staff_event_waiver_operation($1,'approve','fixture-staff')", [ticket.id]);
     await guest.reload(); await guest.getByRole("img", { name: "Your personal event ticket" }).waitFor();
     assert.equal(await guest.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth), true);
-    await guest.screenshot({ path: path.join(screenshots, `${person.signer_role}-signed-mobile.png`), fullPage: true });
+    await guest.screenshot({ path: path.join(screenshots, `${signerRole}-signed-mobile.png`), fullPage: true });
     assert.equal(readFileSync(nextLog, "utf8").includes(token), false, "V2 capability must not enter server URL logs");
     assert.equal(readFileSync(nextLog, "utf8").includes("2015-01-01"), false, "Birth dates must not enter action logs");
   }
@@ -84,8 +93,8 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
     await db.query("select save_event_waiver_policy($1,'America/Los_Angeles',$2,$3,$4,$5,'fixture-staff',true,true)", [slug, adult, guardian, sha(adult), sha(guardian)]);
     await page.goto(`${site}/events/${slug}`);
     await page.getByRole("button", { name: "Add a friend", exact: true }).click();
-    await page.getByLabel(/^Name/).fill("Paid V2 Friend"); await page.getByLabel("Participant 1 birth date").fill("1990-01-01");
-    await page.getByLabel("Attendee’s own email").fill("paid-friend@example.test");
+    await page.getByLabel(/^Name/).fill("Paid V2 Friend");
+    await page.getByLabel("Waiver signing email").fill("paid-friend@example.test");
     await page.getByRole("checkbox", { name: /I have permission/ }).check();
     await page.getByRole("button", { name: "Save and continue to individual payments", exact: true }).click();
     await page.getByRole("button", { name: "Continue this person’s payment" }).waitFor();
@@ -93,5 +102,5 @@ export async function verifyEventGroupBrowser({ db, browser, page, site, booker,
     assert.equal(saved.length, 1); assert.equal(Number(saved[0].quoted_amount), amount); assert.equal(saved[0].payment_model, model); assert.equal(saved[0].requires_approval, approval);
   }
   console.log("PASS V2 group forms preserve all three current payment / approval combinations and bilingual tickets");
-  console.log("PASS V2 real browser: friends-only group, adult/guardian email OTP, refresh-safe proof, fixed roles, approval-gated QR, no token URL logs or external sends");
+  console.log("PASS V2 real browser: friends-only group, adult/guardian email OTP, refresh-safe proof, self-declared signing age, guardian authority and approval-gated QR, no token URL logs or external sends");
 }

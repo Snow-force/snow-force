@@ -24,10 +24,11 @@ export type AssignmentRow = {
   id: string; registration_id: string; participant_id: string; is_current: boolean; recipient_email: string;
   guardian_name: string | null; policy_version: string; waiver_text: string; waiver_sha: string; generation: number;
   token_hash: string | null; expires_at: string | null; status: string; email_verified_at: string | null;
+  declared_signer_role?: SignerRole | null; declared_under14?: boolean | null;
 };
 export type ParticipantRow = {
-  id: string; booking_id: string; attendee_name: string; event_date: string; signer_role: SignerRole; guardian_relationship: string | null;
-  registration_kind: "self" | "proxy"; payment_model: string; date_of_birth: string;
+  id: string; booking_id: string; attendee_name: string; event_date: string; signer_role: SignerRole | "unconfirmed"; guardian_relationship: string | null;
+  registration_kind: "self" | "proxy"; payment_model: string; date_of_birth: string | null; age_confirmation_method?: "birth_date" | "declaration";
 };
 export async function getAssignment(id: string) {
   const { data, error } = await createAdminClient().from("event_waiver_assignments").select("*").eq("id", id).maybeSingle<AssignmentRow>();
@@ -41,7 +42,7 @@ export async function getWaiverInvitation(token: string) {
   if (error) throw new Error("Waiver invitation unavailable");
   if (!assignment?.is_current || !assignment.expires_at || Date.parse(assignment.expires_at) <= Date.now() || ["invalidated", "expired", "bounced"].includes(assignment.status)) return null;
   const [{ data: participant, error: participantError }, { data: registration, error: registrationError }] = await Promise.all([
-    client.from("event_waiver_participants").select("id,booking_id,attendee_name,date_of_birth,event_date,signer_role,guardian_relationship,registration_kind,payment_model").eq("id", assignment.participant_id).single<ParticipantRow>(),
+    client.from("event_waiver_participants").select("id,booking_id,attendee_name,date_of_birth,age_confirmation_method,event_date,signer_role,guardian_relationship,registration_kind,payment_model").eq("id", assignment.participant_id).single<ParticipantRow>(),
     client.from("registrations").select("id,event_slug,status,approval_status,deposit_status,attendance_status,booker_member_id,member_id").eq("id", assignment.registration_id).single(),
   ]);
   if (participantError || registrationError) throw new Error("Waiver invitation unavailable");
@@ -51,7 +52,7 @@ export async function getWaiverInvitation(token: string) {
   const policy = await getWaiverPolicy(String(registration.event_slug));
   const { data: accompaniment, error: accompanimentError } = await client.from("event_waiver_accompaniments").select("present").eq("participant_id", participant.id).maybeSingle<{ present: boolean }>();
   if (!policy || accompanimentError) throw new Error("Waiver entry requirements unavailable");
-  return { assignment, participant, registration, language: booking.preferred_language, timeZone: policy.timeZone, accompanimentPresent: accompaniment?.present ?? false };
+  return { assignment, participant, registration, language: booking.preferred_language, policy, timeZone: policy.timeZone, accompanimentPresent: accompaniment?.present ?? false };
 }
 
 export type BookingParticipantView = {
@@ -93,7 +94,7 @@ export async function listEventBookings(bookerId?: string, eventSlug?: string): 
   const accompaniments = await client.from("event_waiver_accompaniments").select("participant_id,guardian_name,present").in("participant_id", (participants.data ?? []).map((p) => String(p.id)));
   if (accompaniments.error) throw new Error("Accompaniment status unavailable");
   const registrationIds = (registrations.data ?? []).map((r) => String(r.id));
-  const assignments = registrationIds.length ? await client.from("event_waiver_assignments").select("id,registration_id,status,recipient_email,expires_at").in("registration_id", registrationIds).eq("is_current", true) : { data: [], error: null };
+  const assignments = registrationIds.length ? await client.from("event_waiver_assignments").select("id,registration_id,status,recipient_email,expires_at,declared_signer_role").in("registration_id", registrationIds).eq("is_current", true) : { data: [], error: null };
   if (assignments.error) throw new Error("Booking waivers unavailable");
   const assignmentIds = (assignments.data ?? []).map((a) => String(a.id));
   const deliveries = assignmentIds.length ? await client.from("event_waiver_email_outbox").select("assignment_id,status,error_code,created_at").in("assignment_id", assignmentIds).in("kind", ["invitation", "reminder"]).order("created_at", { ascending: false }) : { data: [], error: null };
@@ -109,6 +110,6 @@ export async function listEventBookings(bookerId?: string, eventSlug?: string): 
       accompanyingGuardian: accompaniment ? String(accompaniment.guardian_name) : undefined, accompanimentPresent: accompaniment?.present ?? false,
       registrationId: r ? String(r.id) : null, status: r?.status ?? (hold?.fulfillment_state === "paid_requires_review" ? "paid_requires_review" : expired ? "expired" : "pending_payment"),
       waiverStatus: a?.expires_at && Date.parse(a.expires_at) <= Date.now() && !["signed", "declined", "needs_review"].includes(a.status) ? "expired" : a?.status ?? "not_sent",
-      signerRole: String(p.signer_role), recipient: maskRecipient(String(a?.recipient_email ?? "")), approvalStatus: String(r?.approval_status ?? "not_required"), assignmentId: a ? String(a.id) : null, paymentModel: String(p.payment_model), quotedAmount: Number(p.quoted_amount), currency: String(p.payment_currency), reviewRequired: Boolean(p.review_required), deliveryStatus: delivery?.status === "queued" && delivery.error_code ? "retrying" : delivery?.status ?? "not_sent" };
+      signerRole: String(a?.declared_signer_role ?? p.signer_role), recipient: maskRecipient(String(a?.recipient_email ?? "")), approvalStatus: String(r?.approval_status ?? "not_required"), assignmentId: a ? String(a.id) : null, paymentModel: String(p.payment_model), quotedAmount: Number(p.quoted_amount), currency: String(p.payment_currency), reviewRequired: Boolean(p.review_required), deliveryStatus: delivery?.status === "queued" && delivery.error_code ? "retrying" : delivery?.status ?? "not_sent" };
   }) }));
 }

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useLanguage } from "@/lib/language";
 import { requestWaiverCodeAction, verifyWaiverCodeAction, signEventWaiverAction } from "@/lib/registrations/v2/actions";
+import { WaiverAgeFields } from "./waiver-age-fields";
 
-export function EmailedWaiverForm({ token, attendeeName, eventSlug, role, waiverText, status, ready, qrDataUrl, initiallyVerified = false, onRecorded, registrationId, canSign = true, needsAccompaniment = false, eventTitle, eventDate, eventLocation }: {
-  token: string; attendeeName: string; eventSlug: string; role: "attendee" | "guardian"; waiverText: string; status: string; ready: boolean; qrDataUrl?: string;
+export function EmailedWaiverForm({ token, attendeeName, eventSlug, role, waiverText, status, ready, qrDataUrl, initiallyVerified = false, onRecorded, registrationId, canSign = true, needsAccompaniment = false, eventTitle, eventDate, eventLocation, declarationMode = role === "unconfirmed", adultWaiverText, guardianWaiverText }: {
+  token: string; attendeeName: string; eventSlug: string; role: "attendee" | "guardian" | "unconfirmed"; waiverText: string; status: string; ready: boolean; qrDataUrl?: string;
+  declarationMode?: boolean; adultWaiverText?: string; guardianWaiverText?: string;
   initiallyVerified?: boolean;
   canSign?: boolean; needsAccompaniment?: boolean;
   eventTitle?: { en: string; zh: string }; eventDate?: string; eventLocation?: { en: string; zh: string };
@@ -21,7 +23,11 @@ export function EmailedWaiverForm({ token, attendeeName, eventSlug, role, waiver
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const effectiveRole = declarationMode ? adultConfirmed ? "attendee" : "guardian" : role;
+  const displayedWaiver = declarationMode ? adultConfirmed ? adultWaiverText ?? "" : guardianWaiverText ?? "" : waiverText;
   const recordedTerms = useRef<HTMLDetailsElement>(null);
+  function record(data: FormData) { startTransition(async () => { setError(""); try { const r = await signEventWaiverAction(data); if (r.success) { if (onRecorded) await onRecorded(); else router.refresh(); } else setError(t({ en: "Signature could not be recorded. Check your legal name, designated role, consent and email verification; contact staff if another ticket exists.", zh: "无法记录签名，请核对法定全名、指定身份、同意选项及邮箱验证；如已有其他票据请联系工作人员。" })); } catch { setError(t({ en: "Please retry", zh: "请重试" })); } }); }
   if (["signed", "declined", "needs_review"].includes(status)) return <div className="card space-y-4">
     <h1 className="text-2xl font-semibold">{attendeeName} · {eventTitle ? t(eventTitle) : eventSlug}</h1>
     <p>{eventDate} · {eventLocation ? t(eventLocation) : ""}</p>
@@ -36,7 +42,7 @@ export function EmailedWaiverForm({ token, attendeeName, eventSlug, role, waiver
   </div>;
   if (!canSign) return <div className="card"><p role="status">{t({ en: "You will be an adult on the event date. Your adult waiver can only be signed on or after your 18th birthday. Contact staff if you need help.", zh: "你在活动当天将成年。成人免责须等到年满 18 岁后亲自签署；如需协助请联系工作人员。" })}</p></div>;
   return <div className="card space-y-5">
-    <h1 className="text-2xl font-semibold">{t(role === "guardian" ? { en: "Parent / legal guardian waiver", zh: "父母 / 法定监护人免责签署" } : { en: "Your personal event waiver", zh: "你的个人活动免责" })}</h1>
+    <h1 className="text-2xl font-semibold">{t(declarationMode ? { en: "Confirm age and sign your waiver", zh: "确认年龄并签署免责" } : role === "guardian" ? { en: "Parent / legal guardian waiver", zh: "父母 / 法定监护人免责签署" } : { en: "Your personal event waiver", zh: "你的个人活动免责" })}</h1>
     <p>{attendeeName} · <a className="underline" target="_blank" rel="noreferrer" href={`/events/${eventSlug}`}>{eventTitle ? t(eventTitle) : eventSlug}</a></p>
     <p>{eventDate} · {eventLocation ? t(eventLocation) : ""}</p>
     <p className="text-sm">{t({ en: "First verify the designated email. Codes and links are personal; do not share them. Each attendee needs their own signature.", zh: "请先验证指定邮箱。验证码及链接仅供本人使用，请勿转发；每位参加者须分别签署。" })}</p>
@@ -50,15 +56,20 @@ export function EmailedWaiverForm({ token, attendeeName, eventSlug, role, waiver
     </div> : <form className="space-y-5" onSubmit={(e) => {
       e.preventDefault(); const data = new FormData(e.currentTarget); const submitter = (e.nativeEvent as SubmitEvent).submitter;
       data.set("decision", submitter instanceof HTMLButtonElement ? submitter.value : "accept");
-      startTransition(async () => { setError(""); try { const r = await signEventWaiverAction(data); if (r.success) { if (onRecorded) await onRecorded(); else router.refresh(); } else setError(t({ en: "Signature could not be recorded. Check your legal name, designated role, consent and email verification; contact staff if another ticket exists.", zh: "无法记录签名，请核对法定全名、指定身份、同意选项及邮箱验证；如已有其他票据请联系工作人员。" })); } catch { setError(t({ en: "Please retry", zh: "请重试" })); } });
+      record(data);
     }}>
-      <input type="hidden" name="token" value={token} /><input type="hidden" name="signerRole" value={role} />
-      <div tabIndex={0} aria-label={t({ en: "Event waiver", zh: "活动免责条款" })} className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border p-4 text-sm leading-6 print:max-h-none print:overflow-visible">{waiverText}</div>
+      <input type="hidden" name="token" value={token} /><input type="hidden" name="signerRole" value={effectiveRole} />
+      <fieldset disabled={pending} className="space-y-5">
+      {declarationMode && <WaiverAgeFields adultConfirmed={adultConfirmed} onAdultChange={setAdultConfirmed} />}
+      <fieldset key={effectiveRole} className="space-y-5">
+      <div tabIndex={0} aria-label={t({ en: "Event waiver", zh: "活动免责条款" })} className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border p-4 text-sm leading-6 print:max-h-none print:overflow-visible">{displayedWaiver}</div>
       <button type="button" className="btn-secondary" onClick={() => window.print()}>{t({ en: "Print or save these terms", zh: "打印或保存本条款" })}</button>
       <label className="block text-sm">{t({ en: "Your full legal name / electronic signature", zh: "签署人法定全名 / 电子签名" })}<input name="typedName" maxLength={200} className="input-field mt-2" /></label>
-      {role === "guardian" && <label className="flex items-start gap-3 text-sm"><input name="guardianAttested" type="checkbox" />{t({ en: "I am this child’s parent or legally appointed guardian and have authority to act for them. I sign using my own legal name and will provide verification to staff.", zh: "我是此孩子的父母或依法指定的监护人，有权代表此孩子。我以自己的法定姓名签署，并将配合工作人员核验资格。" })}</label>}
+      {effectiveRole === "guardian" && <label className="flex items-start gap-3 text-sm"><input name="guardianAttested" type="checkbox" />{t({ en: "I am this child’s parent or legally appointed guardian and have authority to act for them. I sign using my own legal name and will provide verification to staff.", zh: "我是此孩子的父母或依法指定的监护人，有权代表此孩子。我以自己的法定姓名签署，并将配合工作人员核验资格。" })}</label>}
       <label className="flex items-start gap-3 text-sm"><input name="attested" type="checkbox" />{t({ en: "I have read and accept the above waiver and personally provide this signature. Marketing and photo consent are separate and are not granted here.", zh: "我已阅读并接受上述免责，并亲自提供签名。营销和肖像授权独立于此，不在本次签署中授予。" })}</label>
-      <div className="flex flex-wrap gap-3"><button disabled={pending} value="accept" className="btn-primary">{t({ en: "Accept and sign", zh: "接受并签署" })}</button><button disabled={pending} value="decline" className="btn-secondary">{t({ en: "Decline waiver", zh: "拒绝签署" })}</button></div>
+      </fieldset>
+      </fieldset>
+      <div className="flex flex-wrap gap-3"><button disabled={pending || !displayedWaiver} value="accept" className="btn-primary">{t({ en: "Accept and sign", zh: "接受并签署" })}</button><button type="button" disabled={pending} onClick={(e) => { const form = e.currentTarget.form; if (!form) return; const data = new FormData(form); data.set("decision", "decline"); record(data); }} className="btn-secondary">{t({ en: "Decline waiver", zh: "拒绝签署" })}</button></div>
       <button type="button" disabled={pending} onClick={() => { setVerified(false); setCode(""); }} className="min-h-11 text-sm underline">{t({ en: "Verify email again", zh: "重新验证邮箱" })}</button>
     </form>}
     {message && <p role="status">{message}</p>}{error && <p role="alert" className="text-sm text-red-700">{error}</p>}
