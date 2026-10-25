@@ -2,6 +2,8 @@
 
 Date: 2026-10-24, America/Los_Angeles.
 
+Later update: [V2 activation preparation and verified infrastructure release](event-group-registration-activation-20261024.md) supersedes this record's application revision and resolves the accompaniment, signing-day age and delivery-configuration gaps. Public V2 enrollment remains off pending retention rules and designated internal email acceptance. The code-only release details below are retained as history.
+
 Status: **production code deployment SUCCESS**, verified 2026-10-24 at 16:52 PDT (23:52 UTC). This is a code-only release. **All V2 event flags remain off; V2 activation is excluded.**
 
 ## Authorized scope

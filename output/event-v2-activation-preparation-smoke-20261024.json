@@ -1,0 +1,81 @@
+{
+  "verifiedAt": "2026-10-25T05:42:30.934Z",
+  "applicationRevision": "d1164694ccb5f808f39ba2caea650808336499d1",
+  "scope": "configured infrastructure; V2 public enrollment pending retention and internal email acceptance",
+  "realBookingsCreated": 0,
+  "realPaymentsCreated": 0,
+  "realWaiverEmailsSent": 0,
+  "checks": [
+    {
+      "endpoint": "/api/health",
+      "status": 200
+    },
+    {
+      "endpoint": "/events/waivers",
+      "status": 200
+    },
+    {
+      "endpoint": "/events/guest/invalid",
+      "status": 200
+    },
+    {
+      "endpoint": "/privacy-policy",
+      "status": 200
+    },
+    {
+      "endpoint": "/events/metroslopes-indoor-ski-snowboard-1107",
+      "status": 200
+    },
+    {
+      "endpoint": "/events/mammoth-opening-weekend-2026",
+      "status": 200
+    },
+    {
+      "endpoint": "/events/mammoth-thanksgiving-trip-2026",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/events/waivers/dispatch",
+      "status": 401
+    },
+    {
+      "endpoint": "/api/resend/waivers",
+      "status": 400
+    }
+  ],
+  "events": [
+    {
+      "slug": "mammoth-opening-weekend-2026",
+      "event_date": "2026-11-13",
+      "enable_group_form": false,
+      "require_emailed_waiver": false,
+      "payment_model": "deposit",
+      "deposit_amount": 99,
+      "full_payment_amount": null,
+      "requires_approval": true,
+      "max_proxy_registrations": 5
+    },
+    {
+      "slug": "mammoth-thanksgiving-trip-2026",
+      "event_date": "2026-11-26",
+      "enable_group_form": false,
+      "require_emailed_waiver": false,
+      "payment_model": "deposit",
+      "deposit_amount": 99,
+      "full_payment_amount": null,
+      "requires_approval": false,
+      "max_proxy_registrations": 5
+    },
+    {
+      "slug": "metroslopes-indoor-ski-snowboard-1107",
+      "event_date": "2026-11-07",
+      "enable_group_form": false,
+      "require_emailed_waiver": false,
+      "payment_model": "full_prepay",
+      "deposit_amount": null,
+      "full_payment_amount": 118,
+      "requires_approval": true,
+      "max_proxy_registrations": 5
+    }
+  ]
+}

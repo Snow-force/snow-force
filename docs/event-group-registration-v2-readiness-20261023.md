@@ -2,6 +2,8 @@
 
 Date: 2026-10-23, America/Los_Angeles. This records code and isolated acceptance, **not a production release**.
 
+**Latest 2026-10-24 update:** [activation preparation release](event-group-registration-activation-20261024.md) is deployed from main. Under-14 accompaniment and signing-day adulthood are enforced; dedicated sender callback, secrets and a five-minute recovery worker are configured and verified. All three public V2 event flags remain off until retention rules and an authorized internal real-email acceptance are complete. Historical holds and implementation notes below are not the current deployment state.
+
 **2026-10-24 update:** the code and default-off schema expansion are now deployed; [verified production release record](event-group-registration-code-deployment-20261024.md). All events remain on V1. The chronological preparation/hold notes below are retained as history; they do not represent the latest code-deployment state. Draft legal texts and V2 activation remain unapproved.
 
 ## Scope and confirmed rules

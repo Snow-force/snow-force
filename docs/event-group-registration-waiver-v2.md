@@ -1,6 +1,6 @@
 # SnowForce Event — Group Registration & Waiver Assignment V2
 
-> 方案状态：**原 P0 已实现并隔离验证；10/24 新增的未满 14 岁陪同规则待接入，免责稿待审定；P1 合并付款未实施**（不是上线记录）
+> 方案状态：**P0 及未满 14 岁陪同规则已实现并发布；邮件基础配置已核验，公开启用仍待资料保留规则和指定测试邮箱验收；P1 合并付款未实施**。最新结果见 [V2 配置与发布记录](event-group-registration-activation-20261024.md)。
 > 编写日期：2026-10-23（America/Los_Angeles）
 > 适用项目：SnowForce Web / Supabase / Stripe Event 域
 > 前置文档：[已上线 V1 记录](event-proxy-registration-launch-20261023.md)、[V1 修复记录](event-proxy-registration-fix-20261023.md)、[旧规划](event-proxy-registration-rollout-plan-20261022.md)
