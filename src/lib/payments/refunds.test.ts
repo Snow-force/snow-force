@@ -181,7 +181,7 @@ function createHarness(refundResult = stripeRefund()) {
       amount_refunded: 0,
       currency: "usd",
     },
-  } as unknown as Stripe.PaymentIntent;
+  } as unknown as Stripe.Response<Stripe.PaymentIntent>;
   const stripe = {
     paymentIntents: { retrieve: vi.fn().mockResolvedValue(paymentIntent) },
     checkout: {
@@ -193,7 +193,8 @@ function createHarness(refundResult = stripeRefund()) {
     },
     refunds: {
       create: vi.fn().mockResolvedValue(refundResult),
-      list: vi.fn().mockResolvedValue({ data: [] }),
+      list: vi.fn().mockResolvedValue({ data: [], has_more: false }),
+      retrieve: vi.fn(),
     },
   } as unknown as Stripe;
 
@@ -442,5 +443,164 @@ describe("refund payment service", () => {
     });
     expect(result.success).toBe(false);
     expect(stripe.refunds.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("refund timeout recovery", () => {
+  const input = {
+    operationId: "99999999-9999-4999-8999-999999999999",
+    registrationId: "reg-1",
+    amount: 100,
+    reason: "requested_by_customer" as const,
+    internalNote: "Approved refund",
+    initiatedBy: "admin-1",
+  };
+  async function unknownOutcome() {
+    const h = createHarness();
+    vi.mocked(h.stripe.refunds.create).mockRejectedValueOnce(
+      Object.assign(new Error("timeout"), { type: "StripeConnectionError" }),
+    );
+    expect((await createRefundAndCancel(h.deps, input)).success).toBe(false);
+    h.refunds[0].createdAt = new Date().toISOString();
+    return h;
+  }
+  function providerRefund(
+    patch: Partial<Stripe.Refund> = {},
+  ): Stripe.Response<Stripe.Refund> {
+    return {
+      ...stripeRefund({
+        amount: 10000,
+        metadata: {
+          registrationId: "reg-1",
+          refundRequestId: input.operationId,
+        },
+        ...patch,
+      }),
+      lastResponse: { headers: {}, requestId: "req_fixture", statusCode: 200 },
+    };
+  }
+  it("recovers a completed refund before rejecting a now-zero refundable balance", async () => {
+    const h = await unknownOutcome();
+    vi.mocked(h.stripe.paymentIntents.retrieve).mockResolvedValueOnce({
+      id: "pi_test_1",
+      status: "succeeded",
+      latest_charge: {
+        id: "ch_test_1",
+        paid: true,
+        amount_captured: 10000,
+        amount_refunded: 10000,
+        currency: "usd",
+      },
+    } as unknown as Stripe.Response<Stripe.PaymentIntent>);
+    vi.mocked(h.stripe.refunds.list).mockResolvedValueOnce({
+      data: [providerRefund()],
+      has_more: false,
+    } as unknown as Awaited<ReturnType<Stripe["refunds"]["list"]>>);
+    const result = await createRefundAndCancel(h.deps, input);
+    expect(result.success).toBe(true);
+    expect(h.refunds[0].status).toBe("succeeded");
+    expect(h.registrations[0].finance?.refundedAmount).toBe(100);
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+  it("checks a saved Stripe refund ID and repairs stale financial totals", async () => {
+    const h = await unknownOutcome();
+    h.refunds[0].stripeRefundId = "re_test_1";
+    vi.mocked(h.stripe.refunds.retrieve).mockResolvedValueOnce(
+      providerRefund(),
+    );
+    expect((await createRefundAndCancel(h.deps, input)).success).toBe(true);
+    expect(h.stripe.refunds.retrieve).toHaveBeenCalledWith("re_test_1");
+    expect(h.registrations[0].finance?.depositStatus).toBe("refunded");
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+  it("retries only a recent unmatched operation with the saved idempotency key and actor", async () => {
+    const h = await unknownOutcome();
+    vi.mocked(h.stripe.refunds.create).mockResolvedValueOnce(providerRefund());
+    expect(
+      (
+        await createRefundAndCancel(h.deps, {
+          ...input,
+          initiatedBy: "admin-2",
+          reason: "duplicate",
+        })
+      ).success,
+    ).toBe(true);
+    expect(h.stripe.refunds.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        reason: "requested_by_customer",
+        metadata: expect.objectContaining({ initiatedBy: "admin-1" }),
+      }),
+      { idempotencyKey: `snowforce-refund-${input.operationId}` },
+    );
+  });
+  it("never re-submits an unmatched operation after the idempotency safety window", async () => {
+    const h = await unknownOutcome();
+    h.refunds[0].createdAt = new Date(
+      Date.now() - 24 * 60 * 60 * 1000,
+    ).toISOString();
+    expect(await createRefundAndCancel(h.deps, input)).toMatchObject({
+      success: false,
+      requiresReview: true,
+    });
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+  it("recovers old operations when a matching provider result exists without creating money movements", async () => {
+    const h = await unknownOutcome();
+    h.refunds[0].createdAt = "2020-01-01T00:00:00Z";
+    vi.mocked(h.stripe.refunds.list).mockResolvedValueOnce({
+      data: [providerRefund()],
+      has_more: false,
+    } as unknown as Awaited<ReturnType<Stripe["refunds"]["list"]>>);
+    expect((await createRefundAndCancel(h.deps, input)).success).toBe(true);
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+  it("does not create another refund when provider lookup fails or a recovered amount mismatches", async () => {
+    const h = await unknownOutcome();
+    vi.mocked(h.stripe.refunds.list).mockRejectedValueOnce(
+      new Error("offline"),
+    );
+    expect(await createRefundAndCancel(h.deps, input)).toMatchObject({
+      success: false,
+      requiresReview: true,
+    });
+    vi.mocked(h.stripe.refunds.list).mockResolvedValueOnce({
+      data: [providerRefund({ amount: 9000 })],
+      has_more: false,
+    } as unknown as Awaited<ReturnType<Stripe["refunds"]["list"]>>);
+    expect(await createRefundAndCancel(h.deps, input)).toMatchObject({
+      success: false,
+      requiresReview: true,
+    });
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+  it("pages through refund history to recover the same operation", async () => {
+    const h = await unknownOutcome();
+    vi.mocked(h.stripe.refunds.list)
+      .mockResolvedValueOnce({
+        data: [providerRefund({ id: "re_other", metadata: {} })],
+        has_more: true,
+      } as unknown as Awaited<ReturnType<Stripe["refunds"]["list"]>>)
+      .mockResolvedValueOnce({
+        data: [providerRefund()],
+        has_more: false,
+      } as unknown as Awaited<ReturnType<Stripe["refunds"]["list"]>>);
+    expect((await createRefundAndCancel(h.deps, input)).success).toBe(true);
+    expect(h.stripe.refunds.list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ starting_after: "re_other" }),
+    );
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+  it("records a failed recovered refund and requires review without issuing a replacement", async () => {
+    const h = await unknownOutcome();
+    vi.mocked(h.stripe.refunds.list).mockResolvedValueOnce({
+      data: [providerRefund({ status: "failed" })],
+      has_more: false,
+    } as unknown as Awaited<ReturnType<Stripe["refunds"]["list"]>>);
+    expect(await createRefundAndCancel(h.deps, input)).toMatchObject({
+      success: false,
+      requiresReview: true,
+    });
+    expect(h.refunds[0].status).toBe("failed");
+    expect(h.stripe.refunds.create).toHaveBeenCalledTimes(1);
   });
 });

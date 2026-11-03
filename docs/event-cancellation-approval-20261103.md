@@ -26,3 +26,9 @@ Run the full tests, coverage and production build. Apply `20261103182503_event_c
 ## Verification
 
 The PGlite database suite executes the actual migration and checks request deduplication, ownership, policy gating, withdrawal/rejection, admin approval, stale RPC denial, permissions, unpaid checkout protection and durable mail claims. Action/UI tests cover authenticated identity, explicit confirmation and server-owned refund amounts. Existing payment/webhook tests cover refunds and reconciliation. No test calls live Stripe refund APIs.
+
+## Follow-up: legacy rejection and timeout recovery
+
+Attendance rejection in both the V1 guest controls and V2 waiver controls no longer cancels a place. The UI links to registration management, stale server actions are denied or redirected, and both database RPCs reject cancellation operations for every caller, including admins. Staff attendance approval and waiver/check-in operations remain available. Admins cancel only through the central audited cancellation controls.
+
+Refund retry first retrieves its saved Stripe refund ID or pages through the payment's refund history using the saved operation ID in metadata. A matching payment, currency and amount is reconciled before checking the remaining refundable balance. This repairs a refund that actually succeeded despite a lost response or delayed webhook. If no result exists, retries reuse the original actor, reason and idempotency key only within a conservative 23-hour window; expired, failed, mismatched or unverified operations require manual review. Recovery tests use mocked Stripe calls and never refund production payments.
