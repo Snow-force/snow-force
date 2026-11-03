@@ -235,10 +235,13 @@ export function MemberAuthCard({ searchParams }: AuthCardProps) {
 
           <form action={loginMemberWithGoogle} className="mt-4 md:mt-5">
             <input type="hidden" name="next" value={next} />
-            <button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-[15px] font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] md:min-h-14 md:text-[17px]">
+            <button aria-describedby="google-account-help" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-[15px] font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] md:min-h-14 md:text-[17px]">
               <GoogleIcon /> Continue with Google
             </button>
           </form>
+          <p id="google-account-help" className="mt-3 text-center text-xs leading-relaxed text-white/60">
+            {t({ en: "Already registered? Choose the Google account with the same email as your SnowForce account to access your existing trips.", zh: "已注册过？请选择与 SnowForce 注册邮箱一致的 Google 账号，查看原有报名记录。" })}
+          </p>
         </div>
       )}
 

@@ -15,6 +15,8 @@ const mockParseMemberMagicLink = vi.hoisted(() => vi.fn());
 const mockParseMemberPasswordUpdate = vi.hoisted(() => vi.fn());
 const mockParseMemberProfileUpdate = vi.hoisted(() => vi.fn());
 const mockGetMemberProfile = vi.hoisted(() => vi.fn());
+const mockRecoverLegacy = vi.hoisted(() => vi.fn());
+vi.mock("./legacy-registrations", () => ({ recoverLegacyMemberRegistrations: mockRecoverLegacy }));
 const mockUpdateMemberProfile = vi.hoisted(() => vi.fn());
 const mockMarketingRequest = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/marketing/client", () => ({ marketingRequest: mockMarketingRequest }));
@@ -311,6 +313,7 @@ describe("member sign-in and recovery actions", () => {
       provider: "google",
       options: {
         redirectTo: "https://snowforce.test/auth/callback?next=%2Fmember",
+        queryParams: { prompt: "select_account" },
       },
     });
     expect(mockCookieSet).not.toHaveBeenCalled();
@@ -341,6 +344,25 @@ describe("member sign-in and recovery actions", () => {
 });
 
 describe("getCurrentMemberAccount", () => {
+  it("recovers orphaned history using the authenticated identity and its existing profile", async () => {
+    const user = { id: "auth-1", email: "rider@example.com", email_confirmed_at: "2026-11-01" };
+    const profile = { id: "profile-1", userId: "auth-1", email: "rider@example.com" };
+    mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
+    mockGetUser.mockResolvedValue({ data: { user } });
+    mockGetMemberProfile.mockResolvedValue(profile);
+    await getCurrentMemberAccount();
+    expect(mockRecoverLegacy).toHaveBeenCalledWith(user, profile);
+  });
+
+  it("does not recover history before privacy acceptance", async () => {
+    mockCookieGetAll.mockReturnValue([{ name: "sb-project-auth-token", value: "session" }]);
+    mockGetUser.mockResolvedValue({ data: { user: { id: "auth-1" } } });
+    mockGetMemberProfile.mockResolvedValue({ id: "profile-1" });
+    mockHasCurrentPrivacyConsent.mockResolvedValue(false);
+    await getCurrentMemberAccount();
+    expect(mockRecoverLegacy).not.toHaveBeenCalled();
+  });
+
   it("does not query Supabase when no auth cookie is present", async () => {
     await expect(getCurrentMemberAccount()).resolves.toBeNull();
     expect(mockCreateClient).not.toHaveBeenCalled();

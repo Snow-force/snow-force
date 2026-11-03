@@ -36,5 +36,14 @@ describe("RegistrationCancellationControl", () => {
     });
 
     expect(submit).toBeEnabled();
+    const form = screen.getByLabelText("Confirmation").closest("form");
+    if (!form) throw new Error("Expected cancellation form");
+    expect(new FormData(form).get("confirmation")).toBe("CANCEL");
+  });
+
+  it("hides cancellation when a paid registration requires admin approval", () => {
+    render(<RegistrationCancellationControl action={"#" as never} registrationId="reg-123" returnEvent="event-123" canCancel={false} />);
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Admin approval required/)).toBeInTheDocument();
   });
 });
