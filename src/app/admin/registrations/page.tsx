@@ -20,10 +20,11 @@ import {
   getRegistration,
   getRegistrations,
   updateRegistrationFinance,
-  updateRegistrationStatus,
 } from "@/lib/registrations/repository";
 import type { Event } from "@/lib/types";
 import { getPaidPendingReviews } from "@/lib/registrations/payment-review";
+import { cancelRegistration } from "@/lib/registrations/cancellation-actions";
+import { hasUnrefundedPayment } from "@/lib/registrations/cancellation";
 
 async function updateFinance(formData: FormData) {
   "use server";
@@ -97,24 +98,6 @@ async function createManualRegistration(formData: FormData) {
 
   revalidatePath("/admin/registrations");
   redirect(registrationReturnPath(eventSlug, possibleDuplicate ? "Registration added. Review a possible attendee duplicate." : "Registration added."));
-}
-
-async function cancelRegistration(formData: FormData) {
-  "use server";
-  await requireAdmin();
-
-  const id = String(formData.get("id") ?? "").trim();
-  const fallbackEventSlug = String(formData.get("returnEvent") ?? "").trim();
-  if (!id) redirect(registrationReturnPath(fallbackEventSlug, "Registration was not found."));
-
-  const registration = await getRegistration(id);
-  if (!registration) redirect(registrationReturnPath(fallbackEventSlug, "Registration was not found."));
-
-  if (registration.status !== "cancelled") {
-    await updateRegistrationStatus(registration.id, "cancelled");
-    revalidatePath("/admin/registrations");
-  }
-  redirect(registrationReturnPath(registration.eventSlug, "Registration cancelled."));
 }
 
 export default async function AdminRegistrationsPage(
@@ -263,10 +246,13 @@ export default async function AdminRegistrationsPage(
                   <td className="px-4 py-3">
                     <p>{registration.status}</p>
                     {registration.status === "cancelled" ? (
-                      <span className="mt-1 block text-xs font-medium text-gray-400">Cancelled</span>
+                      <span className="mt-1 block text-xs font-medium text-gray-500">
+                        {hasUnrefundedPayment(registration) ? "Cancelled; payment not fully refunded / 已取消，款项尚未全额退还" : "Cancelled / 已取消"}
+                      </span>
                     ) : (
                       <RegistrationCancellationControl
                         action={cancelRegistration}
+                        canCancel={staff.role === "admin" || !hasUnrefundedPayment(registration)}
                         registrationId={registration.id}
                         returnEvent={view.selectedEventSlug}
                       />

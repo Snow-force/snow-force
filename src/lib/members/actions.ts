@@ -20,6 +20,7 @@ import {
 import { createWaiverAcceptance } from "@/lib/registrations/waiver-repository";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getMemberProfile, updateMemberProfile } from "./repository";
+import { recoverLegacyMemberRegistrations } from "./legacy-registrations";
 import { memberAuthCallbackUrl, sanitizeMemberNextPath } from "./auth-results";
 import {
   ensureMemberProfileAfterConsent,
@@ -98,6 +99,8 @@ export async function getCurrentMemberAccount() {
 
   const profile = (await getMemberProfile(user.id)) ?? null;
   const privacyAccepted = await hasCurrentPrivacyConsent(user.id, supabase);
+
+  if (profile && privacyAccepted) await recoverLegacyMemberRegistrations(user, profile);
 
   return {
     user,
@@ -249,6 +252,7 @@ export async function loginMemberWithGoogle(formData: FormData) {
     provider: "google",
     options: {
       redirectTo: await memberCallback(nextPathFromForm(formData)),
+      queryParams: { prompt: "select_account" },
     },
   });
   if (error || !data.url) {

@@ -23,13 +23,17 @@ export function RegistrationCancellationControl({
   action,
   registrationId,
   returnEvent,
+  canCancel = true,
 }: {
   action: CancellationAction;
   registrationId: string;
   returnEvent: string;
+  canCancel?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
+
+  if (!canCancel) return <p className="mt-1 text-xs text-gray-500">Admin approval required / 需管理员确认取消</p>;
 
   return (
     <>
@@ -62,6 +66,7 @@ export function RegistrationCancellationControl({
                 Confirmation
                 <input
                   autoFocus
+                  name="confirmation"
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
                   placeholder="CANCEL"

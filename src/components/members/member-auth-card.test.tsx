@@ -84,6 +84,7 @@ describe("MemberAuthCard Google sign-in", () => {
 
     const buttons = screen.getAllByRole("button", { name: "Continue with Google" });
     expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveAccessibleDescription(/same email as your SnowForce account/);
     expect(buttons[0]?.closest("form")).toHaveAttribute("action", "/member/google");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
