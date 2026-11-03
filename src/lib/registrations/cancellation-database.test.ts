@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { beforeAll, afterAll, beforeEach, expect, it } from "vitest";
 let db: PGlite;
 const booker = "11111111-1111-4111-8111-111111111111",
@@ -21,6 +21,9 @@ beforeAll(async () => {
  create table public.notifications(profile_id uuid,type text check(type in ('registration_changed')),title text,body text,href text);
  create table public.pending_registrations(id uuid primary key,waiver_participant_id uuid,member_id uuid,fulfilled_registration_id uuid,checkout_attempt jsonb,expires_at timestamptz,hold_expires_at timestamptz,superseded_at timestamptz);
  alter table public.registrations add column waiver_participant_id uuid;
+ alter table public.registrations add column registration_kind text default 'proxy';
+ alter table public.registrations add column approval_status text default 'pending';
+ create table public.event_waiver_assignments(id uuid,registration_id uuid,is_current boolean,status text);
  insert into auth.users values('${admin}'),('${manager}');
  insert into public.member_profiles values('${booker}','${booker}'),('${other}','${other}');
  insert into public.staff_roles values('${admin}','admin'),('${manager}','manager');
@@ -31,6 +34,12 @@ beforeAll(async () => {
       "utf8",
     ),
   );
+  const guardMigration = readdirSync("supabase/migrations").find((name) =>
+    name.endsWith("_close_legacy_cancellation_paths.sql"),
+  );
+  if (!guardMigration)
+    throw new Error("Missing legacy cancellation guard migration");
+  await db.exec(readFileSync(`supabase/migrations/${guardMigration}`, "utf8"));
 }, 30000);
 afterAll(async () => {
   await db.close();
@@ -185,4 +194,45 @@ it("prevents discarding an in-flight unpaid checkout and claims email batches on
   expect(
     (await db.query("select * from public.claim_cancellation_mail()")).rows,
   ).toHaveLength(0);
+});
+
+it("rejects both legacy cancellation paths for managers and admins without changing capacity", async () => {
+  for (const actor of [manager, admin]) {
+    await expect(
+      db.query("select public.staff_event_waiver_operation($1,'reject',$2)", [
+        ticket,
+        actor,
+      ]),
+    ).rejects.toThrow("cancellation_approval_required");
+    await expect(
+      db.query("select public.review_proxy_registration($1,false,$2)", [
+        ticket,
+        actor,
+      ]),
+    ).rejects.toThrow("cancellation_approval_required");
+  }
+  expect(
+    (
+      await db.query<{ status: string }>(
+        "select status from public.registrations",
+      )
+    ).rows[0].status,
+  ).toBe("confirmed");
+  expect(
+    (await db.query("select * from public.registration_cancellation_requests"))
+      .rows,
+  ).toHaveLength(0);
+});
+it("preserves legitimate attendance approval while leaving cancellation in the central workflow", async () => {
+  await db.query("select public.review_proxy_registration($1,true,$2)", [
+    ticket,
+    manager,
+  ]);
+  expect(
+    (
+      await db.query<{ status: string; approval_status: string }>(
+        "select status,approval_status from public.registrations",
+      )
+    ).rows[0],
+  ).toEqual({ status: "confirmed", approval_status: "approved" });
 });

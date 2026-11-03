@@ -403,22 +403,104 @@ export async function createRefundAndCancel(
       error: "Refund operation does not match this payment and amount.",
     };
   }
-  if (existingOperation?.stripeRefundId) {
-    if (["failed", "canceled"].includes(existingOperation.status))
+  if (existingOperation) {
+    // Recover the provider result before checking the remaining balance: the
+    // original call may have succeeded even when its response was lost.
+    let recovered: Stripe.Refund | undefined;
+    try {
+      if (existingOperation.stripeRefundId) {
+        recovered = await deps.stripe.refunds.retrieve(
+          existingOperation.stripeRefundId,
+        );
+      } else {
+        let cursor: string | undefined;
+        let exhausted = false;
+        for (let pageNumber = 0; pageNumber < 10; pageNumber++) {
+          const page = await deps.stripe.refunds.list({
+            payment_intent: finance.stripePaymentIntentId,
+            limit: 100,
+            ...(cursor ? { starting_after: cursor } : {}),
+          });
+          recovered = page.data.find(
+            (refund) =>
+              refund.metadata?.refundRequestId === existingOperation.id,
+          );
+          if (recovered || !page.has_more) {
+            exhausted = true;
+            break;
+          }
+          const nextCursor = page.data.at(-1)?.id;
+          if (!nextCursor || nextCursor === cursor) break;
+          cursor = nextCursor;
+        }
+        if (!exhausted)
+          return {
+            success: false,
+            error:
+              "Stripe refund history could not be fully checked. Review before retrying.",
+            requiresReview: true,
+          };
+      }
+      if (recovered) {
+        const intentId =
+          typeof recovered.payment_intent === "string"
+            ? recovered.payment_intent
+            : recovered.payment_intent?.id;
+        const currency = asCurrency(recovered.currency);
+        if (
+          (recovered.metadata?.refundRequestId &&
+            recovered.metadata.refundRequestId !== existingOperation.id) ||
+          intentId !== finance.stripePaymentIntentId ||
+          !currency ||
+          (finance.paymentCurrency && currency !== finance.paymentCurrency) ||
+          recovered.amount !==
+            toSmallestCurrencyUnit(existingOperation.amount, currency) ||
+          (!existingOperation.stripeRefundId &&
+            recovered.metadata?.registrationId !== registration.id)
+        ) {
+          return {
+            success: false,
+            error:
+              "Recovered refund does not match this approved payment and amount.",
+            requiresReview: true,
+          };
+        }
+        await reconcileStripeRefund(deps, recovered);
+        const updated = await deps.getRegistrationRefund(existingOperation.id);
+        if (!updated) throw new Error("Refund reconciliation needs review.");
+        if (["failed", "canceled"].includes(updated.status))
+          return {
+            success: false,
+            error:
+              "This refund failed or was cancelled. Review it in Stripe before a new operation.",
+            requiresReview: true,
+          };
+        return { success: true, refund: updated };
+      }
+    } catch {
       return {
         success: false,
         error:
-          "This refund failed or was cancelled. Review it in Stripe before a new operation.",
+          "Could not verify the original Stripe refund. No new refund was submitted.",
         requiresReview: true,
       };
-    await deps.updateRegistrationStatus(registration.id, "cancelled");
-    return { success: true, refund: existingOperation };
-  }
-  if (existingOperation && existingOperation.amount !== input.amount) {
-    return {
-      success: false,
-      error: "Retry the original refund amount for this operation.",
-    };
+    }
+    // Stripe can prune idempotency keys after 24 hours. Never re-create an
+    // uncertain operation beyond a conservative 23-hour retry window.
+    const age = Date.now() - Date.parse(existingOperation.createdAt);
+    if (
+      !Number.isFinite(age) ||
+      age < 0 ||
+      age >= 23 * 60 * 60 * 1000 ||
+      ["failed", "canceled"].includes(existingOperation.status)
+    ) {
+      return {
+        success: false,
+        error:
+          "Original refund outcome requires manual Stripe review; its safe retry window has ended or the operation is closed.",
+        requiresReview: true,
+      };
+    }
   }
   const inFlight = (await deps.getRegistrationRefunds(registration.id)).find(
     (refund) => inFlightStatuses.includes(refund.status),
@@ -483,11 +565,11 @@ export async function createRefundAndCancel(
       {
         payment_intent: finance.stripePaymentIntentId,
         amount: requestedUnits,
-        reason: input.reason,
+        reason: request.reason,
         metadata: {
           registrationId: registration.id,
           refundRequestId: request.id,
-          initiatedBy: input.initiatedBy,
+          initiatedBy: request.initiatedBy ?? input.initiatedBy,
         },
       },
       { idempotencyKey: `snowforce-refund-${request.id}` },
