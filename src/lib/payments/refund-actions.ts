@@ -1,5 +1,6 @@
 "use server";
 
+import { getCancellationRequests } from "@/lib/registrations/cancellation-repository";
 import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth/admin";
 import { getStripeServer } from "@/lib/payments/stripe-server";
@@ -43,8 +44,13 @@ export async function verifyLegacyPaymentAction(formData: FormData) {
   const registrationId = String(formData.get("registrationId") ?? "").trim();
   const paymentIntentId = String(formData.get("paymentIntentId") ?? "").trim();
   const registration = await getRegistration(registrationId);
-  if (!registration) return { success: false as const, error: "Registration not found." };
-  return verifyPaymentIntentForRegistration(dependencies(), registration, paymentIntentId);
+  if (!registration)
+    return { success: false as const, error: "Registration not found." };
+  return verifyPaymentIntentForRegistration(
+    dependencies(),
+    registration,
+    paymentIntentId,
+  );
 }
 
 export async function linkLegacyPaymentAction(formData: FormData) {
@@ -52,9 +58,11 @@ export async function linkLegacyPaymentAction(formData: FormData) {
   const registrationId = String(formData.get("registrationId") ?? "").trim();
   const paymentIntentId = String(formData.get("paymentIntentId") ?? "").trim();
   const confirmation = String(formData.get("confirmation") ?? "").trim();
-  if (confirmation !== "LINK") return { success: false as const, error: "Type LINK to confirm." };
+  if (confirmation !== "LINK")
+    return { success: false as const, error: "Type LINK to confirm." };
   const registration = await getRegistration(registrationId);
-  if (!registration) return { success: false as const, error: "Registration not found." };
+  if (!registration)
+    return { success: false as const, error: "Registration not found." };
   const result = await linkPaymentIntentToRegistration(
     dependencies(),
     registration,
@@ -69,10 +77,34 @@ export async function refundRegistrationAction(formData: FormData) {
   const staff = await requireSuperAdmin();
   const confirmation = String(formData.get("confirmation") ?? "").trim();
   if (confirmation !== "REFUND") {
-    return { success: false as const, error: "Type REFUND to confirm refund and cancellation." };
+    return {
+      success: false as const,
+      error: "Type REFUND to confirm refund and cancellation.",
+    };
   }
+  const registrationId = String(formData.get("registrationId") ?? "").trim();
+  const requests = await getCancellationRequests([registrationId]);
+  if (requests.some((r) => r.status === "pending"))
+    return {
+      success: false as const,
+      error: "Review the cancellation request before refunding.",
+    };
+  const approved = requests.find(
+    (r) => r.status === "approved" && r.refund_operation_id,
+  );
+  if (
+    approved &&
+    approved.refund_operation_id !==
+      String(formData.get("operationId") ?? "").trim()
+  )
+    return {
+      success: false as const,
+      error:
+        "Execute the approved cancellation refund using its saved operation.",
+    };
   const reasonValue = String(formData.get("reason") ?? "requested_by_customer");
-  const reason: RegistrationRefundReason = reasonValue === "duplicate" ? "duplicate" : "requested_by_customer";
+  const reason: RegistrationRefundReason =
+    reasonValue === "duplicate" ? "duplicate" : "requested_by_customer";
   const result = await createRefundAndCancel(dependencies(), {
     operationId: String(formData.get("operationId") ?? "").trim(),
     registrationId: String(formData.get("registrationId") ?? "").trim(),

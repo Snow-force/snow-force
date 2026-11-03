@@ -1,3 +1,7 @@
+vi.mock("@/lib/registrations/cancellation-mail", () => ({
+  scheduleCancellationMail: vi.fn(),
+  dispatchCancellationMail: async () => {},
+}));
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Stripe from "stripe";
 
@@ -10,22 +14,35 @@ const revalidatePath = vi.hoisted(() => vi.fn());
 const insertMaybeSingle = vi.hoisted(() => vi.fn());
 const reconcileExpiredCheckout = vi.hoisted(() => vi.fn());
 const reconcileFailedAsyncCheckout = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/payments/checkout-reconciliation", () => ({ reconcileExpiredCheckout, reconcileFailedAsyncCheckout }));
+vi.mock("@/lib/payments/checkout-reconciliation", () => ({
+  reconcileExpiredCheckout,
+  reconcileFailedAsyncCheckout,
+}));
 
-vi.mock("@/lib/payments/stripe-server", () => ({ verifyStripeWebhookSignature: verifySignature }));
+vi.mock("@/lib/payments/stripe-server", () => ({
+  verifyStripeWebhookSignature: verifySignature,
+}));
 vi.mock("@/lib/payments/fulfillment", () => ({ fulfillCheckoutSession }));
 vi.mock("@/lib/payments/refunds", () => ({ reconcileStripeRefund }));
 vi.mock("@/lib/payments/refund-repository", () => ({
-  createRegistrationRefund: vi.fn(), getRegistrationRefund: vi.fn(), getRegistrationRefundByStripeId: vi.fn(),
-  getRegistrationRefunds: vi.fn(), updateRegistrationRefund: vi.fn(),
+  createRegistrationRefund: vi.fn(),
+  getRegistrationRefund: vi.fn(),
+  getRegistrationRefundByStripeId: vi.fn(),
+  getRegistrationRefunds: vi.fn(),
+  updateRegistrationRefund: vi.fn(),
 }));
 vi.mock("@/lib/registrations/repository", () => ({
-  getRegistration: vi.fn(), getRegistrations: vi.fn(), updateRegistrationFinance: vi.fn(), updateRegistrationStatus: vi.fn(),
+  getRegistration: vi.fn(),
+  getRegistrations: vi.fn(),
+  updateRegistrationFinance: vi.fn(),
+  updateRegistrationStatus: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
-    from: vi.fn(() => ({ insert: () => ({ select: () => ({ maybeSingle: insertMaybeSingle }) }) })),
+    from: vi.fn(() => ({
+      insert: () => ({ select: () => ({ maybeSingle: insertMaybeSingle }) }),
+    })),
   })),
 }));
 
@@ -39,18 +56,31 @@ const envBackup = {
 
 function request() {
   return new Request("http://localhost/api/stripe/webhook", {
-    method: "POST", body: "{}", headers: { "stripe-signature": "t=123,v1=valid" },
+    method: "POST",
+    body: "{}",
+    headers: { "stripe-signature": "t=123,v1=valid" },
   });
 }
 
 function checkoutEvent(id = "evt_1") {
   return {
-    id, type: "checkout.session.completed",
-    data: { object: {
-      id: "cs_live_1", status: "complete", payment_status: "paid", amount_total: 9900, currency: "usd",
-      payment_intent: "pi_live_1",
-      metadata: { pendingRegistrationId: "pending-1", eventSlug: "mammoth", memberId: "member-1" },
-    } },
+    id,
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_live_1",
+        status: "complete",
+        payment_status: "paid",
+        amount_total: 9900,
+        currency: "usd",
+        payment_intent: "pi_live_1",
+        metadata: {
+          pendingRegistrationId: "pending-1",
+          eventSlug: "mammoth",
+          memberId: "member-1",
+        },
+      },
+    },
   } as unknown as Stripe.Event;
 }
 
@@ -59,8 +89,14 @@ beforeEach(() => {
   process.env.SUPABASE_SECRET_KEY = "test-secret";
   process.env.SUPABASE_SERVICE_ROLE_KEY = undefined;
   vi.clearAllMocks();
-  insertMaybeSingle.mockResolvedValue({ data: { event_id: "evt_1" }, error: null });
-  fulfillCheckoutSession.mockResolvedValue({ status: "confirmed", registrationId: "registration-1" });
+  insertMaybeSingle.mockResolvedValue({
+    data: { event_id: "evt_1" },
+    error: null,
+  });
+  fulfillCheckoutSession.mockResolvedValue({
+    status: "confirmed",
+    registrationId: "registration-1",
+  });
   reconcileStripeRefund.mockResolvedValue(undefined);
 });
 
@@ -72,7 +108,9 @@ afterEach(() => {
 
 describe("Stripe webhook route", () => {
   it("rejects a request with an invalid signature", async () => {
-    verifySignature.mockImplementation(() => { throw new Error("bad signature"); });
+    verifySignature.mockImplementation(() => {
+      throw new Error("bad signature");
+    });
 
     const response = await POST(request());
 
@@ -86,7 +124,9 @@ describe("Stripe webhook route", () => {
     const response = await POST(request());
 
     expect(response.status).toBe(200);
-    expect(fulfillCheckoutSession).toHaveBeenCalledWith(expect.objectContaining({ id: "cs_live_1" }));
+    expect(fulfillCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "cs_live_1" }),
+    );
     expect(revalidatePath).toHaveBeenCalledWith("/member");
     expect(revalidatePath).toHaveBeenCalledWith("/member/trips");
     expect(revalidatePath).toHaveBeenCalledWith("/admin/registrations");
@@ -95,7 +135,10 @@ describe("Stripe webhook route", () => {
 
   it("retries fulfillment even if Stripe redelivers an already-recorded event", async () => {
     verifySignature.mockReturnValue(checkoutEvent("evt_duplicate"));
-    insertMaybeSingle.mockResolvedValue({ data: null, error: { code: "23505", message: "duplicate" } });
+    insertMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { code: "23505", message: "duplicate" },
+    });
 
     const response = await POST(request());
 
@@ -105,7 +148,9 @@ describe("Stripe webhook route", () => {
 
   it("returns 500 so Stripe retries a Checkout that cannot be fulfilled", async () => {
     verifySignature.mockReturnValue(checkoutEvent());
-    fulfillCheckoutSession.mockRejectedValue(new Error("paid_checkout_pending_missing"));
+    fulfillCheckoutSession.mockRejectedValue(
+      new Error("paid_checkout_pending_missing"),
+    );
 
     const response = await POST(request());
 
@@ -114,7 +159,11 @@ describe("Stripe webhook route", () => {
   });
 
   it("records other Stripe event types without registration work", async () => {
-    verifySignature.mockReturnValue({ id: "evt_other", type: "payment_intent.succeeded", data: { object: {} } } as unknown as Stripe.Event);
+    verifySignature.mockReturnValue({
+      id: "evt_other",
+      type: "payment_intent.succeeded",
+      data: { object: {} },
+    } as unknown as Stripe.Event);
 
     const response = await POST(request());
 
@@ -122,11 +171,24 @@ describe("Stripe webhook route", () => {
     expect(fulfillCheckoutSession).not.toHaveBeenCalled();
   });
 
-  it.each(["checkout.session.expired","checkout.session.async_payment_failed"])("reconciles signed %s before releasing any seat", async (type) => {
-    verifySignature.mockReturnValue({ id: "evt_expired", type, data: { object: {
-      id: "cs_test_expired", metadata: { pendingRegistrationId: "pending-1" },
-    } } });
-    const reconcile = type === "checkout.session.expired" ? reconcileExpiredCheckout : reconcileFailedAsyncCheckout;
+  it.each([
+    "checkout.session.expired",
+    "checkout.session.async_payment_failed",
+  ])("reconciles signed %s before releasing any seat", async (type) => {
+    verifySignature.mockReturnValue({
+      id: "evt_expired",
+      type,
+      data: {
+        object: {
+          id: "cs_test_expired",
+          metadata: { pendingRegistrationId: "pending-1" },
+        },
+      },
+    });
+    const reconcile =
+      type === "checkout.session.expired"
+        ? reconcileExpiredCheckout
+        : reconcileFailedAsyncCheckout;
     reconcile.mockResolvedValue(true);
     expect((await POST(request())).status).toBe(200);
     expect(reconcile).toHaveBeenCalledWith("cs_test_expired", "pending-1");
@@ -136,18 +198,33 @@ describe("Stripe webhook route", () => {
   });
 
   it("reconciles refunds through the existing refund ledger", async () => {
-    const refund = { id: "re_1", amount: 9900, currency: "usd", metadata: { registrationId: "registration-1" } };
-    verifySignature.mockReturnValue({ id: "evt_refund", type: "refund.created", data: { object: refund } } as unknown as Stripe.Event);
+    const refund = {
+      id: "re_1",
+      amount: 9900,
+      currency: "usd",
+      metadata: { registrationId: "registration-1" },
+    };
+    verifySignature.mockReturnValue({
+      id: "evt_refund",
+      type: "refund.created",
+      data: { object: refund },
+    } as unknown as Stripe.Event);
 
     const response = await POST(request());
 
     expect(response.status).toBe(200);
-    expect(reconcileStripeRefund).toHaveBeenCalledWith(expect.any(Object), refund);
+    expect(reconcileStripeRefund).toHaveBeenCalledWith(
+      expect.any(Object),
+      refund,
+    );
   });
 
   it("returns 500 when the event receipt itself cannot be recorded", async () => {
     verifySignature.mockReturnValue(checkoutEvent());
-    insertMaybeSingle.mockResolvedValue({ data: null, error: { code: "PGRST500", message: "database down" } });
+    insertMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { code: "PGRST500", message: "database down" },
+    });
 
     const response = await POST(request());
 
