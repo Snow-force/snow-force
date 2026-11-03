@@ -41,19 +41,26 @@ export function RegistrationCancellationControl({
         Cancel
       </button>
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+        >
           <div
             aria-labelledby={`cancel-registration-title-${registrationId}`}
             aria-modal="true"
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
             role="dialog"
           >
-            <h3 id={`cancel-registration-title-${registrationId}`} className="text-lg font-semibold text-gray-900">
+            <h3
+              id={`cancel-registration-title-${registrationId}`}
+              className="text-lg font-semibold text-gray-900"
+            >
               Cancel registration?
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              This marks the registration as cancelled and frees its event capacity. It does not issue a refund.
-              Type <strong>CANCEL</strong> to continue.
+              This marks the registration as cancelled and frees its event
+              capacity. It does not issue a refund. Type <strong>CANCEL</strong>{" "}
+              to continue.
             </p>
             <form action={action} className="mt-4">
               <input type="hidden" name="id" value={registrationId} />
@@ -61,11 +68,22 @@ export function RegistrationCancellationControl({
               <label className="block text-sm font-medium text-gray-700">
                 Confirmation
                 <input
+                  name="confirmation"
                   autoFocus
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
                   placeholder="CANCEL"
                   className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
+                />
+              </label>
+              <label className="mt-3 block text-sm font-medium">
+                Cancellation reason / 取消原因
+                <textarea
+                  required
+                  minLength={3}
+                  maxLength={2000}
+                  name="note"
+                  className="mt-1 w-full rounded border p-2"
                 />
               </label>
               <div className="mt-5 flex justify-end gap-3">

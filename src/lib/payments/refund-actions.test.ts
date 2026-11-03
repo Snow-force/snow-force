@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/registrations/cancellation-repository", () => ({
+  getCancellationRequests: async () => [],
+}));
 
 const mocks = vi.hoisted(() => ({
   createRefundAndCancel: vi.fn(),
@@ -12,9 +15,13 @@ const mocks = vi.hoisted(() => ({
   verifyPaymentIntentForRegistration: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/admin", () => ({ requireSuperAdmin: mocks.requireSuperAdmin }));
+vi.mock("@/lib/auth/admin", () => ({
+  requireSuperAdmin: mocks.requireSuperAdmin,
+}));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
-vi.mock("@/lib/payments/stripe-server", () => ({ getStripeServer: mocks.getStripeServer }));
+vi.mock("@/lib/payments/stripe-server", () => ({
+  getStripeServer: mocks.getStripeServer,
+}));
 vi.mock("@/lib/payments/refunds", () => ({
   createRefundAndCancel: mocks.createRefundAndCancel,
   linkPaymentIntentToRegistration: mocks.linkPaymentIntentToRegistration,
@@ -39,16 +46,25 @@ import { refundRegistrationAction } from "./refund-actions";
 describe("refund admin actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireSuperAdmin.mockResolvedValue({ userId: "admin-1", email: "admin@example.com", role: "admin" });
+    mocks.requireSuperAdmin.mockResolvedValue({
+      userId: "admin-1",
+      email: "admin@example.com",
+      role: "admin",
+    });
     mocks.getStripeServer.mockReturnValue({});
-    mocks.createRefundAndCancel.mockResolvedValue({ success: true, refund: { id: "refund-1" } });
+    mocks.createRefundAndCancel.mockResolvedValue({
+      success: true,
+      refund: { id: "refund-1" },
+    });
   });
 
   it("requires the super-admin guard before issuing money", async () => {
     mocks.requireSuperAdmin.mockRejectedValue(new Error("admin-required"));
     const formData = new FormData();
 
-    await expect(refundRegistrationAction(formData)).rejects.toThrow("admin-required");
+    await expect(refundRegistrationAction(formData)).rejects.toThrow(
+      "admin-required",
+    );
     expect(mocks.createRefundAndCancel).not.toHaveBeenCalled();
   });
 
@@ -74,13 +90,16 @@ describe("refund admin actions", () => {
 
     await refundRegistrationAction(formData);
 
-    expect(mocks.createRefundAndCancel).toHaveBeenCalledWith(expect.any(Object), {
-      operationId: "11111111-1111-4111-8111-111111111111",
-      registrationId: "reg-1",
-      amount: 40,
-      reason: "requested_by_customer",
-      internalNote: "Customer request",
-      initiatedBy: "admin-1",
-    });
+    expect(mocks.createRefundAndCancel).toHaveBeenCalledWith(
+      expect.any(Object),
+      {
+        operationId: "11111111-1111-4111-8111-111111111111",
+        registrationId: "reg-1",
+        amount: 40,
+        reason: "requested_by_customer",
+        internalNote: "Customer request",
+        initiatedBy: "admin-1",
+      },
+    );
   });
 });

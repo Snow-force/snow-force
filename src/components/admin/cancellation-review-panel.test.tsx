@@ -1,0 +1,10 @@
+import { render, screen } from '@testing-library/react';
+import { expect, it, vi } from 'vitest';
+import type { CancellationCase } from '@/lib/registrations/cancellation-types';
+vi.mock('next/navigation',()=>({useRouter:()=>({refresh:vi.fn()})}));
+vi.mock('@/lib/registrations/cancellation-actions',()=>({reviewCancellationAction:vi.fn(),executeCancellationRefundAction:vi.fn()}));
+import {CancellationReviewPanel} from './cancellation-review-panel';
+const item:CancellationCase={registrationId:'ticket',name:'Friend',eventSlug:'event',registrationStatus:'confirmed',paidAmount:99,refundedAmount:0,currency:'usd',canRequest:true,externalRefund:false,refundStatus:'none',request:{id:'request',registration_id:'ticket',requested_by:'booker',reason:'Cannot attend',status:'pending',decision_note:'',reviewed_by:null,reviewed_at:null,refund_amount:0,refund_operation_id:null,created_at:'2026-11-03',updated_at:'2026-11-03'}};
+it('lets managers inspect the request without approving or sending money',()=>{render(<CancellationReviewPanel cases={[item]} canReview={false}/>);expect(screen.getByText(/Cannot attend/)).toBeInTheDocument();expect(screen.queryByRole('button')).not.toBeInTheDocument();});
+it('requires admin decision, a note and the payment acknowledgement before review',()=>{render(<CancellationReviewPanel cases={[item]} canReview/>);expect(screen.getByRole('combobox')).toBeRequired();expect(screen.getByRole('textbox')).toBeRequired();expect(screen.getByRole('checkbox')).toBeRequired();expect(screen.getByRole('spinbutton')).toHaveAttribute('max','99');});
+it('requires REFUND for the saved approved amount and highlights failures',()=>{render(<CancellationReviewPanel cases={[{...item,registrationStatus:'cancelled',refundStatus:'awaiting_execution',request:{...item.request!,status:'approved',refund_amount:40,refund_operation_id:'operation'}}]} canReview/>);expect(screen.getByRole('textbox')).toHaveAttribute('pattern','REFUND');expect(screen.getByRole('button')).toHaveTextContent('Refund 40.00 USD to Friend');});

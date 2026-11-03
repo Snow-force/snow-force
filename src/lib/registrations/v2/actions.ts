@@ -174,6 +174,7 @@ export async function manageBookingWaiverAction(form: FormData) {
 }
 
 export async function cancelBookingPlaceAction(pendingId: string | null, registrationId: string | null) {
+  if (registrationId) return { success: false }; // Issued places require a cancellation request.
   const account = await getCurrentMemberAccount();
   if (!account?.profile || !account.emailConfirmed) return { success: false };
   const { error } = await createAdminClient().rpc("cancel_event_booking_place", { pending_id_input: pendingId, registration_id_input: registrationId, booker_id_input: account.profile.id });

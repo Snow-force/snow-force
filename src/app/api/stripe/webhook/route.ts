@@ -1,3 +1,4 @@
+import { scheduleCancellationMail } from "@/lib/registrations/cancellation-mail";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
@@ -11,9 +12,20 @@ import {
   updateRegistrationRefund,
 } from "@/lib/payments/refund-repository";
 import { reconcileStripeRefund } from "@/lib/payments/refunds";
-import { getRegistration, getRegistrations, updateRegistrationFinance, updateRegistrationStatus } from "@/lib/registrations/repository";
-import { fulfillCheckoutSession, type PaidCheckoutSession } from "@/lib/payments/fulfillment";
-import { reconcileExpiredCheckout, reconcileFailedAsyncCheckout } from "@/lib/payments/checkout-reconciliation";
+import {
+  getRegistration,
+  getRegistrations,
+  updateRegistrationFinance,
+  updateRegistrationStatus,
+} from "@/lib/registrations/repository";
+import {
+  fulfillCheckoutSession,
+  type PaidCheckoutSession,
+} from "@/lib/payments/fulfillment";
+import {
+  reconcileExpiredCheckout,
+  reconcileFailedAsyncCheckout,
+} from "@/lib/payments/checkout-reconciliation";
 
 export const runtime = "nodejs";
 
@@ -24,7 +36,8 @@ function getSupabaseUrl() {
 }
 
 function createWebhookAdminClient() {
-  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key =
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) throw new Error("Supabase admin writes are not configured.");
   return createClient(getSupabaseUrl(), key, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -55,7 +68,11 @@ export async function POST(request: Request): Promise<Response> {
     return new Response("Server error", { status: 500 });
   }
 
-  if (event.type === "refund.created" || event.type === "refund.updated" || event.type === "refund.failed") {
+  if (
+    event.type === "refund.created" ||
+    event.type === "refund.updated" ||
+    event.type === "refund.failed"
+  ) {
     try {
       await reconcileStripeRefund(
         {
@@ -71,6 +88,7 @@ export async function POST(request: Request): Promise<Response> {
         },
         event.data.object as Stripe.Refund,
       );
+      scheduleCancellationMail();
       revalidatePath("/admin/registrations");
       revalidatePath("/member");
       return new Response("OK", { status: 200 });
@@ -79,30 +97,50 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
+  if (
+    event.type === "checkout.session.expired" ||
+    event.type === "checkout.session.async_payment_failed"
+  ) {
     const session = event.data.object;
-    if (!session.metadata?.pendingRegistrationId) return new Response("OK", { status: 200 });
-    try {
-      if (event.type === "checkout.session.expired") await reconcileExpiredCheckout(session.id, session.metadata.pendingRegistrationId);
-      else await reconcileFailedAsyncCheckout(session.id, session.metadata.pendingRegistrationId);
+    if (!session.metadata?.pendingRegistrationId)
       return new Response("OK", { status: 200 });
-    } catch { return new Response("Checkout requires reconciliation", { status: 500 }); }
+    try {
+      if (event.type === "checkout.session.expired")
+        await reconcileExpiredCheckout(
+          session.id,
+          session.metadata.pendingRegistrationId,
+        );
+      else
+        await reconcileFailedAsyncCheckout(
+          session.id,
+          session.metadata.pendingRegistrationId,
+        );
+      return new Response("OK", { status: 200 });
+    } catch {
+      return new Response("Checkout requires reconciliation", { status: 500 });
+    }
   }
-  if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {
+  if (
+    event.type !== "checkout.session.completed" &&
+    event.type !== "checkout.session.async_payment_succeeded"
+  ) {
     return new Response("OK", { status: 200 });
   }
   const session = event.data.object as PaidCheckoutSession;
-  if (!session.metadata?.pendingRegistrationId) return new Response("OK", { status: 200 });
+  if (!session.metadata?.pendingRegistrationId)
+    return new Response("OK", { status: 200 });
   try {
     await fulfillCheckoutSession(session);
     revalidatePath("/member");
     revalidatePath("/member/trips");
     revalidatePath("/admin/registrations");
-    if (session.metadata.eventSlug) revalidatePath(`/events/${session.metadata.eventSlug}`);
+    if (session.metadata.eventSlug)
+      revalidatePath(`/events/${session.metadata.eventSlug}`);
     return new Response("OK", { status: 200 });
   } catch (error) {
     console.error("Stripe checkout fulfillment failed", {
-      eventId: event.id, sessionId: session.id,
+      eventId: event.id,
+      sessionId: session.id,
       reason: error instanceof Error ? error.message : "unknown",
     });
     // Retain the order and let Stripe retry; receipt of an event is not fulfillment.
