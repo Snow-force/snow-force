@@ -31,3 +31,8 @@ SnowForce should not look too corporate, like a luxury resort brochure, like a g
 ## Accessibility & Inclusion
 
 No special accessibility requirements are specified beyond strong product defaults. SnowForce should use responsive mobile-first layouts, readable bilingual copy, visible focus states, reduced-motion-friendly interactions, and color contrast suitable for public discovery, registration, and staff operations.
+
+
+## Lodging rollout
+
+Staff may prepare reusable hotels, room types and fixed-date event lodging drafts. This increment does not sell rooms, reserve inventory or accept lodging payments. Public lodging sales remain unavailable until shared nightly inventory, checkout, cancellation and refund validation is complete. Whole-unit booking is the first sales scope; room sharing and bed sales remain deferred.

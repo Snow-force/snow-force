@@ -83,7 +83,7 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 - Never import privileged Supabase admin/service client into client components.
 - Do not grant anonymous direct inserts for registrations or inquiries; server commands own validation/spam controls.
 - Do not edit seed data for day-to-day operational event updates once Supabase is configured.
-- Do not present carpooling or room-sharing as built-in product features; copy may mention community/WeChat coordination only.
+- Lodging rollout: staff-only hotel, room-type and event-offer drafts are supported behind LODGING_ADMIN_ENABLED. Public room sales remain disabled until inventory, payment and refund batches pass validation. Do not present carpooling or room-sharing as built-in features; whole-unit lodging is the planned first sales scope.
 - Do not silently assume public data is correct when Supabase config or migrations are missing.
 - Do not use `as any`, `@ts-ignore`, or `@ts-expect-error`.
 - Do not remove existing dirty worktree changes without explicit instruction.
@@ -132,3 +132,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+

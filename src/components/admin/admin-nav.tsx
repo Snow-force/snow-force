@@ -14,6 +14,7 @@ const adminLinks: AdminLink[] = [
   { href: "/admin", label: { en: "Dashboard", zh: "仪表盘" }, exact: true },
   { href: "/admin/events", label: { en: "Events", zh: "活动管理" } },
   { href: "/admin/events/promotion", label: { en: "Event promotion", zh: "活动推广" } },
+  { href: "/admin/lodging", label: { en: "Lodging", zh: "住宿管理" } },
   { href: "/admin/registrations", label: { en: "Registrations", zh: "报名管理" } },
   { href: "/admin/reviews", label: { en: "Check-in & Reviews", zh: "签到与反馈" } },
   { href: "/admin/coupons", label: { en: "Coupons", zh: "优惠码" } },
@@ -48,3 +49,4 @@ export function AdminNav({ canManageStaff }: { canManageStaff: boolean }) {
     </nav>
   );
 }
+
