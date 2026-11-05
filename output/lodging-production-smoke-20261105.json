@@ -1,0 +1,64 @@
+{
+  "deploymentId": "fcd68d8e-c6dd-4d50-9c14-3ff9a9fab0ee",
+  "source": "9fc1f698a790241520b2e53ed9b30842e41e4bef",
+  "testedAt": "2026-11-05T09:14:29.710Z",
+  "results": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 41,
+      "body": "{\"status\":\"ok\",\"service\":\"snowforce-web\"}"
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 214141
+    },
+    {
+      "path": "/events",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 73945
+    },
+    {
+      "path": "/member",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 31769
+    },
+    {
+      "path": "/shop",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 152196
+    },
+    {
+      "path": "/admin/lodging",
+      "status": 307,
+      "location": "/staff-login",
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 7434
+    },
+    {
+      "path": "/lodging",
+      "status": 404,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 18452
+    }
+  ]
+}
