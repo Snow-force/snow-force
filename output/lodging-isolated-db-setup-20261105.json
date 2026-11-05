@@ -81,24 +81,38 @@
     "anonymousInventoryExecute": false,
     "enabledLodgingSales": 0,
     "hostedInventoryAcceptance": "passed; service_role transaction rolled back",
-    "leftoverFixtureRows": 0
+    "leftoverFixtureRows": 0,
+    "catalogCreateUpdate": "passed",
+    "concurrentEditConflict": "passed",
+    "ordinaryUserStaffAccess": "denied as expected",
+    "revokedStaffSession": "denied as expected",
+    "languageSwitchAndReload": "passed on final deployment",
+    "retainedSyntheticAuditRows": 5,
+    "testAuthUsersAfterCleanup": 0,
+    "testsPassed": 1498,
+    "testFilesPassed": 230,
+    "coverageLinesPercent": 65.65,
+    "productionBuild": "passed"
   },
   "vercel": {
     "project": "snow-force",
-    "deploymentId": "dpl_DqoKwQTtDvefApysDg7ryRBuUFqe",
-    "url": "https://snow-force-485boheu9-harrymeits-projects.vercel.app",
+    "deploymentId": "dpl_GhpyUmywHVXDAPdx63DnPM3W7gHS",
+    "url": "https://snow-force-mzmkh2hub-harrymeits-projects.vercel.app",
+    "sourceCommit": "0cf55f85dd985950d27bac95d00f29815ab5ff15",
     "updatedVariables": [
       "NEXT_PUBLIC_SUPABASE_URL",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "LODGING_ADMIN_ENABLED"
+      "LODGING_ADMIN_ENABLED",
+      "SUPABASE_SECRET_KEY"
     ],
     "target": "preview",
     "branchSpecificVariables": false,
     "reason": "Vercel project has no connected Git repository",
-    "serverCredentialStatus": "pending Vercel browser authentication",
+    "serverCredentialStatus": "configured as Preview-only Secret",
+    "lodgingAdminEnabled": true,
     "deploymentState": "READY",
     "emptyEventList": "passed",
-    "nonemptyEventListAndDetail": "blocked until new test server key is configured",
+    "nonemptyEventListAndDetail": "passed",
     "temporaryEventCleanup": "verified"
   },
   "productionWrites": 0

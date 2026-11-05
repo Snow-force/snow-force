@@ -28,7 +28,9 @@ database; it is separate from the existing live SnowForce project.
 - Ran the real hosted reserve/release path under `service_role`: continuous nights,
   manual occupation, no overselling, request idempotency, retaining unknown-payment
   holds and safe release all passed. The transaction was rolled back afterward.
-- Confirmed zero leftover hotel/unit/hold fixture rows and zero Auth users.
+- After browser acceptance and cleanup, confirmed zero leftover hotel, room-type,
+  offer, event and test Auth-user fixtures; temporary staff access was revoked.
+  Five synthetic audit records were retained as acceptance evidence.
 
 The migration manifest is in `output/lodging-isolated-db-setup-20261105.json`.
 
@@ -47,44 +49,71 @@ Updated only Preview variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL` → the new test project's URL.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` → its active modern publishable key.
-- `LODGING_ADMIN_ENABLED=false`.
+- `SUPABASE_SECRET_KEY` → the dedicated test-project server key, saved as Vercel
+  Secret (`sensitive`), only for Preview.
+- `LODGING_ADMIN_ENABLED=true` for authenticated draft tests. This does not enable
+  sales; the database continues prohibiting `sales_enabled=true`.
 
 Vercel rejected branch-specific variables because this project has no connected
 Git repository. The existing shared Preview configuration was updated instead;
 Production and Development variables were not changed. Git-source deployments
 are still possible through the authenticated deployment API.
 
-Deployment: `dpl_DqoKwQTtDvefApysDg7ryRBuUFqe`, READY, source
-`8f3945ea07ecf820d07d178d03cac728fb237d9f`.
+Final deployment: `dpl_GhpyUmywHVXDAPdx63DnPM3W7gHS`, READY, source
+`0cf55f85dd985950d27bac95d00f29815ab5ff15`.
 
-[Preview](https://snow-force-485boheu9-harrymeits-projects.vercel.app)
+[Preview](https://snow-force-mzmkh2hub-harrymeits-projects.vercel.app)
 
-## Test outcomes and remaining authentication step
+## Completed browser and hosted acceptance
 
-- Homepage and empty activity list render HTTP 200 without the old database setup
-  error; anonymous `/admin/lodging` resolves to the staff login form.
-- A closed, free, explicitly named synthetic event was briefly inserted to verify
-  nonempty activity reads. Both list and detail then showed the database setup
-  error. The event repository uses the server client for questions, modules, booth
-  configuration and registration counts, so a valid server key is required even
-  for these public views when an event exists.
-- The synthetic event was deleted and its absence verified. No registrations,
-  payments or messages were generated.
-- `SUPABASE_SECRET_KEY` still needs replacement with a key from the test project.
-  The Supabase connector does not expose secret keys, and the local Supabase CLI
-  is not logged in. Browser configuration reached Vercel's passkey challenge.
-  The user has been asked to complete the existing Vercel sign-in; no passkey or
-  recovery code should be sent through chat.
-- A `vercel_lodging_preview` secret-key record was created in the test project.
-  No secret value was recorded in this document or committed files.
+The user completed Vercel sign-in. The new server key resolved the nonempty event
+read failure: the repository loads questions, modules, booth configuration and
+registration counts with its server client, even on public event pages.
 
-After sign-in, configure the test server key only for Vercel Preview, rebuild,
-repeat the nonempty activity checks, then verify staff authentication and draft
-catalog operations with isolated test identities. Configure test Auth callback
-URLs before running registration/password/magic-link flows. Keep lodging sales
-disabled; payment, refunds and full commerce acceptance remain outside this batch.
+| Check | Result |
+|---|---|
+| Synthetic event list/detail | HTTP 200; the explicit TEST ONLY event rendered without setup errors |
+| Anonymous lodging administration | Redirected to Staff Admin login, with no editor exposed |
+| Authenticated ordinary test user | Staff sign-in rejected as unauthorized |
+| Temporary manager in isolated test project | Staff sign-in and lodging catalog succeeded |
+| Hotel creation and update | Bilingual name persisted; address update incremented version |
+| Room type | Linked to the saved hotel with bilingual beds and capacity four |
+| Event lodging draft | Two nights at USD 100, USD 20 fee, 10% draft tax displayed USD 242.00 |
+| Concurrent staff edits | Second editor's update persisted; stale first-editor save displayed a conflict and did not overwrite it |
+| Audit | Five records matched the temporary staff actor; conflict produced no extra write |
+| Language | CN/EN switching updated catalog, shell and navigation; Chinese survived reload |
+| Revoked staff role | Existing signed-in session could no longer enter lodging administration |
+| Final anonymous smoke | Home, events and member welcome HTTP 200; admin login guarded; public `/lodging` HTTP 404 |
 
-Local verification was repeated: `npm test` passed 1,495 tests across 229 files;
-`npm run build` passed lint, compilation, TypeScript and production page generation.
-The local logs contain no test stderr or build warnings. No application source or
-dependency versions changed during this provisioning step.
+No registrations, payments, refunds or messages were generated. The synthetic
+account was created with auto-confirm enabled, so no confirmation email was sent.
+All event, hotel, room, offer and account fixtures were removed after acceptance;
+the five audit records remain. Production is still the original deployment
+`dpl_7mysXvE1D3GBCFFuziZ7jeFzBa1R` and its database/configuration was not changed.
+
+## Repair discovered through testing
+
+`src/app/admin/layout.tsx` created a nested `LanguageProvider initialLang="en"`,
+which isolated all admin content from the root language switch. Removed that
+nested provider while keeping the staff guard and shell intact. Three focused
+regressions cover initial Chinese, live switching in both directions and rejected
+staff authentication. Before the fix the two language tests failed; afterward all
+three passed. The fix is committed and pushed in `0cf55f8` and verified on the final
+preview, alongside the existing lodging implementation.
+
+`npm test` passed 1,498 tests across 230 files. `npm run build` passed lint,
+compilation, TypeScript and production page generation. Coverage also passed;
+overall lines are 65.65%. Existing payment branch coverage remains 63.14% and is
+still a follow-up before adding lodging payment behavior. No dependency versions
+changed. The local final logs contain no test stderr or build warnings.
+
+The cloud build succeeded with the previously investigated npm `cache-dir` and
+unreviewed `unrs-resolver` install-script policy warnings. Those build-environment
+follow-ups remain recorded in `event-lodging-preview-test-20261104.md`; no warnings
+were suppressed and no blanket script approvals were added.
+
+This completes the current catalog/inventory deployment tests. Customer lodging
+booking, payment, refund, full commerce and member email/callback flows remain
+outside this batch. Configure the isolated project's Auth callback URLs before
+running registration or magic-link acceptance. No test staff login remains after
+cleanup; future operator testing needs an explicitly provisioned test identity.
