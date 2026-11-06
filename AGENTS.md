@@ -29,6 +29,7 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 |------|----------|-------|
 | Public event list/detail | `src/app/events`, `src/components/events` | Route pages read repositories server-side, render client components for language switching. |
 | Admin event workflow | `src/app/admin/events`, `src/components/admin`, `src/lib/events` | Mutations go through server actions after `requireAdmin()`. |
+| Lodging administration | `src/app/admin/lodging`, `src/components/admin/lodging`, `src/lib/lodging` | Independent activity-package/hotel/room-type lists. Activity editing only links to `/admin/lodging?event=<slug>`; do not re-embed lodging forms in the event editor. |
 | Archive to recap workflow | `src/lib/events/actions.ts`, `src/lib/recaps`, `src/app/admin/recaps` | Archive creates draft recap, editor adds media, status route publishes public recaps. |
 | Registrations | `src/lib/registrations`, `src/components/events/registration-form.tsx` | Client validates UX; server action rechecks event state, window, capacity, required fields, email verification. |
 | Member auth gateway | `src/components/members/member-auth-panel.tsx`, `src/lib/members/actions.ts` | Immersive hero + auth card; login/register/magic/Google OAuth/forgot/reset flows. |
@@ -83,7 +84,7 @@ SnowForce is a bilingual EN/ZH snow sports activity platform built with Next.js 
 - Never import privileged Supabase admin/service client into client components.
 - Do not grant anonymous direct inserts for registrations or inquiries; server commands own validation/spam controls.
 - Do not edit seed data for day-to-day operational event updates once Supabase is configured.
-- Lodging rollout: staff-only hotel, room-type and event-offer drafts are supported behind LODGING_ADMIN_ENABLED. The user confirmed on 2026-11-05 that multi-day activities use fixed per-person activity packages including lodging, selected by room type; staff arrange roommates. Guests need not fill a room together, and occupancy does not change the per-person price. Hotel costs are internal and must not be added to package prices. Public package sales remain disabled until participant capacity, immutable quotes, payment and refund batches pass validation. Do not present carpooling or automatic roommate matching as built-in features.
+- Lodging rollout: staff-only hotel, room-type and event-offer drafts are supported behind LODGING_ADMIN_ENABLED. Lodging is optional per activity, including multi-day activities; no associated package defaults to no lodging and needs no setup, preserving ordinary event registration/pricing. Only explicitly configured lodging activities use fixed per-person packages including lodging, selected by room type; staff arrange roommates. Guests need not fill a room together, and occupancy does not change the per-person price. Hotel costs are internal and must not be added to package prices. Public package sales remain disabled until participant capacity, immutable quotes, payment and refund batches pass validation. Do not present carpooling or automatic roommate matching as built-in features.
 - Do not silently assume public data is correct when Supabase config or migrations are missing.
 - Do not use `as any`, `@ts-ignore`, or `@ts-expect-error`.
 - Do not remove existing dirty worktree changes without explicit instruction.

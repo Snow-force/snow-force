@@ -9,7 +9,6 @@ type ActiveLang = "zh" | "en";
 type EventRegistrationSettingsStepProps = {
   event: Event;
   activeLang: ActiveLang;
-  isNew?: boolean;
   onChange(event: Event): void;
 };
 
@@ -17,7 +16,7 @@ function localDateTime(value: string) {
   return value ? value.slice(0, 16) : "";
 }
 
-export function EventRegistrationSettingsStep({ event, activeLang, onChange, isNew = false }: EventRegistrationSettingsStepProps) {
+export function EventRegistrationSettingsStep({ event, activeLang, onChange }: EventRegistrationSettingsStepProps) {
   const { t } = useLanguage();
   const registrationCloseHint =
     activeLang === "zh"
@@ -49,10 +48,6 @@ export function EventRegistrationSettingsStep({ event, activeLang, onChange, isN
   return (
     <section className="card space-y-4">
       <h3 className="text-base font-semibold text-gray-900">{t(adminCopy.editor.registrationSettings)}</h3>
-      <div className="rounded border border-gray-200 p-4 text-sm space-y-2">
-        <p>{t({ en: "Multi-day activities can have fixed-price room-type packages per person, including lodging. Staff arrange roommates.", zh: "多天活动可按房型配置每人固定套餐价，已含住宿，由工作人员安排同住。" })}</p>
-        {!isNew && event.slug ? <a href="#event-lodging-settings" className="inline-block text-blue-700 underline">{t({ en: "Configure room-type packages below the event editor", zh: "在活动编辑器下方配置房型套餐" })}</a> : <p className="text-gray-600">{t({ en: "Save the event first, then configure its room-type packages.", zh: "请先保存活动，再配置该活动的房型套餐。" })}</p>}
-      </div>
       <div className="grid gap-4 rounded border border-gray-200 p-4 md:grid-cols-2">
         <label className="flex min-h-11 items-center gap-2 text-sm text-gray-700">
           <input type="checkbox" checked={event.allowProxyRegistrations ?? false}

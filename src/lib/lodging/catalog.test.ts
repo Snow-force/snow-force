@@ -47,3 +47,11 @@ it("parses explicit per-person dollars to exact cents and ignores forged cent va
 it.each(["0", "-1", "1.001", "1e2", "NaN", "Infinity", "1000000.01"])("rejects invalid per-person package price %s", price => {
  expect(parseCatalogForm("offer", offerForm(price)).success).toBe(false);
 });
+it("converts internal dollar costs and percentage tax exactly without changing the package price",()=>{
+ const f=offerForm("399.50");f.set("nightly_price","100.29");f.set("mandatory_price","20.05");f.set("tax_percent","10.25");
+ const result=parseCatalogForm("offer",f);
+ expect(result.success && result.data).toMatchObject({package_amount:39950,nightly_amount:10029,mandatory_fee:2005,tax_basis_points:1025});
+});
+it.each(["-1","0.001","1e2","100.01"])("rejects invalid tax percentage %s",value=>{
+ const f=offerForm("399");f.set("tax_percent",value);expect(parseCatalogForm("offer",f).success).toBe(false);
+});

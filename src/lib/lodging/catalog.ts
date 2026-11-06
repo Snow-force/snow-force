@@ -32,15 +32,22 @@ export type Offer = z.infer<typeof offerSchema> & { id: string; currency: "usd";
 export type Catalog = { properties: Property[]; rooms: Room[]; offers: Offer[] };
 export type CatalogKind = "property" | "room" | "offer";
 export const catalogTables = { property: "lodging_properties", room: "lodging_room_types", offer: "event_lodging_offers" } as const;
+function decimalHundredths(value: FormDataEntryValue | undefined) {
+  const text = String(value ?? "").trim();
+  if (!/^\d{1,7}(?:\.\d{1,2})?$/.test(text)) return NaN;
+  const [whole, fraction = ""] = text.split(".");
+  return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+}
 export function parseCatalogForm(kind: CatalogKind, form: FormData) {
   const row = Object.fromEntries(form.entries());
   // The form accepts dollars; storage uses integer cents. Never derive a package
   // price by dividing hotel costs by a room's maximum occupancy.
   const packagePrice = String(row.package_price ?? "").trim();
-  const packageAmount = /^\d{1,7}(?:\.\d{1,2})?$/.test(packagePrice)
-    ? Number(packagePrice.split(".")[0]) * 100 + Number((packagePrice.split(".")[1] ?? "").padEnd(2, "0"))
-    : NaN;
-  const value = { ...row, package_amount: packagePrice ? packageAmount : null, id: row.id || undefined, name: { en: row.name_en, zh: row.name_zh }, beds: { en: row.beds_en, zh: row.beds_zh }, policy: { en: row.policy_en, zh: row.policy_zh } };
+  const value = { ...row,
+    nightly_amount: "nightly_price" in row ? decimalHundredths(row.nightly_price) : row.nightly_amount,
+    mandatory_fee: "mandatory_price" in row ? decimalHundredths(row.mandatory_price) : row.mandatory_fee,
+    tax_basis_points: "tax_percent" in row ? decimalHundredths(row.tax_percent) : row.tax_basis_points,
+    package_amount: packagePrice ? decimalHundredths(row.package_price) : null, id: row.id || undefined, name: { en: row.name_en, zh: row.name_zh }, beds: { en: row.beds_en, zh: row.beds_zh }, policy: { en: row.policy_en, zh: row.policy_zh } };
   return (kind === "property" ? propertySchema : kind === "room" ? roomSchema : offerSchema).safeParse(value);
 }
 

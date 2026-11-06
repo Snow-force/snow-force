@@ -27,9 +27,9 @@ function SiteLanguageSwitch() {
 it("inherits the site's initial Chinese language in the shell and lodging page", async () => {
   const content = await AdminLayout({ children: <LodgingCatalog status="disabled" /> });
   render(<LanguageProvider initialLang="zh">{content}</LanguageProvider>);
-  expect(screen.getByRole("heading", { name: "住宿资料管理" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "住宿管理" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "住宿管理" })).toBeInTheDocument();
-  expect(screen.getByRole("status")).toHaveTextContent("住宿配置尚未启用");
+  expect(screen.getByRole("status")).toHaveTextContent("住宿管理尚未启用");
 });
 
 it("keeps admin content synchronized with the site language switch in both directions", async () => {
@@ -37,10 +37,10 @@ it("keeps admin content synchronized with the site language switch in both direc
   const content = await AdminLayout({ children: <LodgingCatalog status="disabled" /> });
   render(<LanguageProvider initialLang="en"><SiteLanguageSwitch />{content}</LanguageProvider>);
   await user.click(screen.getByRole("button", { name: "CN" }));
-  expect(screen.getByRole("heading", { name: "住宿资料管理" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "住宿管理" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "住宿管理" })).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "EN" }));
-  expect(screen.getByRole("heading", { name: "Lodging catalog" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Lodging management" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Lodging" })).toBeInTheDocument();
 });
 

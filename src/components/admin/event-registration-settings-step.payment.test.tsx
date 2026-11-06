@@ -48,16 +48,10 @@ function createEvent(overrides: Partial<Event> = {}): Event {
 }
 
 describe("EventRegistrationSettingsStep payment model", () => {
-  it("connects saved activities to fixed per-person room-type package setup", () => {
+  it("keeps lodging forms outside event registration settings", () => {
     renderWithLanguage(<EventRegistrationSettingsStep event={createEvent()} activeLang="en" onChange={vi.fn()} />);
-    expect(screen.getByRole("link", { name: /configure room-type packages/i })).toHaveAttribute("href", "#event-lodging-settings");
-    expect(screen.getByText(/fixed-price room-type packages per person, including lodging/)).toBeInTheDocument();
-  });
-
-  it("asks staff to save new activities before linking room-type packages", () => {
-    renderWithLanguage(<EventRegistrationSettingsStep event={createEvent()} activeLang="en" onChange={vi.fn()} isNew />);
-    expect(screen.queryByRole("link", { name: /configure room-type packages/i })).toBeNull();
-    expect(screen.getByText(/save the event first/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /room-type packages/i })).toBeNull();
+    expect(screen.queryByLabelText(/package per person/i)).toBeNull();
   });
   it("renders free helper text and no amount inputs when paymentModel is free", () => {
     renderWithLanguage(
