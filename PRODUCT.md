@@ -35,4 +35,6 @@ No special accessibility requirements are specified beyond strong product defaul
 
 ## Lodging rollout
 
-Staff may prepare reusable hotels, room types and fixed-date event lodging drafts. This increment does not sell rooms, reserve inventory or accept lodging payments. Public lodging sales remain unavailable until shared nightly inventory, checkout, cancellation and refund validation is complete. Whole-unit booking is the first sales scope; room sharing and bed sales remain deferred.
+Staff may prepare reusable hotels, room types and fixed-date event lodging drafts. Multi-day activities offer room-type activity packages at a fixed total price per person, including lodging. Different room types may have different per-person package prices. Staff arrange roommates; guests do not need to fill a room together, and the per-person price does not vary with actual room occupancy. Hotel nightly costs, fees and tax estimates are internal costs and must not be added to the displayed package price or divided automatically to create a sale price.
+
+Configuration belongs to the activity editor, with reusable hotel and room-type data maintained separately. Public selection belongs on the activity detail/registration flow. This increment prepares and previews package drafts; it does not sell rooms or accept lodging payments. Public package sales remain unavailable until participant capacity reservations, immutable price snapshots, checkout, cancellation and refund validation are complete. There is no automatic roommate matching feature.

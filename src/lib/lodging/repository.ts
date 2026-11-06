@@ -9,9 +9,12 @@ function client() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 export function lodgingAdminEnabled() { return process.env.LODGING_ADMIN_ENABLED === "true"; }
-export async function loadCatalog(): Promise<Catalog> {
+export async function loadCatalog(eventSlug?: string): Promise<Catalog> {
   const db = client();
-  const results = await Promise.all(Object.values(catalogTables).map(t => db.from(t).select("*").order("created_at")));
+  const results = await Promise.all(Object.values(catalogTables).map(t => {
+    const query = db.from(t).select("*");
+    return (eventSlug && t === catalogTables.offer ? query.eq("event_slug", eventSlug) : query).order("created_at");
+  }));
   for (const result of results) if (result.error) throw new Error(result.error.message);
   return { properties: results[0].data ?? [], rooms: results[1].data ?? [], offers: results[2].data ?? [] };
 }

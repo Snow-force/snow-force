@@ -15,5 +15,6 @@ export async function saveLodgingCatalog(_previous: CatalogState, form: FormData
   try { await saveCatalog(kind, result.data, staff.userId); }
   catch (error) { return { code: error instanceof Error && error.message === "conflict" ? "conflict" : "unavailable" }; }
   revalidatePath("/admin/lodging");
+  if (kind === "offer" && "event_slug" in result.data) revalidatePath(`/admin/events/${result.data.event_slug}/edit`);
   return { code: "saved" };
 }

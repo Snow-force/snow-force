@@ -171,7 +171,7 @@ export function EventEditorForm({ event, isNew }: { event: Event; isNew: boolean
 
           {activeStep === "registration" ? (
             <div className="space-y-2">
-              <EventRegistrationSettingsStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} />
+              <EventRegistrationSettingsStep event={draftEvent} activeLang={activeLang} onChange={setDraftEvent} isNew={isNew} />
               <FieldError errors={state.fieldErrors?.capacity} />
             </div>
           ) : null}

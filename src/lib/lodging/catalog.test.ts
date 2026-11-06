@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { propertySchema, roomSchema, offerSchema, draftOfferTotal, parseCatalogForm } from "./catalog";
+import { propertySchema, roomSchema, offerSchema, draftOfferTotal, draftPackageTotal, parseCatalogForm } from "./catalog";
 const id = "11111111-1111-4111-8111-111111111111";
 const name = { en: "Hotel", zh: "酒店" };
 const offer = { event_slug: "trip", room_type_id: id, check_in: "2027-01-01", check_out: "2027-01-03", nightly_amount: 10001, mandatory_fee: 2000, tax_basis_points: 1000, policy: name };
@@ -25,4 +25,25 @@ it("does not accept hidden sales fields from a direct action request", () => {
  expect(r.success).toBe(true);
  expect(r.success && r.data).not.toHaveProperty("sales_enabled");
  expect(r.success && r.data).not.toHaveProperty("updated_by");
+});
+it("prices each person independently without adding hotel costs or dividing by occupancy", () => {
+ expect(draftPackageTotal({ package_amount: 39900 }, 1)).toBe(39900);
+ expect(draftPackageTotal({ package_amount: 39900 }, 3)).toBe(119700);
+ expect(draftPackageTotal({ package_amount: null }, 2)).toBeNull();
+ for (const count of [0, -1, 1.5, NaN, 1001]) expect(draftPackageTotal({ package_amount: 39900 }, count)).toBeNull();
+});
+function offerForm(price: string) {
+ const f = new FormData();
+ for (const [key, value] of Object.entries({ ...offer, package_price: price, policy_en: "Terms", policy_zh: "条款", package_amount: 1 })) f.set(key, String(value));
+ return f;
+}
+it("parses explicit per-person dollars to exact cents and ignores forged cent values", () => {
+ for (const [price, amount] of [["399", 39900], ["399.50", 39950], ["0.29", 29], ["1000000.00", 100000000]] as const) {
+  const result = parseCatalogForm("offer", offerForm(price));
+  expect(result.success && "package_amount" in result.data && result.data.package_amount).toBe(amount);
+ }
+ expect(offerSchema.parse(offer).package_amount).toBeNull();
+});
+it.each(["0", "-1", "1.001", "1e2", "NaN", "Infinity", "1000000.01"])("rejects invalid per-person package price %s", price => {
+ expect(parseCatalogForm("offer", offerForm(price)).success).toBe(false);
 });
