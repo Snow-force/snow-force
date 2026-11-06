@@ -86,3 +86,30 @@ Focused coverage includes activity-label filtering, hotel/room dependency resets
 legacy unpriced packages, exact cost conversion, fixed per-person totals,
 successful save/return, conflict retention and disabled/error states. Customer
 payment integration is unchanged and still outside this UI batch.
+
+## Production publication
+
+At the user's request, committed the complete layout and optional-lodging changes
+as `d237e7d4248b6bc2ce72976c8b3e76eaa607f5f6` and pushed them to `main`.
+Railway deployment `f587362d-6624-4341-9c83-0ce33d60c338` reached SUCCESS and
+passed its container healthcheck. The existing web service, production domain,
+region, secrets and lodging admin flag were retained. No migration or production
+catalog edit was performed. The service is explicitly pinned to this reviewed
+source commit; later pushes require another explicit release.
+
+Post-release checks on `https://snow-force.com` returned HTTP 200 for health,
+home, events, member and shop, 307 to staff login for event/lodging administration,
+and 404 for public `/lodging`. The actual Railway domain header and deployment
+metadata matched this release. Evidence is saved in
+`output/lodging-layout-production-release-20261105.json`. These were anonymous,
+read-only production checks; staff saves were tested with source-level tests and
+synthetic local UI data, not repeated against production operational data.
+
+Cloud installation repeated the existing deprecation notices for `whatwg-encoding`,
+`tsconfck` and `eslint`, plus the previously reviewed resolver install-script
+policy notice. No dependency changed, no warnings were suppressed, and cloud lint,
+TypeScript, compilation, page generation and startup checks passed.
+
+Rollback web deployment: `3bfe8d7a-0a6b-453e-94f1-0f7876bb9c13`. No database
+rollback is needed for this layout-only release. Customer lodging sales remain
+disabled.

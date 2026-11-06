@@ -1,0 +1,74 @@
+{
+  "deploymentId": "f587362d-6624-4341-9c83-0ce33d60c338",
+  "commit": "d237e7d4248b6bc2ce72976c8b3e76eaa607f5f6",
+  "branch": "main",
+  "testedAt": "2026-11-06T06:47:34.379Z",
+  "passed": true,
+  "authenticatedProductionSaveTested": false,
+  "checks": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "milliseconds": 361,
+      "passed": true
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "milliseconds": 2375,
+      "passed": true
+    },
+    {
+      "path": "/events",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "milliseconds": 2372,
+      "passed": true
+    },
+    {
+      "path": "/member",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "milliseconds": 928,
+      "passed": true
+    },
+    {
+      "path": "/shop",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "milliseconds": 2210,
+      "passed": true
+    },
+    {
+      "path": "/admin/events",
+      "status": 307,
+      "location": "/staff-login",
+      "server": "railway-hikari",
+      "milliseconds": 2439,
+      "passed": true
+    },
+    {
+      "path": "/admin/lodging",
+      "status": 307,
+      "location": "/staff-login",
+      "server": "railway-hikari",
+      "milliseconds": 1023,
+      "passed": true
+    },
+    {
+      "path": "/lodging",
+      "status": 404,
+      "location": null,
+      "server": "railway-hikari",
+      "milliseconds": 947,
+      "passed": true
+    }
+  ]
+}
