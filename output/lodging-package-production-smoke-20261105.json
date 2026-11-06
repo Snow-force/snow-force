@@ -1,0 +1,72 @@
+{
+  "deploymentId": "9c2b5704-5a53-42ee-8c5e-7c59cf9bbd67",
+  "source": "1667cfc803e1da1eb8166ac952be49ae92c5dc12",
+  "testedAt": "2026-11-06T03:31:59.325Z",
+  "passed": true,
+  "results": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 41
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 214141
+    },
+    {
+      "path": "/events",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 73945
+    },
+    {
+      "path": "/member",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 31769
+    },
+    {
+      "path": "/shop",
+      "status": 200,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 152196
+    },
+    {
+      "path": "/admin/events",
+      "status": 307,
+      "location": "/staff-login",
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 43324
+    },
+    {
+      "path": "/admin/lodging",
+      "status": 307,
+      "location": "/staff-login",
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 7434
+    },
+    {
+      "path": "/lodging",
+      "status": 404,
+      "location": null,
+      "server": "railway-hikari",
+      "setupError": false,
+      "bytes": 18452
+    }
+  ]
+}
