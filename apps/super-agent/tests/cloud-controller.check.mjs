@@ -30,6 +30,7 @@ test('cloud task isolates project credentials, removes auth before tests and des
   assert.ok(calls.findIndex(c=>c.command==='npm ci')<authAttach.step);
   assert.ok(authClear.step<=calls.findLastIndex(c=>c.command==='npm ci'));
   assert.ok(calls.some(c=>c.command==='npm run test:coverage'));
+  assert.ok(calls.filter(c=>c.command==='npm ci').every(c=>c.config.env.PATH.startsWith('/app/agent-toolchain/node_modules/.bin:')));
   assert.equal(completed.succeeded,true);assert.equal(completed.lease_token,'lease');
   assert.equal(JSON.parse(config.auth).tokens.fake,'refreshed');
   assert.doesNotMatch(JSON.stringify(calls),/secret-project-token|secret-worker-token/);

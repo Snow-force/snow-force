@@ -6,6 +6,7 @@ import worker, { recover } from '../worker.mjs';
 import { applyRules, ingest, metrics, query, reserve } from '../store.mjs';
 import { triage } from '../gateway.mjs';
 import { authorized, messagesFor, parseDecision, parseUsage, readBody, redact, reservationCost, rules, verifyGitHub } from '../core.mjs';
+import { consoleErrorMessage } from '../console.mjs';
 
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
@@ -174,6 +175,8 @@ test('HTTP validation, privacy, bounded bodies and console security',async()=>{
   const page=await worker.fetch(new Request('https://agent.test/'),env);
   assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
   assert.doesNotMatch(await page.text(),/localStorage|innerHTML/);
+  assert.equal(consoleErrorMessage(401),'管理密码不正确，请重新输入。');
+  assert.match(consoleErrorMessage(409),/刷新/);
   await assert.rejects(()=>readBody(new Request('https://x',{method:'POST',body:'x'.repeat(100)}),50),/large/);
   assert.throws(()=>parseUsage({prompt_tokens:1,completion_tokens:513},100),/usage/);
   assert.throws(()=>parseDecision({category:'support',priority:'high',draft:1}),/decision/);

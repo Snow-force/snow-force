@@ -8,8 +8,10 @@ const sandbox=await Sandbox.create({token,authType:'project-token',environmentId
   resources:{cpu:0.5,memoryGB:1},idleTimeoutMinutes:1,networkIsolation:'ISOLATED'});
 console.log('Isolated Codex sign-in environment ready.');
 try{
+  const prepared=await sandbox.exec('npm install --prefix /app/agent-toolchain node@24.22.1 npm@11.19.1 @openai/codex@0.167.0 --no-audit --no-fund',{timeoutSec:180,maxOutputBytes:8000});
+  if(prepared.exitCode!==0)throw Error('Could not prepare current Codex CLI: '+prepared.stderr.slice(-1500));
   await sandbox.files.mkdir('/app/cloud-codex-signin');
-  const result=await sandbox.exec('codex login --device-auth',{env:{CODEX_HOME:'/app/cloud-codex-signin'},timeoutSec:900,maxOutputBytes:16000,
+  const result=await sandbox.exec('codex login --device-auth',{env:{CODEX_HOME:'/app/cloud-codex-signin',PATH:'/app/agent-toolchain/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'},timeoutSec:900,maxOutputBytes:16000,
     onStdout:chunk=>process.stdout.write(chunk),onStderr:chunk=>process.stdout.write(chunk)});
   if(result.exitCode!==0)throw Error('Cloud Codex login was not completed');
   const auth=await sandbox.files.read('/app/cloud-codex-signin/auth.json');

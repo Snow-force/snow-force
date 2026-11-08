@@ -32,8 +32,10 @@ export async function executeCloudTask(config,task,{createSandbox,archive,fetche
   try {
     sandbox=await createSandbox({token:config.railwayToken,authType:'project-token',environmentId:config.environmentId,
       resources:{cpu:2,memoryGB:2},idleTimeoutMinutes:1,networkIsolation:'ISOLATED',env:{NEXT_TELEMETRY_DISABLED:'1'}});
+    let toolEnv={};
     const exec=async(command,extra={})=>{
-      const result=await sandbox.exec(command,{timeoutSec:300,maxOutputBytes:100000,signal:abort.signal,...extra});
+      const {env:extraEnv,...other}=extra;
+      const result=await sandbox.exec(command,{timeoutSec:300,maxOutputBytes:100000,signal:abort.signal,...other,env:{...toolEnv,...extraEnv}});
       if(result.exitCode!==0 || result.timedOut)throw Error('Isolated command failed: '+command.split(' ')[0]);
       return result.stdout;
     };
@@ -42,7 +44,8 @@ export async function executeCloudTask(config,task,{createSandbox,archive,fetche
     await exec('git init -q && git -c user.name=SuperAgent -c user.email=agent@localhost add . && git -c user.name=SuperAgent -c user.email=agent@localhost commit -qm baseline',{cwd:'/app/repo'});
     const baseline=(await exec('git rev-parse HEAD',{cwd:'/app/repo'})).trim();
     if(!/^[a-f0-9]{40,64}$/.test(baseline))throw Error('Invalid baseline');
-    await exec('npm install -g node@24.22.1 @openai/codex@0.167.0');
+    await exec('npm install --prefix /app/agent-toolchain node@24.22.1 npm@11.19.1 @openai/codex@0.167.0 --no-audit --no-fund');
+    toolEnv={PATH:'/app/agent-toolchain/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'};
     // Install before attaching auth so the agent can read installed framework guides.
     await exec('npm ci',{cwd:'/app/repo'});
     await sandbox.files.write('/app/codex-auth/auth.json',config.auth,{mode:0o600});
