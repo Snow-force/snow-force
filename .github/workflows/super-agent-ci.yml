@@ -1,0 +1,26 @@
+name: Super Agent Quality Gate
+on:
+  push:
+    paths: ['apps/super-agent/**', '.github/workflows/super-agent-ci.yml']
+  pull_request:
+    paths: ['apps/super-agent/**', '.github/workflows/super-agent-ci.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/super-agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: apps/super-agent/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:coverage
+      - run: npm run build
