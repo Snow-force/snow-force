@@ -26,7 +26,9 @@ test('cloud task isolates project credentials, removes auth before tests and des
   assert.equal(options.networkIsolation,'ISOLATED');assert.equal(options.idleTimeoutMinutes,1);assert.equal(options.authType,'project-token');
   assert.deepEqual(options.env,{NEXT_TELEMETRY_DISABLED:'1'});
   const authClear=writes.find(w=>w.path==='/app/codex-auth/auth.json'&&w.content==='{}');
-  assert.ok(authClear.step<=calls.findIndex(c=>c.command==='npm ci'));
+  const authAttach=writes.find(w=>w.path==='/app/codex-auth/auth.json'&&w.content!=='{}');
+  assert.ok(calls.findIndex(c=>c.command==='npm ci')<authAttach.step);
+  assert.ok(authClear.step<=calls.findLastIndex(c=>c.command==='npm ci'));
   assert.ok(calls.some(c=>c.command==='npm run test:coverage'));
   assert.equal(completed.succeeded,true);assert.equal(completed.lease_token,'lease');
   assert.equal(JSON.parse(config.auth).tokens.fake,'refreshed');
@@ -41,7 +43,7 @@ test('failed isolated execution is reported and cleaned up, without bypassing sa
 });
 test('cloud build context excludes local credentials and existing runtime artifacts',()=>{
   const ignore=readFileSync(new URL('../cloud/Dockerfile.dockerignore',import.meta.url),'utf8');
-  for(const entry of ['**/.env*','**/.dev.vars*','**/node_modules','**/.git','output','.data'])assert.ok(ignore.split('\n').includes(entry));
+  for(const entry of ['**/.env*','**/.dev.vars*','**/node_modules','**/.git','output','Products','.data'])assert.ok(ignore.split('\n').includes(entry));
   const docker=readFileSync(new URL('../cloud/Dockerfile',import.meta.url),'utf8');
   assert.match(docker,/npm ci --omit=dev/);assert.match(docker,/USER node/);
 });

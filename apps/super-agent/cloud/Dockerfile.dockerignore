@@ -17,6 +17,7 @@
 .playwright-mcp
 .playwright-cli
 output
+Products
 artifacts
 tmp
 *.log
