@@ -6,6 +6,7 @@ import { Pause, Play } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { MountainMemoryReel } from "@/components/recaps/mountain-memory-reel";
 import { HomeShopSection } from "./home-shop-section";
+import { NextDeparture } from "./next-departure";
 import type { StoreProduct } from "@/lib/shop/storefront";
 import { useLanguage, type Lang } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
@@ -33,6 +34,7 @@ export function HomePageView({ events, recaps, eventLoadError = false, shopProdu
   return (
     <div className="bg-[#07090c] text-white">
       <HeroSection t={t} />
+      <NextDeparture events={events} loadError={eventLoadError} />
       <PhilosophySection t={t} />
       <ActivityModesSection t={t} />
       <CommunityExperienceSection t={t} />
@@ -112,7 +114,7 @@ function HeroSection({ t }: { t: Translate }) {
         </p>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Link href="#open-events" className="btn-primary bg-white text-[#111827] hover:bg-white/90">
+          <Link href="#next-departures" className="btn-primary bg-white text-[#111827] hover:bg-white/90">
             {t({ en: "View open events", zh: "查看正在报名" })}
           </Link>
           <Link href="#how-we-ride" className="btn-secondary border-white/70 bg-transparent text-white hover:bg-white/10">
