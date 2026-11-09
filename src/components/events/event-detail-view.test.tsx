@@ -1,6 +1,6 @@
 import { createDefaultReviewConfig } from "@/lib/reviews/config";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LanguageProvider } from "@/lib/language";
 import { EventDetailView } from "./event-detail-view";
@@ -58,6 +58,21 @@ const minimalEvent: Event = {
 };
 
 describe("EventDetailView", () => {
+  it("connects the hero, briefing and registration while moving notes and costs into the desk", async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<EventDetailView event={{ ...minimalEvent, detailModules: [
+      { id: "notes", type: "notes", displayMode: "list", title: { en: "Organizer notes", zh: "主办方须知" }, content: { en: "", zh: "" }, items: { en: ["Bring your pass"], zh: ["携带雪票"] } },
+    ] }} />);
+    expect(screen.getByRole("link", { name: "Open your mountain briefing ↓" })).toHaveAttribute("href", "#mountain-briefing-title");
+    expect(screen.getByRole("complementary", { name: "Event registration" })).toHaveAttribute("id", "event-registration");
+    await user.click(screen.getByRole("button", { name: "Get ready" }));
+    expect(screen.getByRole("checkbox", { name: "Bring your pass" })).toBeVisible();
+    expect(screen.getAllByText("Bring your pass")).toHaveLength(1);
+    const briefing = screen.getByRole("region", { name: "Your mountain briefing." });
+    await user.click(within(briefing).getByRole("button", { name: "Costs & terms" }));
+    expect(within(briefing).getByText("Free")).toBeVisible();
+  });
+
   it("renders EventShareBar in hero and sidebar for a valid event", () => {
     renderWithLanguage(
       <EventDetailView

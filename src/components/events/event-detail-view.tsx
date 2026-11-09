@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLanguage, type Lang } from "@/lib/language";
 import { getEventAvailabilitySnapshot } from "@/lib/events/availability";
+import { EventBriefing } from "./event-briefing";
 import { RegistrationForm } from "@/components/events/registration-form";
 import { GroupRegistrationForm } from "./group-registration-form";
 import { EventShareBar } from "./event-share-bar";
@@ -67,11 +68,9 @@ export function EventDetailView({
   const eventDate = event.eventDate ? new Date(`${event.eventDate}T00:00:00`) : undefined;
   const eventTitle = localizedText(event.title, lang);
   const activityLocation = localizedText(event.activityLocation, lang);
-  const meetLocation = localizedText(event.meetLocation, lang);
-  const paymentInstructions = localizedText(event.paymentInstructions, lang);
   const introModule = event.detailModules.find((moduleRow) => moduleRow.type === "intro");
   const heroSummary = introModule ? localizedText(introModule.content, lang) : "";
-  const detailModules = event.detailModules.filter((moduleRow) => moduleRow.type !== "intro");
+  const detailModules = event.detailModules.filter((moduleRow) => !["intro", "itinerary", "notes", "fees", "refund"].includes(moduleRow.type));
   const remaining = availability.remaining;
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -140,6 +139,9 @@ export function EventDetailView({
                   {heroSummary}
                 </p>
               ) : null}
+              <a href="#mountain-briefing-title" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-[#0066cc] px-5 text-[14px] font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2997ff]">
+                {t({ en: "Open your mountain briefing ↓", zh: "查看出发须知 ↓" })}
+              </a>
             </div>
 
             <div className="rounded-[18px] border border-white/10 bg-white p-5 text-[#1d1d1f]">
@@ -170,28 +172,7 @@ export function EventDetailView({
       <section className="px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto grid max-w-[1100px] gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-8">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InfoCard label={t({ en: "Date & Time", zh: "时间" })}>
-                <p>{formattedDate}</p>
-                <p className="mt-1 text-[#7a7a7a]">
-                  {event.meetTime ? t({ en: `Meet at ${event.meetTime}`, zh: `${event.meetTime} 集合` }) : t({ en: "Meet time TBD", zh: "集合时间待定" })}
-                </p>
-              </InfoCard>
-              <InfoCard label={t({ en: "Location", zh: "地点" })}>
-                <p>{activityLocation}</p>
-                {event.locationUrl ? (
-                  <a href={event.locationUrl} target="_blank" rel="noopener" className="mt-1 inline-flex text-[#0066cc]">
-                    {t({ en: "View on map", zh: "查看地图" })}
-                  </a>
-                ) : null}
-              </InfoCard>
-              <InfoCard label={t({ en: "Meet Location", zh: "集合地点" })}>
-                <p>{meetLocation || t({ en: "TBD", zh: "待定" })}</p>
-              </InfoCard>
-              <InfoCard label={t({ en: "Fee Information", zh: "费用说明" })}>
-                <p>{event.feeAmount || paymentInstructions || t({ en: "TBD", zh: "待定" })}</p>
-              </InfoCard>
-            </div>
+            <EventBriefing key={event.slug} event={event} formattedDate={formattedDate} open={open} />
 
             {detailModules.map((moduleRow) => (
               <ContentSection key={moduleRow.id} title={localizedText(moduleRow.title, lang)}>
@@ -211,7 +192,7 @@ export function EventDetailView({
             ))}
           </div>
 
-          <aside className="lg:col-span-1">
+          <aside id="event-registration" tabIndex={-1} aria-label={t({ en: "Event registration", zh: "活动报名" })} className="scroll-mt-28 lg:col-span-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3]">
             <div className="sticky top-28 space-y-6">
               {open ? (
                 groupRegistrationEnabled && memberProfile && emailConfirmed
@@ -259,15 +240,6 @@ function SnapshotRow({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.12em] text-[#7a7a7a]">{label}</p>
       <p className="mt-1 text-[17px] font-semibold leading-[1.24] tracking-[-0.374px] text-[#1d1d1f]">{value}</p>
-    </div>
-  );
-}
-
-function InfoCard({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="card">
-      <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.12em] text-[#7a7a7a]">{label}</p>
-      <div className="mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.374px] text-[#1d1d1f]">{children}</div>
     </div>
   );
 }
