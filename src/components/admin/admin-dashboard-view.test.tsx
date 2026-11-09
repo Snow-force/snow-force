@@ -62,6 +62,7 @@ describe("operations desk", () => {
   it("renders Chinese labels, partner conversations, and embedded admin guidance", () => {
     view("zh");
     expect(screen.getByRole("heading", { name: "运营工作台" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开始／继续引导" })).toBeInTheDocument();
     expect(screen.getByText("小雪")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Mountain partner"));
     expect(screen.getByRole("link", { name: "起草邮件回复" })).toHaveAttribute("href", "mailto:pat%40example.com");

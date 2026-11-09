@@ -2,6 +2,16 @@
 
 The admin home at `/admin` is now a work queue rather than a recent-registration feed. It uses existing records and existing management screens. No new environment variables, database migrations, or AI service are required.
 
+## Interactive staff guide / 交互式使用向导
+
+At the top of `/admin`, choose **Start / resume guide** (开始／继续引导). Choose one of five workflows: Daily shift, Publish an event, Registrations & refunds, Check-in & recaps, or Merchants & lodging. Each step explains what to do, what to verify, and where to go. Module links open in a new tab so the guide stays available; links to the desk queue, inquiries, or shift brief scroll within the same page.
+
+Use **Understood, continue** to record reading progress and move to the next step. You can revisit any step, go back, hide the guide, or restart the selected workflow. Progress resumes after navigation or reload in the same browser tab; it is not synced across staff accounts or devices and should not be treated as training certification. If browser storage is unavailable, the guide still works and explains that progress cannot be saved.
+
+在 Ops 顶部点击 **开始／继续引导**，选择“每日值班、活动发布、报名与退款、现场与回顾、商家与住宿”。每一步都提供操作说明、核对提醒与对应入口。模块在新标签页打开，方便边看引导边操作；工作台内的链接直接定位到对应区域。
+
+点击 **已了解，下一步** 记录阅读进度；可随时跳转步骤、返回、收起或重新学习当前流程。进度仅保存在当前标签页，不跨账号或设备同步，也不代表业务任务已经完成。浏览器禁用存储时，仍可使用引导，但离开或刷新后进度会丢失。
+
 ## Start a shift
 
 1. Sign in at `/staff-login` using an existing staff account. Both managers and admins can view the desk; existing destination-screen permissions still control approvals, cancellations, refunds, and staff management.

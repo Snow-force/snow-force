@@ -98,7 +98,7 @@ fallback app. In production, use Supabase Auth with the `staff_roles` table for
 staff access control, and keep public registration/inquiry writes behind server
 commands so field validation and spam controls cannot be bypassed.
 
-See the bilingual [Admin operations desk guide](docs/admin-operations-desk.md) for daily triage, payment follow-up, partner conversations, and shift handoffs.
+See the bilingual [Admin operations desk guide](docs/admin-operations-desk.md) for interactive workflow guidance, daily triage, payment follow-up, partner conversations, and shift handoffs.
 
 ## Commands
 

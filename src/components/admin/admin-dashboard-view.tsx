@@ -7,6 +7,7 @@ import { buildShiftBrief, type Operation, type OperationGroup, type OperationKin
 import { useLanguage } from "@/lib/language";
 import type { PartnerInquiry } from "@/lib/types";
 import { adminCopy } from "./admin-copy";
+import { AdminOpsGuide } from "./admin-ops-guide";
 
 type Stat = { key: keyof typeof adminCopy.dashboard; value: number | null; href: string };
 type UnavailableSource = "events" | "registrations" | "recaps" | "inquiries" | "cancellations";
@@ -55,8 +56,10 @@ export function AdminDashboardView({ stats, operations, unavailable, inquiries }
         <p className="mt-1">{unavailable.map((source) => source === "cancellations" ? t(copy.cancellations) : t(adminCopy.dashboard[source])).join(" · ")}</p>
       </div>}
 
+      <AdminOpsGuide />
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white" aria-labelledby="work-queue-title">
+        <section id="ops-work-queue" className="min-w-0 scroll-mt-24 overflow-hidden rounded-lg border border-gray-200 bg-white" aria-labelledby="work-queue-title">
           <div className="border-b border-gray-200 p-4 sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 id="work-queue-title" className="text-lg font-semibold text-gray-900">{t(copy.queue)}</h3>
@@ -91,7 +94,7 @@ export function AdminDashboardView({ stats, operations, unavailable, inquiries }
         </section>
 
         <aside className="space-y-5">
-          <section className="rounded-lg bg-gray-900 p-5 text-white" aria-labelledby="shift-title">
+          <section id="ops-shift-handoff" className="scroll-mt-24 rounded-lg bg-gray-900 p-5 text-white" aria-labelledby="shift-title">
             <Clipboard size={20} className="mb-3 text-gray-300" aria-hidden="true" />
             <h3 id="shift-title" className="font-semibold">{t(copy.brief)}</h3>
             <p className="mt-2 text-sm leading-6 text-gray-300">{t(copy.briefHelp)}</p>
