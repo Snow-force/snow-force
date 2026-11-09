@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => ({
   getInquiries: vi.fn(),
   getRecaps: vi.fn(),
   getFAQs: vi.fn(),
+  getCancellationRequests: vi.fn(),
 }));
+
+vi.mock("@/lib/registrations/cancellation-repository", () => ({ getCancellationRequests: mocks.getCancellationRequests }));
 
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: mocks.requireAdmin }));
 vi.mock("@/lib/events/repository", () => ({ getAllEvents: mocks.getAllEvents }));
@@ -27,9 +30,29 @@ beforeEach(() => {
   mocks.getInquiries.mockResolvedValue([]);
   mocks.getRecaps.mockResolvedValue([]);
   mocks.getFAQs.mockReturnValue([]);
+  mocks.getCancellationRequests.mockResolvedValue([]);
 });
 
 describe("AdminDashboard", () => {
+  it("preserves other work and marks failed sources instead of showing false zero counts", async () => {
+    mocks.getAllEvents.mockRejectedValueOnce(new Error("offline"));
+    mocks.getInquiries.mockRejectedValueOnce(new Error("offline"));
+    mocks.getCancellationRequests.mockRejectedValueOnce(new Error("offline"));
+    const page = await AdminDashboard();
+    expect(page.props.unavailable).toEqual(["events", "inquiries", "cancellations"]);
+    expect(page.props.stats.find((stat: { key: string }) => stat.key === "events").value).toBeNull();
+    expect(page.props.stats.find((stat: { key: string }) => stat.key === "registrations").value).toBe(0);
+  });
+
+  it("shows new inquiries and does not serialize unnecessary contact fields", async () => {
+    mocks.getInquiries.mockResolvedValueOnce([
+      { id: "new", status: "new", organizationName: "Partner", contactName: "Pat", contactEmail: "pat@example.com", contactPhone: "private", message: "Hello" },
+      { id: "old", status: "contacted" },
+    ]);
+    const page = await AdminDashboard();
+    expect(page.props.inquiries).toEqual([{ id: "new", organizationName: "Partner", contactName: "Pat", contactEmail: "pat@example.com", message: "Hello" }]);
+  });
+
   it("fails closed before reading operational data when staff authentication is absent", async () => {
     mocks.requireAdmin.mockRejectedValueOnce(new Error("staff-required"));
 
@@ -37,6 +60,7 @@ describe("AdminDashboard", () => {
     expect(mocks.getAllEvents).not.toHaveBeenCalled();
     expect(mocks.getRegistrations).not.toHaveBeenCalled();
     expect(mocks.getInquiries).not.toHaveBeenCalled();
+    expect(mocks.getCancellationRequests).not.toHaveBeenCalled();
   });
 
   it("loads dashboard data only after the admin guard passes", async () => {
@@ -47,5 +71,6 @@ describe("AdminDashboard", () => {
     expect(mocks.getRegistrations).toHaveBeenCalledOnce();
     expect(mocks.getInquiries).toHaveBeenCalledOnce();
     expect(mocks.getRecaps).toHaveBeenCalledOnce();
+    expect(mocks.getCancellationRequests).toHaveBeenCalledOnce();
   });
 });
