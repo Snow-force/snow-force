@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {matchesGlob} from 'node:path';
 import {cloudConfig,executeCloudTask,shellQuote} from '../cloud-controller.mjs';
 
 test('cloud config rejects unsafe origins and missing project-scoped credentials',()=>{
@@ -46,9 +47,25 @@ test('failed isolated execution is reported and cleaned up, without bypassing sa
   assert.equal(result.succeeded,false);assert.equal(destroyed,true);assert.equal(completed.succeeded,false);
   assert.doesNotMatch(readFileSync(new URL('../cloud-controller.mjs',import.meta.url),'utf8'),/dangerously-bypass/);
 });
+test('dependency failure preserves useful diagnostics without copying sensitive text',async()=>{
+  const result=await executeCloudTask({origin:'https://worker.test',token:'token',railwayToken:'project',environmentId:'env',auth:'{"auth_mode":"chatgpt"}'},{id:'case',lease_token:'lease'},
+    {archive:new Uint8Array(),createSandbox:async()=>({files:{async write(){}},async exec(command){
+      if(command==='git rev-parse HEAD')return {exitCode:0,stdout:'a'.repeat(40)};
+      if(command.startsWith('npm '))return {exitCode:1,stderr:'Install failed sk_test-private-value user@example.com',stdout:'Dependency unavailable'};
+      return {exitCode:0,stdout:''};
+    },async destroy(){}}),fetcher:async()=>Response.json({})});
+  assert.equal(result.succeeded,false);assert.match(result.report,/Dependency unavailable/);
+  assert.doesNotMatch(result.report,/sk_test-private-value|user@example.com/);
+});
 test('cloud build context excludes local credentials and existing runtime artifacts',()=>{
   const ignore=readFileSync(new URL('../cloud/Dockerfile.dockerignore',import.meta.url),'utf8');
   for(const entry of ['**/.env*','**/.dev.vars*','**/node_modules','**/.git','output','Products','.data'])assert.ok(ignore.split('\n').includes(entry));
+  const excluded=path=>ignore.split(/\r?\n/).filter(Boolean).reduce((state,line)=>{
+    const negate=line.startsWith('!'),pattern=negate?line.slice(1):line;
+    return matchesGlob(path,pattern)||matchesGlob(path,pattern+'/**')?!negate:state;
+  },false);
+  for(const path of ['.env.local','services/commerce/.env','apps/super-agent/.dev.vars','apps/super-agent/node_modules/private.js'])assert.equal(excluded(path),true,path);
+  for(const path of ['.env.example','services/commerce/.env.example','apps/super-agent/.dev.vars.example'])assert.equal(excluded(path),false,path);
   const docker=readFileSync(new URL('../cloud/Dockerfile',import.meta.url),'utf8');
   assert.match(docker,/npm ci --omit=dev/);assert.match(docker,/USER node/);
 });

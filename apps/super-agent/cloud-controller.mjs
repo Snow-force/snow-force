@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { Sandbox } from 'railway';
 import { allowedFile, publishDraft } from './runner.mjs';
+import { redact } from './core.mjs';
 
 export const shellQuote=value=>"'"+value.replace(/'/g,"'\\''")+"'";
 
@@ -36,7 +37,10 @@ export async function executeCloudTask(config,task,{createSandbox,archive,fetche
     const exec=async(command,extra={})=>{
       const {env:extraEnv,...other}=extra;
       const result=await sandbox.exec(command,{timeoutSec:300,maxOutputBytes:100000,signal:abort.signal,...other,env:{...toolEnv,...extraEnv}});
-      if(result.exitCode!==0 || result.timedOut)throw Error('Isolated command failed: '+command.split(' ')[0]);
+      if(result.exitCode!==0 || result.timedOut){
+        const detail=command.startsWith('npm ')?redact((result.stderr+'\n'+result.stdout).slice(-5000)):'';
+        throw Error('Isolated command failed: '+command+' (exit '+result.exitCode+', timed out: '+!!result.timedOut+')\n'+detail);
+      }
       return result.stdout;
     };
     await sandbox.files.write('/tmp/source.tar.gz',archive??(()=>createReadStream(config.source)));
