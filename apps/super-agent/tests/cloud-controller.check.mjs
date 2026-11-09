@@ -24,12 +24,16 @@ test('cloud task isolates project credentials, removes auth before tests and des
   const result=await executeCloudTask(config,{id:'case',lease_token:'lease',summary:'Error',category:'debug'},{archive:new Uint8Array([1]),createSandbox:async input=>{options=input;return sandbox;},fetcher:async(url,request)=>{completed=JSON.parse(request.body);return Response.json({saved:true});}});
   assert.equal(result.succeeded,true);assert.equal(destroyed,true);
   assert.equal(options.networkIsolation,'ISOLATED');assert.equal(options.idleTimeoutMinutes,1);assert.equal(options.authType,'project-token');
+  assert.deepEqual(options.resources,{cpu:4,memoryGB:4});
   assert.deepEqual(options.env,{NEXT_TELEMETRY_DISABLED:'1'});
   const authClear=writes.find(w=>w.path==='/app/codex-auth/auth.json'&&w.content==='{}');
   const authAttach=writes.find(w=>w.path==='/app/codex-auth/auth.json'&&w.content!=='{}');
   assert.ok(calls.findIndex(c=>c.command==='npm ci')<authAttach.step);
   assert.ok(authClear.step<=calls.findLastIndex(c=>c.command==='npm ci'));
-  assert.ok(calls.some(c=>c.command==='npm run test:coverage'));
+  assert.ok(calls.some(c=>c.command==='npm run test:coverage -- --maxWorkers=4'&&c.config.timeoutSec===600));
+  const codexCall=calls.find(c=>c.command.includes('--sandbox'));
+  assert.match(codexCall.command,/shell_environment_policy.set=\{PATH=/);
+  assert.match(codexCall.command,/shell_environment_policy.inherit="none"/);
   assert.ok(calls.filter(c=>c.command==='npm ci').every(c=>c.config.env.PATH.startsWith('/app/agent-toolchain/node_modules/.bin:')));
   assert.equal(completed.succeeded,true);assert.equal(completed.lease_token,'lease');
   assert.equal(JSON.parse(config.auth).tokens.fake,'refreshed');
