@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {matchesGlob} from 'node:path';
-import {cloudConfig,executeCloudTask,shellQuote} from '../cloud-controller.mjs';
+import {cloudConfig,executeCloudTask,shellQuote,persistSubscriptionAuth} from '../cloud-controller.mjs';
 
 test('cloud config rejects unsafe origins and missing project-scoped credentials',()=>{
   assert.throws(()=>cloudConfig({SUPER_AGENT_URL:'http://remote.test'}),/HTTPS/);
@@ -13,6 +13,18 @@ test('cloud config rejects unsafe origins and missing project-scoped credentials
 test('model-influenced paths stay literal in remote shell commands',()=>{
   assert.equal(shellQuote('src/$(echo secret).ts'),"'src/$(echo secret).ts'");
   assert.equal(shellQuote("src/a'b.ts"),"'src/a'\\''b.ts'");
+});
+test('refreshed subscription auth stays in the dedicated service and does not redeploy it',async()=>{
+  const config={projectId:'own-project',environmentId:'own-env',serviceId:'own-service',railwayToken:'private-project-token'};
+  const auth='{"auth_mode":"chatgpt","tokens":{"test":"refreshed"}}';
+  await persistSubscriptionAuth(config,auth,async(url,options)=>{
+    assert.equal(url,'https://backboard.railway.com/graphql/v2');
+    assert.equal(options.headers['project-access-token'],'private-project-token');
+    assert.deepEqual(JSON.parse(options.body).variables.input,{projectId:'own-project',environmentId:'own-env',serviceId:'own-service',name:'CODEX_AUTH_JSON',value:auth,skipDeploys:true});
+    return Response.json({data:{variableUpsert:true}});
+  });
+  await assert.rejects(()=>persistSubscriptionAuth(config,auth,async()=>Response.json({errors:[{message:'Denied'}]})),/persist/);
+  await assert.rejects(()=>persistSubscriptionAuth(config,'{"auth_mode":"api-key"}'),/credential type/);
 });
 test('cloud task isolates project credentials, removes auth before tests and destroys VM',async()=>{
   const calls=[],writes=[];let options,completed,destroyed=false;

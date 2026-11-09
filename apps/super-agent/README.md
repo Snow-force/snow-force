@@ -76,7 +76,7 @@ support/monitor 的可信适配器可以 POST `/api/ingest`，使用 `Authorizat
 
 本次用户选择独立云端执行。新增 `cloud-controller.mjs` 与 `cloud/Dockerfile`：轻量 Railway service 每 30 秒领取已批准任务，按需创建隔离 Sandbox，最多执行 20 分钟；每条命令另有超时，结束显式销毁，异常遗留由 1 分钟 idle timeout 回收。Sandbox 不加入生产私有网络，也不接收 Railway project token、Worker token、GitHub token 或客户数据库凭据。Codex 独立登录凭据在模型执行后、测试之前清空。源代码来自 GitHub 部署时的仓库快照，Docker 专用 ignore 排除本机密钥与运行状态。供应商 Sandbox API 为实验功能，外部兼容性需要实机验证。
 
-控制服务绑定新 Railway 项目的 production Project Token（`RAILWAY_TOKEN`），不使用可访问商城的账户级 token。环境还需 `SUPER_AGENT_URL`、`RUNNER_TOKEN`；`CODEX_AUTH_JSON` 是专门给云端执行器登录后取得的 ChatGPT auth.json 内容，未配置时 `/health` 明确报告 `ready:false`，不会领取任务。不要将日常本机登录凭据直接复制到云端。`PUBLISH_DRAFT_PR` 仍默认 false，启用前必须提供受限 `GITHUB_TOKEN` 并完成真实 PR 验收。Sandbox 中刷新的 Codex 授权当前需要重新配置到控制服务；适合先验证，尚未实现长期凭据轮换管理。
+控制服务绑定新 Railway 项目的 production Project Token（`RAILWAY_TOKEN`），不使用可访问商城的账户级 token。环境还需 `SUPER_AGENT_URL`、`RUNNER_TOKEN`；`CODEX_AUTH_JSON` 是专门给云端执行器登录后取得的 ChatGPT auth.json 内容，未配置时 `/health` 明确报告 `ready:false`，不会领取任务。不要将日常本机登录凭据直接复制到云端。`PUBLISH_DRAFT_PR` 仍默认 false，启用前必须提供受限 `GITHUB_TOKEN` 并完成真实 PR 验收。Sandbox 中刷新的 Codex 授权会通过只限本项目的凭据更新到同一控制服务，并跳过重新部署；授权失效或被撤销时仍需重新登录。
 
 云端项目：`SnowForce Super Agent`，项目 ID `f3ef22c7-7183-40ab-a52a-7c8b878ca75c`，production `e18f3d3b-7e06-4a75-9189-dbc0ac790f20`，controller service `1a50ea5d-212c-4001-a31a-18d54a686820`。控制器上限 0.5 CPU / 0.5 GB；任务 Sandbox 上限 4 CPU / 4 GB。这些是资源上限，不是包月费用或账单硬上限；Railway 账单与内部 DeepSeek 账本分开。
 

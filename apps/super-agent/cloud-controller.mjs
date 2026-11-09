@@ -10,13 +10,28 @@ import { redact } from './core.mjs';
 
 export const shellQuote=value=>"'"+value.replace(/'/g,"'\\''")+"'";
 
+export async function persistSubscriptionAuth(config,auth,fetcher=fetch){
+  if(!config.projectId || !config.serviceId)throw Error('Missing subscription storage scope');
+  if(JSON.parse(auth).auth_mode!=='chatgpt')throw Error('Unexpected subscription credential type');
+  const response=await fetcher('https://backboard.railway.com/graphql/v2',{
+    method:'POST',redirect:'error',signal:AbortSignal.timeout(30000),
+    headers:{'project-access-token':config.railwayToken,'content-type':'application/json'},
+    body:JSON.stringify({query:'mutation RefreshSubscription($input: VariableUpsertInput!) { variableUpsert(input: $input) }',
+      variables:{input:{projectId:config.projectId,environmentId:config.environmentId,serviceId:config.serviceId,
+        name:'CODEX_AUTH_JSON',value:auth,skipDeploys:true}}}),
+  });
+  if(!response.ok)throw Error('Could not persist refreshed subscription authorization');
+  const body=await response.json();
+  if(body.errors?.length || body.data?.variableUpsert!==true)throw Error('Could not persist refreshed subscription authorization');
+}
+
 export function cloudConfig(env) {
   const origin=new URL(env.SUPER_AGENT_URL);
   if(origin.protocol!=='https:' || origin.username || origin.password || origin.pathname!=='/' || origin.search || origin.hash)throw Error('Expected HTTPS worker origin');
   if(!env.RUNNER_TOKEN || env.RUNNER_TOKEN.length<32 || !env.RAILWAY_TOKEN || !env.RAILWAY_ENVIRONMENT_ID)throw Error('Missing cloud runner configuration');
   return {origin:origin.origin,token:env.RUNNER_TOKEN,railwayToken:env.RAILWAY_TOKEN,environmentId:env.RAILWAY_ENVIRONMENT_ID,
     auth:env.CODEX_AUTH_JSON??'',source:env.SOURCE_ARCHIVE??'/opt/source.tar.gz',base:env.RAILWAY_GIT_COMMIT_SHA??'',
-    publish:env.PUBLISH_DRAFT_PR==='true',repository:'Snow-force/snow-force'};
+    publish:env.PUBLISH_DRAFT_PR==='true',repository:'Snow-force/snow-force',projectId:env.RAILWAY_PROJECT_ID,serviceId:env.RAILWAY_SERVICE_ID};
 }
 export async function executeCloudTask(config,task,{createSandbox,archive,fetcher=fetch,publisher=publishDraft}={}) {
   if(!createSandbox)createSandbox=options=>Sandbox.create(options);
@@ -63,8 +78,10 @@ export async function executeCloudTask(config,task,{createSandbox,archive,fetche
       {cwd:'/app/repo',env:{CODEX_HOME:'/app/codex-auth'},timeoutSec:600});
     report=await sandbox.files.read('/tmp/report.txt');
     // Remove provider auth before dependency lifecycle scripts, tests or builds execute.
+    const previousAuth=config.auth;
     config.auth=await sandbox.files.read('/app/codex-auth/auth.json');
     await sandbox.files.write('/app/codex-auth/auth.json','{}',{mode:0o600});
+    if(config.auth!==previousAuth && config.projectId && config.serviceId)await persistSubscriptionAuth(config,config.auth);
     const changed=(await exec('git diff --name-only '+baseline+' -z',{cwd:'/app/repo'})).split('\0').filter(Boolean);
     const added=(await exec('git ls-files --others --exclude-standard -z',{cwd:'/app/repo'})).split('\0').filter(Boolean);
     const files=[...new Set([...changed,...added])];
