@@ -42,9 +42,11 @@ describe("HomePageView public story", () => {
 
     expect(playMock).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Play mountain video" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("link", { name: "View open events" })).toHaveAttribute("href", "#open-events");
+    expect(screen.getByRole("link", { name: "View open events" })).toHaveAttribute("href", "#next-departures");
     expect(screen.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "#how-we-ride");
     expect(screen.getByRole("region", { name: "Recap reel" })).toBeInTheDocument();
+    const departureBoard = screen.getByRole("region", { name: "Make the next one yours." });
+    expect(screen.getByRole("heading", { level: 1 }).closest("section")?.nextElementSibling).toBe(departureBoard);
   });
 
   it("plays only after an explicit action and announces the playing state", async () => {
@@ -61,7 +63,7 @@ describe("HomePageView public story", () => {
     renderHome("zh");
 
     expect(screen.getByRole("heading", { level: 1, name: "一起去雪山" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "查看正在报名" })).toHaveAttribute("href", "#open-events");
+    expect(screen.getByRole("link", { name: "查看正在报名" })).toHaveAttribute("href", "#next-departures");
     expect(screen.getByRole("button", { name: "播放雪山视频" })).toBeInTheDocument();
   });
 
