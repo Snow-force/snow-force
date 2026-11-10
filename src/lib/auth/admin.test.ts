@@ -43,6 +43,26 @@ function form(email = "staff@snowforce.test", password = "secret123") {
 }
 
 describe("staff auth helpers", () => {
+  it.each([[402, "quota"], [429, "rate-limit"], [503, "unavailable"]])("shows a service error for status %s without treating it as bad credentials", async (status, code) => {
+    mockSignInWithPassword.mockResolvedValue({ data: { user: null }, error: { status } });
+    await expect(loginStaff(form())).rejects.toThrow(`REDIRECT:/staff-login?error=${code}`);
+    expect(mockGetStaffRole).not.toHaveBeenCalled();
+  });
+
+  it("handles credential rejection and network failure separately", async () => {
+    mockSignInWithPassword.mockResolvedValueOnce({ data: { user: null }, error: { code: "invalid_credentials", status: 400 } });
+    await expect(loginStaff(form())).rejects.toThrow("REDIRECT:/staff-login?error=credentials");
+    mockSignInWithPassword.mockRejectedValueOnce(new Error("network unavailable"));
+    await expect(loginStaff(form())).rejects.toThrow("REDIRECT:/staff-login?error=unavailable");
+  });
+
+  it("fails closed with a service error when staff role lookup is unavailable", async () => {
+    mockSignInWithPassword.mockResolvedValueOnce({ data: { user: { id: "user-1" } }, error: null });
+    mockGetStaffRole.mockRejectedValueOnce(new Error("database restricted"));
+    await expect(loginStaff(form())).rejects.toThrow("REDIRECT:/staff-login?error=unavailable");
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
   it("returns current staff account when Supabase user has a staff role", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: "user-1", email: "staff@snowforce.test" } },

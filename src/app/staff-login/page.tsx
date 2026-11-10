@@ -1,4 +1,5 @@
 import { loginStaff } from "@/lib/auth/admin";
+import { staffLoginErrorMessage } from "@/lib/auth/staff-login-errors";
 
 export default async function StaffLoginPage(
   props: {
@@ -6,10 +7,7 @@ export default async function StaffLoginPage(
   }
 ) {
   const searchParams = await props.searchParams;
-  const errorMessage =
-    searchParams.error === "unauthorized"
-      ? "This account is not authorized for staff access."
-      : "Staff credentials are not valid or are not configured.";
+  const errorMessage = searchParams.error ? staffLoginErrorMessage(searchParams.error) : null;
 
   return (
     <div className="py-20">
@@ -24,8 +22,11 @@ export default async function StaffLoginPage(
             <label className="label" htmlFor="staff-password">Password</label>
             <input id="staff-password" name="password" type="password" className="input-field" autoComplete="current-password" required />
           </div>
-          {searchParams.error ? (
-            <p className="text-sm text-red-600">{errorMessage}</p>
+          {errorMessage ? (
+            <div role="alert" className="space-y-1 text-sm text-red-600">
+              <p>{errorMessage.en}</p>
+              <p lang="zh-CN">{errorMessage.zh}</p>
+            </div>
           ) : null}
           <button type="submit" className="btn-primary w-full">Sign in</button>
         </form>
