@@ -7,6 +7,7 @@ import { RegistrationFinanceControl } from "@/components/admin/registration-fina
 import { RegistrationCancellationControl } from "@/components/admin/registration-cancellation-control";
 import { RegistrationRefundControl } from "@/components/admin/registration-refund-control";
 import { GuestRegistrationControl } from "@/components/admin/guest-registration-control";
+import { RegistrationFollowUpDesk } from "@/components/admin/registration-follow-up-desk";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireSuperAdmin, requireAdmin } from "@/lib/auth/admin";
 import {
@@ -284,60 +285,63 @@ export default async function AdminRegistrationsPage(props: {
           </ul>
         </section>
       )}
-      <form
-        action={createManualRegistration}
-        className="mt-6 grid gap-3 rounded border border-gray-200 bg-gray-50 p-4 md:grid-cols-4 md:items-end"
-      >
-        <input
-          type="hidden"
-          name="clientRequestKey"
-          value={crypto.randomUUID()}
-        />
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-          Event
-          <select
-            name="eventSlug"
-            required
-            className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
-          >
-            <option value="">Select event</option>
-            {activeEvents.map((event) => (
-              <option key={event.slug} value={event.slug}>
-                {event.title.en || event.title.zh || event.slug}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-          Name
+      <details className="mt-6 rounded border border-gray-200 bg-gray-50 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-gray-900">Add a registration / 手动添加报名</summary>
+        <form
+          action={createManualRegistration}
+          className="mt-4 grid gap-3 md:grid-cols-4 md:items-end"
+        >
           <input
-            name="contactName"
-            required
-            className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
+            type="hidden"
+            name="clientRequestKey"
+            value={crypto.randomUUID()}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-          Email
-          <input
-            name="contactEmail"
-            type="email"
-            required
-            className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
-          />
-        </label>
-        <div className="flex gap-2">
-          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium text-gray-700">
-            Phone
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+            Event
+            <select
+              name="eventSlug"
+              required
+              className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
+            >
+              <option value="">Select event</option>
+              {activeEvents.map((event) => (
+                <option key={event.slug} value={event.slug}>
+                  {event.title.en || event.title.zh || event.slug}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+            Name
             <input
-              name="contactPhone"
+              name="contactName"
+              required
               className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
             />
           </label>
-          <button className="btn-primary shrink-0 px-4 py-2 text-sm">
-            Add registration
-          </button>
-        </div>
-      </form>
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+            Email
+            <input
+              name="contactEmail"
+              type="email"
+              required
+              className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
+            />
+          </label>
+          <div className="flex gap-2">
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium text-gray-700">
+              Phone
+              <input
+                name="contactPhone"
+                className="rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
+              />
+            </label>
+            <button className="btn-primary shrink-0 px-4 py-2 text-sm">
+              Add registration
+            </button>
+          </div>
+        </form>
+      </details>
       {view.eventOptions.length > 0 ? (
         <form method="get" className="mt-6 flex flex-wrap items-end gap-3">
           <label className="flex min-w-72 flex-col gap-1 text-sm font-medium text-gray-700">
@@ -405,6 +409,13 @@ export default async function AdminRegistrationsPage(props: {
           <button className="btn-primary px-4 py-2 text-sm">View</button>
         </form>
       ) : null}
+      <RegistrationFollowUpDesk
+        key={view.selectedEventSlug}
+        registrations={visibleRegistrations}
+        eventTitle={view.selectedEvent?.title ?? { en: view.selectedEventLabel, zh: view.selectedEventLabel }}
+        paymentModel={view.selectedEvent?.paymentModel}
+        pendingCancellationIds={cancellationCases.filter((item) => item.request?.status === "pending").map((item) => item.registrationId)}
+      />
       <CancellationReviewPanel
         cases={cancellationCases}
         canReview={staff.role === "admin"}
@@ -442,7 +453,7 @@ export default async function AdminRegistrationsPage(props: {
                   registration.finance,
                 );
                 return (
-                  <tr key={registration.id}>
+                  <tr key={registration.id} id={`registration-${registration.id}`} className="scroll-mt-6 target:bg-blue-50">
                     <td className="py-3 pr-4">
                       <p className="font-medium text-gray-900">
                         {registrationDisplayName(registration)}
