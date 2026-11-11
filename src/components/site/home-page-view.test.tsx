@@ -44,7 +44,10 @@ describe("HomePageView public story", () => {
     expect(screen.getByRole("button", { name: "Play mountain video" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("link", { name: "View open events" })).toHaveAttribute("href", "#next-departures");
     expect(screen.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "#how-we-ride");
-    expect(screen.getByRole("region", { name: "Recap reel" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Recent mountain days" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Recap reel" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("SnowForce mountain video")).not.toHaveAttribute("src");
+    expect(screen.getByLabelText("SnowForce mountain video")).toHaveAttribute("preload", "none");
     const departureBoard = screen.getByRole("region", { name: "Make the next one yours." });
     expect(screen.getByRole("heading", { level: 1 }).closest("section")?.nextElementSibling).toBe(departureBoard);
   });
@@ -81,14 +84,12 @@ describe("HomePageView public story", () => {
     expect(within(section).getByText("$79.95")).toBeInTheDocument();
     expect(within(section).getByText("$29.95")).toBeInTheDocument();
     expect(within(section).queryByText(/人民币|CNY|¥/)).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Recap reel" }).nextElementSibling).toBe(section);
-    expect(section.nextElementSibling).toBe(document.querySelector("#open-events"));
+    expect(screen.getByRole("region", { name: lang === "zh" ? "最近的雪山日" : "Recent mountain days" }).nextElementSibling).toBe(section);
+    expect(document.querySelector("#open-events")).not.toBeInTheDocument();
   });
-  it("keeps the shop promotion without showing draft products or estimated prices", () => {
+  it("keeps the home focused on trips when there are no published products", () => {
     render(<LanguageProvider initialLang="zh"><HomePageView events={[]} recaps={[]} shopProducts={[]} /></LanguageProvider>);
-    const section = screen.getByRole("region", { name: "下一趟滑行，装备就位。" });
-    expect(section.querySelectorAll("article")).toHaveLength(0);
-    expect(within(section).getByText("探索新一季装备")).toBeInTheDocument();
-    expect(within(section).queryByText(/参考价|\$/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "下一趟滑行，装备就位。" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "查看正在报名" })).toBeInTheDocument();
   });
 });

@@ -151,6 +151,15 @@ describe("public recap redesign", () => {
     expect(trigger).toHaveFocus();
   });
 
+  it("renders one responsive photo grid and only mounts more previews after a request", () => {
+    const photos = Array.from({ length: 14 }, (_, i) => ({ ...seedRecaps[0].media[0], id: `photo-${i}`, url: `/photo-${i}.jpg` }));
+    renderInEnglish(<ScrollingMediaStream media={photos} />);
+    expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(6);
+    expect(document.querySelectorAll("img")).toHaveLength(6);
+    fireEvent.click(screen.getByRole("button", { name: /Show more photos/ }));
+    expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(12);
+  });
+
   it("keeps list and detail empty/not-found states understandable", () => {
     const { rerender } = renderInEnglish(<RecapsView recaps={[]} />);
     expect(screen.getByText("No published recaps yet.")).toBeInTheDocument();

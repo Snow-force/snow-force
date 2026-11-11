@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import { Expand, X } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import type { StoreProduct } from "@/lib/shop/storefront";

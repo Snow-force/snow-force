@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/shop/product-card";
 import { useLanguage } from "@/lib/language";

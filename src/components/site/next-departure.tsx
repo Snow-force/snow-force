@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import Link from "next/link";
 import { ArrowRight, Clock, MapPin, Mountain } from "lucide-react";
 import { useLanguage } from "@/lib/language";

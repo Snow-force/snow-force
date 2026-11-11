@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import { useState, type CSSProperties } from "react";
 
 type SafeRecapImageProps = {

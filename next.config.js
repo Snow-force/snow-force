@@ -7,6 +7,8 @@ const nextConfig = {
   },
   images: {
     minimumCacheTTL: 31536000,
+    deviceSizes: [640, 1280, 1920],
+    imageSizes: [320],
     remotePatterns: [
       { protocol: "https", hostname: "**" },
     ],
