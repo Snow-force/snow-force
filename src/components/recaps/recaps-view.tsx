@@ -1,172 +1,36 @@
 "use client";
-
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Images, MapPin } from "lucide-react";
-
-import { localizedList, localizedText } from "@/lib/i18n/fallback";
-import { useLanguage, type Lang } from "@/lib/language";
+import { useLanguage } from "@/lib/language";
+import { localizedText } from "@/lib/i18n/fallback";
 import type { EventRecap } from "@/lib/types";
 import { SafeRecapImage } from "./safe-recap-image";
 
-const IMAGE_FALLBACK = "/team/group.jpg";
-
 export function RecapsView({ recaps }: { recaps: EventRecap[] }) {
   const { lang, t } = useLanguage();
-
-  return (
-    <main className="bg-[#f4f4f1] text-[#171719]">
-      <header className="border-b border-black/[0.12] px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[0.62fr_0.38fr] lg:items-end">
-          <div>
-            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#0066cc]">
-              {t({ en: "SnowForce field journal", zh: "SnowForce 山野日志" })}
-            </p>
-            <h1 className={`mt-5 break-words font-semibold leading-[0.96] tracking-[-0.05em] sm:text-[84px] sm:leading-[0.92] sm:tracking-[-0.055em] lg:text-[112px] ${lang === "zh" ? "whitespace-nowrap text-[44px]" : "text-[48px]"}`}>
-              {t({ en: "Past Event Recaps", zh: "往期活动回顾" })}
-            </h1>
-          </div>
-          <p className="max-w-md text-[17px] leading-8 text-[#5a5c61] lg:pb-2">
-            {t({
-              en: "Real mountain days, kept as chapters. Open a recap for the complete photo stream and the stories behind it.",
-              zh: "把真实发生过的雪山日留成章节。打开一场回顾，查看完整照片流和照片背后的故事。",
-            })}
-          </p>
-        </div>
-      </header>
-
-      {recaps.length === 0 ? (
-        <section className="px-4 py-24 sm:px-6 sm:py-32">
-          <div className="mx-auto max-w-[920px] border-y border-black/[0.14] py-14 text-center">
-            <p className="text-[34px] font-semibold leading-tight sm:text-[48px]">
-              {t({ en: "No published recaps yet.", zh: "暂时还没有已发布的活动回顾。" })}
-            </p>
-            <p className="mx-auto mt-4 max-w-lg text-[16px] leading-7 text-[#63656a]">
-              {t({ en: "Come back after the next community ride.", zh: "下一场社群活动结束后，再回来看看。" })}
-            </p>
-          </div>
-        </section>
-      ) : (
-        <div>
-          {recaps.map((recap, index) => {
-            const title = localizedText(recap.title, lang);
-            const secondaryTitle = localizedText(recap.title, otherLanguage(lang));
-            const summary = localizedText(recap.summary, lang);
-            const location = localizedText(recap.location, lang);
-            const tags = localizedList(recap.tags, lang);
-            const photoCount = recap.media.length + (recap.coverImage ? 1 : 0);
-
-            return (
-              <article
-                key={recap.slug}
-                className="border-b border-black/[0.12] first:border-t-0 lg:grid lg:min-h-[720px] lg:grid-cols-[0.38fr_0.62fr]"
-              >
-                <div className="flex flex-col px-4 py-12 sm:px-8 lg:px-10 lg:py-14 xl:px-14">
-                  <div className="flex items-start justify-between gap-5">
-                    <p className="text-[clamp(4.5rem,8vw,8rem)] font-light leading-[0.8] tracking-[-0.075em]">
-                      {pad(index + 1)}
-                    </p>
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.13em] text-[#0066cc]">
-                      {recap.date.slice(0, 4)}
-                    </p>
-                  </div>
-
-                  <div className="mt-10">
-                    <h2 className="text-[36px] font-semibold leading-[0.98] tracking-[-0.04em] sm:text-[50px]">
-                      {title}
-                    </h2>
-                    {secondaryTitle && secondaryTitle !== title ? (
-                      <p className="mt-3 text-[20px] leading-7 text-[#44464b]">{secondaryTitle}</p>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-7 space-y-3 border-t border-black/[0.12] pt-6 text-[14px] leading-5 text-[#4e5055]">
-                    <p className="flex items-start gap-3">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      <span>{location}</span>
-                    </p>
-                    <p className="flex items-start gap-3">
-                      <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      <span>{formatDate(recap.date, lang)}</span>
-                    </p>
-                    <p className="flex items-start gap-3">
-                      <Images className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      <span>
-                        {photoCount} {t({ en: photoCount === 1 ? "photo" : "photos", zh: "张照片" })}
-                      </span>
-                    </p>
-                  </div>
-
-                  <p className="mt-7 line-clamp-5 text-[16px] leading-7 text-[#5d5f64]">{summary}</p>
-                  {tags.length > 0 ? (
-                    <p className="mt-7 text-[11px] font-semibold uppercase leading-5 tracking-[0.12em] text-[#4a4c51]">
-                      {tags.join("  ·  ")}
-                    </p>
-                  ) : null}
-
-                  <Link
-                    href={`/recaps/${recap.slug}`}
-                    className="mt-9 inline-flex min-h-11 w-fit items-center gap-2 text-[16px] font-semibold text-[#0066cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0071e3] lg:mt-auto lg:pt-8"
-                  >
-                    {t({ en: "Open the full recap", zh: "打开完整回顾" })}
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </div>
-
-                <Link
-                  href={`/recaps/${recap.slug}`}
-                  className="group relative block min-h-[360px] overflow-hidden bg-[#111214] sm:min-h-[520px] lg:min-h-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white"
-                  aria-label={t({ en: `Open ${title}`, zh: `打开${title}` })}
-                >
-                  <div className="absolute inset-5 overflow-hidden rounded-[8px] sm:inset-8 lg:inset-10 xl:inset-12">
-                    <SafeRecapImage
-                      src={recap.coverImage}
-                      alt={summary || title}
-                      fallbackSrc={IMAGE_FALLBACK}
-                      fallbackAlt={t({ en: "SnowForce riders together on the mountain", zh: "SnowForce 雪友在山顶合影" })}
-                      fallbackLabel={t({ en: "Community archive fallback", zh: "社群影像替代图" })}
-                      unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })}
-                      sizes="(min-width: 1024px) 58vw, 100vw"
-                      priority={index === 0}
-                      imageClassName="object-cover transition duration-500 group-hover:scale-[1.015]"
-                    />
-                  </div>
-                </Link>
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      <footer className="px-4 py-12 sm:px-6 sm:py-16">
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-5 border-t border-black/[0.12] pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[26px] font-semibold tracking-[-0.025em]">
-            {t({ en: "Ready to make the next chapter?", zh: "准备好加入下一章了吗？" })}
-          </p>
-          <Link
-            href="/events"
-            className="inline-flex min-h-11 items-center gap-2 text-[16px] font-semibold text-[#0066cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0071e3]"
-          >
-            {t({ en: "See open events", zh: "查看正在报名" })}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </footer>
-    </main>
-  );
-}
-function otherLanguage(lang: Lang): Lang {
-  return lang === "en" ? "zh" : "en";
-}
-
-function formatDate(date: string, lang: Lang): string {
-  return new Date(`${date}T12:00:00Z`).toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function pad(value: number): string {
-  return String(value).padStart(2, "0");
+  const [visible, setVisible] = useState(6);
+  return <main className="min-h-screen bg-[#f4f4f1] px-4 py-14 text-gray-900 sm:px-6 sm:py-20">
+    <div className="mx-auto max-w-6xl">
+      <p className="text-xs font-semibold uppercase tracking-widest text-snow-700">SNOWFORCE / FIELD NOTES</p>
+      <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">{t({ en: "Past Event Recaps", zh: "往期活动回顾" })}</h1>
+      <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600">{t({ en: "See the places, the people and the moments. Pick a story, then explore its photos.", zh: "看看雪山、同行的雪友和真实的活动瞬间。先选一段故事，再打开相册。" })}</p>
+      {recaps.length === 0 ? <p className="py-20 text-lg text-gray-600">{t({ en: "No published recaps yet.", zh: "暂时还没有已发布的活动回顾。" })}</p> : <div className="mt-10 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        {recaps.slice(0, visible).map((recap) => {
+          const title = localizedText(recap.title, lang);
+          const count = new Set([recap.coverImage, ...recap.media.map((item) => item.url)].filter(Boolean)).size;
+          return <article key={recap.slug}>
+            <Link href={`/recaps/${recap.slug}`} className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-snow-600">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-200"><SafeRecapImage src={recap.coverImage || recap.media[0]?.url || ""} alt={title} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" fallbackLabel={t({ en: "Community archive", zh: "社群影像" })} unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂不可用" })} /></div>
+              <p className="mt-4 text-xs text-gray-500">{recap.date} · {localizedText(recap.location, lang)}</p>
+              <h2 className="mt-2 text-xl font-semibold group-hover:text-snow-700">{title}</h2>
+              <p className="mt-2 line-clamp-2 text-sm leading-7 text-gray-600">{localizedText(recap.summary, lang)}</p>
+              <p className="mt-3 text-sm font-medium text-snow-700">{t({ en: "Open the full recap", zh: "打开完整回顾" })} · {count} {t({ en: count === 1 ? "photo" : "photos", zh: "张照片" })}</p>
+            </Link>
+          </article>;
+        })}
+      </div>}
+      {visible < recaps.length && <button onClick={() => setVisible((count) => count + 6)} className="mt-10 min-h-11 rounded border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-snow-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-snow-600">{t({ en: "Show more recaps", zh: "查看更多回顾" })}</button>}
+      <footer className="mt-14 flex flex-wrap items-center justify-between gap-5 border-t border-gray-300 pt-8"><p className="text-lg font-semibold">{t({ en: "Make the next story yours.", zh: "下一段故事，等你加入。" })}</p><Link href="/events" className="inline-flex min-h-11 items-center font-semibold text-snow-700 underline">{t({ en: "See open events", zh: "查看正在报名" })}</Link></footer>
+    </div>
+  </main>;
 }

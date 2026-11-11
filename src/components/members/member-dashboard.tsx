@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import { ArrowRight, ArrowUpRight, CalendarDays, CreditCard, LogOut, MapPin, Package, ShoppingBag, Truck } from "lucide-react";
 import type { MemberDashboardData } from "@/lib/members/dashboard";
 import type { MemberProfile, Registration } from "@/lib/types";

@@ -3,51 +3,36 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Pause, Play } from "lucide-react";
-import { EventCard } from "@/components/events/event-card";
-import { MountainMemoryReel } from "@/components/recaps/mountain-memory-reel";
+import { RecapHighlights } from "@/components/recaps/recap-highlights";
 import { HomeShopSection } from "./home-shop-section";
 import { NextDeparture } from "./next-departure";
 import type { StoreProduct } from "@/lib/shop/storefront";
-import { useLanguage, type Lang } from "@/lib/language";
+import { useLanguage } from "@/lib/language";
 import type { Bilingual, Event, EventRecap } from "@/lib/types";
 
 type Translate = <T>(value: Bilingual<T>) => T;
-
-type HomePageViewProps = {
-  events: Event[];
-  recaps: EventRecap[];
-  eventLoadError?: boolean;
-  shopProducts?: StoreProduct[];
-};
-
-type OpenEventsSectionProps = {
-  events: Event[];
-  eventLoadError: boolean;
-  lang: Lang;
-  t: Translate;
-};
+type HomePageViewProps = { events: Event[]; recaps: EventRecap[]; eventLoadError?: boolean; shopProducts?: StoreProduct[] };
 
 export function HomePageView({ events, recaps, eventLoadError = false, shopProducts = [] }: HomePageViewProps) {
-  const { lang, t } = useLanguage();
-  const recentRecaps = recaps.slice(0, 4);
-
-  return (
-    <div className="bg-[#07090c] text-white">
-      <HeroSection t={t} />
-      <NextDeparture events={events} loadError={eventLoadError} />
-      <PhilosophySection t={t} />
-      <ActivityModesSection t={t} />
-      <CommunityExperienceSection t={t} />
-      <MountainMemoryReel recaps={recentRecaps} />
-      <HomeShopSection products={shopProducts} />
-      <OpenEventsSection
-        events={events}
-        eventLoadError={eventLoadError}
-        lang={lang}
-        t={t}
-      />
-    </div>
-  );
+  const { t } = useLanguage();
+  return <div className="bg-[#07090c] text-white">
+    <HeroSection t={t} />
+    <NextDeparture events={events} loadError={eventLoadError} />
+    <section id="how-we-ride" className="bg-white px-4 py-16 text-gray-900 sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="text-3xl font-semibold tracking-tight">{t({ en: "Your next mountain day, in three steps.", zh: "三步，开启下一次雪山之旅。" })}</h2>
+        <ol className="mt-8 grid gap-6 sm:grid-cols-3">
+          {[
+            { title: { en: "Find your ride", zh: "选一场适合的活动" }, body: { en: "Choose a date and a session that fits your level.", zh: "按日期和水平选择活动，先看是否适合自己。" } },
+            { title: { en: "Know the plan", zh: "看清安排与费用" }, body: { en: "Check the meeting point, included costs, equipment and cancellation terms.", zh: "核对集合地点、费用包含项、装备要求和取消规则。" } },
+            { title: { en: "Join with confidence", zh: "报名，等待确认" }, body: { en: "Register, complete any payment or waiver steps, and check your trip details in your account.", zh: "完成报名及所需付款、豁免确认，在账号中查看行程详情。" } },
+          ].map((item, index) => <li key={index} className="border-t border-gray-200 pt-5"><span className="text-sm font-semibold text-snow-700">0{index + 1}</span><h3 className="mt-3 text-lg font-semibold">{t(item.title)}</h3><p className="mt-2 text-sm leading-7 text-gray-600">{t(item.body)}</p></li>)}
+        </ol>
+      </div>
+    </section>
+    <RecapHighlights recaps={recaps} />
+    {shopProducts.length > 0 && <HomeShopSection products={shopProducts} />}
+  </div>;
 }
 
 function HeroSection({ t }: { t: Translate }) {
@@ -65,6 +50,7 @@ function HeroSection({ t }: { t: Translate }) {
       return;
     }
 
+    if (!video.getAttribute("src")) video.src = "/videos/snowmountain.mp4";
     video.muted = true;
     video.playsInline = true;
 
@@ -80,11 +66,11 @@ function HeroSection({ t }: { t: Translate }) {
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
-        src="/videos/snowmountain.mp4"
+        poster="/team/group.jpg"
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         aria-label={t({ en: "SnowForce mountain video", zh: "SnowForce 雪山视频" })}
@@ -123,192 +109,5 @@ function HeroSection({ t }: { t: Translate }) {
         </div>
       </div>
     </section>
-  );
-}
-
-function PhilosophySection({ t }: { t: Translate }) {
-  return (
-    <section className="bg-[#07090c] px-4 py-20 sm:px-6 sm:py-28">
-      <div className="mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-        <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#7dd3fc]">
-          {t({ en: "Why we exist", zh: "为什么存在" })}
-        </p>
-        <div>
-          <h2 className="text-[38px] font-semibold leading-[1.08] text-white sm:text-[56px]">
-            {t({ en: "Make joining a snow day feel simple.", zh: "让上山这件事，没那么难开始。" })}
-          </h2>
-          <p className="mt-6 max-w-3xl text-[18px] leading-[1.65] text-white/70">
-            {t({
-              en: "SnowForce organizes collective mountain activities so riders do not have to figure out every detail alone: who to ride with, which session fits, and how to join the group with confidence.",
-              zh: "SnowForce 组织社区集体活动，让大家不用一个人解决所有不确定：跟谁一起滑、适合参加哪一场、怎么安心加入队伍。",
-            })}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ActivityModesSection({ t }: { t: Translate }) {
-  const modes = [
-    {
-      number: "01",
-      title: t({ en: "Weekend mountain days", zh: "周末雪场日" }),
-      body: t({
-        en: "A clear, low-pressure way to join the community for a full day on snow.",
-        zh: "适合新老雪友一起参加的雪场集体活动，把上山从想法变成日程。",
-      }),
-    },
-    {
-      number: "02",
-      title: t({ en: "Progression sessions", zh: "进阶训练局" }),
-      body: t({
-        en: "Technique-focused activities for riders who want structure, feedback, and steady progress.",
-        zh: "围绕技术提升组织活动，让想进阶的雪友有节奏、有反馈地练起来。",
-      }),
-    },
-    {
-      number: "03",
-      title: t({ en: "Theme community rides", zh: "主题社群局" }),
-      body: t({
-        en: "Night sessions, park days, season meetups, and other rides built around a shared reason to gather.",
-        zh: "夜滑、公园、开板、收官和主题活动，让大家因为同一个理由聚到雪上。",
-      }),
-    },
-  ];
-
-  return (
-    <section id="how-we-ride" className="bg-[#0d1117] px-4 py-20 sm:px-6 sm:py-28">
-      <div className="mx-auto max-w-[1120px]">
-        <div className="max-w-3xl">
-          <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#7dd3fc]">
-            {t({ en: "How we ride", zh: "我们怎么玩" })}
-          </p>
-          <h2 className="mt-4 text-[38px] font-semibold leading-[1.08] text-white sm:text-[56px]">
-            {t({ en: "Different sessions, one community rhythm.", zh: "不同活动，同一个社群节奏。" })}
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-px overflow-hidden rounded-[8px] bg-white/[0.12] lg:grid-cols-3">
-          {modes.map((mode) => (
-            <article key={mode.number} className="bg-[#0d1117] p-6 sm:p-8">
-              <span className="text-[14px] font-semibold leading-none text-[#7dd3fc]">{mode.number}</span>
-              <h3 className="mt-12 text-[28px] font-semibold leading-[1.12] text-white">{mode.title}</h3>
-              <p className="mt-4 text-[17px] leading-[1.6] text-white/60">{mode.body}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CommunityExperienceSection({ t }: { t: Translate }) {
-  const features = [
-    {
-      title: t({ en: "WeChat coordination", zh: "微信群协调" }),
-      body: t({
-        en: "After registration, practical details and trip coordination happen in the community group.",
-        zh: "报名后，活动细节和同行沟通主要在微信群里推进，不把还没有的功能包装成页面。",
-      }),
-    },
-    {
-      title: t({ en: "Group atmosphere", zh: "一起上山的氛围" }),
-      body: t({
-        en: "The point is not just a ticket. It is knowing there will be people to ride with when you arrive.",
-        zh: "报名不只是拿到一个名额，而是知道到了雪场有人一起滑、一起集合、一起收尾。",
-      }),
-    },
-    {
-      title: t({ en: "Level-aware organization", zh: "按水平组织活动" }),
-      body: t({
-        en: "Activities describe who they fit and can split groups by ability when the format needs it.",
-        zh: "活动会说明适合什么水平，必要时按能力分组，减少新手和进阶雪友的心理门槛。",
-      }),
-    },
-  ];
-
-  return (
-    <section className="bg-[#f4f4f1] px-4 py-24 text-[#151515] sm:px-6 sm:py-36">
-      <div className="mx-auto grid max-w-[1120px] gap-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-20">
-        <div>
-          <p className="text-[12px] font-semibold uppercase leading-none tracking-[0.24em] text-[#6f6f68]">
-            {t({ en: "SNOWFORCE COMMUNITY", zh: "SNOWFORCE COMMUNITY" })}
-          </p>
-          <p className="mt-6 text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#8a877f]">
-            {t({ en: "Mountain culture", zh: "山野社群" })}
-          </p>
-          <h2 className="mt-8 max-w-[720px] text-[44px] font-semibold leading-[0.98] tracking-normal sm:text-[64px] lg:text-[72px]">
-            {t({ en: "Signup is simple. The ride is shared.", zh: "网站负责报名 社群负责一起出发" })}
-          </h2>
-          <p className="mt-8 max-w-[560px] text-[18px] leading-[1.75] text-[#57534b] sm:text-[20px]">
-            {t({
-              en: "SnowForce is built around the trust that happens before the first chair: familiar names, clear plans, and a group that knows why the mountain matters.",
-              zh: "SnowForce 关心的不只是名额 而是出发前就能被看见的信任 熟悉的人 清楚的安排 和真正属于雪上的共同感",
-            })}
-          </p>
-        </div>
-
-        <div className="space-y-0 border-y border-[#d8d6cf]">
-          {features.map((feature) => (
-            <article key={feature.title} className="border-t border-[#d8d6cf] py-8 first:border-t-0 sm:py-10">
-              <h3 className="text-[25px] font-semibold leading-[1.1] tracking-normal">{feature.title}</h3>
-              <p className="mt-4 text-[17px] leading-[1.7] text-[#5f5b52]">{feature.body}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function OpenEventsSection({ events, eventLoadError, lang, t }: OpenEventsSectionProps) {
-  return (
-    <section id="open-events" className="bg-[#f5f5f7] px-4 py-20 text-[#1d1d1f] sm:px-6 sm:py-24">
-      <div className="mx-auto max-w-[1120px]">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[13px] font-semibold uppercase leading-none tracking-[0.18em] text-[#0066cc]">
-              {t({ en: "Current events", zh: "当前活动" })}
-            </p>
-            <h2 className="mt-4 text-[38px] font-semibold leading-[1.08] sm:text-[56px]">
-              {t({ en: "Join the next community ride.", zh: "加入下一场集体活动。" })}
-            </h2>
-          </div>
-          <Link href="/events" className="text-[17px] leading-[1.47] text-[#0066cc]">
-            {t({ en: "All events", zh: "全部活动" })}
-          </Link>
-        </div>
-
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {eventLoadError ? (
-            <StatusTile light>
-              {t({
-                en: "Event data is not ready yet. Check the Supabase event setup.",
-                zh: "活动数据暂时没有加载成功，请稍后再试。",
-              })}
-            </StatusTile>
-          ) : events.length === 0 ? (
-            <StatusTile light>
-              {t({ en: "No current events right now. Check back soon.", zh: "暂无当前活动，敬请期待。" })}
-            </StatusTile>
-          ) : (
-            events.map((event) => <EventCard key={event.slug} event={event} lang={lang} t={t} />)
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StatusTile({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
-  return (
-    <div
-      className={`rounded-[8px] border p-6 text-center text-[17px] leading-[1.47] sm:col-span-2 ${
-        light ? "border-[#e0e0e0] bg-white text-[#333333]" : "border-white/10 bg-white/10 text-white/70"
-      }`}
-    >
-      {children}
-    </div>
   );
 }

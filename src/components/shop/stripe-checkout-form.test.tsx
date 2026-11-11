@@ -39,11 +39,18 @@ it("records interactivity only after onReady and usable SDK/Elements, without re
   expect(report.mock.calls.filter(call => call[0] === "payment.element_ready")).toHaveLength(1);
 });
 it("records authorization separately from order callback completion without provider secrets", async () => {
-  const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };
-  view(true, timing); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
-  await waitFor(() => expect(report).toHaveBeenCalledWith("payment.order", "returned", expect.any(Number)));
-  expect(report).toHaveBeenCalledWith("payment.confirm", "authorized", expect.any(Number));
-  expect(JSON.stringify(report.mock.calls)).not.toMatch(/pi_fixture|secret|89\.9/); expect(mocks.confirm).toHaveBeenCalledOnce();
+  const clock = vi.spyOn(performance, "now").mockReturnValue(2089.9);
+  try {
+    const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };
+    view(true, timing); fireEvent.click(screen.getByRole("button", { name: "Authorize $89.90" }));
+    await waitFor(() => expect(report).toHaveBeenCalledWith("payment.order", "returned", 2089.9));
+    expect(report).toHaveBeenCalledWith("payment.confirm", "authorized", 2089.9);
+    // A timestamp can contain the amount's digits; inspect text separately.
+    const textArguments = report.mock.calls.flat().filter(value => typeof value === "string");
+    expect(JSON.stringify(textArguments)).not.toMatch(/pi_fixture|secret|89\.9/);
+    expect(report.mock.calls.every(call => call.length <= 3)).toBe(true);
+    expect(mocks.confirm).toHaveBeenCalledOnce();
+  } finally { clock.mockRestore(); }
 });
 it("counts SDK rejection as a failed readiness attempt rather than omitting it from the denominator", async () => {
   const report = vi.fn(), timing: ShopClientTiming = { operationId: "11111111-1111-4111-8111-000000000001", report, measure: async (_phase, work) => work() };

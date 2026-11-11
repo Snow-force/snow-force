@@ -100,6 +100,8 @@ commands so field validation and spam controls cannot be bypassed.
 
 See the bilingual [Admin operations desk guide](docs/admin-operations-desk.md) for interactive workflow guidance, daily triage, payment follow-up, partner conversations, and shift handoffs.
 
+See [Customer media delivery](docs/customer-media-delivery.md) for Chinese photo-management instructions, durable preview caching, and rollout verification.
+
 ## Commands
 
 ```bash

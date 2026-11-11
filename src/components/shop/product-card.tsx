@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useLanguage } from "@/lib/language";

@@ -36,6 +36,7 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
   const { lang, t } = useLanguage();
   const orderedMedia = useMemo(() => [...media].sort((a, b) => a.order - b.order), [media]);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const [visibleCount, setVisibleCount] = useState(6);
   const [zoomIndex, setZoomIndex] = useState(ZOOM_INDEX_DEFAULT);
   const [rotation, setRotation] = useState(0);
   const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -162,84 +163,18 @@ export function ScrollingMediaStream({ media }: ScrollingMediaStreamProps) {
 
   return (
     <>
-      <div className="sm:hidden -mx-4 px-4 pt-8">
-        <ul
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4"
-          aria-label={t({ en: "Event photo strip", zh: "活动照片浏览" })}
-        >
-          {orderedMedia.map((item, index) => {
-            const label = photoLabel(item, index);
-            return (
-              <li key={item.id} className="w-[82vw] max-w-[340px] shrink-0 snap-center">
-                <button
-                  type="button"
-                  onClick={(event) => openLightbox(index, event.currentTarget)}
-                  className={`block w-full text-left ${GALLERY_CONTROL}`}
-                  aria-label={t({ en: `Open ${label}`, zh: `打开${label}` })}
-                >
-                  <span className="relative block aspect-[4/3] overflow-hidden rounded-[8px] bg-[#1d2025]">
-                    <SafeRecapImage
-                      src={item.url}
-                      alt={label}
-                      fallbackSrc={IMAGE_FALLBACK}
-                      fallbackAlt={t({ en: "SnowForce community photo", zh: "SnowForce 社群照片" })}
-                      fallbackLabel={t({ en: "Archive fallback", zh: "影像替代图" })}
-                      unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })}
-                      sizes="340px"
-                    />
-                  </span>
-                  <span className="mt-3 flex items-start justify-between gap-3 text-[12px] leading-5 text-white/60">
-                    <span>{label}</span>
-                    <span className="shrink-0 tabular-nums">{pad(index + 1)} / {pad(orderedMedia.length)}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      <ol className="hidden pt-4 sm:block">
-        {orderedMedia.map((item, index) => {
+      <ul className="grid gap-5 pt-8 sm:grid-cols-2 lg:grid-cols-3" aria-label={t({ en: "Event photos", zh: "活动照片" })}>
+        {orderedMedia.slice(0, visibleCount).map((item, index) => {
           const label = photoLabel(item, index);
-          return (
-            <li key={item.id} className="border-b border-white/[0.14] py-10 last:border-b-0 lg:py-14">
-              <button
-                type="button"
-                onClick={(event) => openLightbox(index, event.currentTarget)}
-                className={`group grid w-full gap-6 text-left sm:grid-cols-[4rem_minmax(0,1fr)] lg:grid-cols-[5rem_minmax(0,1fr)_minmax(14rem,0.32fr)] lg:items-end ${GALLERY_CONTROL}`}
-                aria-label={t({ en: `Open ${label}`, zh: `打开${label}` })}
-              >
-                <span className="self-start text-[20px] font-light tabular-nums text-[#2997ff]">
-                  {pad(index + 1)}
-                </span>
-                <span className="relative block aspect-[16/10] overflow-hidden rounded-[8px] bg-[#1d2025]">
-                  <SafeRecapImage
-                    src={item.url}
-                    alt={label}
-                    fallbackSrc={IMAGE_FALLBACK}
-                    fallbackAlt={t({ en: "SnowForce community photo", zh: "SnowForce 社群照片" })}
-                    fallbackLabel={t({ en: "Archive fallback", zh: "影像替代图" })}
-                    unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })}
-                    sizes="(min-width: 1024px) 62vw, 80vw"
-                    imageClassName="object-cover transition duration-500 group-hover:scale-[1.012]"
-                  />
-                </span>
-                <span className="sm:col-start-2 lg:col-start-auto lg:pb-1">
-                  <span className="block text-[12px] font-semibold uppercase tracking-[0.13em] text-white/40">
-                    {t({ en: "Frame", zh: "画面" })} {pad(index + 1)} / {pad(orderedMedia.length)}
-                  </span>
-                  <span className="mt-3 block max-w-sm text-[16px] leading-7 text-white/70">{label}</span>
-                  <span className="mt-4 inline-flex items-center gap-2 text-[13px] font-semibold text-[#2997ff]">
-                    {t({ en: "Open full screen", zh: "全屏查看" })}
-                    <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  </span>
-                </span>
-              </button>
-            </li>
-          );
+          return <li key={item.id}><button type="button" onClick={(event) => openLightbox(index, event.currentTarget)} className={`block w-full text-left ${GALLERY_CONTROL}`} aria-label={t({ en: `Open ${label}`, zh: `打开${label}` })}>
+            <span className="relative block aspect-[4/3] overflow-hidden rounded-lg bg-[#1d2025]"><SafeRecapImage src={item.url} alt={label} fallbackSrc={IMAGE_FALLBACK} fallbackLabel={t({ en: "Archive fallback", zh: "影像替代图" })} unavailableLabel={t({ en: "Photo unavailable", zh: "照片暂时无法显示" })} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" /></span>
+            <span className="mt-3 flex justify-between gap-3 text-xs leading-6 text-white/70"><span>{label}</span><span className="shrink-0 tabular-nums">{pad(index + 1)} / {pad(orderedMedia.length)}</span></span>
+          </button></li>;
         })}
-      </ol>
+      </ul>
+      {visibleCount < orderedMedia.length && <button type="button" onClick={() => setVisibleCount((count) => count + 6)} className={`mt-8 min-h-11 rounded border border-white/30 px-5 py-3 text-sm font-medium text-white ${GALLERY_CONTROL}`}>
+        {t({ en: "Show more photos", zh: "查看更多照片" })} · {Math.min(visibleCount, orderedMedia.length)} / {orderedMedia.length}
+      </button>}
 
       {activeItem ? (
         <div

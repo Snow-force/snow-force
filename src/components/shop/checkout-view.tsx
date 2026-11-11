@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadCheckoutStripe, selectStripeWarmup, type StripeWarmupConfig } from "@/lib/shop/stripe-loader";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
+import { PublicImage as Image } from "@/components/media/public-image";
 import { LockKeyhole, MapPin, Truck } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import { changeShopCheckoutAction as changeCheckout, getShopCheckoutAction as getCheckout } from "@/lib/shop/checkout-actions";
