@@ -9,6 +9,7 @@ import { RegistrationForm } from "@/components/events/registration-form";
 import { GroupRegistrationForm } from "./group-registration-form";
 import { EventShareBar } from "./event-share-bar";
 import { MerchantBoothCta } from "./merchant-booth-cta";
+import { TripConcierge } from "./trip-concierge";
 import type { Bilingual, Event, MemberProfile } from "@/lib/types";
 
 function localizedText(value: Bilingual, lang: Lang) {
@@ -213,6 +214,7 @@ export function EventDetailView({
           </aside>
         </div>
       </section>
+      <TripConcierge key={`${event.slug}-${lang}`} event={event} />
     </div>
   );
 }
