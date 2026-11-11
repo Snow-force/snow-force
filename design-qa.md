@@ -1,3 +1,90 @@
+# Immersive mobile subject framing — latest QA
+
+final result: passed
+
+The user's final preference is the original immersive full-bleed treatment, with better subject framing. The separated 16:9 mobile panel below is a superseded trial. Some horizontal crop is intentional; the target is to retain the snowpeak/rider rather than show the full landscape at once.
+
+- Source visual truth: `public/videos/snowmountain.mp4` (1280 × 720, 15.0167 seconds), original poster and the reviewed one-second contact sheet in `output/homepage-redesign/framing-study/one-second-keyframes.jpg`.
+- Candidate browser proof: 66 reviewed subject checks across 320/390/430px phone widths and both languages passed. The video's actual media clock drives the focal point, including seeks, scene cuts and looping.
+- Mobile uses an immersive viewport-height background, a smaller one-line wordmark, and compact overlaid copy/actions. During explicit playback, copy fades out to clear the rider; pause restores the actions. The pause control remains visible. Desktop styles are unchanged.
+- Candidate captures: `mobile-immersive-zh-poster.png`, `mobile-immersive-en-poster.png`, `mobile-immersive-frame-0.5.png`, `mobile-immersive-frame-3.5.png`, `mobile-immersive-frame-8.5.png`, `mobile-immersive-frame-14.5.png`.
+- Final production proof: `subject-framing-verification.json` reports 66 passing checks, no page errors, actual media-clock positioning and restored controls after pause. Final screenshots above are from the standalone production build, not the development preview.
+- Six general viewport checks passed. Phone video frames are full-bleed `cover`: 320 × 504, 390 × 780 and 430 × 868 CSS px. CTA/wordmark spacing is valid; no horizontal overflow.
+- Native desktop scroll motion remains active; reduced motion disables decorative transitions; scrolling produced zero fetch/XHR requests. Explicit play downloads the same video once and offscreen playback pauses.
+- Final full suite: 254 files / 1716 tests passed, exit 0. Production build passed, exit 0. Focused framing/media coverage: 100% lines; focal-point helper: 100% statements/functions and 92.85% branches.
+- Visual review: original dark/light palette and full-bleed atmosphere retained. Mobile typography is compact and the one-line outlined mark leaves more image visible. During playback, copy visibility is hidden rather than merely transparent, keeping hidden actions out of keyboard navigation; pause restores them. Portrait crop is intentional and the reviewed subject stays prioritised.
+- No actionable P0/P1/P2 findings remain for the final preference.
+
+---
+
+# Superseded mobile full-frame trial (history)
+
+# Mobile Hero framing correction — latest QA
+
+final result: passed
+
+User feedback identified that the prior mobile layout adapted text and controls but retained a landscape video stretched with `object-fit: cover` across a portrait container. At 390 × 844 CSS px, the video box was 390 × 780px, showing about 28% of the source width. The earlier overflow checks did not establish correct image framing.
+
+The correction gives phones a separate composition: copy/actions above a full-width 16:9 video frame with `object-fit: contain`, followed by a compact outlined wordmark and playback controls. Desktop composition and existing media remain unchanged. No new requests, media assets or database reads are introduced.
+
+- Reproduction: `scripts/check-homepage-browser.cjs` failed with `Mobile hero crops the landscape video at 390px: 390x780, cover`.
+- Candidate screenshots: `output/homepage-redesign/mobile-panorama-zh.png` and `mobile-panorama-en.png`.
+- Candidate browser checks: 320, 390 and 430px widths, both languages; complete 16:9 framing and no horizontal overflow.
+- Final production checks: 320 × 568, 390 × 844 and 430 × 932 video frames are respectively 320 × 180, 390 × 219.375 and 430 × 241.875 CSS px, all `contain`, with no overflow. Desktop/tablet checks still pass.
+- Production screenshots: `output/homepage-redesign/mobile-hero-zh.png`, `after-mobile-zh.png`, `after-mobile-en.png`; matched 390 × 844 comparison: `mobile-framing-comparison.png`. Original framing truth is `public/videos/snowmountain-poster.jpg` (1280 × 720); the entire landscape now fits in the matching 16:9 frame.
+- Browser verification: explicit playback works, source remains absent before play, offscreen pause works, language switching works, no page errors or scroll-triggered fetch/XHR requests.
+- Final `npm test -- --maxWorkers=2`: 253 files / 1709 tests passed. Final `npm run build` passed.
+- No actionable P0/P1/P2 issues remain for this correction.
+
+---
+
+# Cinematic homepage — latest QA (2026-11-11)
+
+final result: passed
+
+## Visual truth and evidence
+
+- Selected visual: `output/homepage-redesign/selected-reference.png`, the second displayed image of the latest ideation set. Original source: `/workspace/generated_images/exec-bc75c1d6-26a8-432b-9198-6db3b49772c5.png`.
+- Rendered production implementation: `output/homepage-redesign/after-desktop-zh.png`; English and mobile captures are in the same folder.
+- Source raster: 921 × 1708 px, interpreted as the generated representation of the requested 1440px desktop design. Implementation: 1440 × 3591 px, browser viewport 1440 × 1000 CSS px, deviceScaleFactor 1.
+- Combined full-view comparison: `output/homepage-redesign/visual-comparison.png`, both surfaces normalized to 720px width and placed side by side without changing aspect ratios. Focused first-1000px comparison: `output/homepage-redesign/hero-comparison.png`, source first normalized to 1440px width.
+- State: anonymous Chinese homepage, hero paused on the original poster, reduced motion for stable visual captures. No production credentials are present, so the implementation truthfully shows a schedule error rather than the mock's planned-event empty state.
+
+## Comparison history and findings
+
+1. [P2, fixed] The first implementation's outlined lettering was undersized and the existing navigation used a narrower grid. Enlarged lettering with a viewport-height bound to prevent overlap, increased stroke weight, and aligned homepage navigation with the content grid. The latest combined and focused comparisons show the corrected hierarchy.
+2. [P2, fixed] The English departure heading repeated itself. Removed the redundant English subtitle while retaining the bilingual hierarchy in Chinese. Rechecked English desktop/mobile captures.
+3. [P1 performance, fixed] A production browser scroll initially triggered 23 route fetches from the legacy footer. Disabled automatic prefetch on homepage content, navigation and footer links. Latest `motion-verification.json` records zero fetch/XHR requests while scrolling through the entire homepage. Lazy image loads remain intentional.
+
+## Required fidelity surfaces
+
+- Typography: clean system sans headings, clear Chinese/English wrapping and outlined italic brand lettering match the selected visual language; body text remains at usable product sizes. No external font download or font-loading shift.
+- Layout/rhythm: full-bleed hero, dark image-and-briefing departure section, light ruled community section with sticky photograph and numbered preparation sequence. Five responsive viewports pass with no overflow or CTA/lettering overlap.
+- Colors: near-black theatre, off-white editorial surface, white hero type and blue action color preserve the selected dark/light balance. No gradient text or decorative dashboard surfaces.
+- Imagery: exact existing mountain video/poster retained. Existing brand logo, real SnowForce group photograph and the repository's mountain editorial photo deliberately replace fictional concept imagery. Published recap covers remain lazy, bounded and linked to real stories.
+- Copy/content: all primary actions work in English and Chinese. Three practical preparation steps, published recap previews, actual commerce products when available, and existing footer are retained beyond the mock's two story steps. No fabricated availability, member counts, testimonials or trips.
+
+## Browser and interaction verification
+
+- Chromium production build: desktop English/Chinese at 1440 × 1000, mobile English/Chinese at 390 × 844. Additional responsive checks: 1440 × 800, 1024 × 768, 768 × 1024 and 320 × 568.
+- Video is source-less before play, downloads once on explicit action, plays successfully and pauses offscreen. Switching language through the mobile navigation works.
+- Native scroll animation changes the mountain transform from identity to `matrix(1.048, 0, 0, 1.048, 0, 29.952)` after scrolling 400px. Reduced motion yields animationName `none`.
+- No browser page errors. No fetch/XHR requests during the final normal-scroll check.
+- Keyboard departure switching, published-only/bounded recap covers, media failure/retry and loading-error recovery are covered by focused tests.
+- Cross-request production cache check: nine visits with alternating language cookies produced one request per public source; see `cache-verification.json`.
+
+## Accepted differences and limits
+
+- Genuine project photographs and branding are used instead of generated fictional community photos. The complete site includes recap/commerce/footer content beyond the concept crop.
+- Production database contents and account-wide billing reduction cannot be verified without deployment and production usage measurements. The provided billing screenshot does not identify traffic causes.
+- Decorative scroll timelines degrade to static content on unsupported browsers and are omitted on mobile. These are intentional usability choices.
+
+No actionable P0/P1/P2 findings remain.
+
+---
+
+# Prior QA history (preserved)
+
 # SnowForce public UI redesign — design QA
 
 ## Visual target

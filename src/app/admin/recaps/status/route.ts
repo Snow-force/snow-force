@@ -11,6 +11,7 @@ export async function POST(request: Request) {
 
   if (slug && ["draft", "published"].includes(status)) {
     await updateRecap(slug, { status: status as "draft" | "published" });
+    revalidatePath("/");
     revalidatePath("/recaps");
     revalidatePath(`/recaps/${slug}`);
     revalidatePath("/admin/recaps");

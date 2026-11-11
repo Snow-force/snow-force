@@ -79,7 +79,7 @@ function FooterColumn({ title, children }: { title: React.ReactNode; children: R
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <li>
-      <Link href={href} className="transition hover:text-[#0066cc]">
+      <Link prefetch={false} href={href} className="transition hover:text-[#0066cc]">
         {children}
       </Link>
     </li>

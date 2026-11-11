@@ -239,6 +239,7 @@ export async function createRecapFromEvent(event: Event): Promise<EventRecap | u
 }
 
 function refreshRecapPaths(slug: string) {
+  revalidatePath("/");
   revalidatePath("/recaps");
   revalidatePath(`/recaps/${slug}`);
   revalidatePath("/admin/recaps");

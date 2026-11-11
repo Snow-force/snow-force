@@ -23,7 +23,7 @@ export function Nav() {
     <header className="sticky top-0 z-50">
       <nav className="select-none h-16 border-b border-white/10 bg-black text-white">
         <div className="mx-auto flex h-full max-w-[980px] items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5 text-[24px] font-semibold leading-none text-white">
+          <Link prefetch={false} href="/" className="flex items-center gap-2.5 text-[24px] font-semibold leading-none text-white">
             <Image src="/logo.jpg" alt="SnowForce" width={36} height={36} className="h-9 w-9 rounded-[10px] object-cover" />
             <span>SnowForce</span>
           </Link>
@@ -31,6 +31,7 @@ export function Nav() {
           <div className="hidden h-full items-center gap-5 lg:flex">
             {navItems.map((item) => (
               <Link
+                prefetch={false}
                 key={item.href}
                 href={item.href}
                 className="text-[14px] font-normal leading-none tracking-[-0.224px] text-white/75 transition hover:text-white"
@@ -63,6 +64,7 @@ export function Nav() {
             </div>
 
             <Link
+                prefetch={false}
               href="/member"
               className="hidden rounded-full bg-[#0066cc] px-5 py-2.5 text-[14px] font-normal leading-none tracking-[-0.224px] text-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3] sm:inline-flex"
             >
@@ -85,6 +87,7 @@ export function Nav() {
           <div className="space-y-1 px-4 py-3">
             {navItems.map((item) => (
               <Link
+                prefetch={false}
                 key={item.href}
                 href={item.href}
                 className="block px-3 py-3 text-[17px] font-normal tracking-[-0.374px] text-white/80 hover:text-white"
@@ -95,6 +98,7 @@ export function Nav() {
             ))}
 
             <Link
+                prefetch={false}
               href="/member"
               className="block rounded-lg bg-[#0066cc] px-3 py-3 text-[17px] font-medium tracking-[-0.374px] text-white"
               onClick={() => setMenuOpen(false)}

@@ -36,10 +36,11 @@ describe("admin recap status route", () => {
     expect(mocks.getAllRecaps).not.toHaveBeenCalled();
   });
 
-  it("publishes a valid status and revalidates both public and admin routes", async () => {
-    const response = await POST(request("opening-day", "published"));
+  it.each(["published", "draft"])("sets %s and invalidates homepage, public and admin caches", async (status) => {
+    const response = await POST(request("opening-day", status));
 
-    expect(mocks.updateRecap).toHaveBeenCalledWith("opening-day", { status: "published" });
+    expect(mocks.updateRecap).toHaveBeenCalledWith("opening-day", { status });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/recaps");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/recaps/opening-day");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/recaps");

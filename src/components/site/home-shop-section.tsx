@@ -24,12 +24,12 @@ export function HomeShopSection({ products = [] }: { products?: StoreProduct[] }
               {text("Snow apparel, goggles and little-rider essentials. Explore our gear collection and find the styles that fit your next ride.", "从雪服、雪镜到儿童装备，探索我们的品牌精选，为你和小滑手挑选合适的下一套装备。")}
             </p>
           </div>
-          <Link href="/shop" className="btn-primary w-fit shrink-0 gap-4">
+          <Link prefetch={false} href="/shop" className="btn-primary w-fit shrink-0 gap-4">
             {text("Explore the gear shop", "逛逛装备商城")}
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </div>
-        {products.length > 0 ? <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6">{products.slice(0, 3).map((product) => <ProductCard key={product.id} product={product} />)}</div> : <Link href="/shop" className="relative mt-10 block h-64 overflow-hidden rounded-xl sm:h-80"><Image src="/shop/mountain-editorial.webp" alt={text("Gear for mountain days", "雪山滑行装备")} fill sizes="(max-width: 1120px) 100vw, 1120px" className="object-cover" /><span className="absolute bottom-5 left-5 rounded-lg bg-black/70 px-5 py-3 text-sm text-white">{text("Explore the next collection", "探索新一季装备")}</span></Link>}
+        {products.length > 0 ? <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6">{products.slice(0, 3).map((product) => <ProductCard prefetch={false} key={product.id} product={product} />)}</div> : <Link prefetch={false} href="/shop" className="relative mt-10 block h-64 overflow-hidden rounded-xl sm:h-80"><Image src="/shop/mountain-editorial.webp" alt={text("Gear for mountain days", "雪山滑行装备")} fill sizes="(max-width: 1120px) 100vw, 1120px" className="object-cover" /><span className="absolute bottom-5 left-5 rounded-lg bg-black/70 px-5 py-3 text-sm text-white">{text("Explore the next collection", "探索新一季装备")}</span></Link>}
       </div>
     </section>
   );
