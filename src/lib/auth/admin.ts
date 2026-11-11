@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server";
+import { classifyStaffLoginError } from "./staff-login-errors";
 import {
   getStaffRole,
   grantStaffRole,
@@ -66,13 +67,17 @@ export async function loginStaff(formData: FormData) {
   const password = readRequiredString(formData, "password");
   if (!email || !password) redirect("/staff-login?error=credentials");
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const supabase = await createClient().catch(() => null);
+  if (!supabase) redirect("/staff-login?error=unavailable");
+  const attempt = await supabase.auth.signInWithPassword({ email, password }).catch(() => null);
+  if (!attempt) redirect("/staff-login?error=unavailable");
+  const { data, error } = attempt;
   if (error || !data.user) {
-    redirect("/staff-login?error=credentials");
+    redirect(`/staff-login?error=${classifyStaffLoginError(error)}`);
   }
 
-  const role = await getStaffRole(data.user.id);
+  const role = await getStaffRole(data.user.id).catch(() => undefined);
+  if (role === undefined) redirect("/staff-login?error=unavailable");
   if (!role) {
     await supabase.auth.signOut();
     redirect("/staff-login?error=unauthorized");
