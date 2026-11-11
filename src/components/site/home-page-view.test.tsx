@@ -48,6 +48,7 @@ describe("HomePageView public story", () => {
     expect(screen.queryByRole("region", { name: "Recap reel" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("SnowForce mountain video")).not.toHaveAttribute("src");
     expect(screen.getByLabelText("SnowForce mountain video")).toHaveAttribute("preload", "none");
+    expect(screen.getByLabelText("SnowForce mountain video")).toHaveAttribute("poster", "/videos/snowmountain-poster.jpg");
     const departureBoard = screen.getByRole("region", { name: "Make the next one yours." });
     expect(screen.getByRole("heading", { level: 1 }).closest("section")?.nextElementSibling).toBe(departureBoard);
   });
