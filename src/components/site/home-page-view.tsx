@@ -66,7 +66,7 @@ function HeroSection({ t }: { t: Translate }) {
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
-        poster="/team/group.jpg"
+        poster="/videos/snowmountain-poster.jpg"
         muted
         loop
         playsInline
