@@ -86,4 +86,13 @@ describe("event availability", () => {
       percentFull: 0,
     });
   });
+  it("evaluates a deadline against an explicit clock without changing other availability rules", () => {
+    const event = { ...openEvent, registrationCloseAt: "2020-02-01T00:00:00Z" };
+    const before = new Date("2020-01-31T23:59:59Z");
+    const after = new Date("2020-02-01T00:00:01Z");
+    expect(isEventOpen(event, before)).toBe(true);
+    expect(getEventAvailabilitySnapshot(event, before).open).toBe(true);
+    expect(getEventAvailabilitySnapshot(event, after).open).toBe(false);
+    expect(isEventOpen({ ...event, registrationState: "closed" }, before)).toBe(false);
+  });
 });

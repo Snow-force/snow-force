@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -10,6 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language";
+import { briefingSectionEvent, type BriefingSection } from "@/lib/events/trip-concierge";
 import type { Bilingual, Event, EventDetailModule } from "@/lib/types";
 
 const focus =
@@ -28,6 +29,20 @@ export function EventBriefing({
   const { lang, t } = useLanguage();
   const [section, setSection] = useState("plan");
   const [reviewed, setReviewed] = useState<string[]>([]);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    // The trip desk asks the briefing to open the section that backs its answer.
+    const onRequest = (request: globalThis.Event) => {
+      const target = (request as CustomEvent<BriefingSection>).detail;
+      if (!["plan", "prepare", "costs"].includes(target)) return;
+      setSection(target);
+      const reduceMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      heading.current?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      heading.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener(briefingSectionEvent, onRequest);
+    return () => window.removeEventListener(briefingSectionEvent, onRequest);
+  }, []);
   const text = (value: Bilingual) =>
     value[lang] || value[lang === "en" ? "zh" : "en"];
   const list = (value: Bilingual<string[]>) =>
@@ -103,6 +118,7 @@ export function EventBriefing({
           {t({ en: "Basecamp", zh: "出发营地" })}
         </p>
         <h2
+          ref={heading}
           id="mountain-briefing-title"
           tabIndex={-1}
           className="scroll-mt-28 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2997ff] mt-4 text-[28px] font-semibold leading-tight sm:text-[34px]"
@@ -208,7 +224,7 @@ export function EventBriefing({
               </li>
             ))}
           </ol>
-          {modules(["itinerary"]).map((row) => renderModule(row))}
+          {modules(["overview", "highlights", "itinerary"]).map((row) => renderModule(row))}
         </div>
 
         <div id="briefing-prepare" hidden={section !== "prepare"}>

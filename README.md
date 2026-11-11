@@ -102,6 +102,8 @@ See the bilingual [Admin operations desk guide](docs/admin-operations-desk.md) f
 
 See [Customer media delivery](docs/customer-media-delivery.md) for Chinese photo-management instructions, durable preview caching, and rollout verification.
 
+See [Trip desk](docs/trip-desk.md) for the event-page assistant's published-data boundaries and Chinese administrator instructions.
+
 ## Commands
 
 ```bash
