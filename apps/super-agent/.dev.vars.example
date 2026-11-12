@@ -1,0 +1,6 @@
+# Copy to .dev.vars; do not commit real secrets.
+ADMIN_TOKEN=
+RUNNER_TOKEN=
+INGEST_TOKEN=
+GITHUB_WEBHOOK_SECRET=
+DEEPSEEK_API_KEY=

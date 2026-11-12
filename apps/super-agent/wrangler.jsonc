@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "snowforce-super-agent",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-08",
+  "workers_dev": true,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "super-agent",
+    "database_id": "e20ac937-820d-4b6e-82ff-800197c4ece3",
+    "migrations_dir": "migrations"
+  }],
+  "queues": {
+    "producers": [{ "binding": "TASKS", "queue": "snowforce-agent-tasks" }],
+    "consumers": [{
+      "queue": "snowforce-agent-tasks",
+      "max_batch_size": 1,
+      "max_concurrency": 1,
+      "max_retries": 2,
+      "dead_letter_queue": "snowforce-agent-dead-letters"
+    }]
+  },
+  "triggers": { "crons": ["*/10 * * * *"] },
+  "vars": {
+    "GITHUB_REPOSITORY": "Snow-force/snow-force",
+    "AI_ENABLED": "false",
+    "MONTHLY_BUDGET_MICRO_USD": "5000000",
+    "CASE_BUDGET_MICRO_USD": "50000"
+  },
+  "observability": { "enabled": false }
+}
